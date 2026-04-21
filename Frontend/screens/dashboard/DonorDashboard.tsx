@@ -43,6 +43,8 @@ interface DonorDashboardProps {
   userName?: string;
 }
 
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
 // Reusable animated button for premium feedback
 const ScaleButton = ({ children, onPress, style }: any) => {
   const scale = useSharedValue(1);
@@ -51,17 +53,15 @@ const ScaleButton = ({ children, onPress, style }: any) => {
   }));
 
   return (
-    <Animated.View style={[animatedStyle, style]}>
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={onPress}
-        onPressIn={() => (scale.value = withSpring(0.96, { damping: 10, stiffness: 200 }))}
-        onPressOut={() => (scale.value = withSpring(1))}
-        style={styles.scaleButtonInner}
-      >
-        {children}
-      </TouchableOpacity>
-    </Animated.View>
+    <AnimatedTouchable
+      activeOpacity={0.8}
+      onPress={onPress}
+      onPressIn={() => (scale.value = withSpring(0.96, { damping: 10, stiffness: 200 }))}
+      onPressOut={() => (scale.value = withSpring(1))}
+      style={[style, animatedStyle]}
+    >
+      {children}
+    </AnimatedTouchable>
   );
 };
 

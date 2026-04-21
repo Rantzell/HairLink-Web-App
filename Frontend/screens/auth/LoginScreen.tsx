@@ -15,7 +15,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { supabase } from "../../lib/supabase";
+import api from "../../lib/api";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeInDown, FadeInUp, Layout } from "react-native-reanimated";
 import AuthStatusModal from "../../components/AuthStatusModal";
 
@@ -78,30 +79,31 @@ export default function LoginScreen({
         if (!valid) return;
 
         setLoggingIn(true);
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        setLoggingIn(false);
-        if (error) {
-            showError("Login Failed", error.message);
+        try {
+            const response = await api.post('/login', { 
+                email, 
+                password,
+                device_name: Platform.OS 
+            });
+            await AsyncStorage.setItem('auth_token', response.data.token);
+            
+            let rawRole = response.data.user.role || "donor";
+            let formattedRole = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
+            if (formattedRole !== "Donor" && formattedRole !== "Recipient") formattedRole = "Donor";
+            
+            onLogin(formattedRole as "Donor" | "Recipient");
+        } catch (error: any) {
+            const message = error.response?.data?.message || error.response?.data?.errors?.email?.[0] || error.message || "An error occurred";
+            showError("Login Failed", message);
+        } finally {
+            setLoggingIn(false);
         }
     };
 
     // ── Forgot password flow ─────────────────────────────────────
     const handleSendResetCode = async () => {
         if (!forgotEmail.trim()) { setForgotError("Please enter your email."); return; }
-        setForgotLoading(true);
-        setForgotError("");
-        const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail);
-        setForgotLoading(false);
-        if (error) { 
-            // Silently ignore rate limits durante development if they specifically asked to remove the popup 
-            if (!error.message.includes("rate limit")) {
-                showError("Reset Failed", error.message);
-                return;
-            }
-            console.warn("Email Rate Limit Suppressed:", error.message);
-        }
-        showSuccess("Email Sent", "Check your inbox for the 8-digit verification code.");
-        setViewMode("forgot_otp");
+        showError("Not Implemented", "Forgot password API is currently under construction.");
     };
 
     const handleVerifyResetCode = async () => {
