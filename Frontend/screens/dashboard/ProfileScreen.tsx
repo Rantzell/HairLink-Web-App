@@ -11,6 +11,7 @@ import {
     ActivityIndicator,
     Platform,
     Dimensions,
+    KeyboardAvoidingView,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,7 +29,7 @@ import Animated, {
     withSpring,
     interpolateColor
 } from 'react-native-reanimated';
-import { supabase } from '../../lib/supabase';
+import api from '../../lib/api';
 
 const { width } = Dimensions.get('window');
 
@@ -69,120 +70,55 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const fetchProfile = async () => {
         try {
             setLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            setEmail(user.email || '');
-
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-
-            if (error) throw error;
+            const response = await api.get('/me');
+            const data = response.data;
 
             if (data) {
                 setProfile(data);
-                setFullName(data.full_name || '');
+                setEmail(data.email || '');
+                setFullName(`${data.first_name || ''} ${data.last_name || ''}`.trim() || '');
                 setPhone(data.phone || '');
                 setRole(data.role || 'Donor');
-                setPoints(data.reward_points || 0);
+                setPoints(data.star_points || 0);
                 setReferralCode(data.referral_code || '---');
-                setAvatarUrl(data.avatar_url);
+                setAvatarUrl(data.profile_photo_url); // This uses the accessor we checked earlier
                 setHasRedeemed(data.has_redeemed_code || false);
                 roleToggleValue.value = withSpring(data.role === 'Donor' ? 0 : 1);
             }
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            Alert.alert('Error', 'Failed to fetch profile. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
     const handleRedeemCode = async () => {
-        const cleanedCode = otherReferralCode.trim().toUpperCase();
-        
-        if (!cleanedCode) {
-            Alert.alert('Required', 'Please enter a referral code to redeem.');
-            return;
-        }
-
-        if (cleanedCode === referralCode.toUpperCase()) {
-            Alert.alert('Invalid Code', 'You cannot redeem your own referral code. Share it with friends instead! ✨');
-            return;
-        }
-
-        try {
-            setIsRedeeming(true);
-            const { data, error } = await supabase.rpc('redeem_referral_code', {
-                code_to_redeem: cleanedCode
-            });
-
-            if (error) throw error;
-
-            if (data.success) {
-                // Optimistic UI Update: Update points immediately for "live" feel
-                setPoints(prev => prev + 3);
-                setHasRedeemed(true);
-
-                Alert.alert(
-                    'Success! 🎉', 
-                    "You've earned 3 Welcome Stars! \n\nYour kindness is the first step toward a beautiful journey. Keep shining and making a difference! ✨"
-                );
-                setOtherReferralCode('');
-                fetchProfile(); // Background sync
-            } else {
-                Alert.alert('Redemption Failed', data.message);
-            }
-        } catch (error: any) {
-            Alert.alert('Error', error.message || 'Something went wrong while redeeming the code.');
-        } finally {
-            setIsRedeeming(false);
-        }
+        // Referral redemption logic on Laravel backend still pending implementation
+        Alert.alert('Coming Soon', 'Referral code redemption will be available in the next update!');
     };
 
     const handleUpdateProfile = async () => {
         try {
             setUpdating(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            
+            // Split full name back into first and last for Laravel
+            const names = fullName.split(' ');
+            const firstName = names[0];
+            const lastName = names.slice(1).join(' ');
 
-            // Update Auth Metadata & Email
-            const authUpdates: any = {
-                data: { full_name: fullName, phone: phone, role: role }
-            };
+            const response = await api.post('/profile/update', {
+                first_name: firstName,
+                last_name: lastName,
+                phone: phone,
+                role: role,
+                email: email
+            });
 
-            if (email !== user.email) {
-                authUpdates.email = email;
-            }
-
-            const { error: authError } = await supabase.auth.updateUser(authUpdates);
-            if (authError) throw authError;
-
-            // Update Public Profile
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .update({
-                    full_name: fullName,
-                    phone: phone,
-                    role: role,
-                    updated_at: new Date(),
-                })
-                .eq('id', user.id);
-
-            if (profileError) throw profileError;
-
-            Alert.alert(
-                'Profile Updated',
-                email !== user.email
-                    ? 'Check your new email for a verification link.'
-                    : 'Your changes have been saved.'
-            );
-            if (onRoleChange) onRoleChange(role);
+            Alert.alert('Success', 'Profile updated successfully! ✨');
             setEditMode(false);
+            fetchProfile(); // Sync state
         } catch (error: any) {
-            Alert.alert('Update Failed', error.message);
+            Alert.alert('Update Failed', error.response?.data?.message || 'Failed to update profile.');
         } finally {
             setUpdating(false);
         }
@@ -208,47 +144,26 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const uploadAvatar = async (uri: string) => {
         try {
             setUpdating(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
 
-            // ── ROBUST UPLOAD LOGIC ──────────────
-            const response = await fetch(uri);
-            const blob = await response.blob();
-
+            const formData = new FormData();
             const fileExt = uri.split('.').pop()?.toLowerCase();
-            const mimeType = fileExt === 'jpg' ? 'image/jpeg' : `image/${fileExt}`;
-            const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+            const fileName = `avatar.${fileExt}`;
 
-            const { error: uploadError } = await supabase.storage
-                .from('avatars')
-                .upload(fileName, blob, {
-                    contentType: mimeType,
-                    upsert: true,
-                });
+            formData.append('avatar', {
+                uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+                name: fileName,
+                type: `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
+            } as any);
 
-            if (uploadError) throw uploadError;
+            const response = await api.post('/profile/avatar', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
 
-            // Get Public URL
-            const { data: { publicUrl } } = supabase.storage
-                .from('avatars')
-                .getPublicUrl(fileName);
-
-            // Update Profile table
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({
-                    avatar_url: publicUrl,
-                    updated_at: new Date()
-                })
-                .eq('id', user.id);
-
-            if (updateError) throw updateError;
-
-            setAvatarUrl(publicUrl);
+            setAvatarUrl(response.data.avatar_url);
             Alert.alert('Success', 'Profile picture updated! ✨');
         } catch (error: any) {
             console.error('Upload error:', error);
-            Alert.alert('Upload Error', error.message || 'Failed to sync image to database.');
+            Alert.alert('Upload Error', 'Failed to upload image to server.');
         } finally {
             setUpdating(false);
         }
@@ -272,28 +187,16 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                     onPress: async () => {
                         try {
                             setUpdating(true);
-                            const { data: { user } } = await supabase.auth.getUser();
-                            if (!user) return;
-
-                            // 1. Update DB 
-                            const { error } = await supabase
-                                .from('profiles')
-                                .update({ role: newRole, updated_at: new Date() })
-                                .eq('id', user.id);
-
-                            if (error) throw error;
-
-                            // 2. Update Local State
+                            await api.post('/profile/update', { role: newRole });
+                            
                             setRole(newRole);
                             roleToggleValue.value = withSpring(newRole === 'Donor' ? 0 : 1);
 
-                            // 3. Trigger Global Transition
                             if (onRoleChange) {
-                                // Small delay for animation feel
                                 setTimeout(() => onRoleChange(newRole), 500);
                             }
                         } catch (err: any) {
-                            Alert.alert('Switch Failed', err.message);
+                            Alert.alert('Switch Failed', 'Failed to update role on server.');
                         } finally {
                             setUpdating(false);
                         }
@@ -322,7 +225,10 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     }
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView 
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
             <StatusBar style="light" />
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {/* Header Hero Section */}
@@ -362,7 +268,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                             </View>
                             <Text style={styles.userName}>{fullName || 'User Name'}</Text>
                             <View style={styles.idChip}>
-                                <Text style={styles.idChipText}>#{profile?.id?.slice(0, 4).toUpperCase() || '0000'}</Text>
+                                <Text style={styles.idChipText}>#{String(profile?.id || '0').padStart(4, '0')}</Text>
                             </View>
                         </Animated.View>
                 </LinearGradient>
@@ -511,7 +417,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                     <View style={{ height: 100 }} />
                 </View>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 

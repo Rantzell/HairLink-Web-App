@@ -9,16 +9,18 @@ import {
     Image,
     Alert,
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '../../lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import DonationSuccessModal from '../../components/DonationSuccessModal';
+import api from '../../lib/api';
 
 interface HairDonationScreenProps {
     onBack: () => void;
@@ -49,33 +51,6 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
         }
     };
 
-    const uploadImage = async (uri: string, path: string) => {
-        try {
-            const formData = new FormData();
-            formData.append('file', {
-                uri,
-                name: 'donation.jpg',
-                type: 'image/jpeg',
-            } as any);
-
-            const { data, error } = await supabase.storage
-                .from('hair-requests') // Using existing bucket from SQL
-                .upload(path, formData, {
-                    contentType: 'multipart/form-data',
-                    upsert: true
-                });
-
-            if (error) {
-                console.error('Storage upload error:', error);
-                return null;
-            }
-            return data?.path || null;
-        } catch (err) {
-            console.error('Upload exception:', err);
-            return null;
-        }
-    };
-
     const handleSubmit = async () => {
         setSubmitError(null);
         if (!hairLength || !hairColor || !address || !reason || !proofImage) {
@@ -84,58 +59,43 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
         }
 
         setLoading(true);
-        setLoadingLabel('Verifying authentication...');
+        setLoadingLabel('Preparing submission...');
+        
         try {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            const formData = new FormData();
+            formData.append('reference', `MOB-${Date.now()}`);
+            formData.append('hair_length', hairLength);
+            formData.append('hair_color', hairColor);
+            formData.append('treated_hair', chemicallyTreated ? '1' : '0');
+            formData.append('address', address);
+            formData.append('reason', reason);
 
-            if (userError || !user) {
-                setSubmitError('You are not logged in. Please go back and log in again.');
-                return;
-            }
+            const filename = proofImage.split('/').pop() || 'donation.jpg';
+            const match = /\.(\w+)$/.exec(filename);
+            const type = match ? `image/${match[1]}` : `image/jpeg`;
 
-            const timestamp = Date.now();
-            setLoadingLabel('Uploading proof of donation...');
-            const proofPath = await uploadImage(proofImage, `${user.id}/donation_${timestamp}.jpg`);
+            formData.append('photo_front', {
+                uri: proofImage,
+                name: filename,
+                type,
+            } as any);
+
+            setLoadingLabel('Uploading to secure server...');
             
-            if (!proofPath) {
-                setSubmitError('Could not upload image. Please try again.');
-                return;
-            }
-
-            setLoadingLabel('Saving donation record...');
-            const { error } = await supabase.from('donations').insert({
-                user_id: user.id,
-                type: 'hair',
-                status: 'pending',
-                proof_url: proofPath,
-                hair_length: hairLength,
-                hair_color: hairColor,
-                chemically_treated: chemicallyTreated,
-                address: address,
-                reason: reason,
+            const response = await api.post('/donations', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
             });
 
-            if (error) {
-                setSubmitError(`${error.message} (code: ${error.code})`);
-                return;
+            if (response.status === 201 || response.status === 200) {
+                setShowSuccess(true);
+            } else {
+                throw new Error('Unexpected server response.');
             }
-
-            // Send notification
-            setLoadingLabel('Sending confirmation...');
-            try {
-                await supabase.from('notifications').insert({
-                    user_id: user.id,
-                    title: 'Donation Submitted! ❤️',
-                    message: 'Your hair donation request has been received. Please wait for our staff to approve and provide further instructions.',
-                    type: 'donation'
-                });
-            } catch (nErr) {
-                console.warn('Notification failed:', nErr);
-            }
-
-            setShowSuccess(true);
         } catch (err: any) {
-            setSubmitError(err.message || 'An unexpected error occurred.');
+            console.error('Submission error:', err.response?.data || err.message);
+            setSubmitError(err.response?.data?.message || err.message || 'An unexpected error occurred.');
         } finally {
             setLoading(false);
             setLoadingLabel('Submitting...');
@@ -145,7 +105,10 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
     const insets = useSafeAreaInsets();
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <KeyboardAvoidingView 
+            style={[styles.container, { paddingTop: insets.top }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
             <StatusBar style="light" />
 
             {/* ── Elite Header ──────────────────────────────── */}
@@ -313,7 +276,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                     else onBack();
                 }}
             />
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 

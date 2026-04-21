@@ -28,7 +28,7 @@ import Animated, {
   withTiming,
   Layout,
 } from 'react-native-reanimated';
-import { supabase } from '../../lib/supabase';
+import api from '../../lib/api';
 
 import MonetaryDonationDashboard from './MonetaryDonationDashboard';
 import HairDonationScreen from './HairDonationScreen';
@@ -95,39 +95,13 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
 
   const fetchPoints = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      // 1. Fetch Approved Donations for Points
-      const { data: donations, error: donationsError } = await supabase
-        .from('donations')
-        .select('type, amount')
-        .eq('user_id', session.user.id)
-        .eq('status', 'approved');
-
-      if (donationsError) throw donationsError;
-
-      let total = 0;
-      donations.forEach((d) => {
-        if (d.type === 'hair') {
-          total += 10;
-        } else if (d.type === 'monetary') {
-          total += Math.floor(d.amount / 100);
-        }
-      });
-      setStarPoints(total);
-
-      // 2. Fetch Referral Code from Profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('referral_code')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError) {
-        console.log('Error fetching referral code:', profileError);
-      } else if (profile) {
-        setReferralCode(profile.referral_code || '---');
+      const response = await api.get('/me');
+      if (response.data) {
+        // We might want a dedicated endpoint for points, but for now we can use /me 
+        // if the user model includes points or we can calculate them.
+        // Assuming star_points is a field on the user or we'll add it.
+        setStarPoints(response.data.star_points || 0);
+        setReferralCode(response.data.referral_code || '---');
       }
     } catch (err) {
       console.log('Error fetching user data:', err);
@@ -136,14 +110,9 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { count } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false);
-      setUnreadCount(count || 0);
+      const response = await api.get('/notifications');
+      const unread = response.data.filter((n: any) => !n.is_read).length;
+      setUnreadCount(unread);
     } catch (err) {
       console.log('Error fetching unread count:', err);
     }

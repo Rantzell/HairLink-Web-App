@@ -16,7 +16,7 @@ import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeIn, Layout, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { supabase } from '../../lib/supabase';
+import api from '../../lib/api';
 
 interface NotificationItem {
   id: string;
@@ -64,17 +64,8 @@ export default function NotificationScreen({ onBack, role = 'Donor' }: { onBack?
 
   const fetchNotifications = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setNotifications(data || []);
+      const response = await api.get('/notifications');
+      setNotifications(response.data || []);
     } catch (err) {
       console.error('Error fetching notifications:', err);
     } finally {
@@ -85,13 +76,7 @@ export default function NotificationScreen({ onBack, role = 'Donor' }: { onBack?
 
   const markAllAsRead = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false);
+      await api.post('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch (err) {
       console.error('Error marking all as read:', err);
@@ -112,12 +97,7 @@ export default function NotificationScreen({ onBack, role = 'Donor' }: { onBack?
 
   const markAsRead = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', id);
-      if (error) throw error;
-
+      await api.post(`/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch (err) {
       console.error('Error marking as read:', err);

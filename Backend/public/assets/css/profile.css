@@ -1,0 +1,223 @@
+.profile-shell {
+    max-width: 980px;
+    margin-inline: auto;
+    display: grid;
+    gap: 0.8rem;
+}
+
+.profile-head,
+.profile-card,
+.profile-stats {
+    background: #fff;
+    border: 1px solid #ead7e8;
+    border-radius: 16px;
+    padding: 0.8rem;
+    box-shadow: 0 12px 26px rgba(73, 20, 52, 0.08);
+}
+
+.profile-head h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(1.35rem, 2.8vw, 2rem);
+    line-height: 1.1;
+}
+
+.profile-head p {
+    color: #665772;
+    margin-top: 0.35rem;
+    font-size: 0.9rem;
+}
+
+.profile-hero {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.profile-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #cf2f84, #a71f68);
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 800;
+    box-shadow: 0 10px 22px rgba(167, 31, 104, 0.25);
+}
+
+.profile-name {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #3b2e43;
+}
+
+.profile-role {
+    margin-top: 0.2rem;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.28rem 0.56rem;
+    font-weight: 800;
+    font-size: 0.76rem;
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.profile-role.status-donor {
+    background: #fce7f3;
+    color: #9d174d;
+}
+
+.profile-role.status-recipient {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.profile-grid {
+    margin-top: 0.7rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.profile-item {
+    background: #fcf8fc;
+    border: 1px solid #eddce9;
+    border-radius: 10px;
+    padding: 0.62rem;
+}
+
+.profile-item small {
+    display: block;
+    color: #7a6a84;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+    font-size: 0.76rem;
+}
+
+.profile-item strong {
+    color: #3b2e43;
+    font-size: 0.93rem;
+    word-break: break-word;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.profile-stat {
+    background: #fcf8fc;
+    border: 1px solid #eddce9;
+    border-radius: 10px;
+    padding: 0.62rem;
+}
+
+.profile-stat small {
+    display: block;
+    color: #7a6a84;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+    font-size: 0.76rem;
+}
+
+.profile-stat strong {
+    color: #3b2e43;
+    font-size: 1rem;
+}
+
+.profile-actions {
+    margin-top: 0.7rem;
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+    .profile-grid,
+    .profile-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Referral Code Card */
+.referral-code-card {
+    background: #fff;
+    border: 1px solid #ead7e8;
+    border-radius: 16px;
+    padding: 0.8rem;
+    box-shadow: 0 12px 26px rgba(73, 20, 52, 0.08);
+}
+
+.referral-code-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.7rem;
+}
+
+.referral-code-head i {
+    font-size: 1.6rem;
+    color: #cf2f84;
+}
+
+.referral-code-head h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #3b2e43;
+    margin: 0;
+}
+
+.referral-code-head p {
+    font-size: 0.82rem;
+    color: #796a83;
+    margin: 0.1rem 0 0;
+}
+
+.referral-code-display {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: linear-gradient(135deg, #fdf2f8, #f5e6f0);
+    border: 2px dashed #e0b4d4;
+    border-radius: 12px;
+    padding: 0.7rem 1rem;
+}
+
+.referral-code-display span {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #a71f68;
+    letter-spacing: 2px;
+    flex: 1;
+}
+
+.copy-code-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: linear-gradient(135deg, #cf2f84, #a71f68);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.45rem 0.8rem;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 6px 14px rgba(167, 31, 104, 0.22);
+}
+
+.copy-code-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(167, 31, 104, 0.3);
+}
+
+.copy-code-btn:active {
+    transform: translateY(0);
+}

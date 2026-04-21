@@ -9,12 +9,15 @@ import {
     Image,
     Switch,
     Alert,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
+import api from '../../lib/api';
 import DonationSuccessModal from '../../components/DonationSuccessModal';
 
 interface MonetaryDonationDashboardProps {
@@ -72,37 +75,41 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
 
     setLoading(true);
     try {
-      // Use getUser() — more reliable in React Native than getSession()
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const formData = new FormData();
+      formData.append('reference', `MON-${Date.now()}`);
+      formData.append('type', 'monetary');
+      formData.append('full_name', fullName);
+      formData.append('amount', numAmount);
+      formData.append('words_amount', wordsAmount);
+      formData.append('anonymous', anonymous ? '1' : '0');
 
-      if (userError || !user) {
-        setSubmitError('You are not logged in. Please go back and log in again.');
-        return;
+      const filename = proofImage.split('/').pop() || 'proof.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+      formData.append('proof_photo', {
+        uri: Platform.OS === 'android' ? proofImage : proofImage.replace('file://', ''),
+        name: filename,
+        type,
+      } as any);
+
+      const response = await api.post('/donations', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 201 || response.status === 200) {
+        const donationAmount = parseFloat(numAmount);
+        setLastAmount(donationAmount);
+        setEarnedStars(Math.floor(donationAmount / 100));
+        setShowSuccess(true);
+      } else {
+        throw new Error('Unexpected server response.');
       }
-      
-      const { error } = await supabase
-        .from('donations')
-        .insert({
-          user_id: user.id,
-          type: 'monetary',
-          full_name: fullName,
-          amount: parseFloat(numAmount),
-          words_amount: wordsAmount,
-          status: 'pending',
-          proof_url: proofImage, 
-        });
-
-      if (error) {
-        setSubmitError(`${error.message} (code: ${error.code})`);
-        return;
-      }
-
-      const donationAmount = parseFloat(numAmount);
-      setLastAmount(donationAmount);
-      setEarnedStars(Math.floor(donationAmount / 100));
-      setShowSuccess(true);
     } catch (err: any) {
-      setSubmitError(err.message || 'Failed to submit donation.');
+      console.error('Donation error:', err.response?.data || err.message);
+      setSubmitError(err.response?.data?.message || 'Failed to submit donation.');
     } finally {
       setLoading(false);
     }
@@ -112,7 +119,11 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
     const insets = useSafeAreaInsets();
 
     return (
-        <View style={[styles.container, { backgroundColor: themeBg, paddingTop: insets.top }]}>
+        <KeyboardAvoidingView 
+            style={[styles.container, { backgroundColor: themeBg, paddingTop: insets.top }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+            <StatusBar style="light" />
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={onBack} style={styles.backBtn}>
@@ -297,7 +308,7 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
                     else onBack();
                 }}
             />
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 

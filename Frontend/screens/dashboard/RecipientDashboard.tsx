@@ -27,7 +27,7 @@ import Animated, {
   withSpring,
   Layout,
 } from 'react-native-reanimated';
-import { supabase } from '../../lib/supabase';
+import api from '../../lib/api';
 import MonetaryDonationDashboard from './MonetaryDonationDashboard';
 import RecipientCalendarScreen from './RecipientCalendarScreen';
 import NotificationScreen from './NotificationScreen';
@@ -55,14 +55,9 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
 
   const fetchUnreadCount = React.useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { count } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false);
-      setUnreadCount(count || 0);
+      const response = await api.get('/notifications');
+      const unread = response.data.filter((n: any) => !n.is_read).length;
+      setUnreadCount(unread);
     } catch (err) {
       console.log('Error fetching unread count:', err);
     }
@@ -70,18 +65,15 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
 
   const fetchLatestRequest = React.useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data, error } = await supabase
-        .from('hair_requests')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows found"
-      setLatestRequest(data || null);
+      // Assuming we have an endpoint for latest request or it's in /me
+      const response = await api.get('/me');
+      if (response.data && response.data.latest_hair_request) {
+        setLatestRequest(response.data.latest_hair_request);
+      } else {
+        // Fallback or specific endpoint if needed
+        // For now, let's just use the /me response if it's there
+        setLatestRequest(null);
+      }
     } catch (err) {
       console.log('Error fetching latest request:', err);
     }

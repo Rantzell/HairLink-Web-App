@@ -9,6 +9,8 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,7 +19,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '../../lib/supabase';
+import api from '../../lib/api';
 import RequestSuccessModal from '../../components/RequestSuccessModal';
 
 interface HairRequestScreenProps {
@@ -60,33 +62,6 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
     }
   };
 
-  const uploadImage = async (uri: string, path: string) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', {
-        uri,
-        name: 'image.jpg', // Standardize name for storage
-        type: 'image/jpeg',
-      } as any);
-
-      const { data, error } = await supabase.storage
-        .from('hair-requests')
-        .upload(path, formData, {
-          contentType: 'multipart/form-data',
-          upsert: true
-        });
-
-      if (error) {
-        console.error('Storage upload error:', error);
-        return null;
-      }
-      return data?.path || null;
-    } catch (err) {
-      console.error('Upload exception:', err);
-      return null;
-    }
-  };
-
   const handleSubmit = async () => {
     if (!story.trim() || !hairLength || !wigColor || !docImage) {
       Alert.alert('Missing Information', 'Please provide your story, specifications, and medical documentation.');
@@ -94,69 +69,53 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
     }
 
     setLoading(true);
-    setLoadingLabel('Verifying authentication...');
+    setLoadingLabel('Preparing request...');
 
     try {
-      // 1. Authenticate user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('You must be logged in to submit a request.');
+      const formData = new FormData();
+      formData.append('reference', `REQ-${Date.now()}`);
+      formData.append('story', story);
+      formData.append('wig_length', hairLength);
+      formData.append('wig_color', wigColor);
+      
+      // Handle Medical Certificate
+      const docExt = docImage.split('.').pop() || 'jpg';
+      formData.append('medical_certificate', {
+        uri: Platform.OS === 'android' ? docImage : docImage.replace('file://', ''),
+        name: `medical_cert.${docExt}`,
+        type: `image/${docExt === 'jpg' ? 'jpeg' : docExt}`,
+      } as any);
 
-      const timestamp = Date.now();
-      let docPath = null;
-      let refPath = null;
-
-      // 2. Upload Medical Documentation
-      setLoadingLabel('Uploading medical documentation...');
-      docPath = await uploadImage(docImage, `${user.id}/doc_${timestamp}.jpg`);
-      if (!docPath) {
-        throw new Error('Could not upload documentation. Please check your storage settings or try another image.');
-      }
-
-      // 3. Upload Reference Image (Optional)
+      // Handle Reference Photo (Optional)
       if (refImage) {
-        setLoadingLabel('Uploading reference photo...');
-        refPath = await uploadImage(refImage, `${user.id}/ref_${timestamp}.jpg`);
+        const refExt = refImage.split('.').pop() || 'jpg';
+        formData.append('additional_photo', {
+          uri: Platform.OS === 'android' ? refImage : refImage.replace('file://', ''),
+          name: `reference.${refExt}`,
+          type: `image/${refExt === 'jpg' ? 'jpeg' : refExt}`,
+        } as any);
       }
 
-      // 4. Insert Request into Database
-      setLoadingLabel('Finalizing your request...');
-      const { error: requestError } = await supabase
-        .from('hair_requests')
-        .insert({
-          user_id: user.id,
-          story,
-          hair_length: hairLength,
-          wig_color: wigColor,
-          document_path: docPath,
-          reference_path: refPath,
-          survey_source: surveySource,
-          permissions: permissions,
-        });
+      // Handle Survey & Permissions (Serialized)
+      formData.append('notes', JSON.stringify({
+        survey_source: surveySource,
+        permissions: permissions
+      }));
 
-      if (requestError) {
-        console.error('Database insertion error:', requestError);
-        throw new Error(requestError.message);
+      setLoadingLabel('Submitting to server...');
+      
+      const response = await api.post('/hair-requests', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (response.status === 201 || response.status === 200) {
+        setShowSuccess(true);
+      } else {
+        throw new Error('Unexpected server response.');
       }
-
-      // 5. Insert Notification (Non-blocking)
-      try {
-        setLoadingLabel('Sending confirmation...');
-        await supabase.from('notifications').insert({
-          user_id: user.id,
-          title: 'Request Submitted! ✨',
-          message: 'Your hair request was successful! please wait for the staff or admin to review and approve your application.',
-          type: 'wig'
-        });
-      } catch (e) {
-        console.warn('Notification failed, but request saved.');
-      }
-
-      // 6. Show Success
-      setShowSuccess(true);
-
     } catch (err: any) {
-      console.error('Final submission sequence failed:', err);
-      Alert.alert('Submission Error', err.message || 'Something went wrong. Please try again.');
+      console.error('Submission error:', err.response?.data || err.message);
+      Alert.alert('Submission Error', err.response?.data?.message || 'Failed to submit your request. Please try again.');
     } finally {
       setLoading(false);
       setLoadingLabel('Submitting...');
@@ -175,7 +134,10 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <KeyboardAvoidingView 
+        style={[styles.container, { paddingTop: insets.top }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <StatusBar style="light" />
       
       {/* ── Elite Header ──────────────────────────────── */}
@@ -359,7 +321,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
           onSuccess();
         }}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
