@@ -45,6 +45,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [App\Http\Controllers\Api\NotificationController::class, 'index']);
     Route::post('/notifications/{id}/read', [App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
+
+    // Community
+    Route::get('/community/posts', [App\Http\Controllers\Api\CommunityController::class, 'index']);
+    Route::post('/community/posts', [App\Http\Controllers\Api\CommunityController::class, 'storePost']);
+    Route::post('/community/posts/{post}/comments', [App\Http\Controllers\Api\CommunityController::class, 'storeComment']);
+    Route::post('/community/posts/{post}/like', [App\Http\Controllers\Api\CommunityController::class, 'toggleLike']);
+    Route::delete('/community/posts/{post}', [App\Http\Controllers\Api\CommunityController::class, 'destroyPost']);
+    Route::delete('/community/comments/{comment}', [App\Http\Controllers\Api\CommunityController::class, 'destroyComment']);
 });
 
 Route::get('/ar-test', function () {

@@ -40,13 +40,47 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = ['profile_photo_url', 'latest_hair_request'];
+
+    /**
+     * Get the latest hair request for the user.
+     */
+    public function getLatestHairRequestAttribute()
+    {
+        return $this->hairRequests()->orderBy('created_at', 'desc')->first();
+    }
+
+    /**
      * Get the profile photo URL from Supabase.
      */
     public function getProfilePhotoUrlAttribute()
     {
         return $this->profile_photo_path 
-            ? config('services.supabase.storage_url') . '/profile-photos/' . $this->profile_photo_path 
+            ? asset('storage/' . $this->profile_photo_path)
             : null;
+    }
+
+    /**
+     * Calculate star points dynamically based on donations and referrals.
+     */
+    public function getStarPointsAttribute()
+    {
+        $monetaryPoints = floor(\App\Models\MonetaryDonation::where('user_id', $this->id)
+            ->where('status', 'Approved')
+            ->sum('amount') / 100);
+
+        $receivedStatuses = ['Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'];
+        $hairPoints = \App\Models\Donation::where('user_id', $this->id)
+            ->whereIn('status', $receivedStatuses)
+            ->count() * 10;
+
+        $referralPoints = $this->referred_by ? 5 : 0;
+
+        return $monetaryPoints + $hairPoints + $referralPoints;
     }
 
     /**

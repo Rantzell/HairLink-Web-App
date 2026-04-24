@@ -192,13 +192,13 @@
                         <span>Wig Color: <strong>{{ ucfirst($request->wig_color ?? 'N/A') }}</strong></span>
                     </div>
                     <div class="stage-row" style="margin-top: 1rem; border-top: 1px dashed #f2ebf4; padding-top: 1rem;">
-                        <div class="stage" data-stage="validated"><i class='bx bx-check-circle'></i><small>Validated</small></div>
+                        <div class="stage" data-stage="approved"><i class='bx bx-check-circle'></i><small>Approved</small></div>
                         <div class="stage" data-stage="matched"><i class='bx bx-user-check'></i><small>Matched</small></div>
                         <div class="stage" data-stage="in-transit"><i class='bx bx-bus'></i><small>In Transit</small></div>
                         <div class="stage" data-stage="completed"><i class='bx bx-check-double'></i><small>Completed</small></div>
                     </div>
                     <div class="track-actions">
-                        @if($request->status === 'Validated')
+                        @if($request->status === 'Approved')
                             <a href="{{ route('staff.rule-matching') }}" class="soft-btn">
                                 <i class='bx bx-user-check'></i> Go to Matching Page
                             </a>

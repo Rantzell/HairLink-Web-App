@@ -120,7 +120,8 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
     return (
         <KeyboardAvoidingView 
             style={[styles.container, { backgroundColor: themeBg, paddingTop: insets.top }]}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? ms(0) : ms(20)}
         >
             <StatusBar style="light" />
             {/* Header */}
@@ -132,7 +133,10 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
                 <View style={styles.spacer} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(vs(40), insets.bottom + vs(20)) }]} 
+                showsVerticalScrollIndicator={false}
+            >
                 {/* Title Section */}
                 <Text style={styles.pageTitle}>Monetary Donation</Text>
                 <Text style={styles.pageSubtitle}>

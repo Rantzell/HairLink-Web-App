@@ -12,7 +12,13 @@ class CommunityController extends Controller
 {
     public function index()
     {
-        $posts = CommunityPost::with(['user', 'comments.user'])
+        $posts = CommunityPost::with(['user', 'comments' => function($q) {
+                $q->whereNull('parent_id')
+                  ->with(['user', 'replies' => function($rq) {
+                      $rq->with('user')->orderBy('created_at', 'asc');
+                  }])
+                  ->orderBy('created_at', 'asc');
+            }])
             ->withCount('likedByUsers as likes')
             ->withExists(['likedByUsers as is_liked' => function($query) {
                 $query->where('user_id', Auth::id());
@@ -25,14 +31,23 @@ class CommunityController extends Controller
     public function storePost(Request $request)
     {
         $validated = $request->validate([
-            'content' => 'required|string'
+            'content' => 'required|string',
+            'image' => 'nullable|image|max:10240'
         ]);
 
         $user = Auth::user();
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
-        $post = $user->communityPosts()->create($validated);
+
+        $data = ['content' => $validated['content']];
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('community/posts', 'public');
+            $data['image_url'] = \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+        }
+
+        $post = $user->communityPosts()->create($data);
         
         $post->setAttribute('likes', 0);
 
@@ -42,13 +57,23 @@ class CommunityController extends Controller
     public function storeComment(Request $request, CommunityPost $post)
     {
         $validated = $request->validate([
-            'content' => 'required|string'
+            'content' => 'required_without:image|string|nullable',
+            'parent_id' => 'nullable|exists:community_comments,id',
+            'image' => 'nullable|image|max:10240'
         ]);
 
-        $comment = $post->comments()->create([
+        $data = [
             'user_id' => Auth::id(),
-            'content' => $validated['content']
-        ]);
+            'content' => $validated['content'],
+            'parent_id' => $validated['parent_id'] ?? null,
+        ];
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('community/comments', 'public');
+            $data['image_url'] = \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+        }
+
+        $comment = $post->comments()->create($data);
 
         return response()->json($comment->load('user'), 201);
     }

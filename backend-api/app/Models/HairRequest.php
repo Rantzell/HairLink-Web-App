@@ -26,6 +26,8 @@ class HairRequest extends Model
         'medical_certificate',
         'diagnosis_photo',
         'recipient_photo',
+        'delivery_tracking_link',
+        'wig_received_at',
     ];
 
     protected $appends = [
@@ -38,6 +40,7 @@ class HairRequest extends Model
 
     protected $casts = [
         'appointment_at' => 'datetime',
+        'wig_received_at' => 'datetime',
         'documents' => 'array',
     ];
 
@@ -53,29 +56,29 @@ class HairRequest extends Model
 
     public function getMedicalCertificateUrlAttribute()
     {
-        return ($this->medical_certificate && $this->medical_certificate !== '0') ? Storage::disk('s3')->url($this->medical_certificate) : null;
+        return ($this->medical_certificate && $this->medical_certificate !== '0') ? Storage::disk('public')->url($this->medical_certificate) : null;
     }
 
     public function getDiagnosisPhotoUrlAttribute()
     {
-        return ($this->diagnosis_photo && $this->diagnosis_photo !== '0') ? Storage::disk('s3')->url($this->diagnosis_photo) : null;
+        return ($this->diagnosis_photo && $this->diagnosis_photo !== '0') ? Storage::disk('public')->url($this->diagnosis_photo) : null;
     }
 
     public function getRecipientPhotoUrlAttribute()
     {
-        return ($this->recipient_photo && $this->recipient_photo !== '0') ? Storage::disk('s3')->url($this->recipient_photo) : null;
+        return ($this->recipient_photo && $this->recipient_photo !== '0') ? Storage::disk('public')->url($this->recipient_photo) : null;
     }
 
     public function getAdditionalPhotoUrlAttribute()
     {
-        return ($this->additional_photo && $this->additional_photo !== '0') ? Storage::disk('s3')->url($this->additional_photo) : null;
+        return ($this->additional_photo && $this->additional_photo !== '0') ? Storage::disk('public')->url($this->additional_photo) : null;
     }
 
     public function getDocumentsUrlsAttribute()
     {
         if (!$this->documents || !is_array($this->documents)) return [];
         return array_map(function ($path) {
-            return Storage::disk('s3')->url($path);
+            return Storage::disk('public')->url($path);
         }, $this->documents);
     }
 }

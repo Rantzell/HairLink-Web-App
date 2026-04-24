@@ -37,6 +37,7 @@
                 <a href="{{ route('staff.dashboard') }}" class="{{ request()->routeIs('staff.dashboard') ? 'active' : '' }}">Overview</a>
                 <a href="{{ route('staff.donor-verification') }}" class="{{ request()->routeIs('staff.donor-verification') ? 'active' : '' }}">Donor</a>
                 <a href="{{ route('staff.recipient-verification') }}" class="{{ request()->routeIs('staff.recipient-verification') ? 'active' : '' }}">Recipient</a>
+                <a href="{{ route('staff.monetary-verification') }}" class="{{ request()->routeIs('staff.monetary-verification') ? 'active' : '' }}">Monetary</a>
                 <a href="{{ route('staff.realtime-tracking') }}" class="{{ request()->routeIs('staff.realtime-tracking') ? 'active' : '' }}">Tracking</a>
                 <a href="{{ route('staff.wig-stock') }}" class="{{ request()->routeIs('staff.hair-stock') || request()->routeIs('staff.wig-stock') ? 'active' : '' }}">Stock</a>
                 <a href="{{ route('staff.recipient-matching-list') }}" class="{{ request()->routeIs('staff.recipient-matching-list') ? 'active' : '' }}">Matching</a>

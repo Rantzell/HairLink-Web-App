@@ -153,12 +153,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 filePhoto: selectedPhoto
             };
 
-            // Create request and redirect to confirmation
+            // Create request and redirect to tracking detail
             const newRequest = await window.hairlinkRecipientModule.createRequest(requestData);
-            window.location.href = `/recipient/confirmation?ref=${newRequest.reference}`;
+            window.location.href = `/recipient/tracking/${newRequest.reference}`;
         } catch (error) {
             console.error('Request submission error:', error);
-            alert('There was an error submitting your request. Please try again.');
+            const msg = error.message || 'There was an error submitting your request. Please try again.';
+            alert(msg);
             if (submitBtn) submitBtn.disabled = false;
         }
     }

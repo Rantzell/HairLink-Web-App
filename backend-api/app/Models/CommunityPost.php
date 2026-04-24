@@ -17,8 +17,16 @@ class CommunityPost extends Model
     protected $fillable = [
         'user_id',
         'content',
+        'image_url',
         'likes'
     ];
+
+    protected $appends = ['full_image_url'];
+
+    public function getFullImageUrlAttribute()
+    {
+        return $this->image_url ? asset('storage/' . $this->image_url) : null;
+    }
 
     public function user()
     {

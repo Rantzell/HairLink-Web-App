@@ -12,7 +12,7 @@
         <h2>Hair Stock</h2>
 
         <div class="stock-columns">
-            @foreach(['Short', 'Medium', 'Long'] as $len)
+            @foreach(['10-14 inch', '15-20 inch', 'More than 20 inch'] as $len)
                 <section class="stock-col">
                     <h3>{{ $len }}</h3>
                     @foreach(['Black', 'Brown', 'Light'] as $col)

@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { supabase } from '../../lib/supabase';
+import api from '../../lib/api';
 import Animated, { 
   FadeInDown, 
   FadeInUp, 
@@ -79,39 +79,38 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
 
   const fetchDonations = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      // Fetch both donations and hair requests simultaneously
-      const [donationsResult, requestsResult] = await Promise.all([
-        supabase.from('donations').select('*').eq('user_id', session.user.id),
-        supabase.from('hair_requests').select('*').eq('user_id', session.user.id)
+      setLoading(true);
+      
+      // Fetch both donations and hair requests simultaneously using API
+      const [donationsRes, requestsRes] = await Promise.all([
+        api.get('/donations'),
+        api.get('/hair-requests')
       ]);
 
-      if (donationsResult.error) throw donationsResult.error;
-      if (requestsResult.error) throw requestsResult.error;
+      const donationsData = donationsRes.data || [];
+      const requestsData = requestsRes.data || [];
 
       // Map donations to Events
-      const mappedDonations: Event[] = (donationsResult.data || []).map((d: any) => ({
+      const mappedDonations: Event[] = donationsData.map((d: any) => ({
         id: d.id,
         title: d.type === 'hair' ? 'Hair Donation' : `Monetary Support (₱${d.amount})`,
-        location: d.type === 'hair' ? 'Strand-by-Strand' : 'Financial Aid',
+        location: d.type === 'hair' ? 'Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)' : 'Financial Aid',
         time: new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: d.created_at.split('T')[0],
         type: d.type === 'hair' ? 'drive' : 'other', 
-        accepted: d.status === 'approved',
+        accepted: ['approved', 'completed', 'received hair'].includes(d.status.toLowerCase()),
         status: d.status
       }));
 
       // Map hair requests to Events
-      const mappedRequests: Event[] = (requestsResult.data || []).map((h: any) => ({
+      const mappedRequests: Event[] = requestsData.map((h: any) => ({
         id: h.id,
         title: 'Hair Request',
         location: 'Medical Review',
         time: new Date(h.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: h.created_at.split('T')[0],
         type: 'drive',
-        accepted: h.status === 'approved',
+        accepted: h.status.toLowerCase() === 'approved' || h.status.toLowerCase() === 'matched',
         status: h.status
       }));
 
@@ -467,8 +466,8 @@ const styles = StyleSheet.create({
 
   eventItem: { flexDirection: 'row', marginBottom: vs(30) },
   timeCol: { width: ms(70), alignItems: 'flex-start', paddingTop: vs(8) },
-  timeText: { fontSize: ms(24), fontWeight: '900', color: '#1a1a1a', letterSpacing: -1 },
-  ampmText: { fontSize: ms(12), fontWeight: '800', color: '#bbb', textTransform: 'uppercase', marginTop: vs(-2) },
+  timeText: { fontSize: ms(15), fontWeight: '900', color: '#1a1a1a', letterSpacing: -0.5 },
+  ampmText: { fontSize: ms(10), fontWeight: '800', color: '#bbb', textTransform: 'uppercase', marginTop: vs(-2) },
 
   eventCard: { 
     flex: 1, 

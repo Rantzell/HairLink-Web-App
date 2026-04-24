@@ -28,7 +28,7 @@ interface HairDonationScreenProps {
 }
 
 export default function HairDonationScreen({ onBack, onSuccess }: HairDonationScreenProps) {
-    const [hairLength, setHairLength] = useState<'Short' | 'Long' | null>(null);
+    const [hairLength, setHairLength] = useState<'10-14 inch' | '15-20 inch' | 'More than 20 inch' | null>(null);
     const [hairColor, setHairColor] = useState<'Black' | 'Brown' | 'Light' | null>(null);
     const [chemicallyTreated, setChemicallyTreated] = useState(false);
     const [address, setAddress] = useState('');
@@ -112,11 +112,17 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
             let type = match ? `image/${match[1].toLowerCase()}` : `image/jpeg`;
             if (type === 'image/jpg') type = 'image/jpeg';
 
-            formData.append('photo_front', {
-                uri: Platform.OS === 'ios' ? proofImage.replace('file://', '') : proofImage,
-                name: filename,
-                type: type,
-            } as any);
+            if (Platform.OS === 'web') {
+                const response = await fetch(proofImage);
+                const blob = await response.blob();
+                formData.append('photo_front', blob, filename);
+            } else {
+                formData.append('photo_front', {
+                    uri: Platform.OS === 'ios' ? proofImage.replace('file://', '') : proofImage,
+                    name: filename,
+                    type: type,
+                } as any);
+            }
 
             setLoadingLabel('Uploading to secure server...');
             
@@ -143,7 +149,8 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
     return (
         <KeyboardAvoidingView 
             style={[styles.container, { paddingTop: insets.top }]}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={ms(80)}
         >
             <StatusBar style="light" />
 
@@ -171,7 +178,10 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                 </View>
             )}
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(vs(40), insets.bottom + vs(20)) }]} 
+                showsVerticalScrollIndicator={false}
+            >
 
                 {/* ── Section 1: Your Donation Story ────────── */}
                 <Animated.View entering={FadeInDown.delay(100)} style={styles.card}>
@@ -206,14 +216,14 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
 
                     <Text style={styles.fieldLabel}>Hair Length *</Text>
                     <View style={styles.chipRow}>
-                        {['Short', 'Long'].map((val: any) => (
+                        {['10-14 inch', '15-20 inch', 'More than 20 inch'].map((val: any) => (
                             <TouchableOpacity
                                 key={val}
                                 style={[styles.chip, hairLength === val && styles.chipActive]}
                                 onPress={() => setHairLength(val)}
                             >
                                 <Text style={[styles.chipText, hairLength === val && styles.chipTextActive]}>
-                                    {val === 'Short' ? 'Short' : 'Long '}
+                                    {val}
                                 </Text>
                             </TouchableOpacity>
                         ))}
@@ -376,10 +386,10 @@ const styles = StyleSheet.create({
     },
 
     fieldLabel: { fontSize: ms(14), fontWeight: '900', color: '#444', marginBottom: vs(12) },
-    chipRow: { flexDirection: 'row', gap: ms(10) },
+    chipRow: { flexDirection: 'column', gap: vs(10) },
     chip: {
-        flex: 1,
-        paddingVertical: vs(12),
+        width: '100%',
+        paddingVertical: vs(14),
         alignItems: 'center',
         borderRadius: ms(16),
         borderWidth: 1.5,
@@ -387,7 +397,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     chipActive: { borderColor: '#FF1493', backgroundColor: '#FFF9FB' },
-    chipText: { fontSize: ms(14), fontWeight: '700', color: '#666' },
+    chipText: { fontSize: ms(14), fontWeight: '700', color: '#666', textAlign: 'center' },
     chipTextActive: { color: '#FF1493' },
 
     checkRow: { flexDirection: 'row', alignItems: 'center', marginTop: vs(24) },

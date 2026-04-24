@@ -78,12 +78,13 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 setEmail(data.email || '');
                 setFullName(`${data.first_name || ''} ${data.last_name || ''}`.trim() || '');
                 setPhone(data.phone || '');
-                setRole(data.role || 'Donor');
+                const fetchedRole = data.role ? (data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase()) : 'Donor';
+                setRole(fetchedRole as 'Donor' | 'Recipient');
                 setPoints(data.star_points || 0);
                 setReferralCode(data.referral_code || '---');
                 setAvatarUrl(data.profile_photo_url); // This uses the accessor we checked earlier
                 setHasRedeemed(data.has_redeemed_code || false);
-                roleToggleValue.value = withSpring(data.role === 'Donor' ? 0 : 1);
+                roleToggleValue.value = withSpring(fetchedRole === 'Donor' ? 0 : 1);
             }
         } catch (error: any) {
             Alert.alert('Error', 'Failed to fetch profile. Please try again.');
@@ -227,7 +228,8 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     return (
         <KeyboardAvoidingView 
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? ms(0) : ms(20)}
         >
             <StatusBar style="light" />
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -337,74 +339,30 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                         </View>
                     </View>
 
-                    {/* Rewards Premium View */}
-                    <Animated.View entering={FadeInUp.delay(300)} style={styles.premiumCard}>
-                        <LinearGradient
-                            colors={['#1a1a1a', '#333']}
-                            style={styles.cardGradient}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                        >
-                            <View style={styles.cardHeader}>
-                                <View style={styles.platinumBadge}>
-                                    <FontAwesome5 name="medal" size={ms(14)} color="#FFD700" />
-                                    <Text style={styles.platinumText}>ELITE MEMBER</Text>
+                    {/* Rewards Premium View - Only for Donors */}
+                    {role === 'Donor' && (
+                        <Animated.View entering={FadeInUp.delay(300)} style={styles.premiumCard}>
+                            <LinearGradient
+                                colors={['#1a1a1a', '#333']}
+                                style={styles.cardGradient}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                <View style={styles.cardHeader}>
+                                    <View style={styles.platinumBadge}>
+                                        <FontAwesome5 name="medal" size={ms(14)} color="#FFD700" />
+                                        <Text style={styles.platinumText}>ELITE MEMBER</Text>
+                                    </View>
+                                    <Ionicons name="star" size={ms(24)} color="#FFD700" />
                                 </View>
-                                <Ionicons name="star" size={ms(24)} color="#FFD700" />
-                            </View>
 
-                            <View style={styles.pointsBody}>
-                                <Text style={styles.pointsValue}>{points}</Text>
-                                <Text style={styles.pointsLabel}>TOTAL REWARD STARS</Text>
-                            </View>
-
-                            <View style={styles.cardFooter}>
-                                <View>
-                                    <Text style={styles.footerLabel}>YOUR UNIQUE CODE</Text>
-                                    <Text style={styles.footerValue}>{referralCode}</Text>
+                                <View style={styles.pointsBody}>
+                                    <Text style={styles.pointsValue}>{points}</Text>
+                                    <Text style={styles.pointsLabel}>TOTAL REWARD STARS</Text>
                                 </View>
-                                <TouchableOpacity style={styles.premiumCopyBtn} onPress={copyReferral}>
-                                    <Feather name="copy" size={ms(18)} color="#fff" />
-                                </TouchableOpacity>
-                            </View>
-                        </LinearGradient>
-                    </Animated.View>
 
-                    {/* Redeem Section - Only show if hasn't redeemed yet */}
-                    {!hasRedeemed && role === 'Donor' && (
-                        <Animated.View entering={FadeInUp.delay(400)} style={styles.redeemCard}>
-                            <View style={styles.redeemHeader}>
-                                <View style={styles.redeemIconBg}>
-                                    <Ionicons name="gift-outline" size={ms(24)} color="#FF1493" />
-                                </View>
-                                <View>
-                                    <Text style={styles.redeemTitle}>GOT A REFERRAL CODE?</Text>
-                                    <Text style={styles.redeemSubtitle}>Claim your 3-star welcome bonus!</Text>
-                                </View>
-                            </View>
-
-                            <View style={styles.redeemInputRow}>
-                                <TextInput
-                                    style={styles.redeemInput}
-                                    placeholder="Enter Friend's Code"
-                                    placeholderTextColor="#999"
-                                    value={otherReferralCode}
-                                    onChangeText={setOtherReferralCode}
-                                    autoCapitalize="characters"
-                                    maxLength={6}
-                                />
-                                <TouchableOpacity
-                                    style={[styles.claimBtn, isRedeeming && { opacity: 0.7 }]}
-                                    onPress={handleRedeemCode}
-                                    disabled={isRedeeming}
-                                >
-                                    {isRedeeming ? (
-                                        <ActivityIndicator size="small" color="#fff" />
-                                    ) : (
-                                        <Text style={styles.claimBtnText}>CLAIM</Text>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
+                                {/* Referral code removed per user request */}
+                            </LinearGradient>
                         </Animated.View>
                     )}
 

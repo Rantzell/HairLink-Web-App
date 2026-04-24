@@ -42,6 +42,7 @@ class DonationApprovedNotification extends Notification
             ->subject('Your hair donation has been approved!')
             ->greeting('Hello ' . $notifiable->first_name . '!')
             ->line('Your hair donation request (#' . $this->donation->reference . ') has been verified and approved by our staff.')
+            ->line('Please deliver your hair to our Receiving Area: Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila).')
             ->line('We are excited to move forward with your donation.')
             ->action('Track Your Donation', url('/donor/tracking/' . $this->donation->reference))
             ->line('Thank you for your generosity!');
@@ -54,7 +55,7 @@ class DonationApprovedNotification extends Notification
     {
         return OneSignalMessage::create()
             ->setSubject("Donation Approved! ✅")
-            ->setBody("Your donation #{$this->donation->reference} has been approved. Tap to track progress.")
+            ->setBody("Approved! Please drop off your hair at Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila).")
             ->setData('reference', $this->donation->reference)
             ->setData('type', 'donation_update');
     }
@@ -66,11 +67,18 @@ class DonationApprovedNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $isHair = !isset($this->donation->amount);
+        $typeLabel = $isHair ? 'Hair Donation' : 'Monetary Support';
+        
+        $message = $isHair 
+            ? "Your hair donation #{$this->donation->reference} has been approved. Please deliver your hair to: Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)."
+            : "Your monetary support (#{$this->donation->reference_number}) has been verified. Thank you for your generosity!";
+
         return [
-            'title' => 'Donation Approved! ✅',
-            'message' => "Your donation #{$this->donation->reference} has been approved. Tap to track progress.",
-            'type' => 'donation',
-            'reference' => $this->donation->reference,
+            'title' => "$typeLabel Approved! ✅",
+            'message' => $message,
+            'type' => $isHair ? 'hair_donation' : 'monetary_donation',
+            'reference' => $isHair ? $this->donation->reference : $this->donation->reference_number,
         ];
     }
 }

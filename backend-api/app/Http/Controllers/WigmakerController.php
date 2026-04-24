@@ -57,12 +57,15 @@ class WigmakerController extends Controller
             'progressNotes' => 'required|string',
             'updatedAt' => 'nullable|date',
             'previewPhoto' => 'nullable|image|max:10240',
+            'deliveryLink' => 'nullable|url|max:2048',
         ]);
 
         // 1. Update Task status
-        $task->update([
-            'status' => $validated['status'],
-        ]);
+        $updateData = ['status' => $validated['status']];
+        if (!empty($validated['deliveryLink'])) {
+            $updateData['delivery_link'] = $validated['deliveryLink'];
+        }
+        $task->update($updateData);
 
         // 2. Handle metadata (photo)
         $metadata = [];

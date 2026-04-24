@@ -43,6 +43,8 @@ class AuthController extends Controller
 
         $token = $user->createToken($request->device_name)->plainTextToken;
 
+        $user->append('star_points');
+
         return response()->json([
             'token' => $token,
             'user' => $user
@@ -59,7 +61,7 @@ class AuthController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|in:donor,recipient',
+            'role' => 'required|string|in:donor,recipient,Donor,Recipient',
             'device_name' => 'required|string',
         ]);
 
@@ -74,6 +76,8 @@ class AuthController extends Controller
         ]);
 
         $token = $user->createToken($validated['device_name'])->plainTextToken;
+
+        $user->append('star_points');
 
         return response()->json([
             'token' => $token,
@@ -98,7 +102,7 @@ class AuthController extends Controller
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'role' => 'nullable|string|in:Donor,Recipient',
+            'role' => 'nullable|string|in:donor,recipient,Donor,Recipient',
             'email' => 'nullable|email|unique:users,email,' . $user->id,
         ]);
 
@@ -136,7 +140,9 @@ class AuthController extends Controller
      */
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        $user = $request->user();
+        $user->append('star_points');
+        return response()->json($user);
     }
 
     /**

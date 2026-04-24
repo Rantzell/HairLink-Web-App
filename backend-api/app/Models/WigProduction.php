@@ -18,6 +18,7 @@ class WigProduction extends Model
         'target_color',
         'status',
         'due_date',
+        'delivery_link',
     ];
 
     public function wigmaker()

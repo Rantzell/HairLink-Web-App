@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'mobile-api',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

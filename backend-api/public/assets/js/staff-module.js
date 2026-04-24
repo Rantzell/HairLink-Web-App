@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const trackingCards = document.querySelectorAll('[data-track-card]');
     const donorSteps = ['verified', 'received-hair', 'in-queue', 'in-progress', 'completed', 'wig-received'];
-    const recipientSteps = ['validated', 'matched', 'in-transit', 'completed'];
+    const recipientSteps = ['approved', 'matched', 'in-transit', 'completed'];
     
     const labels = {
         'verified': 'Verified',
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'in-progress': 'In Progress',
         'completed': 'Completed',
         'wig-received': 'Wig Received',
-        'validated': 'Validated',
+        'approved': 'Approved',
         'matched': 'Matched',
         'in-transit': 'In Transit'
     };
@@ -223,11 +223,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     body: JSON.stringify({
                         status: newStatus,
-                        notes: notes
+                        notes: notes,
+                        delivery_tracking_link: card.querySelector('[data-tracking-link]')?.value || null
                     })
                 });
 
-                const data = await response.json();
+                if (response.status === 419) {
+                    alert('Session expired. Refreshing page...');
+                    location.reload();
+                    return false;
+                }
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    alert('Server error occurred. Please refresh.');
+                    return false;
+                }
+                
                 if (response.ok && data.success) {
                     paintStages(card, newStatus.toLowerCase().replace(' ', '-'), steps);
                     stampUpdate(newStatus);
@@ -252,6 +266,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 shipBtn.disabled = true;
                 shipBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
+                
+                const trackingLink = card.querySelector('[data-tracking-link]')?.value;
+                if (!trackingLink) {
+                    alert('Please enter a tracking link before shipping.');
+                    shipBtn.disabled = false;
+                    shipBtn.innerHTML = '<i class="bx bx-send"></i> Ship to Recipient';
+                    return;
+                }
+
                 await updateBackend('In Transit', 'Staff confirmed wig shipment');
             });
         }
@@ -362,38 +385,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const computeScore = (card, preferredLength, preferredColor) => {
-        const wigLength = normalizeSize(card.dataset.length);
-        const wantedLength = normalizeSize(preferredLength);
-        const wigColor = normalize(card.dataset.color);
-        const wantedColor = normalize(preferredColor);
-        const available = card.dataset.available === 'true';
-
-        let sizeScore = 0;
-        let colorScore = 0;
-        let availabilityScore = 0;
-
-        if (wigLength === wantedLength) {
-            sizeScore = 40;
-        } else if (sizeDistance(wigLength, wantedLength) === 1) {
-            sizeScore = 20;
-        }
-
-        if (wigColor === wantedColor) {
-            colorScore = 40;
-        } else if (isSimilarColor(wigColor, wantedColor)) {
-            colorScore = 20;
-        }
-
-        if (available) {
-            availabilityScore = 20;
-        }
-
-        const total = sizeScore + colorScore + availabilityScore;
+        // Now using server-side calculated scores provided in the view
+        const total = parseInt(card.dataset.score || 0);
         return {
             total,
-            size: sizeScore,
-            color: colorScore,
-            availability: availabilityScore,
+            size: total >= 40 ? 40 : 0, // Approximation for UI
+            color: total >= 80 ? 40 : (total >= 40 ? 0 : 0),
+            availability: 20,
         };
     };
 
@@ -544,8 +542,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const decision = button.dataset.decision;
-            const status = decision === 'approved' ? (verificationForm.dataset.actionUrl.includes('/donor/') ? 'Verified' : 'Validated') : 'Rejected';
             const url = verificationForm.dataset.actionUrl;
+            
+            // Map decisions to backend statuses
+            let status = decision;
+            if (decision === 'approved') {
+                status = url.includes('/donor/') ? 'Verified' : 'Validated';
+            } else if (decision === 'rejected') {
+                status = 'Rejected';
+            }
             
             button.disabled = true;
             button.innerText = 'Processing...';
@@ -564,21 +569,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                 });
 
-                const data = await response.json();
+                if (response.status === 419) {
+                    alert('Your session has expired or CSRF token is invalid. Please refresh the page and try again.');
+                    location.reload();
+                    return;
+                }
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    alert('An unexpected server error occurred. Please refresh and try again.');
+                    return;
+                }
 
                 if (response.ok) {
                     decisionBanner.hidden = false;
                     decisionBanner.classList.remove('approved', 'rejected');
-                    decisionBanner.classList.add(decision);
-                    decisionBanner.textContent = decision === 'approved' 
+                    decisionBanner.classList.add(decision.toLowerCase());
+                    
+                    decisionBanner.textContent = (decision === 'approved' || decision === 'Approved') 
                         ? 'Submission approved. Notification queued and workflow updated.' 
                         : 'Submission rejected. Remarks saved and user notification queued.';
                     
                     setTimeout(() => {
-                        window.location.href = verificationForm.dataset.actionUrl.includes('/donor/') 
-                            ? '/staff/donor-verification' 
-                            : '/staff/recipient-verification';
-                    }, 200);
+                        if (url.includes('/monetary/')) {
+                            window.location.href = '/staff/monetary-verification';
+                        } else {
+                            window.location.href = url.includes('/donor/') 
+                                ? '/staff/donor-verification' 
+                                : '/staff/recipient-verification';
+                        }
+                    }, 800);
                 } else {
                     alert(data.message || 'Error updating status');
                 }

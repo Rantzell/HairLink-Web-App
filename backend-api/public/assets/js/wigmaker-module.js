@@ -174,6 +174,12 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = 'Saving...';
 
             const formData = new FormData(taskUpdateForm);
+            
+            // If there's a delivery link input, make sure it's included
+            const deliveryLinkInput = document.getElementById('delivery_link');
+            if (deliveryLinkInput && !formData.has('delivery_link')) {
+                formData.append('delivery_link', deliveryLinkInput.value.trim());
+            }
 
             try {
                 const response = await fetch(actionUrl, {

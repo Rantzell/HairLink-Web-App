@@ -58,20 +58,79 @@
     border-radius: 8px;
     font-family: inherit;
     font-size: 0.95rem;
-    resize: vertical;
+    resize: none;
     color: #3b2e43;
     transition: all 0.3s ease;
+    overflow: hidden;
 }
 
-.post-form textarea:focus {
+.post-form textarea:focus, .post-form textarea.expanded {
     outline: none;
     border-color: #cf2f84;
     box-shadow: 0 0 0 3px rgba(207, 47, 132, 0.1);
+    min-height: 100px;
+}
+
+.post-actions-panel {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.post-actions-panel.visible {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.image-upload-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.image-upload-btn {
+    cursor: pointer;
+    color: #cf2f84;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: background 0.3s;
+}
+
+.image-upload-btn:hover {
+    background: #ffe8f2;
+}
+
+.file-name-display {
+    font-size: 0.8rem;
+    color: #6b5b6d;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .form-actions {
     display: flex;
     justify-content: flex-end;
+}
+
+.post-image {
+    width: 100%;
+    max-height: 600px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
+    border: 1px solid #ead7e8;
+    background-color: #fcf8fc;
 }
 
 /* Community Feed */
@@ -364,6 +423,38 @@
     color: #3b2e43;
     line-height: 1.5;
     word-wrap: break-word;
+}
+
+/* Reply indicator styles */
+.reply-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fdf5fb;
+    border: 1px solid #f1a8cf;
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #ad246d;
+    animation: fadeIn 0.3s ease;
+}
+.reply-target-name { font-weight: 700; }
+.cancel-reply-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #cf2f84;
+    padding: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Comment Form */

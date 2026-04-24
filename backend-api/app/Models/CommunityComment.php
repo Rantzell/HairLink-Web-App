@@ -17,7 +17,9 @@ class CommunityComment extends Model
     protected $fillable = [
         'post_id',
         'user_id',
-        'content'
+        'content',
+        'parent_id',
+        'image_url'
     ];
 
     public function user()
@@ -28,5 +30,15 @@ class CommunityComment extends Model
     public function post()
     {
         return $this->belongsTo(CommunityPost::class, 'post_id');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(CommunityComment::class, 'parent_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(CommunityComment::class, 'parent_id');
     }
 }

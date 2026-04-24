@@ -670,7 +670,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    width: 120px;
+    width: 160px;
 }
 
 .file-thumbnail {

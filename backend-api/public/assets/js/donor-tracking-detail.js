@@ -115,8 +115,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (error) {
                 console.error('Error advancing status:', error);
-                alert('Failed to advance status. Please try again.');
+                const msg = error.message || 'Failed to advance status. Please try again.';
+                alert(msg);
                 simulateStatusBtn.disabled = false;
+            }
+        });
+    }
+
+    const deliveryLinkInput = document.getElementById('deliveryLinkInput');
+    const updateDeliveryBtn = document.getElementById('updateDeliveryBtn');
+
+    if (updateDeliveryBtn) {
+        updateDeliveryBtn.addEventListener('click', async () => {
+            const link = deliveryLinkInput.value.trim();
+            if (!link) {
+                alert('Please enter a valid tracking link.');
+                return;
+            }
+
+            updateDeliveryBtn.disabled = true;
+            updateDeliveryBtn.textContent = 'Saving...';
+
+            try {
+                await moduleApi.updateDeliveryLink(ref, link);
+                alert('Tracking link updated successfully!');
+                window.location.reload();
+            } catch (error) {
+                console.error('Error updating delivery link:', error);
+                const msg = error.message || 'Failed to update tracking link. Please try again.';
+                alert(msg);
+                updateDeliveryBtn.disabled = false;
+                updateDeliveryBtn.textContent = 'Update Tracking Link';
             }
         });
     }

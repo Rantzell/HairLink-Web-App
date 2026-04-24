@@ -37,6 +37,7 @@ import NotificationScreen from './NotificationScreen';
 import DonationHistoryScreen from './DonationHistoryScreen';
 import ProfileScreen from './ProfileScreen';
 import ARScreen from '../ar/ARScreen';
+import CommunityScreen from './CommunityScreen';
 
 interface DonorDashboardProps {
   onLogout?: () => void;
@@ -66,20 +67,8 @@ const ScaleButton = ({ children, onPress, style }: any) => {
   );
 };
 
-export default function DonorDashboard({ onLogout, onRoleChange, userName = "Donor" }: DonorDashboardProps) {
-  const [showMonetary, setShowMonetary] = useState(false);
-  const [showHairDonation, setShowHairDonation] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [showAR, setShowAR] = useState(false);
-  const [starPoints, setStarPoints] = useState(0);
-  const [referralCode, setReferralCode] = useState('---');
-  const [unreadCount, setUnreadCount] = useState(0);
-  const notificationsViewedRef = useRef(false); // Track if user has seen notifications
-
-  // Countdown timer state
+// Extracted Countdown Component to prevent entire dashboard re-renders
+const CountdownTimer = () => {
   const [timeLeft, setTimeLeft] = useState({ days: 2, hours: 14, mins: 30, secs: 45 });
 
   useEffect(() => {
@@ -94,6 +83,42 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  return (
+    <View style={styles.countdownRow}>
+      {['DAYS', 'HOURS', 'MINS', 'SECS'].map((unit, idx) => {
+        const val = unit === 'DAYS' ? timeLeft.days :
+          unit === 'HOURS' ? timeLeft.hours :
+            unit === 'MINS' ? timeLeft.mins : timeLeft.secs;
+        return (
+          <React.Fragment key={unit}>
+            <View style={styles.countdownBlock}>
+              <Text style={styles.countdownNum}>{val}</Text>
+              <Text style={styles.countdownLabel}>{unit}</Text>
+            </View>
+            {idx < 3 && <Text style={styles.countdownDivider}>:</Text>}
+          </React.Fragment>
+        )
+      })}
+    </View>
+  );
+};
+
+export default function DonorDashboard({ onLogout, onRoleChange, userName = "Donor" }: DonorDashboardProps) {
+  const [showMonetary, setShowMonetary] = useState(false);
+  const [showHairDonation, setShowHairDonation] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showAR, setShowAR] = useState(false);
+  const [showCommunity, setShowCommunity] = useState(false);
+  const [starPoints, setStarPoints] = useState(0);
+  const [referralCode, setReferralCode] = useState('---');
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notificationsViewedRef = useRef(false); // Track if user has seen notifications
+
+
 
   const fetchPoints = useCallback(async () => {
     try {
@@ -127,13 +152,13 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
 
   useEffect(() => {
     // Only re-fetch unread count when returning from other screens, not notifications
-    if (!showMonetary && !showHairDonation && !showCalendar && !showNotifications && !showHistory && !showProfile) {
+    if (!showMonetary && !showHairDonation && !showCalendar && !showNotifications && !showHistory && !showProfile && !showCommunity) {
       fetchPoints();
       if (!notificationsViewedRef.current) {
         fetchUnreadCount();
       }
     }
-  }, [showMonetary, showHairDonation, showCalendar, showNotifications, showHistory, showProfile, fetchPoints, fetchUnreadCount]);
+  }, [showMonetary, showHairDonation, showCalendar, showNotifications, showHistory, showProfile, showCommunity, fetchPoints, fetchUnreadCount]);
 
   const navPlaceholder = (screen: string) =>
     Alert.alert('Coming Soon', `${screen} is coming soon!`);
@@ -202,7 +227,14 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         entering={FadeInUp.springify().damping(15).stiffness(120)}
         exiting={FadeOut.duration(200)}
       >
-        <NotificationScreen onBack={() => setShowNotifications(false)} role="Donor" />
+        <NotificationScreen 
+          onBack={() => setShowNotifications(false)} 
+          onTrack={() => {
+            setShowNotifications(false);
+            setShowHistory(true);
+          }}
+          role="Donor" 
+        />
       </Animated.View>
     );
   }
@@ -247,13 +279,25 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
     );
   }
 
+  if (showCommunity) {
+    return (
+      <Animated.View
+        style={{ flex: 1 }}
+        entering={FadeInUp.springify().damping(15).stiffness(120)}
+        exiting={FadeOut.duration(200)}
+      >
+        <CommunityScreen onBack={() => setShowCommunity(false)} />
+      </Animated.View>
+    );
+  }
+
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar style="light" />
       {/* ── Header ─────────────────────────────────── */}
-      <Animated.View entering={FadeIn.duration(400)}>
+      <View>
         <LinearGradient
           colors={['rgba(255, 102, 204, 0.88)', 'rgba(255, 153, 221, 0.88)']}
           start={{ x: 0, y: 0 }}
@@ -265,11 +309,28 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
             <Text style={styles.headerGreeting}>Welcome back 👋</Text>
             <Text style={styles.headerRole} numberOfLines={1}>{userName}</Text>
           </View>
-          <ScaleButton onPress={() => setShowProfile(true)} style={styles.logoutBtn}>
-            <Ionicons name="person-circle-outline" size={30} color="#fff" />
+          
+          <ScaleButton 
+            onPress={() => {
+              setShowNotifications(true);
+              setUnreadCount(0); // Clear badge immediately
+              notificationsViewedRef.current = true; // Prevent re-fetch after returning
+            }} 
+            style={styles.notificationBtn}
+          >
+            <View style={{ position: 'relative' }}>
+              <Ionicons name="notifications" size={26} color="#fff" />
+              {unreadCount > 0 && (
+                <View style={styles.notificationBadgeHeader}>
+                  <Text style={styles.notificationBadgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           </ScaleButton>
         </LinearGradient>
-      </Animated.View>
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -397,19 +458,14 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
             />
           </View>
           <Text style={styles.aboutUsText}>
-            Strand Up for Cancer (SUFC) is a youth-led initiative of the Manila Downtown YMCA Youth Club dedicated to supporting patients who experience long-term hair loss caused by illness and medical treatment. Through hair donations, we craft wigs that restore not only appearance but also a sense of dignity, comfort, and renewed self-confidence. Each strand given is more than just hair—it’s a gift of hope and strength.
+            Strand Up for Cancer (SUFC) is a youth-led initiative of the Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila) dedicated to supporting patients who experience long-term hair loss caused by illness and medical treatment. Through hair donations, we craft wigs that restore not only appearance but also a sense of dignity, comfort, and renewed self-confidence. Each strand given is more than just hair—it’s a gift of hope and strength.
           </Text>
         </Animated.View>
 
         {/* ── Our Partners ───────────────────────────── */}
-        <Animated.View entering={FadeInRight.springify().delay(700)} style={styles.partnersSection}>
+        <View style={styles.partnersSection}>
           <Text style={styles.sectionTitle}>Our Partners</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.partnersContent}
-            contentContainerStyle={styles.partnersScrollContent}
-          >
+          <View style={styles.partnersGrid}>
             {[
               { id: 1, name: 'YMCA Youth Club', img: require('../../assets/ymca.jpg'), url: 'https://web.facebook.com/ManilaDowntownYMCAYouthClub' },
               { id: 2, name: 'Richard D. Manila', img: require('../../assets/RDM.png'), url: 'https://web.facebook.com/Richarddmanilawigmaker' },
@@ -426,8 +482,8 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
                 <Text style={styles.partnerName}>{p.name}</Text>
               </ScaleButton>
             ))}
-          </ScrollView>
-        </Animated.View>
+          </View>
+        </View>
 
         {/* ── Upcoming Events ────────────────────────── */}
         <Animated.View entering={FadeInUp.springify().delay(800)} style={styles.eventsSection}>
@@ -443,24 +499,9 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
                 <Ionicons name="calendar" size={20} color="#fff" />
               </View>
               <Text style={styles.eventTitle}>Annual Grand Hair Drive</Text>
-              <Text style={styles.eventSubtitle}>Manila Downtown YMCA Auditorium</Text>
+              <Text style={styles.eventSubtitle}>Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)</Text>
 
-              <View style={styles.countdownRow}>
-                {['DAYS', 'HOURS', 'MINS', 'SECS'].map((unit, idx) => {
-                  const val = unit === 'DAYS' ? timeLeft.days :
-                    unit === 'HOURS' ? timeLeft.hours :
-                      unit === 'MINS' ? timeLeft.mins : timeLeft.secs;
-                  return (
-                    <React.Fragment key={unit}>
-                      <View style={styles.countdownBlock}>
-                        <Text style={styles.countdownNum}>{val}</Text>
-                        <Text style={styles.countdownLabel}>{unit}</Text>
-                      </View>
-                      {idx < 3 && <Text style={styles.countdownDivider}>:</Text>}
-                    </React.Fragment>
-                  )
-                })}
-              </View>
+              <CountdownTimer />
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -482,35 +523,9 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           <MaterialCommunityIcons name="augmented-reality" size={ms(30)} color="#fff" />
         </ScaleButton>
 
-        <ScaleButton style={styles.navItem} onPress={() => {
-          setShowNotifications(true);
-          setUnreadCount(0); // Clear badge immediately
-          notificationsViewedRef.current = true; // Prevent re-fetch after returning
-        }}>
-          <View style={{ position: 'relative' }}>
-            <Ionicons name="notifications-outline" size={ms(26)} color="#888" />
-            {unreadCount > 0 && (
-              <View style={{
-                position: 'absolute',
-                top: -ms(6),
-                right: -ms(8),
-                backgroundColor: '#FF1493',
-                borderRadius: ms(10),
-                minWidth: ms(18),
-                height: ms(18),
-                justifyContent: 'center',
-                alignItems: 'center',
-                paddingHorizontal: ms(4),
-                borderWidth: ms(2),
-                borderColor: '#fff',
-              }}>
-                <Text style={{ color: '#fff', fontSize: ms(10), fontWeight: '900' }}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.navLabel}>Alerts</Text>
+        <ScaleButton style={styles.navItem} onPress={() => setShowCommunity(true)}>
+          <Ionicons name="people-outline" size={ms(26)} color={showCommunity ? '#e91e63' : '#888'} />
+          <Text style={[styles.navLabel, showCommunity && { color: '#e91e63' }]}>Community</Text>
         </ScaleButton>
 
         <ScaleButton style={styles.navItem} onPress={() => setShowProfile(true)}>
@@ -541,15 +556,37 @@ const styles = StyleSheet.create({
     elevation: 6,
     marginBottom: vs(8),
   },
-  logoImage: { width: ms(44), height: ms(44), resizeMode: 'contain', borderRadius: ms(22), backgroundColor: '#fff' },
+  logoImage: { 
+    width: ms(48), 
+    height: ms(48), 
+    resizeMode: 'contain',
+    borderRadius: ms(24),
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+  },
   headerGreeting: { fontSize: ms(12), color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
   headerRole: { fontSize: ms(17), color: '#fff', fontWeight: '900' },
-  logoutBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  notificationBtn: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
     borderRadius: ms(20), padding: ms(6),
-    width: ms(40), height: ms(40),
+    width: ms(42), height: ms(42),
     alignItems: 'center', justifyContent: 'center',
   },
+  notificationBadgeHeader: {
+    position: 'absolute',
+    top: -ms(4),
+    right: -ms(6),
+    backgroundColor: '#FF1493',
+    borderRadius: ms(10),
+    minWidth: ms(18),
+    height: ms(18),
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: ms(4),
+    borderWidth: ms(2),
+    borderColor: '#FF66B2',
+  },
+  notificationBadgeText: { color: '#fff', fontSize: ms(10), fontWeight: '900' },
 
   scrollContent: { paddingBottom: vs(110) },
 
@@ -704,23 +741,22 @@ const styles = StyleSheet.create({
 
   partnersSection: {
     marginBottom: vs(30),
-  },
-  partnersContent: {
-    marginTop: vs(14),
-  },
-  partnersScrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: ms(14),
+  },
+  partnersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: ms(12),
+    marginTop: vs(14),
   },
   partnerCard: {
     backgroundColor: '#fff',
-    borderRadius: ms(16),
+    borderRadius: ms(20),
     padding: ms(12),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: ms(12),
-    width: ms(120),
+    width: ms(105),
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 5,
@@ -729,19 +765,24 @@ const styles = StyleSheet.create({
     borderColor: '#FFF0F8',
   },
   partnerLogoPlaceholder: {
-    width: ms(64),
-    height: ms(64),
-    borderRadius: ms(32),
-    backgroundColor: '#FFF0F8',
+    width: ms(68),
+    height: ms(68),
+    borderRadius: ms(34),
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: vs(10),
     alignSelf: 'center',
     overflow: 'hidden',
+    shadowColor: '#FF66B2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   partnerImg: {
-    width: '70%',
-    height: '70%',
+    width: '100%',
+    height: '100%',
     resizeMode: 'contain',
   },
   partnerName: {

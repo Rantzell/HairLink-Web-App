@@ -26,7 +26,12 @@
 
         const response = await fetch(url, options);
         if (!response.ok) {
-            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+            let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+            try {
+                const errorData = await response.json();
+                if (errorData.message) errorMessage = errorData.message;
+            } catch (e) {}
+            throw new Error(errorMessage);
         }
         return await response.json();
     }
@@ -132,6 +137,11 @@
                 return await this.setStatus(reference, STATUS_FLOW[currentIndex + 1]);
             }
             return donation;
+        },
+
+        async updateDeliveryLink(reference, link) {
+            const data = await apiCall(`/internal-api/donations/${reference}/delivery-link`, 'POST', { donor_delivery_link: link });
+            return mapDonation(data);
         }
     };
 

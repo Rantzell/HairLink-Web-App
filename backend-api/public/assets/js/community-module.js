@@ -21,15 +21,29 @@ const CommunityModule = {
         };
 
         if (body) {
-            options.headers['Content-Type'] = 'application/json';
-            options.body = JSON.stringify(body);
+            if (body instanceof FormData) {
+                options.body = body;
+            } else {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(body);
+            }
         }
 
         const response = await fetch(url, options);
         if (!response.ok) {
-            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+            let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+            try {
+                const errorData = await response.json();
+                if (errorData.message) errorMessage = errorData.message;
+            } catch (e) {}
+            throw new Error(errorMessage);
         }
-        return await response.json();
+
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return await response.json();
+        }
+        return await response.text();
     },
 
     /**
@@ -40,14 +54,29 @@ const CommunityModule = {
             ...post,
             author: post.user?.name || 'Anonymous',
             userType: post.user?.role || 'user',
-            avatar: this.generateAvatar(post.user?.name || 'Anonymous'),
+            avatar: post.user?.profile_photo_url ? `<img src="${post.user.profile_photo_url}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : this.generateAvatar(post.user?.name || 'Anonymous'),
+            image_url: post.full_image_url || null,
             timestamp: post.created_at,
-            comments: (post.comments || []).map(comment => ({
-                ...comment,
-                author: comment.user?.name || 'Anonymous',
-                userType: comment.user?.role || 'user',
-                avatar: this.generateAvatar(comment.user?.name || 'Anonymous'),
-                timestamp: comment.created_at
+            comments: (Array.isArray(post.comments) ? post.comments : Object.values(post.comments || {})).map(comment => this.mapComment(comment))
+        };
+    },
+
+    /**
+     * Map comment with nested replies
+     */
+    mapComment(comment) {
+        return {
+            ...comment,
+            author: comment.user?.name || 'Anonymous',
+            userType: comment.user?.role || 'user',
+            avatar: comment.user?.profile_photo_url ? `<img src="${comment.user.profile_photo_url}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : this.generateAvatar(comment.user?.name || 'Anonymous'),
+            timestamp: comment.created_at,
+            replies: (Array.isArray(comment.replies) ? comment.replies : Object.values(comment.replies || {})).map(reply => ({
+                ...reply,
+                author: reply.user?.name || 'Anonymous',
+                userType: reply.user?.role || 'user',
+                avatar: reply.user?.profile_photo_url ? `<img src="${reply.user.profile_photo_url}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : this.generateAvatar(reply.user?.name || 'Anonymous'),
+                timestamp: reply.created_at
             }))
         };
     },
@@ -65,21 +94,15 @@ const CommunityModule = {
     },
 
     // Create new post
-    async createPost(content) {
-        const data = await this.apiCall('/internal-api/community/posts', 'POST', { content });
+    async createPost(formDataOrContent) {
+        const data = await this.apiCall('/internal-api/community/posts', 'POST', formDataOrContent);
         return this.mapPost(data);
     },
 
     // Add comment to post
-    async addComment(postId, content) {
-        const data = await this.apiCall(`/internal-api/community/posts/${postId}/comments`, 'POST', { content });
-        return {
-            ...data,
-            author: data.user?.name || 'Anonymous',
-            userType: data.user?.role || 'user',
-            avatar: this.generateAvatar(data.user?.name || 'Anonymous'),
-            timestamp: data.created_at
-        };
+    async addComment(postId, formDataOrContent) {
+        const data = await this.apiCall(`/internal-api/community/posts/${postId}/comments`, 'POST', formDataOrContent);
+        return this.mapComment(data);
     },
 
     // Like post

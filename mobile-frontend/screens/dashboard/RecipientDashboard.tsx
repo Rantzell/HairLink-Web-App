@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Clipboard from 'expo-clipboard';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -33,6 +34,8 @@ import MonetaryDonationDashboard from './MonetaryDonationDashboard';
 import RecipientCalendarScreen from './RecipientCalendarScreen';
 import NotificationScreen from './NotificationScreen';
 import HairRequestScreen from './HairRequestScreen';
+import HairRequestHistoryScreen from './HairRequestHistoryScreen';
+import CommunityScreen from './CommunityScreen';
 
 interface RecipientDashboardProps {
   onLogout?: () => void;
@@ -46,14 +49,71 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMonetary, setShowMonetary] = useState(false);
   const [showHairRequest, setShowHairRequest] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [showAR, setShowAR] = useState(false);
+  const [showCommunity, setShowCommunity] = useState(false);
   const [starPoints, setStarPoints] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [latestRequest, setLatestRequest] = useState<any>(null);
   const notificationsViewedRef = React.useRef(false);
 
-  // Countdown timer state
-  const [timeLeft, setTimeLeft] = useState({ days: 2, hours: 14, mins: 30, secs: 45 });
+  const ScaleButton = ({ children, onPress, style }: any) => {
+    const scale = useSharedValue(1);
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
+  
+    return (
+      <Animated.View style={[animatedStyle, style]}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={onPress}
+          onPressIn={() => (scale.value = withSpring(0.96, { damping: 10, stiffness: 200 }))}
+          onPressOut={() => (scale.value = withSpring(1))}
+          style={{ width: '100%' }}
+        >
+          {children}
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  // Extracted Countdown Component to prevent entire dashboard re-renders
+  const CountdownTimer = () => {
+    const [timeLeft, setTimeLeft] = useState({ days: 2, hours: 14, mins: 30, secs: 45 });
+
+    useEffect(() => {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev.secs > 0) return { ...prev, secs: prev.secs - 1 };
+          if (prev.mins > 0) return { ...prev, mins: prev.mins - 1, secs: 59 };
+          if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, mins: 59, secs: 59 };
+          if (prev.days > 0) return { ...prev, days: prev.days - 1, hours: 23, mins: 59, secs: 59 };
+          return prev;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }, []);
+
+    return (
+      <View style={styles.countdownRow}>
+        {['DAYS', 'HOURS', 'MINS', 'SECS'].map((unit, idx) => {
+          const val = unit === 'DAYS' ? timeLeft.days :
+            unit === 'HOURS' ? timeLeft.hours :
+              unit === 'MINS' ? timeLeft.mins : timeLeft.secs;
+          return (
+            <React.Fragment key={unit}>
+              <View style={styles.countdownBlock}>
+                <Text style={styles.countdownNum}>{val}</Text>
+                <Text style={styles.countdownLabel}>{unit}</Text>
+              </View>
+              {idx < 3 && <Text style={styles.countdownDivider}>:</Text>}
+            </React.Fragment>
+          )
+        })}
+      </View>
+    );
+  };
 
   const fetchUnreadCount = React.useCallback(async () => {
     try {
@@ -67,14 +127,9 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
 
   const fetchLatestRequest = React.useCallback(async () => {
     try {
-      // Assuming we have an endpoint for latest request or it's in /me
       const response = await api.get('/me');
       if (response.data && response.data.latest_hair_request) {
         setLatestRequest(response.data.latest_hair_request);
-      } else {
-        // Fallback or specific endpoint if needed
-        // For now, let's just use the /me response if it's there
-        setLatestRequest(null);
       }
     } catch (err) {
       console.log('Error fetching latest request:', err);
@@ -87,26 +142,14 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
   }, [fetchUnreadCount, fetchLatestRequest]);
 
   useEffect(() => {
-    // Re-fetch counts whenever the dashboard is the active view
-    if (!showCalendar && !showNotifications && !showMonetary && !showProfile && !showHairRequest) {
+    if (!showCalendar && !showNotifications && !showMonetary && !showProfile && !showHairRequest && !showHistory && !showCommunity) {
       fetchUnreadCount();
       fetchLatestRequest();
-      notificationsViewedRef.current = false; // Reset ref so it can be used again if needed
+      notificationsViewedRef.current = false;
     }
-  }, [showCalendar, showNotifications, showMonetary, showProfile, showHairRequest, fetchUnreadCount, fetchLatestRequest]);
+  }, [showCalendar, showNotifications, showMonetary, showProfile, showHairRequest, showHistory, showCommunity, fetchUnreadCount, fetchLatestRequest]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.secs > 0) return { ...prev, secs: prev.secs - 1 };
-        if (prev.mins > 0) return { ...prev, mins: prev.mins - 1, secs: 59 };
-        if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, mins: 59, secs: 59 };
-        if (prev.days > 0) return { ...prev, days: prev.days - 1, hours: 23, mins: 59, secs: 59 };
-        return prev;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+
 
   const handleOpenURL = (url: string) => {
     Linking.openURL(url).catch(err => Alert.alert('Error', 'Cannot open link'));
@@ -118,7 +161,14 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
   if (showNotifications) {
     return (
       <View style={{ flex: 1 }}>
-        <NotificationScreen onBack={() => setShowNotifications(false)} role="Recipient" />
+        <NotificationScreen 
+          onBack={() => setShowNotifications(false)} 
+          onTrack={() => {
+            setShowNotifications(false);
+            setShowHistory(true);
+          }}
+          role="Recipient" 
+        />
       </View>
     );
   }
@@ -172,6 +222,26 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
     );
   }
 
+  if (showHistory) {
+    return (
+      <View style={{ flex: 1 }}>
+        <HairRequestHistoryScreen onBack={() => setShowHistory(false)} />
+      </View>
+    );
+  }
+
+  if (showCommunity) {
+    return (
+      <Animated.View
+        style={{ flex: 1 }}
+        entering={FadeInUp.springify().damping(15).stiffness(120)}
+        exiting={FadeOut.duration(200)}
+      >
+        <CommunityScreen onBack={() => setShowCommunity(false)} />
+      </Animated.View>
+    );
+  }
+
   if (showAR) {
     return (
       <Animated.View
@@ -190,7 +260,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar style="light" />
       {/* ── Header ─────────────────────────────────── */}
-      <Animated.View entering={FadeIn.duration(400)}>
+      <View>
         <LinearGradient
           colors={['#8E44AD', '#9B59B6']}
           start={{ x: 0, y: 0 }}
@@ -202,11 +272,28 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
             <Text style={styles.headerGreeting}>Welcome back 👋</Text>
             <Text style={styles.headerRole} numberOfLines={1}>{userName}</Text>
           </View>
-          <TouchableOpacity onPress={() => setShowProfile(true)} style={styles.logoutBtn}>
-            <Ionicons name="person-circle-outline" size={30} color="#fff" />
-          </TouchableOpacity>
+          
+          <ScaleButton 
+            onPress={() => {
+              setShowNotifications(true);
+              setUnreadCount(0); // Clear badge immediately
+              notificationsViewedRef.current = true; // Prevent re-fetch after returning
+            }} 
+            style={styles.notificationBtn}
+          >
+            <View style={{ position: 'relative' }}>
+              <Ionicons name="notifications" size={26} color="#fff" />
+              {unreadCount > 0 && (
+                <View style={styles.notificationBadgeHeader}>
+                  <Text style={styles.notificationBadgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </ScaleButton>
         </LinearGradient>
-      </Animated.View>
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -222,20 +309,30 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           >
             <Text style={styles.heroTitle}>STRAND UP{'\n'}FOR CANCER</Text>
             <Text style={styles.heroSubtitle}>Hope begins, one strand at a time</Text>
-            <TouchableOpacity
+            <ScaleButton
               style={styles.heroCTA}
-              onPress={() => setShowMonetary(true)}
+              onPress={() => setShowHairRequest(true)}
             >
-              <Text style={styles.heroCTAText}>Donate Now →</Text>
-            </TouchableOpacity>
+              <Text style={styles.heroCTAText}>Request Now →</Text>
+            </ScaleButton>
           </LinearGradient>
         </Animated.View>
+
+
+
+
 
         {/* ── Status Tracker ────────────────────────── */}
         <Animated.View entering={FadeInRight.springify().delay(200)} style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="time-outline" size={20} color="#9B59B6" />
+            <Ionicons name="time" size={20} color="#9B59B6" />
             <Text style={[styles.cardTitle, { color: '#9B59B6' }]}>  My Request Status</Text>
+            <TouchableOpacity onPress={() => setShowHistory(true)}>
+              <View style={styles.historyBtnSmall}>
+                <MaterialCommunityIcons name="history" size={16} color="#9B59B6" />
+                <Text style={styles.historyBtnTextSmall}>View History</Text>
+              </View>
+            </TouchableOpacity>
           </View>
 
           {/* Steps */}
@@ -244,21 +341,40 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
               <Text style={{ color: '#aaa', fontStyle: 'italic' }}>No active requests. Start your journey below! ✨</Text>
             </View>
           ) : (
-            [
-              { label: 'Application Submitted', done: true },
-              { label: 'Under Review', done: latestRequest.status !== 'pending' },
-              { label: 'Hair Matched', done: ['matched', 'ready'].includes(latestRequest.status) },
-              { label: 'Wig Ready for Pickup', done: latestRequest.status === 'ready' },
-            ].map((step, i) => (
-              <View key={i} style={styles.stepRow}>
-                <View style={[styles.stepDot, step.done && styles.stepDotDone]}>
-                  {step.done && <Ionicons name="checkmark" size={12} color="#fff" />}
-                </View>
-                <Text style={[styles.stepLabel, step.done && styles.stepLabelDone]}>
-                  {step.label}
-                </Text>
+            <View style={styles.statusContent}>
+               <View style={styles.progressBg}>
+                <View style={[styles.progressFill, { 
+                  width: latestRequest.status === 'ready' ? '100%' : 
+                         (['matched', 'ready'].includes(latestRequest.status) ? '75%' : 
+                         (latestRequest.status !== 'pending' ? '50%' : '25%'))
+                }]} />
               </View>
-            ))
+              <Text style={styles.progressLabel}>Status: {latestRequest.status.toUpperCase()}</Text>
+
+              { [
+                  { label: 'Application Pending', done: true },
+                  { label: 'Application Approved', done: !['pending', 'submitted'].includes(latestRequest.status.toLowerCase()) },
+                  { label: 'Wig in Production', done: ['matched', 'ready', 'completed'].includes(latestRequest.status.toLowerCase()) },
+                  { label: 'Wig Ready for Pickup', done: ['ready', 'completed'].includes(latestRequest.status.toLowerCase()) },
+                ].map((step, i) => (
+                <View key={i} style={styles.stepRow}>
+                  <View style={[styles.stepDot, step.done && styles.stepDotDone]}>
+                    {step.done && <Ionicons name="checkmark" size={12} color="#fff" />}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.stepLabel, step.done && styles.stepLabelDone]}>
+                      {step.label}
+                    </Text>
+                    {step.label === 'Wig Ready for Pickup' && step.done && (
+                      <Animated.View entering={FadeIn.delay(300)} style={styles.locationInfo}>
+                        <Ionicons name="location" size={12} color="#9B59B6" />
+                        <Text style={styles.locationText}>Pick up: Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)</Text>
+                      </Animated.View>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
           )}
         </Animated.View>
 
@@ -287,12 +403,12 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
               </TouchableOpacity>
             </View>
 
-            {/* Monetary Donation (Replaced Track Status) */}
+            {/* Monetary Donation */}
             <View style={styles.actionBox}>
               <View style={styles.actionIconCircle}>
                 <Ionicons name="cash-outline" size={28} color="#9B59B6" />
               </View>
-              <Text style={styles.actionTitle}>Monetary Donation</Text>
+              <Text style={styles.actionTitle}>Monetary</Text>
               <Text style={styles.actionDesc}>
                 Support our mission with a contribution to help others.
               </Text>
@@ -306,39 +422,41 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           </View>
         </Animated.View>
 
+        {/* ── Banner ─────────────────────────────────── */}
+        <Animated.View entering={FadeInDown.springify().delay(400)} style={styles.bannerWrapper}>
+          <Image
+            source={require('../../assets/group.jpg')}
+            style={styles.bannerImage}
+            resizeMode="cover"
+          />
+        </Animated.View>
 
         {/* ── About Us ───────────────────────────────── */}
-        <Animated.View entering={FadeInUp.springify().delay(600)} style={styles.aboutUsContainer}>
-          <Image source={require('../../assets/group.jpg')} style={styles.aboutUsImage} />
+        <Animated.View entering={FadeInUp.springify().delay(500)} style={styles.aboutUsContainer}>
           <View style={styles.aboutUsHeader}>
             <Text style={styles.aboutUsTitle}>About Us</Text>
             <MaterialCommunityIcons
               name="ribbon"
               size={32}
-              color="#6e0363ff"
+              color="#9B59B6"
               style={styles.ribbonIcon}
             />
           </View>
           <Text style={styles.aboutUsText}>
-            Strand Up for Cancer (SUFC) is a youth-led initiative of the Manila Downtown YMCA Youth Club dedicated to supporting patients who experience long-term hair loss caused by illness and medical treatment. Through hair donations, we craft wigs that restore not only appearance but also a sense of dignity, comfort, and renewed self-confidence. Each strand given is more than just hair—it’s a gift of hope and strength.
+            Strand Up for Cancer (SUFC) is a youth-led initiative of the Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila) dedicated to supporting patients who experience long-term hair loss caused by illness and medical treatment. Through hair donations, we craft wigs that restore not only appearance but also a sense of dignity, comfort, and renewed self-confidence. Each strand given is more than just hair—it’s a gift of hope and strength.
           </Text>
         </Animated.View>
 
         {/* ── Our Partners ───────────────────────────── */}
-        <Animated.View entering={FadeInRight.springify().delay(500)} style={styles.partnersSection}>
+        <View style={styles.partnersSection}>
           <Text style={styles.sectionTitle}>Our Partners</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.partnersContent}
-            contentContainerStyle={styles.partnersScrollContent}
-          >
+          <View style={styles.partnersGrid}>
             {[
               { id: 1, name: 'YMCA Youth Club', img: require('../../assets/ymca.jpg'), url: 'https://web.facebook.com/ManilaDowntownYMCAYouthClub' },
               { id: 2, name: 'Richard D. Manila', img: require('../../assets/RDM.png'), url: 'https://web.facebook.com/Richarddmanilawigmaker' },
               { id: 3, name: 'PGH Hospital', img: require('../../assets/pgh_logo.png'), url: 'https://pgh.gov.ph/' }
             ].map((p, idx) => (
-              <TouchableOpacity
+              <ScaleButton
                 key={p.id}
                 style={styles.partnerCard}
                 onPress={() => handleOpenURL(p.url)}
@@ -347,10 +465,10 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
                   <Image source={p.img} style={styles.partnerImg} />
                 </View>
                 <Text style={styles.partnerName}>{p.name}</Text>
-              </TouchableOpacity>
+              </ScaleButton>
             ))}
-          </ScrollView>
-        </Animated.View>
+          </View>
+        </View>
 
         {/* ── Upcoming Events ────────────────────────── */}
         <Animated.View entering={FadeInUp.springify().delay(600)} style={styles.eventsSection}>
@@ -366,24 +484,9 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
                 <Ionicons name="calendar" size={20} color="#fff" />
               </View>
               <Text style={styles.eventTitle}>Annual Grand Hair Drive</Text>
-              <Text style={styles.eventSubtitle}>Manila Downtown YMCA Auditorium</Text>
+              <Text style={styles.eventSubtitle}>Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)</Text>
 
-              <View style={styles.countdownRow}>
-                {['DAYS', 'HOURS', 'MINS', 'SECS'].map((unit, idx) => {
-                  const val = unit === 'DAYS' ? timeLeft.days :
-                    unit === 'HOURS' ? timeLeft.hours :
-                      unit === 'MINS' ? timeLeft.mins : timeLeft.secs;
-                  return (
-                    <React.Fragment key={unit}>
-                      <View style={styles.countdownBlock}>
-                        <Text style={styles.countdownNum}>{val}</Text>
-                        <Text style={styles.countdownLabel}>{unit}</Text>
-                      </View>
-                      {idx < 3 && <Text style={styles.countdownDivider}>:</Text>}
-                    </React.Fragment>
-                  )
-                })}
-              </View>
+              <CountdownTimer />
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -405,35 +508,9 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           <MaterialCommunityIcons name="augmented-reality" size={ms(30)} color="#fff" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => {
-          setShowNotifications(true);
-          setUnreadCount(0); // Clear badge immediately
-          notificationsViewedRef.current = true; // Prevent re-fetch after returning
-        }}>
-          <View style={{ position: 'relative' }}>
-            <Ionicons name="notifications-outline" size={ms(26)} color="#888" />
-            {unreadCount > 0 && (
-              <View style={{
-                position: 'absolute',
-                top: -ms(6),
-                right: -ms(8),
-                backgroundColor: '#9B59B6',
-                borderRadius: ms(10),
-                minWidth: ms(18),
-                height: ms(18),
-                justifyContent: 'center',
-                alignItems: 'center',
-                paddingHorizontal: ms(4),
-                borderWidth: ms(2),
-                borderColor: '#fff',
-              }}>
-                <Text style={{ color: '#fff', fontSize: ms(10), fontWeight: '900' }}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.navLabel}>Alerts</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => setShowCommunity(true)}>
+          <Ionicons name="people-outline" size={ms(26)} color={showCommunity ? '#9B59B6' : '#888'} />
+          <Text style={[styles.navLabel, showCommunity && { color: '#9B59B6' }]}>Community</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navItem} onPress={() => setShowProfile(true)}>
@@ -462,15 +539,37 @@ const styles = StyleSheet.create({
     elevation: 6,
     marginBottom: vs(8),
   },
-  logoImage: { width: ms(44), height: ms(44), resizeMode: 'contain', borderRadius: ms(22), backgroundColor: '#fff' },
+  logoImage: { 
+    width: ms(48), 
+    height: ms(48), 
+    resizeMode: 'contain',
+    borderRadius: ms(24),
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+  },
   headerGreeting: { fontSize: ms(12), color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
   headerRole: { fontSize: ms(17), color: '#fff', fontWeight: '900' },
-  logoutBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  notificationBtn: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
     borderRadius: ms(20), padding: ms(6),
-    width: ms(40), height: ms(40),
+    width: ms(42), height: ms(42),
     alignItems: 'center', justifyContent: 'center',
   },
+  notificationBadgeHeader: {
+    position: 'absolute',
+    top: -ms(4),
+    right: -ms(6),
+    backgroundColor: '#9B59B6',
+    borderRadius: ms(10),
+    minWidth: ms(18),
+    height: ms(18),
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: ms(4),
+    borderWidth: ms(2),
+    borderColor: '#9B59B6',
+  },
+  notificationBadgeText: { color: '#fff', fontSize: ms(10), fontWeight: '900' },
 
   scrollContent: { paddingBottom: vs(110) },
 
@@ -565,80 +664,115 @@ const styles = StyleSheet.create({
   actionBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(13) },
 
   aboutUsContainer: {
-    marginHorizontal: ms(14),
-    marginBottom: vs(25),
-    backgroundColor: '#fff',
-    borderRadius: ms(22),
-    padding: ms(20),
-    borderLeftWidth: 5,
-    borderLeftColor: '#9B59B6',
-    shadowColor: '#9B59B6',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    paddingHorizontal: ms(20),
+    marginBottom: vs(30),
+    alignItems: 'center',
   },
   aboutUsHeader: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: vs(10),
+    justifyContent: 'center',
+    marginBottom: vs(12),
   },
   aboutUsTitle: {
     fontSize: ms(26),
     fontWeight: '900',
     color: '#1a1a1a',
+    marginRight: ms(8),
   },
   ribbonIcon: {
-    opacity: 0.8,
+    transform: [{ rotate: '15deg' }],
   },
   aboutUsText: {
     fontSize: ms(14),
-    color: '#555',
+    color: '#333',
+    textAlign: 'center',
     lineHeight: vs(22),
-    textAlign: 'justify',
+    fontWeight: '500',
   },
-  aboutUsImage: {
-    width: '100%',
-    height: vs(180),
-    borderRadius: ms(20),
-    marginBottom: vs(20),
-    resizeMode: 'cover',
+  bannerWrapper: {
+    marginHorizontal: ms(14), marginBottom: vs(24),
+    borderRadius: ms(18), overflow: 'hidden',
+    backgroundColor: '#F4ECF7',
+    elevation: 3,
+  },
+  bannerImage: { width: '100%', height: vs(250) },
+  historyBtnSmall: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F4ECF7',
+    paddingHorizontal: ms(8),
+    paddingVertical: vs(4),
+    borderRadius: ms(8),
+  },
+  historyBtnTextSmall: {
+    fontSize: ms(11),
+    fontWeight: '800',
+    color: '#9B59B6',
+    marginLeft: ms(4),
+  },
+  progressBg: { backgroundColor: '#F0F0F0', height: vs(8), borderRadius: ms(8), marginBottom: vs(6) },
+  progressFill: { backgroundColor: '#9B59B6', height: vs(8), borderRadius: ms(8) },
+  progressLabel: { fontSize: ms(11), color: '#999', fontWeight: '600', marginBottom: vs(12) },
+  statusContent: { marginTop: vs(4) },
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: vs(4),
+    backgroundColor: '#F5EEF8',
+    paddingHorizontal: ms(8),
+    paddingVertical: vs(4),
+    borderRadius: ms(8),
+    alignSelf: 'flex-start',
+  },
+  locationText: {
+    fontSize: ms(11),
+    fontWeight: '700',
+    color: '#9B59B6',
+    marginLeft: ms(4),
   },
 
-  partnersSection: {
-    marginBottom: vs(30),
-  },
-  partnersContent: {
+  partnersSection: { marginBottom: vs(24), paddingHorizontal: ms(14) },
+  partnersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: ms(12),
     marginTop: vs(14),
   },
-  partnersScrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: ms(14),
-  },
   partnerCard: {
+    width: ms(105),
     backgroundColor: '#fff',
-    borderRadius: ms(16),
+    borderRadius: ms(20),
     padding: ms(12),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: ms(12),
-    width: ms(120),
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 3,
     borderWidth: 1,
     borderColor: '#F5EEF8',
   },
   partnerLogoPlaceholder: {
-    width: ms(64), height: ms(64), borderRadius: ms(32),
-    backgroundColor: '#F5EEF8',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: vs(10), alignSelf: 'center', overflow: 'hidden',
+    width: ms(70),
+    height: ms(70),
+    borderRadius: ms(35),
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: vs(8),
+    overflow: 'hidden',
+    alignSelf: 'center',
+    shadowColor: '#9B59B6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  partnerImg: { width: '100%', height: '100%', resizeMode: 'cover' },
-  partnerName: { fontSize: ms(11), fontWeight: '700', color: '#666', textAlign: 'center' },
+  partnerImg: { width: '100%', height: '100%', resizeMode: 'contain' },
+  partnerName: { fontSize: ms(11), color: '#444', fontWeight: '700', textAlign: 'center' },
 
   eventsSection: { marginHorizontal: ms(14), marginBottom: vs(30) },
   eventCard: {
@@ -673,5 +807,8 @@ const styles = StyleSheet.create({
     shadowColor: '#9B59B6',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4, shadowRadius: 10, elevation: 8,
+    borderWidth: 3,
+    borderColor: '#fff',
   },
+
 });

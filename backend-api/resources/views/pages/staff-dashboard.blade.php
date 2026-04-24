@@ -22,6 +22,7 @@
 
     <div class="quick-stat-grid">
         <article class="quick-stat"><small>Donations</small><h2>{{ $pendingDonations ?? 0 }}</h2><p>Pending Hair Donations</p></article>
+        <article class="quick-stat"><small>Monetary</small><h2>{{ $pendingMonetary ?? 0 }}</h2><p>Pending Monetary</p></article>
         <article class="quick-stat"><small>Inventory</small><h2>{{ $totalStock ?? 0 }}</h2><p>Hair Inventory Records</p></article>
         <article class="quick-stat"><small>Production</small><h2>{{ $productionCount ?? 0 }}</h2><p>Wig Builds In Progress</p></article>
         <article class="quick-stat"><small>Stock</small><h2>{{ $wigStockCount ?? 0 }}</h2><p>Completed Wig Stock</p></article>
@@ -33,7 +34,7 @@
             <h2>Verification Desk</h2>
             <span>Review and decision workflow</span>
         </div>
-        <div class="staff-actions two-col">
+        <div class="staff-actions three-col">
             <a class="staff-action-link" href="{{ route('staff.donor-verification') }}">
                 <h3>Donor Hair Verification</h3>
                 <p>Review donor hair submissions and approve or reject with remarks.</p>
@@ -41,6 +42,10 @@
             <a class="staff-action-link" href="{{ route('staff.recipient-verification') }}">
                 <h3>Recipient Request Verification</h3>
                 <p>Validate recipient requests and supporting medical documentation.</p>
+            </a>
+            <a class="staff-action-link" href="{{ route('staff.monetary-verification') }}">
+                <h3>Monetary Verification</h3>
+                <p>Verify bank transfers and payment proofs for monetary donations.</p>
             </a>
         </div>
     </article>

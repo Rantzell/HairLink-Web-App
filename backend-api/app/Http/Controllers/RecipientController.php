@@ -63,28 +63,38 @@ class RecipientController extends Controller
         return view('pages.recipient-tracking-detail', compact('requestData'));
     }
 
-    public function confirmation(Request $request)
+    public function confirmWigReceived(Request $request, $reference)
     {
         $user = Auth::user();
-        if (!$user) return redirect('/login');
-
-        $reference = $request->query('ref');
-        $query = HairRequest::with(['statusHistories', 'user']);
-            
-        if (!in_array($user->role, ['staff', 'admin'])) {
-            $query->where('user_id', $user->id);
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized', 'success' => false], 401);
         }
 
-        if ($reference) {
-            $requestData = $query->where('reference', $reference)->first();
-        } else {
-            $requestData = $query->orderBy('created_at', 'desc')->first();
+        $hairRequest = HairRequest::where('reference', $reference)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        if ($hairRequest->status !== 'In Transit') {
+            return response()->json([
+                'message' => 'Wig can only be confirmed when status is In Transit.',
+                'success' => false
+            ], 422);
         }
 
-        if (!$requestData) {
-            return redirect()->route('recipient.dashboard');
-        }
+        $hairRequest->update([
+            'status' => 'Completed',
+            'wig_received_at' => now(),
+        ]);
 
-        return view('pages.recipient-confirmation', compact('requestData'));
+        $hairRequest->statusHistories()->create([
+            'status' => 'Completed',
+            'notes' => 'Recipient confirmed wig received',
+        ]);
+
+        return response()->json([
+            'message' => 'Wig received confirmed! Your request is now complete.',
+            'success' => true,
+            'wig_received_at' => $hairRequest->wig_received_at->format('M d, Y h:i A'),
+        ]);
     }
 }

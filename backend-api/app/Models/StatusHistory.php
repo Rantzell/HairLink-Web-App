@@ -35,7 +35,7 @@ class StatusHistory extends Model
     {
         $data = $this->metadata;
         if (is_array($data) && isset($data['preview_photo'])) {
-            return Storage::disk('s3')->url($data['preview_photo']);
+            return Storage::disk('public')->url($data['preview_photo']);
         }
         return null;
     }

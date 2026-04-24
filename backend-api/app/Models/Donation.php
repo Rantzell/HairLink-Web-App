@@ -24,7 +24,8 @@ class Donation extends Model
         'certificate_no',
         'received_wig_at',
         'photo_front',
-        'photo_side'
+        'photo_side',
+        'donor_delivery_link'
     ];
 
     protected $appends = [

@@ -136,7 +136,8 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
   return (
     <KeyboardAvoidingView 
         style={[styles.container, { paddingTop: insets.top }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? ms(0) : ms(20)}
     >
       <StatusBar style="light" />
       

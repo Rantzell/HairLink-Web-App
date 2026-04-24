@@ -61,8 +61,11 @@ class HairRequestController extends Controller
 
         // Record initial status in history
         $hairRequest->statusHistories()->create([
-            'status' => 'Submitted'
+            'status' => 'Pending'
         ]);
+
+        // Notify Recipient
+        Auth::user()->notify(new \App\Notifications\HairRequestSubmittedNotification($hairRequest));
 
         return response()->json($hairRequest, 201);
     }
@@ -100,6 +103,9 @@ class HairRequestController extends Controller
         if ($hairRequest->status !== $validated['status']) {
             $hairRequest->update(['status' => $validated['status']]);
             $hairRequest->statusHistories()->create(['status' => $validated['status']]);
+
+            // Notify Recipient
+            $hairRequest->user->notify(new \App\Notifications\HairRequestStatusNotification($hairRequest, $validated['status']));
         }
 
         return response()->json($hairRequest->load(['statusHistories', 'user']));

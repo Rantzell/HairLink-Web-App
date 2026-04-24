@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="post-content">
                 ${post.content}
             </div>
+            ${post.image_url ? `<img src="${post.image_url}" class="post-image" alt="Post image">` : ''}
 
             <div class="post-stats">
                 <span class="likes-count"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg> <span class="count">${post.likes}</span></span>
@@ -98,6 +99,10 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
 
             <div class="comments-section" style="display: none;">
+                <div class="reply-indicator" style="display: none;">
+                    <span>Replying to <span class="reply-target-name"></span></span>
+                    <button class="cancel-reply-btn"><i class='bx bx-x'></i></button>
+                </div>
                 <div class="comments-list"></div>
                 <div class="comment-form">
                     <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${post.id}">
@@ -153,37 +158,68 @@ document.addEventListener('DOMContentLoaded', () => {
             section.style.display = isVisible ? 'none' : 'block';
             
             if (!isVisible) {
-                renderComments(post.comments, postElement.querySelector('.comments-list'));
+                renderComments(post.comments, postElement.querySelector('.comments-list'), postElement);
                 postElement.querySelector('.comment-input')?.focus();
             }
+        });
+
+        // Cancel reply
+        postElement.querySelector('.cancel-reply-btn')?.addEventListener('click', () => {
+            const input = postElement.querySelector('.comment-input');
+            const indicator = postElement.querySelector('.reply-indicator');
+            delete input.dataset.parentId;
+            input.placeholder = "Write a comment...";
+            indicator.style.display = 'none';
         });
 
         // Submit comment
         postElement.querySelector('.submit-comment-btn')?.addEventListener('click', async (e) => {
             e.preventDefault();
             const input = postElement.querySelector('.comment-input');
+            const indicator = postElement.querySelector('.reply-indicator');
             const content = input.value.trim();
+            const parentId = input.dataset.parentId;
             
             if (content) {
                 try {
-                    const newComment = await CommunityModule.addComment(postId, content);
-                    post.comments.push(newComment);
-                    renderComments(post.comments, postElement.querySelector('.comments-list'));
+                    const formData = new FormData();
+                    formData.append('content', content);
+                    if (parentId) formData.append('parent_id', parentId);
+
+                    const newComment = await CommunityModule.addComment(postId, formData);
+                    
+                    if (parentId) {
+                        // Find parent and add to replies
+                        const parent = post.comments.find(c => c.id === parentId);
+                        if (parent) {
+                            if (!parent.replies) parent.replies = [];
+                            parent.replies.push(newComment);
+                        }
+                    } else {
+                        post.comments.push(newComment);
+                    }
+
+                    renderComments(post.comments, postElement.querySelector('.comments-list'), postElement);
                     input.value = '';
+                    delete input.dataset.parentId;
+                    input.placeholder = "Write a comment...";
+                    indicator.style.display = 'none';
                     
                     const commentCount = postElement.querySelector('.comments-count');
                     if (commentCount) {
-                        commentCount.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> ${post.comments.length}`;
+                        const total = post.comments.reduce((acc, c) => acc + 1 + (c.replies ? c.replies.length : 0), 0);
+                        commentCount.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> ${total}`;
                     }
                 } catch (error) {
                     console.error('Error adding comment:', error);
+                    alert('Failed to post comment: ' + error.message);
                 }
             }
         });
     }
 
     // Render comments for a post
-    function renderComments(comments, container) {
+    function renderComments(comments, container, postElement) {
         container.innerHTML = '';
 
         if (!comments || comments.length === 0) {
@@ -194,6 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         comments.forEach(comment => {
             const commentDiv = document.createElement('div');
             commentDiv.className = 'comment';
+            commentDiv.dataset.commentId = comment.id;
 
             const userBadge = comment.userType === 'donor'
                 ? '<span class="comment-badge donor-badge">Donor</span>'
@@ -210,10 +247,58 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="comment-menu">
                         ${userBadge}
+                        <button class="reply-btn" style="background:none;border:none;color:#cf2f84;font-size:0.75rem;font-weight:700;cursor:pointer;padding:0.2rem 0.5rem;border-radius:4px;margin-left:5px;">REPLY</button>
                     </div>
                 </div>
                 <div class="comment-content">${comment.content}</div>
+                <div class="replies-list" style="margin-left: 1.5rem; margin-top: 0.5rem; border-left: 2px solid #ead7e8; padding-left: 0.8rem;"></div>
             `;
+
+            // Reply button handler
+            commentDiv.querySelector('.reply-btn')?.addEventListener('click', () => {
+                const input = postElement.querySelector('.comment-input');
+                const indicator = postElement.querySelector('.reply-indicator');
+                const targetName = postElement.querySelector('.reply-target-name');
+                
+                input.dataset.parentId = comment.id;
+                input.placeholder = `Replying to ${comment.author}...`;
+                if (targetName) targetName.textContent = comment.author;
+                if (indicator) indicator.style.display = 'flex';
+                input.focus();
+            });
+
+            // Render nested replies
+            const repliesContainer = commentDiv.querySelector('.replies-list');
+            if (comment.replies && comment.replies.length > 0) {
+                comment.replies.forEach(reply => {
+                    const replyDiv = document.createElement('div');
+                    replyDiv.className = 'comment reply';
+                    replyDiv.style.border = 'none';
+                    replyDiv.style.padding = '0.4rem 0';
+                    replyDiv.style.marginBottom = '0.4rem';
+                    
+                    const replyBadge = reply.userType === 'donor'
+                        ? '<span class="comment-badge donor-badge">Donor</span>'
+                        : '<span class="comment-badge recipient-badge">Recipient</span>';
+
+                    replyDiv.innerHTML = `
+                        <div class="comment-header">
+                            <div class="comment-author">
+                                <span class="comment-avatar" style="width:22px;height:22px;font-size:0.6rem;">${reply.avatar}</span>
+                                <div>
+                                    <div class="comment-name" style="font-size:0.8rem;">${reply.author}</div>
+                                    <div class="comment-time" style="font-size:0.7rem;">${CommunityModule.formatTime(reply.timestamp)}</div>
+                                </div>
+                            </div>
+                            <div>${replyBadge}</div>
+                        </div>
+                        <div class="comment-content" style="font-size:0.85rem;">${reply.content}</div>
+                    `;
+                    repliesContainer.appendChild(replyDiv);
+                });
+            } else {
+                repliesContainer.style.display = 'none';
+            }
 
             container.appendChild(commentDiv);
         });
@@ -222,18 +307,49 @@ document.addEventListener('DOMContentLoaded', () => {
     // Create post form handler
     const postForm = document.getElementById('create-post-form');
     if (postForm) {
+        const textarea = document.getElementById('postContent');
+        const actionsPanel = document.getElementById('postActionsPanel');
+        const fileInput = document.getElementById('postImage');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+        // Expand textarea on focus
+        textarea.addEventListener('focus', () => {
+            textarea.classList.add('expanded');
+            actionsPanel.classList.add('visible');
+        });
+
+        // Handle file selection display
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileNameDisplay.textContent = e.target.files[0].name;
+            } else {
+                fileNameDisplay.textContent = '';
+            }
+        });
+
         postForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const textarea = postForm.querySelector('textarea');
             const content = textarea.value.trim();
             const submitBtn = postForm.querySelector('button[type="submit"]');
 
             if (content) {
                 if (submitBtn) submitBtn.disabled = true;
                 try {
-                    await CommunityModule.createPost(content);
-                    textarea.value = '';
+                    const formData = new FormData();
+                    formData.append('content', content);
+                    if (fileInput.files.length > 0) {
+                        formData.append('image', fileInput.files[0]);
+                    }
+
+                    await CommunityModule.createPost(formData);
+                    
+                    // Reset form
+                    postForm.reset();
+                    fileNameDisplay.textContent = '';
+                    textarea.classList.remove('expanded');
+                    actionsPanel.classList.remove('visible');
+                    
                     await renderPosts();
                 } catch (error) {
                     console.error('Error creating post:', error);

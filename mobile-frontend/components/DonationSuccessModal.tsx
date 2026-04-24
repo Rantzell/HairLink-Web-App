@@ -78,9 +78,16 @@ export default function DonationSuccessModal({
             </View>
 
             <Text style={styles.titleText}>Thank You!</Text>
+            
+            <View style={[styles.pendingBanner, { backgroundColor: themeLightColor }]}>
+              <MaterialCommunityIcons name="clock-outline" size={ms(16)} color={themeColor} />
+              <Text style={[styles.pendingText, { color: themeColor }]}>PENDING REVIEW</Text>
+            </View>
+
             <Text style={styles.messageText}>
-              Your {type === 'hair' ? 'hair donation' : <><Text style={[styles.highlight, { color: themeColor }]}>₱{amount.toLocaleString()}</Text> donation</>} has been received and is <Text style={{fontWeight:'900', color: themeColor}}>Pending Review</Text>.
-              Together, we are making a difference!
+              Your {type === 'hair' ? 'hair donation' : <><Text style={[styles.highlight, { color: themeColor }]}>₱{amount.toLocaleString()}</Text> donation</>} has been received!
+              {"\n\n"}
+              <Text style={{fontWeight: '700'}}>Please wait while we verify your contribution.</Text> Your Star Points will be automatically added to your profile once approved!
             </Text>
 
             {/* Rewards Card */}
@@ -166,6 +173,20 @@ const styles = StyleSheet.create({
   },
   highlight: {
     fontWeight: '900',
+  },
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: ms(12),
+    paddingVertical: vs(6),
+    borderRadius: ms(20),
+    marginBottom: vs(16),
+    gap: ms(6),
+  },
+  pendingText: {
+    fontSize: ms(12),
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   rewardCard: {
     width: '100%',

@@ -14,17 +14,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { supabase } from '../../lib/supabase';
-import Animated, { 
-  FadeInDown, 
-  FadeInUp, 
-  FadeIn, 
-  FadeOut, 
-  SlideInUp, 
-  Layout, 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring 
+import api from '../../lib/api';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeIn,
+  FadeOut,
+  SlideInUp,
+  Layout,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
@@ -100,29 +100,23 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
 
   const fetchDonations = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data, error } = await supabase
-        .from('donations')
-        .select('*')
-        .eq('user_id', session.user.id);
-
-      if (error) throw error;
+      setLoading(true);
+      const response = await api.get('/donations');
+      const data = response.data;
 
       // Map donations to Events
       const mapped: Event[] = (data || []).map((d: any) => ({
         id: d.id,
-        title: d.type === 'hair' ? 'Hair Donation' : `Monetary Donation (₱${d.amount})`,
-        location: d.type === 'hair' ? 'Strand-by-Strand' : 'Financial Contribution',
+        title: d.type === 'hair' ? 'Hair Donation' : `Monetary Support (₱${d.amount})`,
+        location: d.type === 'hair' ? 'Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)' : 'Digital Contribution',
         time: new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: d.created_at.split('T')[0],
-        type: d.type === 'hair' ? 'drive' : 'other', 
-        accepted: d.status === 'approved',
+        type: d.type === 'hair' ? 'drive' : 'other',
+        accepted: ['approved', 'completed', 'received hair'].includes(d.status.toLowerCase()),
         status: d.status
       }));
 
-      setEvents(mapped); // Removing mock events for a cleaner real-time experience
+      setEvents(mapped);
     } catch (err) {
       console.error("Error fetching donations:", err);
     } finally {
@@ -131,7 +125,7 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
   };
 
   // ── Dynamic Date Helpers ─────────────────────
-  
+
   const monthName = useMemo(() => {
     return viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
   }, [viewDate]);
@@ -141,7 +135,7 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
     const month = viewDate.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
+
     const days = [];
     // Padding for first week
     for (let i = 0; i < firstDay; i++) {
@@ -149,8 +143,8 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
     }
     // Actual days
     for (let i = 1; i <= daysInMonth; i++) {
-        const full = `${year}-${(month + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
-        days.push({ date: i.toString(), full, isPadding: false });
+      const full = `${year}-${(month + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
+      days.push({ date: i.toString(), full, isPadding: false });
     }
     return days;
   }, [viewDate]);
@@ -159,16 +153,16 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
     const sel = new Date(selectedDate);
     const startOfWeek = new Date(sel);
     startOfWeek.setDate(sel.getDate() - sel.getDay()); // Sunday as 0
-    
+
     return Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(startOfWeek);
-        d.setDate(startOfWeek.getDate() + i);
-        const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-        return {
-            day: dayNames[i],
-            date: d.getDate().toString(),
-            full: d.toISOString().split('T')[0]
-        };
+      const d = new Date(startOfWeek);
+      d.setDate(startOfWeek.getDate() + i);
+      const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+      return {
+        day: dayNames[i],
+        date: d.getDate().toString(),
+        full: d.toISOString().split('T')[0]
+      };
     });
   }, [selectedDate]);
 
@@ -193,7 +187,7 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
+
       {/* ── Premium Gradient Header ────────────────── */}
       <LinearGradient
         colors={['#FF66B2', '#FF1493']}
@@ -206,73 +200,73 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
           <TouchableOpacity onPress={onBack} style={styles.backBtnWrapper}>
             <Ionicons name="chevron-back" size={ms(28)} color="#fff" />
           </TouchableOpacity>
-            
-            {/* Title & Navigation */}
-            <View style={styles.titleNavGroup}>
-              <Text style={styles.monthTitle}>{monthName}</Text>
-              
-              <View style={styles.navArrows}>
-                <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.arrowBtn}>
-                  <Ionicons name="chevron-back-circle-outline" size={ms(26)} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => changeMonth(1)} style={styles.arrowBtn}>
-                  <Ionicons name="chevron-forward-circle-outline" size={ms(26)} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
 
-            <View style={styles.headerIcons}>
-              <ScaleButton style={styles.iconCircle} onPress={() => setShowMonthView(!showMonthView)}>
-                <Ionicons 
-                  name={showMonthView ? "list-sharp" : "calendar-sharp"} 
-                  size={ms(22)} 
-                  color={"#FF1493"} 
-                />
-              </ScaleButton>
+          {/* Title & Navigation */}
+          <View style={styles.titleNavGroup}>
+            <Text style={styles.monthTitle}>{monthName}</Text>
+
+            <View style={styles.navArrows}>
+              <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.arrowBtn}>
+                <Ionicons name="chevron-back-circle-outline" size={ms(26)} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => changeMonth(1)} style={styles.arrowBtn}>
+                <Ionicons name="chevron-forward-circle-outline" size={ms(26)} color="#fff" />
+              </TouchableOpacity>
             </View>
           </View>
 
-          {/* ── Switching Views ── */}
-          <Animated.View layout={Layout.springify()}>
-            {showMonthView ? (
-              /* Month Grid View */
-              <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(200)} style={styles.monthGrid}>
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                  <Text key={i} style={styles.monthDayName}>{d}</Text>
-                ))}
-                {monthDays.map((m, idx) => (
-                  <ScaleButton 
-                    key={`${m.full}-${idx}`} 
-                    style={[
-                        styles.monthDayItem, 
-                        selectedDate === m.full && styles.selectedMonthDay,
-                        m.isPadding && { opacity: 0 }
-                    ]}
-                    onPress={() => !m.isPadding && setSelectedDate(m.full)}
-                  >
-                    <Text style={[styles.monthDayText, selectedDate === m.full && styles.selectedMonthDayText]}>
-                      {m.date}
-                    </Text>
-                    {!m.isPadding && events.some(e => e.date === m.full) && <View style={styles.eventDot} />}
-                  </ScaleButton>
-                ))}
-              </Animated.View>
-            ) : (
-              /* Week Strip View */
-              <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(200)} style={styles.weekRow}>
-                {weekDays.map((w) => (
-                  <ScaleButton 
-                    key={w.full} 
-                    style={[styles.dayItem, selectedDate === w.full && styles.selectedDay]}
-                    onPress={() => setSelectedDate(w.full)}
-                  >
-                    <Text style={[styles.dayName, selectedDate === w.full && styles.selectedDayText]}>{w.day}</Text>
-                    <Text style={[styles.dayDate, selectedDate === w.full && styles.selectedDayText]}>{w.date}</Text>
-                  </ScaleButton>
-                ))}
-              </Animated.View>
-            )}
-          </Animated.View>
+          <View style={styles.headerIcons}>
+            <ScaleButton style={styles.iconCircle} onPress={() => setShowMonthView(!showMonthView)}>
+              <Ionicons
+                name={showMonthView ? "list-sharp" : "calendar-sharp"}
+                size={ms(22)}
+                color={"#FF1493"}
+              />
+            </ScaleButton>
+          </View>
+        </View>
+
+        {/* ── Switching Views ── */}
+        <Animated.View layout={Layout.springify()}>
+          {showMonthView ? (
+            /* Month Grid View */
+            <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(200)} style={styles.monthGrid}>
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                <Text key={i} style={styles.monthDayName}>{d}</Text>
+              ))}
+              {monthDays.map((m, idx) => (
+                <ScaleButton
+                  key={`${m.full}-${idx}`}
+                  style={[
+                    styles.monthDayItem,
+                    selectedDate === m.full && styles.selectedMonthDay,
+                    m.isPadding && { opacity: 0 }
+                  ]}
+                  onPress={() => !m.isPadding && setSelectedDate(m.full)}
+                >
+                  <Text style={[styles.monthDayText, selectedDate === m.full && styles.selectedMonthDayText]}>
+                    {m.date}
+                  </Text>
+                  {!m.isPadding && events.some(e => e.date === m.full) && <View style={styles.eventDot} />}
+                </ScaleButton>
+              ))}
+            </Animated.View>
+          ) : (
+            /* Week Strip View */
+            <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(200)} style={styles.weekRow}>
+              {weekDays.map((w) => (
+                <ScaleButton
+                  key={w.full}
+                  style={[styles.dayItem, selectedDate === w.full && styles.selectedDay]}
+                  onPress={() => setSelectedDate(w.full)}
+                >
+                  <Text style={[styles.dayName, selectedDate === w.full && styles.selectedDayText]}>{w.day}</Text>
+                  <Text style={[styles.dayDate, selectedDate === w.full && styles.selectedDayText]}>{w.date}</Text>
+                </ScaleButton>
+              ))}
+            </Animated.View>
+          )}
+        </Animated.View>
       </LinearGradient>
 
       {/* Events Content */}
@@ -281,7 +275,7 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
           <View style={styles.dayHeader}>
             <Text style={styles.dayTitle}>{getDayNameLong(selectedDate)} {selectedDate.split('-')[2]}</Text>
             <TouchableOpacity onPress={() => setSelectedDate(today.toISOString().split('T')[0])} style={styles.todayBtn}>
-               <Text style={styles.todayBtnText}>Today</Text>
+              <Text style={styles.todayBtnText}>Today</Text>
             </TouchableOpacity>
             <View style={styles.line} />
           </View>
@@ -292,20 +286,20 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
-                    <Animated.View entering={FadeInDown.springify()} style={styles.eventItem}>
-                      <View style={styles.timeCol}>
-                        <Text style={styles.timeText}>{item.time.split(' ')[0]}</Text>
-                        <Text style={styles.ampmText}>{item.time.split(' ')[1]}</Text>
-                      </View>
-                      
-                      <LinearGradient
-                        colors={item.title.includes('Hair') ? ['#FF66B2', '#FF1493'] : ['#4FACFE', '#009EFD']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.eventCard}
-                      >
+                <Animated.View entering={FadeInDown.springify()} style={styles.eventItem}>
+                  <View style={styles.timeCol}>
+                    <Text style={styles.timeText}>{item.time.split(' ')[0]}</Text>
+                    <Text style={styles.ampmText}>{item.time.split(' ')[1]}</Text>
+                  </View>
+
+                  <LinearGradient
+                    colors={item.title.includes('Hair') ? ['#FF66B2', '#FF1493'] : ['#4FACFE', '#009EFD']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.eventCard}
+                  >
                     <View style={[
-                      styles.eventIconBg, 
+                      styles.eventIconBg,
                       !item.title.includes('Hair') && { backgroundColor: '#E3F2FD' }
                     ]}>
                       {item.title.includes('Hair') ? (
@@ -317,19 +311,19 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
                     <View style={styles.eventDetails}>
                       <Text style={styles.eventTitle}>{item.title}</Text>
                       <Text style={styles.eventLoc}>{item.location}</Text>
-                      
+
                       {item.status ? (
                         <View style={[
                           styles.statusBadge, 
-                          { backgroundColor: item.status === 'approved' ? '#4CAF50' : '#FF9800' }
+                          { backgroundColor: ['verified', 'approved', 'completed'].includes(item.status.toLowerCase()) ? '#2E7D32' : '#F2994A' }
                         ]}>
                           <Text style={styles.statusBadgeText}>
-                            {item.status.charAt(0) + item.status.slice(1)}
+                            {item.status}
                           </Text>
                         </View>
                       ) : !item.accepted ? (
-                        <ScaleButton 
-                          style={styles.acceptBtn} 
+                        <ScaleButton
+                          style={styles.acceptBtn}
                           onPress={() => handleAccept(item.id)}
                         >
                           <Text style={styles.acceptBtnText}>Accept Invitation</Text>
@@ -341,8 +335,8 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
                         </View>
                       )}
                     </View>
-                      </LinearGradient>
-                    </Animated.View>
+                  </LinearGradient>
+                </Animated.View>
               )}
             />
           ) : (
@@ -377,8 +371,8 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F0F5' },
-  pinkHeader: { 
-    paddingHorizontal: ms(16), 
+  pinkHeader: {
+    paddingHorizontal: ms(16),
     paddingBottom: vs(24),
     borderBottomLeftRadius: ms(30),
     borderBottomRightRadius: ms(30),
@@ -387,60 +381,60 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
-  topRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingTop: vs(10), 
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: vs(10),
     marginBottom: vs(20),
     width: '100%',
   },
-  backBtnWrapper: { 
-    width: ms(44), 
-    height: ms(44), 
-    alignItems: 'center', 
+  backBtnWrapper: {
+    width: ms(44),
+    height: ms(44),
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  titleNavGroup: { 
-    flex: 1, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  titleNavGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: ms(4),
   },
-  monthTitle: { 
-    fontSize: ms(20), 
-    fontWeight: '900', 
-    color: '#fff', 
+  monthTitle: {
+    fontSize: ms(20),
+    fontWeight: '900',
+    color: '#fff',
     marginRight: ms(10),
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  navArrows: { 
-    flexDirection: 'row', 
+  navArrows: {
+    flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: ms(20),
     paddingHorizontal: ms(4),
   },
-  arrowBtn: { 
+  arrowBtn: {
     padding: ms(6),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerIcons: { 
-    width: ms(44), 
-    flexDirection: 'row', 
+  headerIcons: {
+    width: ms(44),
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
-  iconCircle: { 
-    width: ms(42), 
-    height: ms(42), 
-    borderRadius: ms(14), 
-    backgroundColor: '#fff', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  iconCircle: {
+    width: ms(42),
+    height: ms(42),
+    borderRadius: ms(14),
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
     elevation: 6,
     shadowColor: '#000',
     shadowOpacity: 0.15,
@@ -450,8 +444,8 @@ const styles = StyleSheet.create({
 
   weekRow: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: ms(4), marginTop: vs(10) },
   dayItem: { alignItems: 'center', paddingVertical: vs(14), borderRadius: ms(24), width: '13%', height: vs(72) },
-  selectedDay: { 
-    backgroundColor: '#fff', 
+  selectedDay: {
+    backgroundColor: '#fff',
     elevation: 8,
     shadowColor: '#FF1493',
     shadowOpacity: 0.3,
@@ -465,8 +459,8 @@ const styles = StyleSheet.create({
   monthGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', paddingHorizontal: 0, marginTop: vs(10) },
   monthDayName: { width: '14.28%', textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontWeight: '900', fontSize: ms(13), marginBottom: vs(15), letterSpacing: 1 },
   monthDayItem: { width: '14.28%', height: vs(48), alignItems: 'center', justifyContent: 'center', marginBottom: vs(6), borderRadius: ms(14) },
-  selectedMonthDay: { 
-    backgroundColor: '#fff', 
+  selectedMonthDay: {
+    backgroundColor: '#fff',
     elevation: 8,
     shadowColor: '#FF1493',
     shadowOpacity: 0.3,
@@ -478,65 +472,65 @@ const styles = StyleSheet.create({
   eventDot: { width: ms(5), height: ms(5), borderRadius: ms(2.5), backgroundColor: '#FF66B2', position: 'absolute', bottom: vs(6) },
 
   content: { flex: 1, backgroundColor: '#F8F0F5', marginTop: vs(-25) },
-  whiteCard: { 
-    flex: 1, 
-    backgroundColor: '#fff', 
-    borderRadius: ms(35), 
-    marginHorizontal: ms(16), 
-    padding: ms(28), 
-    marginTop: vs(10), 
-    marginBottom: vs(20), 
-    shadowColor: '#000', 
-    shadowOpacity: 0.08, 
-    shadowRadius: 20, 
+  whiteCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: ms(35),
+    marginHorizontal: ms(16),
+    padding: ms(28),
+    marginTop: vs(10),
+    marginBottom: vs(20),
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
     elevation: 4,
     shadowOffset: { width: 0, height: 5 },
   },
   dayHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: vs(35) },
-  dayTitle: { fontSize: ms(26), fontWeight: '900', color: '#1a1a1a', letterSpacing: -0.5 },
+  dayTitle: { fontSize: ms(20), fontWeight: '900', color: '#1a1a1a', letterSpacing: -0.5 },
   line: { flex: 1, height: 1.5, backgroundColor: '#f0f0f0', marginLeft: ms(15) },
   todayBtn: { marginLeft: ms(15), backgroundColor: '#FFD6EF', paddingHorizontal: ms(14), paddingVertical: vs(8), borderRadius: ms(12) },
   todayBtnText: { fontSize: ms(14), fontWeight: '900', color: '#FF1493', textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  eventItem: { flexDirection: 'row', marginBottom: vs(30) },
+  eventItem: { flexDirection: 'row', marginBottom: vs(20) },
   timeCol: { width: ms(70), alignItems: 'flex-start', paddingTop: vs(8) },
-  timeText: { fontSize: ms(24), fontWeight: '900', color: '#1a1a1a', letterSpacing: -1 },
-  ampmText: { fontSize: ms(12), fontWeight: '800', color: '#bbb', textTransform: 'uppercase', marginTop: vs(-2) },
+  timeText: { fontSize: ms(15), fontWeight: '900', color: '#1a1a1a', letterSpacing: -0.5 },
+  ampmText: { fontSize: ms(10), fontWeight: '800', color: '#999', textTransform: 'uppercase', marginTop: vs(-2) },
 
-  eventCard: { 
-    flex: 1, 
-    borderRadius: ms(26), 
-    padding: ms(20), 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    shadowColor: '#FF66B2', 
-    shadowOpacity: 0.25, 
-    shadowRadius: 12, 
-    elevation: 6,
-    shadowOffset: { width: 0, height: 6 },
-  },
-  eventIconBg: { 
-    width: ms(54), 
-    height: ms(54), 
-    borderRadius: ms(18), 
-    backgroundColor: '#fff', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginRight: ms(18),
+  eventCard: {
+    flex: 1,
+    borderRadius: ms(18),
+    padding: ms(12),
+    flexDirection: 'row',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowRadius: 10,
+    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  eventIconBg: {
+    width: ms(44),
+    height: ms(44),
+    borderRadius: ms(12),
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: ms(12),
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
   eventDetails: { flex: 1 },
-  eventTitle: { fontSize: ms(18), fontWeight: '900', color: '#fff', marginBottom: vs(4), letterSpacing: 0.2 },
-  eventLoc: { fontSize: ms(13), color: 'rgba(255,255,255,0.9)', marginBottom: vs(14), fontWeight: '700' },
-  acceptBtn: { 
-    backgroundColor: '#fff', 
-    borderRadius: ms(16), 
-    height: vs(42), 
-    width: '100%', 
-    alignItems: 'center', 
+  eventTitle: { fontSize: ms(15), fontWeight: '900', color: '#fff', marginBottom: vs(4), letterSpacing: 0.2 },
+  eventLoc: { fontSize: ms(11), color: 'rgba(255,255,255,0.9)', marginBottom: vs(14), fontWeight: '700' },
+  acceptBtn: {
+    backgroundColor: '#fff',
+    borderRadius: ms(16),
+    height: vs(42),
+    width: '100%',
+    alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -546,21 +540,21 @@ const styles = StyleSheet.create({
   acceptBtnText: { color: '#FF1493', fontWeight: '900', fontSize: ms(14), textTransform: 'uppercase' },
   acceptedTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: ms(12), paddingVertical: vs(6), borderRadius: ms(12), alignSelf: 'flex-start' },
   acceptedText: { fontSize: ms(13), color: '#fff', fontWeight: '900', marginLeft: ms(6) },
-  statusBadge: { 
-    alignSelf: 'flex-start', 
-    paddingHorizontal: ms(14), 
-    paddingVertical: vs(6), 
-    borderRadius: ms(12), 
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(6),
+    borderRadius: ms(12),
     marginTop: vs(10),
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 3,
   },
-  statusBadgeText: { 
-    color: '#fff', 
-    fontSize: ms(12), 
-    fontWeight: '900', 
+  statusBadgeText: {
+    color: '#fff',
+    fontSize: ms(10),
+    fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },

@@ -68,7 +68,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('/donor/donate', 'pages.donate-dashboard')->name('donor.donate');
     Route::get('/donor/tracking', [App\Http\Controllers\DonorController::class, 'tracking'])->name('donor.tracking');
     Route::get('/donor/tracking/{reference}', [App\Http\Controllers\DonorController::class, 'trackingDetail'])->name('donor.tracking.detail');
-    Route::get('/donor/confirmation', [App\Http\Controllers\DonorController::class, 'confirmation'])->name('donor.confirmation');
     Route::get('/donor/certificate', [App\Http\Controllers\DonorController::class, 'certificate'])->name('donor.certificate');
     Route::view('/donor/profile', 'pages.donor-profile')->name('donor.profile');
     Route::post('/profile/update', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
@@ -78,7 +77,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('/recipient/request', 'pages.recipient-request')->name('recipient.request');
     Route::get('/recipient/tracking', [App\Http\Controllers\RecipientController::class, 'tracking'])->name('recipient.tracking');
     Route::get('/recipient/tracking/{reference}', [App\Http\Controllers\RecipientController::class, 'trackingDetail'])->name('recipient.tracking.detail');
-    Route::get('/recipient/confirmation', [App\Http\Controllers\RecipientController::class, 'confirmation'])->name('recipient.confirmation');
+    Route::post('/recipient/tracking/{reference}/confirm-received', [App\Http\Controllers\RecipientController::class, 'confirmWigReceived'])->name('recipient.tracking.confirm-received');
     Route::view('/recipient/profile', 'pages.recipient-profile')->name('recipient.profile');
     Route::view('/recipient/community', 'pages.recipient-community')->name('recipient.community');
     Route::view('/recipient/haircare', 'pages.recipient-haircare')->name('recipient.haircare');
@@ -90,6 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/donations', [App\Http\Controllers\Api\DonationController::class, 'store']);
         Route::get('/donations/{reference}', [App\Http\Controllers\Api\DonationController::class, 'show']);
         Route::post('/donations/{reference}/status', [App\Http\Controllers\Api\DonationController::class, 'updateStatus']);
+        Route::post('/donations/{reference}/delivery-link', [App\Http\Controllers\Api\DonationController::class, 'updateDeliveryLink']);
 
         // Hair Requests
         Route::get('/requests', [App\Http\Controllers\Api\HairRequestController::class, 'index']);
@@ -136,6 +136,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/staff/recipient-verification', [App\Http\Controllers\StaffController::class, 'recipientVerification'])->name('staff.recipient-verification');
     Route::get('/staff/verification/{type}/{reference}', [App\Http\Controllers\StaffController::class, 'verificationDetail'])->whereIn('type', ['donor', 'recipient'])->name('staff.verification.detail');
     Route::post('/staff/verification/{type}/{reference}/status', [App\Http\Controllers\StaffController::class, 'updateVerificationStatus'])->whereIn('type', ['donor', 'recipient'])->name('staff.verification.status');
+    Route::get('/staff/monetary-verification', [App\Http\Controllers\StaffController::class, 'monetaryVerification'])->name('staff.monetary-verification');
+    Route::get('/staff/verification/monetary/{id}', [App\Http\Controllers\StaffController::class, 'monetaryVerificationDetail'])->name('staff.monetary-verification.detail');
+    Route::post('/staff/verification/monetary/{id}/status', [App\Http\Controllers\StaffController::class, 'updateMonetaryStatus'])->name('staff.monetary-verification.status');
     Route::get('/staff/realtime-tracking', [App\Http\Controllers\StaffController::class, 'realtimeTracking'])->name('staff.realtime-tracking');
     Route::post('/staff/tracking/{reference}/assign-wigmaker', [App\Http\Controllers\StaffController::class, 'assignWigmaker'])->name('staff.tracking.assign-wigmaker');
     Route::post('/staff/tracking/{reference}/update-status', [App\Http\Controllers\StaffController::class, 'updateTrackingStatus'])->name('staff.tracking.update-status');

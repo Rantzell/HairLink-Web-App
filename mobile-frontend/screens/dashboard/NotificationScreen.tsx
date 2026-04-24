@@ -37,11 +37,11 @@ const ScaleButton = ({ children, onPress, style }: any) => {
   return (
     <Animated.View style={[animatedStyle, style]}>
       <TouchableOpacity
-        activeOpacity={0.8}
+        activeOpacity={0.9}
         onPress={onPress}
-        onPressIn={() => (scale.value = withSpring(0.96, { damping: 10, stiffness: 200 }))}
+        onPressIn={() => (scale.value = withSpring(0.98, { damping: 15, stiffness: 300 }))}
         onPressOut={() => (scale.value = withSpring(1))}
-        style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}
+        style={{ width: '100%' }}
       >
         {children}
       </TouchableOpacity>
@@ -49,7 +49,7 @@ const ScaleButton = ({ children, onPress, style }: any) => {
   );
 };
 
-export default function NotificationScreen({ onBack, role = 'Donor' }: { onBack?: () => void, role?: 'Donor' | 'Recipient' }) {
+export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: { onBack?: () => void, onTrack?: () => void, role?: 'Donor' | 'Recipient' }) {
   const isRecipient = role === 'Recipient';
   const themeColor = isRecipient ? '#9B59B6' : '#FF1493';
   const themeMedium = isRecipient ? '#8E44AD' : '#FF66B2';
@@ -61,6 +61,7 @@ export default function NotificationScreen({ onBack, role = 'Donor' }: { onBack?
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetchNotifications = async () => {
     try {
@@ -107,8 +108,8 @@ export default function NotificationScreen({ onBack, role = 'Donor' }: { onBack?
 
   const filteredNotifications = notifications.filter((n) => {
     const matchesTab = activeTab === 'All' || !n.is_read;
-    const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) || 
-                          n.message.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) ||
+      n.message.toLowerCase().includes(search.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
@@ -144,17 +145,35 @@ export default function NotificationScreen({ onBack, role = 'Donor' }: { onBack?
     return acc;
   }, {});
 
-  const renderIcon = (type: string) => {
-    switch (type) {
-      case 'wig':
-        return <MaterialCommunityIcons name="ribbon" size={28} color={themeMedium} />;
-      case 'donation':
-        return <MaterialCommunityIcons name="heart-pulse" size={28} color={themeMedium} />;
-      case 'announcement':
-        return <Ionicons name="notifications" size={28} color={themeMedium} />;
-      default:
-        return <Ionicons name="mail" size={28} color={themeMedium} />;
+  const getNotifStyle = (type: string) => {
+    if (isRecipient) {
+      switch (type) {
+        case 'wig':
+        case 'hair_donation':
+        case 'donation':
+          return { icon: 'ribbon', color: '#8E44AD', bg: '#F5EEF8' };
+        case 'monetary_donation':
+          return { icon: 'wallet', color: '#9B59B6', bg: '#FDF7FF' };
+        case 'announcement':
+          return { icon: 'megaphone', color: '#8E44AD', bg: '#F5EEF8' };
+        default:
+          return { icon: 'mail', color: '#9B59B6', bg: '#FDF7FF' };
+      }
     }
+    
+    switch (type) {
+      case 'wig': return { icon: 'ribbon', color: '#8E44AD', bg: '#F3E5F5' };
+      case 'hair_donation': return { icon: 'content-cut', color: '#D81B60', bg: '#FCE4EC' };
+      case 'monetary_donation': return { icon: 'wallet', color: '#1E88E5', bg: '#E3F2FD' };
+      case 'donation': return { icon: 'heart-pulse', color: '#FF1493', bg: '#FFF0F5' };
+      case 'announcement': return { icon: 'megaphone', color: '#FB8C00', bg: '#FFF3E0' };
+      default: return { icon: 'mail', color: themeMedium, bg: themePale };
+    }
+  };
+
+  const renderIcon = (type: string) => {
+    const style = getNotifStyle(type);
+    return <MaterialCommunityIcons name={style.icon as any} size={26} color={style.color} />;
   };
 
   const insets = useSafeAreaInsets();
@@ -162,7 +181,7 @@ export default function NotificationScreen({ onBack, role = 'Donor' }: { onBack?
   return (
     <View style={[styles.container, { backgroundColor: themeBg }]}>
       <StatusBar style="light" />
-      
+
       {/* ── Premium Gradient Header ────────────────── */}
       <LinearGradient
         colors={isRecipient ? [themeColor, themeMedium] : ['#FF66B2', '#FF1493']}
@@ -200,7 +219,7 @@ export default function NotificationScreen({ onBack, role = 'Donor' }: { onBack?
             {['All', 'Unread'].map((tab: any) => {
               const count = notifications.filter(n => tab === 'All' ? true : !n.is_read).length;
               return (
-                <TouchableOpacity 
+                <TouchableOpacity
                   key={tab}
                   style={[styles.tab, activeTab === tab && [styles.activeTab, { borderColor: themeMedium }]]}
                   onPress={() => setActiveTab(tab)}
@@ -234,33 +253,73 @@ export default function NotificationScreen({ onBack, role = 'Donor' }: { onBack?
           </View>
         )}
 
-        {/* ── Notification Groups ────────────────────── */}
         {Object.keys(groupedNotifications).map((group, gIdx) => (
           <Animated.View key={group} entering={FadeIn.delay(300 + gIdx * 100)}>
             <Text style={styles.dateHeader}>{group}</Text>
-            {groupedNotifications[group].map((n: NotificationItem) => (
-              <ScaleButton 
-                key={n.id} 
-                style={[styles.notificationCard, { borderColor: isRecipient ? '#E8DAEF' : '#FFF0F8' }]}
-                onPress={() => markAsRead(n.id)}
-              >
-                <View style={styles.cardInner}>
-                  <View style={styles.iconCircle}>
-                    {renderIcon(n.type)}
-                  </View>
-                  <View style={styles.notifContent}>
-                    <View style={styles.notifHeader}>
-                      <Text style={styles.notifTitle}>{n.title}</Text>
-                      {!n.is_read && <View style={[styles.unreadDot, { backgroundColor: themeMedium }]} />}
+            {groupedNotifications[group].map((n: NotificationItem) => {
+              const style = getNotifStyle(n.type);
+              const isExpanded = expandedId === n.id;
+              
+              return (
+                <ScaleButton
+                  key={n.id}
+                  style={[
+                    styles.notificationCard, 
+                    { borderLeftColor: style.color },
+                    n.is_read && { opacity: 0.8 }
+                  ]}
+                  onPress={() => {
+                    setExpandedId(isExpanded ? null : n.id);
+                    if (!n.is_read) markAsRead(n.id);
+                  }}
+                >
+                  <View style={styles.cardInner}>
+                    <View style={[styles.iconCircle, { backgroundColor: style.bg }]}>
+                      {renderIcon(n.type)}
                     </View>
-                    <Text style={styles.notifDesc} numberOfLines={2}>
-                      {n.message}
-                    </Text>
-                    <Text style={styles.notifTime}>{getRelativeTime(n.created_at)}</Text>
+                    
+                    <View style={styles.notifContent}>
+                      <View style={styles.notifHeader}>
+                        <Text style={[styles.notifTitle, n.is_read && styles.readText]}>
+                          {n.title || 'Update Available'}
+                        </Text>
+                        {!n.is_read && <View style={[styles.unreadDot, { backgroundColor: themeMedium }]} />}
+                      </View>
+                      
+                      <Text 
+                        style={[
+                          styles.notifDesc, 
+                          isExpanded && styles.expandedDesc
+                        ]} 
+                        numberOfLines={isExpanded ? undefined : 2}
+                      >
+                        {n.message || 'Check your dashboard for the latest details on your activity.'}
+                      </Text>
+
+                      <View style={styles.notifFooter}>
+                        <View style={styles.timeRow}>
+                          <Ionicons name="time-outline" size={12} color="#999" />
+                          <Text style={styles.notifTime}>{getRelativeTime(n.created_at)}</Text>
+                        </View>
+                        
+                        {['donation', 'hair_donation', 'monetary_donation', 'wig'].includes(n.type) && onTrack && (
+                          <TouchableOpacity
+                            style={[styles.trackBtn, { backgroundColor: themeBg, borderColor: themeLight }]}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              onTrack();
+                            }}
+                          >
+                            <Text style={[styles.trackBtnText, { color: themeColor }]}>TRACK</Text>
+                            <Ionicons name="arrow-forward" size={12} color={themeColor} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
                   </View>
-                </View>
-              </ScaleButton>
-            ))}
+                </ScaleButton>
+              );
+            })}
           </Animated.View>
         ))}
       </ScrollView>
@@ -337,28 +396,41 @@ const styles = StyleSheet.create({
   notificationCard: {
     backgroundColor: '#fff',
     marginHorizontal: ms(16),
-    marginBottom: vs(12),
-    borderRadius: ms(22),
-    shadowColor: '#FF66B2',
+    marginBottom: vs(16),
+    borderRadius: ms(20),
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
-    borderWidth: 1,
-    height: vs(100), // Explicit height for ScaleButton logic
+    shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
+    borderLeftWidth: 6,
+    overflow: 'hidden',
   },
-  cardInner: { flexDirection: 'row', alignItems: 'center', padding: ms(12), flex: 1 },
+  cardInner: { flexDirection: 'row', padding: ms(16) },
   iconCircle: {
-    width: ms(60), height: ms(60), borderRadius: ms(30),
-    backgroundColor: '#FFF0F8',
+    width: ms(56), height: ms(56), borderRadius: ms(20),
     justifyContent: 'center', alignItems: 'center',
-    marginRight: ms(14),
+    marginRight: ms(16),
   },
-  notifContent: { flex: 1 },
-  notifHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: vs(2) },
-  notifTitle: { fontSize: ms(16), fontWeight: '800', color: '#1a1a1a' },
-  unreadDot: { width: ms(8), height: ms(8), borderRadius: ms(4), backgroundColor: '#FF66B2' },
-  notifDesc: { fontSize: ms(14), color: '#666', lineHeight: vs(18), fontWeight: '500' },
-  notifTime: { fontSize: ms(11), color: '#999', marginTop: vs(4), fontWeight: '700' },
-  
+  notifContent: { flex: 1, justifyContent: 'center' },
+  notifHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: vs(4) },
+  notifTitle: { fontSize: ms(17), fontWeight: '800', color: '#1a1a1a', flex: 1, paddingRight: ms(10), lineHeight: vs(22) },
+  readText: { color: '#888', fontWeight: '600' },
+  unreadDot: { width: ms(10), height: ms(10), borderRadius: ms(5), marginTop: vs(6) },
+  notifDesc: { fontSize: ms(14), color: '#555', lineHeight: vs(20), fontWeight: '500' },
+  expandedDesc: { fontSize: ms(16), color: '#222', marginTop: vs(4), marginBottom: vs(12), lineHeight: vs(24) },
+  notifFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: vs(10) },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: ms(4) },
+  notifTime: { fontSize: ms(12), color: '#999', fontWeight: '700' },
+  trackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(6),
+    borderRadius: ms(12),
+    borderWidth: 1.5,
+    gap: ms(6)
+  },
+  trackBtnText: { fontSize: ms(12), fontWeight: '900', letterSpacing: 1 },
+
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: vs(80), paddingHorizontal: ms(40) },
   emptyTitle: { fontSize: ms(20), fontWeight: '900', color: '#1a1a1a', marginTop: vs(20) },
   emptyDesc: { fontSize: ms(14), color: '#999', textAlign: 'center', marginTop: vs(10), lineHeight: vs(20), fontWeight: '600' },

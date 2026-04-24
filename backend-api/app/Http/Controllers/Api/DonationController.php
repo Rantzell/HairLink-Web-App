@@ -11,8 +11,27 @@ class DonationController extends Controller
 {
     public function index()
     {
-        $donations = Auth::user()->donations()->with('user')->orderBy('created_at', 'desc')->get();
-        return response()->json($donations);
+        $user = Auth::user();
+        
+        $hairDonations = $user->donations()
+            ->with('user')
+            ->get()
+            ->map(function($d) {
+                $d->donation_type = 'hair';
+                return $d;
+            });
+
+        $monetaryDonations = \App\Models\MonetaryDonation::where('user_id', $user->id)
+            ->get()
+            ->map(function($d) {
+                $d->donation_type = 'monetary';
+                $d->type = 'monetary'; // For consistency with mobile logic
+                return $d;
+            });
+
+        $combined = $hairDonations->concat($monetaryDonations)->sortByDesc('created_at')->values();
+
+        return response()->json($combined);
     }
 
     public function store(Request $request)
@@ -52,6 +71,8 @@ class DonationController extends Controller
                 'remarks' => $validated['words_amount'] ?? null,
             ]);
 
+            Auth::user()->notify(new \App\Notifications\DonationSubmittedNotification($donation, 'monetary'));
+
             return response()->json($donation, 201);
         }
 
@@ -81,6 +102,8 @@ class DonationController extends Controller
         $donation->statusHistories()->create([
             'status' => 'Submitted'
         ]);
+
+        Auth::user()->notify(new \App\Notifications\DonationSubmittedNotification($donation, 'hair'));
 
         return response()->json($donation, 201);
     }
@@ -132,6 +155,24 @@ class DonationController extends Controller
             $donation->update($updateData);
             $donation->statusHistories()->create(['status' => $validated['status']]);
         }
+
+        return response()->json($donation->load(['statusHistories', 'user']));
+    }
+
+    public function updateDeliveryLink(Request $request, $reference)
+    {
+        $user = Auth::user();
+        $donation = Donation::where('reference', $reference)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'donor_delivery_link' => 'required|string',
+        ]);
+
+        $donation->update([
+            'donor_delivery_link' => $validated['donor_delivery_link']
+        ]);
 
         return response()->json($donation->load(['statusHistories', 'user']));
     }

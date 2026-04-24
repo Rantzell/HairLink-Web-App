@@ -20,9 +20,20 @@
                 <p>Tell others about your donation experience or offer support to community members.</p>
             </div>
             <form id="create-post-form" class="post-form">
-                <textarea name="content" placeholder="What's on your mind? Share your experience, tips, or words of encouragement..." rows="4" required></textarea>
-                <div class="form-actions">
-                    <button type="submit" class="soft-btn">Post</button>
+                <textarea id="postContent" name="content" placeholder="What's on your mind? Share your experience, tips, or words of encouragement..." rows="1" required></textarea>
+                
+                <!-- Expanded actions, initially hidden or styled compactly -->
+                <div class="post-actions-panel" id="postActionsPanel">
+                    <div class="image-upload-wrapper">
+                        <label for="postImage" class="image-upload-btn" title="Attach an image">
+                            <i class='bx bx-camera'></i> <span>Add Photo</span>
+                        </label>
+                        <input type="file" id="postImage" name="image" accept="image/*" style="display: none;">
+                        <span id="fileNameDisplay" class="file-name-display"></span>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="soft-btn">Post</button>
+                    </div>
                 </div>
             </form>
         </div>
