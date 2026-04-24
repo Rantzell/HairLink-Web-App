@@ -17,7 +17,9 @@ class MonetaryDonation extends Model
         'currency',
         'payment_method',
         'reference_number',
+        'proof_path',
         'status', // Pending, Completed, Failed
+        'remarks',
     ];
 
     public function user()

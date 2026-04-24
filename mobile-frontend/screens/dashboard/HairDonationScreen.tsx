@@ -100,6 +100,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
         try {
             const formData = new FormData();
             formData.append('reference', `MOB-${Date.now()}`);
+            formData.append('type', 'hair');
             formData.append('hair_length', hairLength);
             formData.append('hair_color', hairColor);
             formData.append('treated_hair', chemicallyTreated ? '1' : '0');
@@ -108,21 +109,18 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
 
             const filename = proofImage.split('/').pop() || 'donation.jpg';
             const match = /\.(\w+)$/.exec(filename);
-            const type = match ? `image/${match[1]}` : `image/jpeg`;
+            let type = match ? `image/${match[1].toLowerCase()}` : `image/jpeg`;
+            if (type === 'image/jpg') type = 'image/jpeg';
 
             formData.append('photo_front', {
-                uri: proofImage,
+                uri: Platform.OS === 'ios' ? proofImage.replace('file://', '') : proofImage,
                 name: filename,
-                type,
+                type: type,
             } as any);
 
             setLoadingLabel('Uploading to secure server...');
             
-            const response = await api.post('/donations', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            const response = await api.post('/donations', formData);
 
             if (response.status === 201 || response.status === 200) {
                 setShowSuccess(true);
@@ -131,7 +129,9 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
             }
         } catch (err: any) {
             console.error('Submission error:', err.response?.data || err.message);
-            setSubmitError(err.response?.data?.message || err.message || 'An unexpected error occurred.');
+            const errorMsg = err.response?.data?.message || err.message || 'An unexpected error occurred.';
+            setSubmitError(errorMsg);
+            Alert.alert('Submission Error', errorMsg);
         } finally {
             setLoading(false);
             setLoadingLabel('Submitting...');

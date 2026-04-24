@@ -17,24 +17,55 @@ class DonationController extends Controller
 
     public function store(Request $request)
     {
+        $type = $request->input('type', 'hair');
+
+        \Log::info('Donation Attempt', [
+            'type' => $type,
+            'all' => $request->all(),
+            'files' => $request->allFiles(),
+        ]);
+
+        if ($type === 'monetary') {
+            $validated = $request->validate([
+                'reference' => 'required|string',
+                'full_name' => 'required|string',
+                'amount' => 'required|numeric',
+                'words_amount' => 'nullable|string',
+                'anonymous' => 'boolean',
+                'proof_photo' => 'nullable|mimes:jpeg,png,jpg,gif,svg,webp,heic,heif|max:10240',
+            ]);
+
+            $proofPath = null;
+            if ($request->hasFile('proof_photo')) {
+                $proofPath = $request->file('proof_photo')->store('monetary-donations', 'public');
+            }
+
+            $donation = \App\Models\MonetaryDonation::create([
+                'user_id' => Auth::id(),
+                'name' => $validated['full_name'],
+                'amount' => $validated['amount'],
+                'currency' => 'PHP',
+                'payment_method' => 'Mobile App',
+                'reference_number' => $validated['reference'],
+                'proof_path' => $proofPath,
+                'status' => 'Submitted',
+                'remarks' => $validated['words_amount'] ?? null,
+            ]);
+
+            return response()->json($donation, 201);
+        }
+
+        // Hair Donation Logic
         $validated = $request->validate([
             'reference' => 'required|string|unique:donations',
-            'type' => 'required|string|in:hair,monetary',
-            // Hair fields
-            'hair_length' => 'required_if:type,hair|string',
-            'hair_color' => 'required_if:type,hair|string',
+            'type' => 'required|string|in:hair',
+            'hair_length' => 'required|string',
+            'hair_color' => 'required|string',
             'treated_hair' => 'boolean',
             'address' => 'nullable|string',
             'reason' => 'nullable|string',
-            // Monetary fields
-            'full_name' => 'required_if:type,monetary|string',
-            'amount' => 'required_if:type,monetary|numeric',
-            'words_amount' => 'nullable|string',
-            'anonymous' => 'boolean',
-            // Files
-            'photo_front' => 'nullable|image|max:10240',
-            'photo_side' => 'nullable|image|max:10240',
-            'proof_photo' => 'nullable|image|max:10240',
+            'photo_front' => 'nullable|mimes:jpeg,png,jpg,gif,svg,webp,heic,heif|max:10240',
+            'photo_side' => 'nullable|mimes:jpeg,png,jpg,gif,svg,webp,heic,heif|max:10240',
         ]);
 
         if ($request->hasFile('photo_front')) {
@@ -45,13 +76,8 @@ class DonationController extends Controller
             $validated['photo_side'] = $request->file('photo_side')->store('donations/photos', 'public');
         }
 
-        if ($request->hasFile('proof_photo')) {
-            $validated['proof_url'] = $request->file('proof_photo')->store('donations/proofs', 'public');
-        }
-
         $donation = Auth::user()->donations()->create($validated);
 
-        // Record initial status in history
         $donation->statusHistories()->create([
             'status' => 'Submitted'
         ]);

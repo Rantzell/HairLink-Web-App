@@ -85,19 +85,16 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
 
       const filename = proofImage.split('/').pop() || 'proof.jpg';
       const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : `image/jpeg`;
+      let type = match ? `image/${match[1].toLowerCase()}` : `image/jpeg`;
+      if (type === 'image/jpg') type = 'image/jpeg';
 
       formData.append('proof_photo', {
-        uri: Platform.OS === 'android' ? proofImage : proofImage.replace('file://', ''),
+        uri: Platform.OS === 'ios' ? proofImage.replace('file://', '') : proofImage,
         name: filename,
-        type,
+        type: type,
       } as any);
 
-      const response = await api.post('/donations', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await api.post('/donations', formData);
 
       if (response.status === 201 || response.status === 200) {
         const donationAmount = parseFloat(numAmount);
@@ -109,7 +106,9 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
       }
     } catch (err: any) {
       console.error('Donation error:', err.response?.data || err.message);
-      setSubmitError(err.response?.data?.message || 'Failed to submit donation.');
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to submit donation.';
+      setSubmitError(errorMsg);
+      Alert.alert('Donation Error', errorMsg);
     } finally {
       setLoading(false);
     }
