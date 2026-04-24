@@ -4,6 +4,7 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "development": "concurrently \"php artisan serve\" \"npm run dev\"",
         "dev": "vite",
         "network": "concurrently \"php artisan serve --host=0.0.0.0\" \"vite --host 0.0.0.0\""
     },
