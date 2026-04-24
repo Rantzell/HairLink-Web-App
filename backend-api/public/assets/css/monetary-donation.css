@@ -1,0 +1,192 @@
+.monetary-page {
+    max-width: 920px;
+    margin-inline: auto;
+}
+
+/* ── Amount Pills ── */
+.amount-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.4rem;
+}
+
+.pill-btn {
+    border: 1.5px solid #d6a8cc;
+    background: #fff;
+    color: #3b2e43;
+    border-radius: 10px;
+    padding: 0.65rem 1.3rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, color 0.18s;
+    min-width: 90px;
+    text-align: center;
+}
+
+.pill-btn:hover {
+    border-color: #cf2f84;
+    background: #fdf0f7;
+}
+
+.pill-btn.active {
+    border-color: #cf2f84;
+    background: #fdf0f7;
+    color: #cf2f84;
+}
+
+/* ── Billing Section Header ── */
+.billing-section-header {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+/* ── Payment Tabs ── */
+.payment-tabs {
+    display: flex;
+    margin-left: auto;
+    border: 1.5px solid #d6a8cc;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.tab-btn {
+    background: #fff;
+    border: none;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #665772;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+}
+
+.tab-btn.active {
+    background: #cf2f84;
+    color: #fff;
+}
+
+/* ── Billing Body Layout ── */
+.billing-body {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 1.2rem;
+    align-items: start;
+    margin-top: 0.8rem;
+}
+
+@media (max-width: 640px) {
+    .billing-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Bank Card ── */
+.bank-card {
+    background: linear-gradient(135deg, #1a4fa0 0%, #0d3480 100%);
+    border-radius: 16px;
+    padding: 1.2rem 1rem;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 160px;
+    box-shadow: 0 8px 20px rgba(13, 52, 128, 0.3);
+}
+
+.bank-card.instapay-card {
+    background: linear-gradient(135deg, #0a7c4a 0%, #065e37 100%);
+    box-shadow: 0 8px 20px rgba(6, 94, 55, 0.3);
+}
+
+.bank-logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+.instapay-logo {
+    font-size: 1.2rem;
+}
+
+.bank-info {
+    margin-top: auto;
+}
+
+.account-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0 0 0.2rem;
+}
+
+.account-number {
+    font-size: 0.85rem;
+    opacity: 0.85;
+    margin: 0;
+    letter-spacing: 0.05em;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ── Billing Fields ── */
+.billing-fields {
+    display: grid;
+    gap: 0.7rem;
+}
+
+/* ── Checkbox Label ── */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.88rem;
+    color: #3b2e43;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #cf2f84;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* ── Donate Button ── */
+.monetary-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.donate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #cf2f84, #a0206a);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 0.75rem 2.5rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(207, 47, 132, 0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.donate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(207, 47, 132, 0.45);
+}
+
+.donate-btn svg {
+    fill: #fff;
+}
+
