@@ -1,0 +1,334 @@
+// ============================================================
+// HairLink — Prisma Schema
+// Converted from Laravel Eloquent (12 models + 39 migrations)
+// Target: Existing Supabase PostgreSQL (ZERO schema changes)
+// ============================================================
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ──────────────────────────────────────────────
+// 1. User
+// ──────────────────────────────────────────────
+model User {
+  id               BigInt    @id @default(autoincrement())
+  profilePhotoPath String?   @map("profile_photo_path")
+  role             String    @default("donor")
+  bio              String?   @db.Text
+  firstName        String?   @map("first_name")
+  lastName         String?   @map("last_name")
+  name             String
+  email            String    @unique
+  emailVerifiedAt  DateTime? @map("email_verified_at") @db.Timestamptz
+  isActive         Boolean   @default(true) @map("is_active")
+  country          String?
+  region           String?
+  postalCode       String?   @map("postal_code")
+  age              Int?
+  gender           String?
+  phone            String?
+  onesignalId      String?   @map("onesignal_id")
+  password         String
+  rememberToken    String?   @map("remember_token")
+  referralCode     String?   @unique @map("referral_code") @db.VarChar(20)
+  referredBy       BigInt?   @map("referred_by")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Self-referential relation for referrals
+  referrer  User?  @relation("UserReferrals", fields: [referredBy], references: [id], onDelete: SetNull)
+  referrals User[] @relation("UserReferrals")
+
+  // One-to-many relations
+  donations         Donation[]
+  hairRequests      HairRequest[]
+  communityPosts    CommunityPost[]
+  communityComments CommunityComment[]
+  wigProductions    WigProduction[]      @relation("WigmakerTasks")
+  monetaryDonations MonetaryDonation[]
+
+  // Many-to-many pivot
+  likedPosts CommunityPostLike[]
+
+  @@map("users")
+}
+
+// ──────────────────────────────────────────────
+// 2. Donation
+// ──────────────────────────────────────────────
+model Donation {
+  id                BigInt    @id @default(autoincrement())
+  userId            BigInt?   @map("user_id")
+  reference         String    @unique
+  hairLength        String    @map("hair_length")
+  hairColor         String    @map("hair_color")
+  treatedHair       Boolean   @default(false) @map("treated_hair")
+  address           String?   @db.Text
+  reason            String?   @db.Text
+  dropoffLocation   String?   @map("dropoff_location")
+  appointmentAt     DateTime? @map("appointment_at") @db.Timestamptz
+  photoFront        String?   @map("photo_front")
+  photoSide         String?   @map("photo_side")
+  status            String    @default("Submitted")
+  certificateNo     String?   @map("certificate_no")
+  donorDeliveryLink String?   @map("donor_delivery_link")
+  receivedWigAt     DateTime? @map("received_wig_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  wigProductions WigProduction[]
+
+  // Polymorphic: status_histories where trackable_type = 'App\\Models\\Donation'
+  // Handled in service layer — no Prisma relation
+
+  @@map("donations")
+}
+
+// ──────────────────────────────────────────────
+// 3. HairRequest
+// ──────────────────────────────────────────────
+model HairRequest {
+  id                   BigInt    @id @default(autoincrement())
+  userId               BigInt?   @map("user_id")
+  reference            String    @unique
+  contactNumber        String?   @map("contact_number")
+  gender               String?
+  story                String?   @db.Text
+  medicalCertificate   String?   @map("medical_certificate")
+  diagnosisPhoto       String?   @map("diagnosis_photo")
+  recipientPhoto       String?   @map("recipient_photo")
+  documents            Json?
+  additionalPhoto      String?   @map("additional_photo")
+  status               String    @default("Submitted")
+  deliveryTrackingLink String?   @map("delivery_tracking_link") @db.VarChar(2048)
+  wigReceivedAt        DateTime? @map("wig_received_at") @db.Timestamptz
+  appointmentAt        DateTime? @map("appointment_at") @db.Timestamptz
+  notes                String?   @db.Text
+  wigLength            String?   @map("wig_length")
+  wigColor             String?   @map("wig_color")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  wigProductions WigProduction[]
+
+  // Polymorphic: status_histories where trackable_type = 'App\\Models\\HairRequest'
+  // Handled in service layer
+
+  @@map("hair_requests")
+}
+
+// ──────────────────────────────────────────────
+// 4. WigProduction
+// ──────────────────────────────────────────────
+model WigProduction {
+  id            BigInt    @id @default(autoincrement())
+  taskCode      String    @unique @map("task_code")
+  wigmakerId    BigInt    @map("wigmaker_id")
+  donationId    BigInt?   @map("donation_id")
+  hairRequestId BigInt?   @map("hair_request_id")
+  targetLength  String    @map("target_length")
+  targetColor   String    @map("target_color")
+  status        String    @default("assigned")
+  deliveryLink  String?   @map("delivery_link")
+  dueDate       DateTime? @map("due_date") @db.Date
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  wigmaker    User         @relation("WigmakerTasks", fields: [wigmakerId], references: [id], onDelete: Cascade)
+  donation    Donation?    @relation(fields: [donationId], references: [id], onDelete: SetNull)
+  hairRequest HairRequest? @relation(fields: [hairRequestId], references: [id], onDelete: SetNull)
+
+  // Polymorphic: status_histories where trackable_type = 'App\\Models\\WigProduction'
+  // Handled in service layer
+
+  @@map("wig_productions")
+}
+
+// ──────────────────────────────────────────────
+// 5. CommunityPost
+// NOTE: Model uses HasUuids — id column is UUID in live DB
+// despite $table->id() in migration. Verified by working code.
+// ──────────────────────────────────────────────
+model CommunityPost {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    BigInt   @map("user_id")
+  content   String   @db.Text
+  imageUrl  String?  @map("image_url")
+  likes     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments CommunityComment[]
+  likedBy  CommunityPostLike[]
+
+  @@map("community_posts")
+}
+
+// ──────────────────────────────────────────────
+// 6. CommunityComment
+// NOTE: Model uses HasUuids — id is UUID.
+// FK column is "post_id" (confirmed by enhance migration
+// using after('post_id') and model relations).
+// ──────────────────────────────────────────────
+model CommunityComment {
+  id        String    @id @default(uuid()) @db.Uuid
+  postId    String    @map("post_id") @db.Uuid
+  userId    BigInt    @map("user_id")
+  parentId  String?   @map("parent_id") @db.Uuid
+  content   String    @db.Text
+  imageUrl  String?   @map("image_url")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz
+
+  post    CommunityPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  CommunityComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies CommunityComment[] @relation("CommentReplies")
+
+  @@map("community_comments")
+}
+
+// ──────────────────────────────────────────────
+// 7. CommunityPostLike (pivot table)
+// ──────────────────────────────────────────────
+model CommunityPostLike {
+  id              BigInt   @id @default(autoincrement())
+  userId          BigInt   @map("user_id")
+  communityPostId String   @map("community_post_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityPostId])
+  @@map("community_post_likes")
+}
+
+// ──────────────────────────────────────────────
+// 8. StatusHistory (polymorphic — no Prisma relations)
+// trackable_type values:
+//   'App\\Models\\Donation'
+//   'App\\Models\\HairRequest'
+//   'App\\Models\\WigProduction'
+// ──────────────────────────────────────────────
+model StatusHistory {
+  id            BigInt   @id @default(autoincrement())
+  trackableType String   @map("trackable_type")
+  trackableId   BigInt   @map("trackable_id")
+  status        String
+  notes         String?  @db.Text
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Polymorphic — query manually:
+  // WHERE trackable_type = 'App\\Models\\Donation' AND trackable_id = ?
+  // No @relation possible in Prisma for polymorphic
+
+  @@index([trackableType, trackableId])
+  @@map("status_histories")
+}
+
+// ──────────────────────────────────────────────
+// 9. MonetaryDonation
+// ──────────────────────────────────────────────
+model MonetaryDonation {
+  id              BigInt   @id @default(autoincrement())
+  userId          BigInt?  @map("user_id")
+  name            String?
+  email           String?
+  amount          Decimal  @db.Decimal(10, 2)
+  currency        String   @default("PHP")
+  paymentMethod   String?  @map("payment_method")
+  referenceNumber String   @unique @map("reference_number")
+  proofPath       String?  @map("proof_path")
+  status          String   @default("Completed")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("monetary_donations")
+}
+
+// ──────────────────────────────────────────────
+// 10. Event
+// ──────────────────────────────────────────────
+model Event {
+  id                BigInt    @id @default(autoincrement())
+  title             String
+  date              DateTime? @db.Date
+  description       String?   @db.Text
+  location          String?
+  status            String    @default("Upcoming")
+  participantsCount Int       @default(0) @map("participants_count")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("events")
+}
+
+// ──────────────────────────────────────────────
+// 11. HaircareArticle
+// ──────────────────────────────────────────────
+model HaircareArticle {
+  id       BigInt   @id @default(autoincrement())
+  title    String
+  category String
+  author   String   @default("HairLink Team")
+  excerpt  String?  @db.Text
+  content  String   @db.Text
+  readTime Int      @default(5) @map("read_time")
+  image    String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("haircare_articles")
+}
+
+// ──────────────────────────────────────────────
+// 12. HaircareVideo
+// ──────────────────────────────────────────────
+model HaircareVideo {
+  id          BigInt   @id @default(autoincrement())
+  title       String
+  category    String
+  source      String   @default("youtube")
+  videoId     String   @map("video_id")
+  author      String
+  duration    String?
+  views       Int      @default(0)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("haircare_videos")
+}
+
+// ──────────────────────────────────────────────
+// 13. Partnership
+// ──────────────────────────────────────────────
+model Partnership {
+  id           BigInt   @id @default(autoincrement())
+  fullName     String   @map("full_name")
+  email        String
+  phone        String?
+  organization String?
+  message      String   @db.Text
+  status       String   @default("pending")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("partnerships")
+}

@@ -1,0 +1,168 @@
+.donate-page {
+    max-width: 920px;
+    margin-inline: auto;
+}
+
+.guidelines-box,
+.form-shell {
+    background: #fff;
+    border: 1px solid #ead7e8;
+    border-radius: 16px;
+    padding: 0.8rem;
+    box-shadow: 0 12px 26px rgba(73, 20, 52, 0.08);
+}
+
+.guidelines-box {
+    margin-top: 0.9rem;
+}
+
+.guidelines-box h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #ad246d;
+    font-size: 1.05rem;
+}
+
+.guidelines-box ul {
+    margin: 0.62rem 0 0 1rem;
+    color: #5f5268;
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+}
+
+.form-shell {
+    margin-top: 0.8rem;
+}
+
+.form-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.62rem;
+}
+
+.form-head h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.18rem;
+}
+
+.form-head i {
+    color: #cf2f84;
+    font-size: 1.2rem;
+}
+
+.form-grid {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.form-grid.two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 0.55rem;
+}
+
+.form-grid label {
+    display: grid;
+    gap: 0.35rem;
+    font-weight: 700;
+    color: #64546d;
+    font-size: 0.84rem;
+}
+
+.form-grid label span,
+.upload-row p span {
+    color: #d33f7f;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+    border: 1px solid #e6d3e4;
+    border-radius: 8px;
+    padding: 0.52rem 0.6rem;
+    font: inherit;
+    color: #2d2531;
+    background: #fff;
+}
+
+.form-grid textarea {
+    resize: vertical;
+}
+
+.checkbox-wrap {
+    align-content: end;
+}
+
+.checkbox-wrap input {
+    margin-right: 0.3rem;
+}
+
+.checkbox-wrap span {
+    color: #6b5872;
+    font-weight: 600;
+}
+
+.upload-row {
+    border-top: 1px dashed #ebd8e9;
+    border-bottom: 1px dashed #ebd8e9;
+    padding: 0.7rem 0;
+    margin: 0.55rem 0;
+}
+
+.upload-row p {
+    color: #5f5069;
+    font-weight: 700;
+    font-size: 0.88rem;
+}
+
+.upload-controls {
+    margin-top: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.upload-controls small {
+    color: #715e79;
+    font-size: 0.8rem;
+}
+
+.delivery-note {
+    margin-top: 0.65rem;
+    padding: 0.62rem;
+    border-radius: 10px;
+    background: #fdf7fc;
+    border: 1px solid #f0dced;
+}
+
+.delivery-note h3 {
+    margin-bottom: 0.3rem;
+    color: #ad246d;
+    font-size: 0.98rem;
+}
+
+.delivery-note p {
+    color: #67596f;
+    font-size: 0.88rem;
+}
+
+.submit-wrap {
+    margin-top: 0.75rem;
+    display: flex;
+    justify-content: center;
+}
+
+.submit-wrap .soft-btn {
+    min-width: 220px;
+}
+
+@media (max-width: 900px) {
+    .form-grid.two-col {
+        grid-template-columns: 1fr;
+    }
+}
+

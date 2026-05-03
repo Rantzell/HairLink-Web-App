@@ -1,0 +1,132 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import apiClient from '../api/client';
+import StatusPill from '../components/StatusPill';
+import type { Donation, StatusHistory } from '../types';
+
+const DonorTrackingDetail: React.FC = () => {
+  const { reference } = useParams<{ reference: string }>();
+  const [donation, setDonation] = useState<Donation | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDetail = async () => {
+      try {
+        const res = await apiClient.get(`/internal-api/donations/${reference}`);
+        setDonation(res.data);
+      } catch (err) {
+        console.error('Failed to fetch donation detail', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [reference]);
+
+  if (loading) return <div className="section-wrap">Loading...</div>;
+  if (!donation) return <div className="section-wrap">Donation not found.</div>;
+
+  return (
+    <section className="section-wrap donor-module-page reveal active">
+      <header className="module-head">
+        <h1>Donation Tracking Detail</h1>
+        <p>Reference: <strong>{donation.reference}</strong></p>
+        <div className="action-row">
+          <Link className="ghost-btn" to="/donor/tracking">Back to Tracking List</Link>
+        </div>
+      </header>
+
+      <div className="summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.8rem', marginBottom: '1rem' }}>
+        <div className="summary-item" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '12px', padding: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ background: '#fdf2f8', width: '40px', height: '40px', borderRadius: '50%', display: 'grid', placeItems: 'center' }}>
+            <i className='bx bx-hash' style={{ color: '#ad246d', fontSize: '1.2rem' }}></i>
+          </div>
+          <div>
+            <small style={{ display: 'block', color: '#8c7895', fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 800 }}>Reference</small>
+            <strong style={{ color: '#3b2e43', fontSize: '0.85rem' }}>{donation.reference}</strong>
+          </div>
+        </div>
+        <div className="summary-item" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '12px', padding: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ background: '#fdf2f8', width: '40px', height: '40px', borderRadius: '50%', display: 'grid', placeItems: 'center' }}>
+            <i className='bx bx-info-circle' style={{ color: '#ad246d', fontSize: '1.2rem' }}></i>
+          </div>
+          <div>
+            <small style={{ display: 'block', color: '#8c7895', fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 800 }}>Status</small>
+            <div style={{ marginTop: '0.2rem' }}><StatusPill status={donation.status} /></div>
+          </div>
+        </div>
+        <div className="summary-item" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '12px', padding: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ background: '#fdf2f8', width: '40px', height: '40px', borderRadius: '50%', display: 'grid', placeItems: 'center' }}>
+            <i className='bx bx-calendar' style={{ color: '#ad246d', fontSize: '1.2rem' }}></i>
+          </div>
+          <div>
+            <small style={{ display: 'block', color: '#8c7895', fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 800 }}>Submitted</small>
+            <strong style={{ color: '#3b2e43', fontSize: '0.85rem' }}>{new Date(donation.createdAt).toLocaleDateString()}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="detail-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '1rem', alignItems: 'start' }}>
+        <div className="module-card" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <i className='bx bx-git-commit' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
+            <h3 style={{ margin: 0 }}>Donation Roadmap</h3>
+          </div>
+          <ul className="timeline" style={{ paddingLeft: '0.5rem', listStyle: 'none' }}>
+            {donation.statusHistories?.map((history, i) => (
+              <li key={i} className="timeline-item" style={{ borderLeft: '2px solid #f2ebf4', paddingLeft: '1.5rem', paddingBottom: '1.25rem', position: 'relative' }}>
+                <div style={{ position: 'absolute', left: '-7px', top: 0, width: '12px', height: '12px', background: '#ad246d', borderRadius: '50%', border: '2px solid #fff' }}></div>
+                <div className="timeline-meta" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                  <strong style={{ fontSize: '0.9rem', color: '#ad246d' }}>{history.status}</strong>
+                  <time style={{ fontSize: '0.75rem', color: '#8c7895' }}>{new Date(history.createdAt).toLocaleString()}</time>
+                </div>
+                <div className="timeline-desc" style={{ background: '#fdf7fb', padding: '0.6rem 0.8rem', borderRadius: '8px', border: '1px solid #f2ebf4', fontSize: '0.85rem', color: '#4d3f56' }}>
+                  {history.notes || `Status changed to ${history.status}`}
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="action-row" style={{ marginTop: '1rem', borderTop: '1px dashed #f2ebf4', paddingTop: '1rem' }}>
+            {['Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].includes(donation.status) && (
+              <Link className="soft-btn" to="/donor/certificate" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'fit-content', padding: '0.6rem 1.5rem', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', border: 'none' }}>
+                <i className='bx bx-award'></i> Download Certificate
+              </Link>
+            )}
+          </div>
+        </div>
+
+        <div className="side-box" style={{ display: 'grid', gap: '1rem' }}>
+          <div style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <i className='bx bx-cut' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
+              <h3 style={{ margin: 0 }}>Hair Info</h3>
+            </div>
+            <div style={{ display: 'grid', gap: '0.4rem', fontSize: '0.88rem' }}>
+              <p style={{ margin: 0 }}><strong>Length:</strong> {donation.hairLength}</p>
+              <p style={{ margin: 0, marginBottom: '0.5rem' }}><strong>Color:</strong> {donation.hairColor}</p>
+              <div style={{ background: '#fdf7fb', padding: '0.5rem', borderRadius: '8px', border: '1px solid #f2ebf4', fontSize: '0.82rem', fontStyle: 'italic', color: '#665772' }}>
+                "{donation.reason || 'No reason provided'}"
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1rem', textAlign: 'center' }}>
+            <small style={{ display: 'block', marginBottom: '0.5rem', color: '#ad246d', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>Donation Reference Photo</small>
+            <div id="photoPreview" style={{ width: '200px', height: '200px', margin: '0 auto', borderRadius: '12px', overflow: 'hidden', background: '#fff5fa', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.05)', border: '1px solid #ead7e8' }}>
+              {donation.photoFront ? (
+                <a href={donation.photoFront} target="_blank" rel="noreferrer" style={{ width: '100%', height: '100%', display: 'block' }}>
+                  <img src={donation.photoFront} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Donation" />
+                </a>
+              ) : (
+                <i className='bx bx-image' style={{ fontSize: '3rem', color: '#ead7e8' }}></i>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default DonorTrackingDetail;
