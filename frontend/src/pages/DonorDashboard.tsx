@@ -90,69 +90,61 @@ const DonorDashboard: React.FC = () => {
       </article>
 
       <section className="quick-actions">
-        <div className="referral-box">
-          <label htmlFor="referralCode">Referral Code</label>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="referral-box-wrap">
+          <div className="referral-box">
+            <label htmlFor="referralCode">Referral Code</label>
             <input 
               id="referralCode" 
               type="text" 
               placeholder="Enter code here" 
-              style={{ flex: 1 }}
               value={referralCode}
               onChange={e => setReferralCode(e.target.value)}
               disabled={referralStatus !== 'idle'}
             />
             <button 
+              className="submit-code-btn" 
               type="button" 
-              className="demo-fill-btn" 
-              onClick={() => setReferralCode('HL-GALA-2026')}
-              style={{ marginTop: 0, padding: '0.5rem 0.8rem' }}
-            >Demo Fill</button>
-            <button 
-              className="soft-btn" 
-              type="button" 
-              style={{ marginTop: 0 }}
               onClick={handleReferralSubmit}
               disabled={referralStatus !== 'idle'}
             >
-              {referralStatus === 'submitting' ? 'Verifying...' : referralStatus === 'success' ? '✓ Code Applied' : 'Submit Code'}
+              {referralStatus === 'submitting' ? '...' : 'Submit Code'}
             </button>
           </div>
         </div>
 
         <div className="action-buttons">
-          <Link className="ghost-btn" to="/donor/tracking">
-            <i className='bx bx-map-pin'></i> Track Donations
+          <Link className="action-item-btn" to="/donor/tracking">
+            <i className='bx bx-home-alt'></i> Track Donations
           </Link>
-          <Link className="ghost-btn" to="/donor/certificate">
-            <i className='bx bx-award'></i> My Certificate
+          <Link className="action-item-btn" to="/donor/certificate">
+            <i className='bx bx-book-content'></i> My Certificate
           </Link>
-          <Link className="ghost-btn" to="/community">
+          <Link className="action-item-btn" to="/donor/community">
             <i className='bx bx-group'></i> Community Support
           </Link>
-          <Link className="ghost-btn" to="/donor/profile">
+          <Link className="action-item-btn" to="/donor/profile">
             <i className='bx bx-user'></i> My Profile
           </Link>
         </div>
       </section>
 
-      <section className="rewards-shell reveal active">
+      <section className="rewards-shell">
         <div className="rewards-head">
           <h2>Claimable Actions</h2>
-          <i className='bx bxs-badge-check'></i>
+          <i className='bx bxs-check-circle' style={{ color: '#bc2f79' }}></i>
         </div>
 
         <div className="reward-grid">
           <article className="reward-card">
             <h3>Donate Hair</h3>
             <p>Give confidence to someone in need by donating your hair.</p>
-            <Link className="soft-btn" to="/donor/donate">Donate Hair</Link>
+            <Link className="action-filled-btn" to="/donor/donate">Donate Hair</Link>
           </article>
 
           <article className="reward-card">
             <h3>Monetary Donation</h3>
             <p>Support the cause by making a financial contribution to HairLink.</p>
-            <Link className="soft-btn" to="/donate-monetary">Support Now</Link>
+            <Link className="action-filled-btn" to="/donor/monetary">Support Now</Link>
           </article>
         </div>
       </section>

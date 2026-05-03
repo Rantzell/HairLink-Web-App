@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
 
@@ -83,163 +83,161 @@ const RecipientRequest: React.FC = () => {
   };
 
   return (
-    <div className="section-wrap recipient-request-page reveal active">
+    <section className="section-wrap donate-page reveal active">
       <div className="section-title-block center">
         <h1>Request Hair</h1>
         <p>Let's boost your confidence. Request hair to support your journey of comfort and self-expression.</p>
       </div>
 
-      <div className="request-guidelines">
-        <div className="guidelines-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#ad246d' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path></svg>
-          <h3 style={{ margin: 0 }}>Request Guidelines</h3>
-        </div>
-        <div className="guidelines-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-          <div>
-            <h4 style={{ color: '#3b2e43', marginBottom: '0.5rem' }}>Prepare the following:</h4>
-            <ul style={{ color: '#5d4d62' }}>
-              <li>Your story/journey</li>
-              <li>Related documents</li>
-              <li>Any photo of yourself</li>
-            </ul>
-          </div>
-          <div>
-            <h4 style={{ color: '#3b2e43', marginBottom: '0.5rem' }}>Important:</h4>
-            <ul style={{ color: '#5d4d62' }}>
-              <li>Wait for us to coordinate details</li>
-              <li>Fill up the wig request form</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+      <article className="guidelines-box">
+        <h2><i className='bx bxs-info-circle'></i> Request Guidelines</h2>
+        <ul>
+          <li>Gather your medical documents (if applicable).</li>
+          <li>Prepare your hair loss story and journey.</li>
+          <li>Prepare photos of yourself for reference.</li>
+          <li>Be ready to fill up the request form.</li>
+        </ul>
+      </article>
 
-      <form className="request-form" onSubmit={handleSubmit}>
-        <div className="form-section">
-          <div className="section-header" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #ead7e8', paddingBottom: '0.75rem' }}>
-            <i className='bx bx-user-circle' style={{ fontSize: '1.5rem', color: '#ad246d' }}></i>
-            <h3 style={{ margin: 0 }}>Request Details</h3>
+      <article className="form-shell">
+        <form onSubmit={handleSubmit}>
+          <div className="form-head">
+            <h2>Request Details</h2>
+            <i className='bx bxs-user-circle'></i>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Full Name <span className="required">*</span></label>
+          <div className="form-grid two-col">
+            <label>
+              Full Name <span>*</span>
               <input type="text" value={user?.firstName ? `${user.firstName} ${user.lastName}` : (user?.name || '')} readOnly style={{ background: '#f5f3f7', cursor: 'not-allowed' }} />
-            </div>
-            <div className="form-group">
-              <label>Contact Number <span className="required">*</span></label>
+            </label>
+            <label>
+              Contact Number <span>*</span>
               <input type="tel" value={user?.phone || ''} readOnly style={{ background: '#f5f3f7', cursor: 'not-allowed' }} />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>Gender <span className="required">*</span></label>
-              <select value={user?.gender || ''} readOnly style={{ background: '#f5f3f7', cursor: 'not-allowed' }}>
+            </label>
+            <label>
+              Gender <span>*</span>
+              <select value={user?.gender || ''} disabled style={{ background: '#f5f3f7', cursor: 'not-allowed' }}>
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
                 <option value="nonbinary">Non-binary</option>
                 <option value="prefer_not_say">Prefer not to say</option>
               </select>
-            </div>
-            <div className="form-group">
-              <label>Email Address <span className="required">*</span></label>
+            </label>
+            <label>
+              Email Address <span>*</span>
               <input type="email" value={user?.email || ''} readOnly style={{ background: '#f5f3f7', cursor: 'not-allowed' }} />
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <div className="section-header" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #ead7e8', paddingBottom: '0.75rem' }}>
-            <i className='bx bx-book-heart' style={{ fontSize: '1.5rem', color: '#ad246d' }}></i>
-            <h3 style={{ margin: 0 }}>Your Journey</h3>
+            </label>
           </div>
 
-          <div className="form-group">
-            <label>Please share with us your story/journey <span className="required">*</span></label>
-            <textarea 
-              placeholder="Tell us your story..." 
-              value={formData.story} 
-              onChange={e => setFormData({...formData, story: e.target.value})}
-              required
-            ></textarea>
+          <div className="form-head">
+            <h2>Your Journey</h2>
+            <i className='bx bxs-book-heart'></i>
           </div>
 
-          <div className="form-group">
-            <label>Upload supporting document/s here <span className="required">*</span></label>
-            <div className="file-upload">
-              <input ref={docsInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" hidden onChange={handleDocsChange} />
-              <button type="button" className="file-label" onClick={() => docsInputRef.current?.click()}>
-                <i className='bx bx-upload'></i> Add Files
-              </button>
-              <div className="file-list">
+          <div className="form-grid">
+            <label>
+              Please share with us your story/journey <span>*</span>
+              <textarea 
+                placeholder="Tell us your story..." 
+                rows={5}
+                value={formData.story} 
+                onChange={e => setFormData({...formData, story: e.target.value})}
+                required
+              ></textarea>
+            </label>
+          </div>
+
+          <div className="form-grid two-col" style={{ gap: '1.5rem' }}>
+            {/* Ultra-Compact Multi-File Upload */}
+            <div className="upload-section-mini">
+              <label className="upload-label-main">Supporting Documents <span>*</span></label>
+              <div 
+                className={`upload-box-mini ${documents.length > 0 ? 'has-content' : ''}`}
+                onClick={() => docsInputRef.current?.click()}
+              >
+                <input ref={docsInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" hidden onChange={handleDocsChange} />
+                <div className="upload-mini-content">
+                  <i className='bx bx-file-blank'></i>
+                  <span>{documents.length > 0 ? `${documents.length} files added` : 'Upload medical files'}</span>
+                  <button type="button" className="mini-add-btn"><i className='bx bx-plus'></i></button>
+                </div>
+              </div>
+              <div className="mini-file-list">
                 {documents.map((doc, i) => (
-                  <div key={i} className="file-item">
-                    <span>{doc.name} ({(doc.size / 1024 / 1024).toFixed(2)} MB)</span>
-                    <button type="button" onClick={() => removeDoc(i)}>Remove</button>
+                  <div key={i} className="mini-file-tag">
+                    <span title={doc.name}>{doc.name}</span>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); removeDoc(i); }}>×</button>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
 
-          <div className="form-group">
-            <label>Additional Picture for reference <span className="required">*</span></label>
-            <div className="file-upload">
-              <input ref={photoInputRef} type="file" accept=".jpg,.jpeg,.png,.gif,.webp" hidden onChange={handlePhotoChange} />
-              <button type="button" className="file-label" onClick={() => photoInputRef.current?.click()}>
-                <i className='bx bx-image-add'></i> Add Photo
-              </button>
-              {additionalPhoto && (
-                <div className="file-list">
-                  <div className="file-item">
-                    <span>{additionalPhoto.name} ({(additionalPhoto.size / 1024 / 1024).toFixed(2)} MB)</span>
-                    <button type="button" onClick={() => setAdditionalPhoto(null)}>Remove</button>
+            {/* Ultra-Compact Single Photo Upload */}
+            <div className="upload-section-mini">
+              <label className="upload-label-main">Reference Picture <span>*</span></label>
+              <div 
+                className={`upload-box-mini ${additionalPhoto ? 'has-content' : ''}`}
+                onClick={() => photoInputRef.current?.click()}
+              >
+                <input ref={photoInputRef} type="file" accept=".jpg,.jpeg,.png,.gif,.webp" hidden onChange={handlePhotoChange} />
+                {!additionalPhoto ? (
+                  <div className="upload-mini-content">
+                    <i className='bx bx-image-add'></i>
+                    <span>Upload reference photo</span>
+                    <button type="button" className="mini-add-btn"><i className='bx bx-plus'></i></button>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="upload-mini-success" onClick={e => e.stopPropagation()}>
+                    <div className="mini-preview">
+                      <img src={URL.createObjectURL(additionalPhoto)} alt="Preview" />
+                    </div>
+                    <div className="mini-details">
+                      <strong>{additionalPhoto.name}</strong>
+                      <button type="button" onClick={() => setAdditionalPhoto(null)}>Change</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="form-section">
-          <div className="section-header" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #ead7e8', paddingBottom: '0.75rem' }}>
-            <i className='bx bx-palette' style={{ fontSize: '1.5rem', color: '#ad246d' }}></i>
-            <h3 style={{ margin: 0 }}>Wig Preferences</h3>
+          <div className="form-head">
+            <h2>Wig Preferences</h2>
+            <i className='bx bxs-palette'></i>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Preferred Wig Length <span className="required">*</span></label>
+          <div className="form-grid two-col">
+            <label>
+              Preferred Wig Length <span>*</span>
               <select value={formData.wigLength} onChange={e => setFormData({...formData, wigLength: e.target.value})} required>
                 <option value="">Select Wig Length</option>
-                <option value="short">Short</option>
-                <option value="medium">Medium</option>
-                <option value="long">Long</option>
+                <option value="short">Short (10-14 inches)</option>
+                <option value="medium">Medium (15-20 inches)</option>
+                <option value="long">Long (More than 20 inches)</option>
               </select>
-            </div>
-            <div className="form-group">
-              <label>Preferred Hair Color <span className="required">*</span></label>
+            </label>
+            <label>
+              Preferred Hair Color <span>*</span>
               <select value={formData.wigColor} onChange={e => setFormData({...formData, wigColor: e.target.value})} required>
                 <option value="">Select Hair Color</option>
                 <option value="black">Black</option>
-                <option value="dark-brown">Dark Brown</option>
-                <option value="light-brown">Light Brown</option>
-                <option value="blonde">Blonde</option>
-                <option value="auburn">Auburn / Red</option>
-                <option value="gray">Gray / White</option>
-                <option value="no-preference">No Preference</option>
+                <option value="brown">Brown</option>
+                <option value="light">Light</option>
+                <option value="other">Other</option>
               </select>
-            </div>
+            </label>
           </div>
-        </div>
 
-        <div className="form-actions" style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-          <button type="submit" className="soft-btn" disabled={isSubmitting}>{isSubmitting ? 'Submitting...' : 'Submit Request'}</button>
-          <Link to="/recipient/dashboard" className="ghost-btn">Cancel</Link>
-        </div>
-      </form>
-    </div>
+          <div className="submit-wrap">
+            <button className="soft-btn" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Submitting...' : 'Submit Request'}
+            </button>
+          </div>
+        </form>
+      </article>
+    </section>
   );
 };
 

@@ -53,8 +53,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <Link to="/donor/dashboard" className={isActive('/donor/dashboard') ? 'active' : ''}>Overview</Link>
                 <Link to="/donor/donate" className={isActive('/donor/donate') ? 'active' : ''}>Donate Hair</Link>
                 <Link to="/donor/tracking" className={isActive('/donor/tracking') ? 'active' : ''}>Tracking</Link>
-                <Link to="/donor/certificate" className={isActive('/donor/certificate') ? 'active' : ''}>Certificate</Link>
-                <Link to="/donor/profile" className={isActive('/donor/profile') ? 'active' : ''}>Profile</Link>
+                 <Link to="/donor/certificate" className={isActive('/donor/certificate') ? 'active' : ''}>Certificate</Link>
+                 <Link to="/donor/profile" className={isActive('/donor/profile') ? 'active' : ''}>Profile</Link>
               </>
             )}
 
@@ -62,8 +62,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <>
                 <Link to="/recipient/dashboard" className={isActive('/recipient/dashboard') ? 'active' : ''}>Overview</Link>
                 <Link to="/recipient/request" className={isActive('/recipient/request') ? 'active' : ''}>Request Hair</Link>
-                <Link to="/recipient/tracking" className={isActive('/recipient/tracking') ? 'active' : ''}>Tracking</Link>
-                <Link to="/recipient/profile" className={isActive('/recipient/profile') ? 'active' : ''}>Profile</Link>
+                 <Link to="/recipient/tracking" className={isActive('/recipient/tracking') ? 'active' : ''}>Tracking</Link>
+                 <Link to="/recipient/profile" className={isActive('/recipient/profile') ? 'active' : ''}>Profile</Link>
               </>
             )}
 

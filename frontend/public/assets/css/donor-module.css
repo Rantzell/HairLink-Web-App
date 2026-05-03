@@ -10,9 +10,9 @@
 .module-head {
     background: #fff;
     border: 1px solid #ead7e8;
-    border-radius: 16px;
-    padding: 0.8rem;
-    box-shadow: 0 12px 26px rgba(73, 20, 52, 0.08);
+    border-radius: 20px;
+    padding: 1.2rem;
+    box-shadow: 0 10px 25px rgba(73, 20, 52, 0.04);
 }
 
 .module-head h1 {
@@ -30,9 +30,9 @@
 .module-card {
     background: #fff;
     border: 1px solid #ead7e8;
-    border-radius: 16px;
-    padding: 1.25rem;
-    box-shadow: 0 12px 26px rgba(73, 20, 52, 0.08);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px rgba(73, 20, 52, 0.04);
 }
 
 .summary-grid {
@@ -118,10 +118,19 @@
 
 .tracking-tools input {
     border: 1px solid #e7d5e5;
-    border-radius: 8px;
-    padding: 0.52rem 0.62rem;
-    width: min(360px, 80vw);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    width: min(400px, 80vw);
     font: inherit;
+    background: #fafafa;
+    transition: all 0.2s ease;
+}
+
+.tracking-tools input:focus {
+    outline: none;
+    border-color: #bc2f79;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(188, 47, 121, 0.05);
 }
 
 .table-wrap {
@@ -489,3 +498,355 @@
 
 .donor-module-page { max-width: 1200px !important; margin-inline: auto; }
 .module-card { margin-bottom: 0.5rem !important; }
+
+/* Premium Upload Styles (Compact Version) */
+.upload-section-premium {
+    margin: 1.5rem 0;
+}
+
+.upload-label-main {
+    display: block;
+    font-weight: 800;
+    color: #4a3452;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.upload-box-premium {
+    border: 2px dashed #ead7e8;
+    border-radius: 20px;
+    padding: 2rem 1.5rem;
+    background: linear-gradient(135deg, #fdfafd 0%, #fff 100%);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    text-align: center;
+    overflow: hidden;
+}
+
+.upload-box-premium:hover, .upload-box-premium.on-drag {
+    border-color: #cf2f84;
+    background: #fff3fa;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(207, 47, 132, 0.06);
+}
+
+.upload-init-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.icon-sphere {
+    width: 56px;
+    height: 56px;
+    background: #fff;
+    border: 1.5px solid #f2eef2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ad246d;
+    font-size: 1.6rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+}
+
+.upload-box-premium:hover .icon-sphere {
+    transform: scale(1.05) rotate(-5deg);
+    border-color: #cf2f84;
+    background: #cf2f84;
+    color: #fff;
+}
+
+.upload-instructions h3 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #3b2e43;
+    margin-bottom: 0.25rem;
+}
+
+.upload-instructions p {
+    color: #8c7d91;
+    font-weight: 500;
+    font-size: 0.88rem;
+}
+
+.file-types {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.3rem 0.8rem;
+    background: #fdf2f8;
+    color: #ad246d;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+/* Success State */
+.upload-success-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    animation: slideUp 0.4s ease forwards;
+}
+
+.preview-bubble {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 3px solid #fff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+    transform: rotate(-3deg);
+}
+
+.preview-bubble img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.success-details {
+    text-align: left;
+}
+
+.file-main-info {
+    margin-bottom: 0.75rem;
+}
+
+.file-main-info strong {
+    display: block;
+    font-size: 1rem;
+    color: #3b2e43;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-main-info span {
+    font-size: 0.8rem;
+    color: #8c7d91;
+    font-weight: 600;
+}
+
+.change-file-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #f5f3f7;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #4a3452;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.change-file-btn:hover {
+    background: #ead7e8;
+    color: #ad246d;
+}
+
+.success-mark {
+    font-size: 2.2rem;
+    color: #10b981;
+    filter: drop-shadow(0 4px 8px rgba(16, 185, 129, 0.2));
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+    .upload-success-state {
+        flex-direction: column;
+        gap: 1.2rem;
+        text-align: center;
+    }
+    .success-details {
+        text-align: center;
+    }
+    .success-mark {
+        display: none;
+    }
+}
+
+/* Ultra-Compact Premium Action Bars */
+.upload-section-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    width: 100%;
+}
+
+.upload-box-mini {
+    border: 2px dashed #ead7e8;
+    border-radius: 16px;
+    padding: 0.8rem 1.2rem;
+    background: #fdfafd;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center the content */
+    width: 100%;
+}
+
+.upload-box-mini:hover {
+    border-color: #cf2f84;
+    background: #fff3fa;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(207, 47, 132, 0.06);
+}
+
+.upload-mini-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.upload-mini-content i {
+    font-size: 1.6rem;
+    color: #ad246d;
+    background: #fff;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid #f2eef2;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+}
+
+.upload-mini-content span {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #4a3452;
+}
+
+.mini-add-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: #fdf2f8;
+    color: #ad246d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.upload-box-mini:hover .mini-add-btn {
+    background: #cf2f84;
+    color: #fff;
+}
+
+/* Success State for Mini Upload */
+.upload-mini-success {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    animation: fadeInCompact 0.3s ease;
+}
+
+.mini-preview {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.mini-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mini-details {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.mini-details strong {
+    font-size: 0.85rem;
+    color: #3b2e43;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-details button {
+    background: none;
+    border: none;
+    color: #ad246d;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    margin-top: 0.1rem;
+}
+
+.mini-file-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.mini-file-tag {
+    background: #fff;
+    border: 1px solid #ead7e8;
+    padding: 0.4rem 0.75rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #4a3452;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.mini-file-tag button {
+    background: #fdf2f8;
+    color: #ad246d;
+    border: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.mini-file-tag button:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
+@keyframes fadeInCompact {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}

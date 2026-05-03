@@ -17,6 +17,8 @@ import RecipientDashboard from './pages/RecipientDashboard';
 import RecipientRequest from './pages/RecipientRequest';
 import RecipientTracking from './pages/RecipientTracking';
 import RecipientTrackingDetail from './pages/RecipientTrackingDetail';
+import MonetaryDonation from './pages/MonetaryDonation';
+import HairCareHub from './pages/HairCareHub';
 
 import StaffDashboard from './pages/StaffDashboard';
 import StaffVerificationList from './pages/StaffVerificationList';
@@ -57,9 +59,10 @@ function App() {
                   <Route path="donate" element={<DonorDonate />} />
                   <Route path="tracking" element={<DonorTracking />} />
                   <Route path="tracking/:reference" element={<DonorTrackingDetail />} />
-                  <Route path="certificate" element={<DonorCertificate />} />
-                  <Route path="profile" element={<DonorProfile />} />
-                  <Route path="community" element={<CommunityFeed />} />
+                   <Route path="certificate" element={<DonorCertificate />} />
+                   <Route path="profile" element={<DonorProfile />} />
+                   <Route path="monetary" element={<MonetaryDonation />} />
+                   <Route path="community" element={<CommunityFeed />} />
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>
               </DashboardLayout>
@@ -75,8 +78,10 @@ function App() {
                   <Route path="request" element={<RecipientRequest />} />
                   <Route path="tracking" element={<RecipientTracking />} />
                   <Route path="tracking/:reference" element={<RecipientTrackingDetail />} />
-                  <Route path="profile" element={<DonorProfile />} /> {/* Recipient uses same profile UI */}
-                  <Route path="community" element={<CommunityFeed />} />
+                   <Route path="profile" element={<DonorProfile />} /> {/* Recipient uses same profile UI */}
+                   <Route path="monetary" element={<MonetaryDonation />} />
+                   <Route path="community" element={<CommunityFeed />} />
+                   <Route path="haircare" element={<HairCareHub />} />
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>
               </DashboardLayout>

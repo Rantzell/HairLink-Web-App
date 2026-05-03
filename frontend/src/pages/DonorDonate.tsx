@@ -178,9 +178,26 @@ const DonorDonate: React.FC = () => {
             </label>
           </div>
 
-          <div className="upload-row">
-            <p>Upload a clear picture of the hair (max 10MB) <span>*</span></p>
-            <div className="upload-controls">
+          <div className="upload-section-premium">
+            <label className="upload-label-main">Upload a clear picture of the hair (max 10MB) <span>*</span></label>
+            <div 
+              className={`upload-box-premium ${file ? 'file-active' : ''}`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('on-drag'); }}
+              onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('on-drag'); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('on-drag');
+                const droppedFile = e.dataTransfer.files?.[0];
+                if (droppedFile) {
+                  if (droppedFile.size > 10 * 1024 * 1024) {
+                    alert('File is too large. Please upload an image up to 10MB.');
+                    return;
+                  }
+                  setFile(droppedFile);
+                }
+              }}
+            >
               <input 
                 ref={fileInputRef}
                 type="file" 
@@ -188,12 +205,41 @@ const DonorDonate: React.FC = () => {
                 hidden 
                 onChange={handleFileChange}
               />
-              <button 
-                className="ghost-btn" 
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-              >Add File</button>
-              <small>{file ? file.name : 'No file selected'}</small>
+              
+              {!file ? (
+                <div className="upload-init-state">
+                  <div className="icon-sphere">
+                    <i className='bx bx-camera'></i>
+                  </div>
+                  <div className="upload-instructions">
+                    <h3>Click to upload photo</h3>
+                    <p>or drag and drop your image here</p>
+                    <span className="file-types">Supported: PNG, JPG, JPEG</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="upload-success-state" onClick={e => e.stopPropagation()}>
+                  <div className="preview-bubble">
+                    <img src={URL.createObjectURL(file)} alt="Hair Preview" />
+                  </div>
+                  <div className="success-details">
+                    <div className="file-main-info">
+                      <strong>{file.name}</strong>
+                      <span>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                    </div>
+                    <button 
+                      type="button" 
+                      className="change-file-btn"
+                      onClick={() => setFile(null)}
+                    >
+                      <i className='bx bx-refresh'></i> Change Photo
+                    </button>
+                  </div>
+                  <div className="success-mark">
+                    <i className='bx bxs-check-circle'></i>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

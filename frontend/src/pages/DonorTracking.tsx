@@ -41,7 +41,7 @@ const DonorTracking: React.FC = () => {
             value={filter}
             onChange={e => setFilter(e.target.value)}
           />
-          <Link className="soft-btn" to="/donor/donate">Submit Another Donation</Link>
+          <Link className="submit-code-btn" to="/donor/donate" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>Submit Another Donation</Link>
         </div>
       </header>
 

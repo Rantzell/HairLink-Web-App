@@ -3,9 +3,9 @@
     --ink: #17151b;
     --muted: #4f4a56;
     --line: #ea91bb;
-    --pink: #e66da9;
-    --pink-strong: #ce3d88;
-    --container: min(980px, 100%);
+    --pink: #ad246d;
+    --pink-strong: #cf2f84;
+    --container: min(1200px, 94vw);
 }
 
 * {
@@ -41,7 +41,7 @@ img {
 
 .navbar {
     width: var(--container);
-    min-height: 4rem;
+    min-height: 5rem;
     display: flex;
     align-items: center;
     padding-inline: clamp(12px, 2.2vw, 28px);
@@ -114,30 +114,43 @@ img {
 
 .btn {
     border: 0;
-    border-radius: 0.45rem;
-    font-weight: 700;
+    border-radius: 12px;
+    font-weight: 800;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 180ms ease, opacity 180ms ease;
-    padding: 0.42rem 1rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0.65rem 1.5rem;
+    font-size: 0.88rem;
+    letter-spacing: -0.1px;
 }
 
 .btn:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(173, 36, 109, 0.2);
+}
+
+.btn:active {
+    transform: translateY(0);
 }
 
 .btn-primary {
-    background: linear-gradient(180deg, #d8388a, #b82172);
+    background: linear-gradient(135deg, #ad246d, #cf2f84);
     color: #fff;
-    box-shadow: 0 3px 0 #7c2b57;
+    box-shadow: 0 4px 12px rgba(173, 36, 109, 0.15);
 }
 
 .btn-outline {
     background: #fff;
-    border: 1px solid #e5e5e8;
-    color: #34313c;
+    border: 2px solid #ead7e8;
+    color: #4a3452;
+}
+
+.btn-outline:hover {
+    background: #fff0f8;
+    border-color: #ad246d;
+    color: #ad246d;
 }
 
 .hero {
@@ -155,7 +168,7 @@ img {
 
 .hero-inner {
     text-align: center;
-    padding: 0.9rem 0.9rem 1.6rem;
+    padding: 3rem 1.5rem 4rem;
 }
 
 .hero-logo-wrap {
@@ -200,6 +213,13 @@ img {
     border-radius: 999px;
     box-shadow: 0 4px 0 #7c2b57;
     position: relative;
+    background: linear-gradient(180deg, #d8388a, #b82172);
+    color: #fff;
+}
+
+.hero-actions .btn:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
 }
 
 .hero-actions .btn::before {
@@ -264,37 +284,40 @@ img {
 }
 
 .service-card {
-    min-height: 190px;
-    border: 2px solid var(--line);
-    border-radius: 1.05rem;
+    min-height: 220px;
+    border: 1px solid #ead7e8;
+    border-radius: 20px;
     background: #fff;
     text-align: center;
-    padding: 1rem 0.9rem 0.9rem;
-    box-shadow: 0 8px 0 rgba(214, 89, 148, 0.9);
+    padding: 2rem 1.5rem;
+    box-shadow: 0 10px 25px rgba(73, 20, 52, 0.04);
     display: flex;
     flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(73, 20, 52, 0.08);
 }
 
 .service-card h3 {
-    font-size: clamp(1.15rem, 1.8vw, 1.6rem);
-    line-height: 1.03;
-    font-weight: 900;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #4a3452;
 }
 
 .service-card p {
-    margin-top: 0.45rem;
-    font-size: clamp(0.82rem, 1vw, 0.92rem);
-    color: #25212d;
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
+    color: #665772;
+    line-height: 1.5;
 }
 
 .service-card .btn {
-    margin: auto auto 0;
-    min-width: 140px;
-    padding: 0.38rem 1.1rem;
-    border-radius: 999px;
-    background: linear-gradient(180deg, #ed7ab3, #d44f96);
-    color: #fff;
-    box-shadow: 0 4px 0 #7c2b57;
+    margin-top: auto;
+    width: 100%;
 }
 
 .event-panel {
@@ -308,10 +331,10 @@ img {
 
 .event-top {
     background: linear-gradient(0deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('../images/landing/event.png') center/cover no-repeat;
-    min-height: 190px;
-    padding: 1rem 0.85rem;
+    min-height: 240px;
+    padding: 2.5rem 1.5rem;
     text-align: center;
-    border-radius: 0.8rem 0.8rem 0 0;
+    border-radius: 20px 20px 0 0;
 }
 
 .event-meta {
@@ -328,8 +351,9 @@ img {
 }
 
 .event-top .btn {
-    margin-top: 0.5rem;
-    padding: 0.42rem 1.2rem;
+    margin: 1.5rem auto 0;
+    padding: 0.6rem 2rem;
+    width: fit-content;
 }
 
 .event-bottom {
@@ -339,7 +363,8 @@ img {
     grid-template-columns: 1fr 2fr;
     align-items: center;
     gap: 1rem;
-    padding: 0.75rem;
+    padding: 1.5rem;
+    border-radius: 0 0 20px 20px;
 }
 
 .event-starts h4 {
@@ -488,8 +513,9 @@ img {
 
 .contact-card {
     background: #fff;
-    padding: 0.8rem 0.65rem 0;
-    border-radius: 0.2rem;
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(73, 20, 52, 0.04);
 }
 
 .section-heading-left {
@@ -534,17 +560,18 @@ img {
 }
 
 .contact-form .btn {
-    margin: 0 auto;
-    border-radius: 0.55rem;
-    min-width: 120px;
-    padding: 0.55rem 1rem;
+    margin: 1rem auto 0;
+    min-width: 180px;
+    padding: 0.8rem 2.5rem;
+    border-radius: 12px;
+    width: fit-content;
 }
 
 .site-footer {
-    margin-top: 0.8rem;
-    background: #e2a6c8;
-    border-radius: 1.2rem 1.2rem 0 0;
-    padding: 0.95rem 0;
+    margin-top: 3rem;
+    background: #fdf7fb;
+    border-top: 1px solid #ead7e8;
+    padding: 3rem 0;
 }
 
 .footer-main {

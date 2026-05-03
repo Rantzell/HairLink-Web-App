@@ -5,15 +5,18 @@ import apiClient from '../api/client';
 
 const RecipientDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [activeCount, setActiveCount] = useState(0);
+  const [points, setPoints] = useState(0);
+  const [referralCode, setReferralCode] = useState('');
+  const [referralStatus, setReferralStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+  const goal = 100;
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const res = await apiClient.get('/internal-api/requests/stats');
-        setActiveCount(res.data.activeCount);
+        setPoints(res.data.totalPoints || 0);
       } catch (err) {
-        console.error('Failed to fetch request stats', err);
+        console.error('Failed to fetch stats', err);
       }
     };
     fetchStats();
@@ -26,75 +29,124 @@ const RecipientDashboard: React.FC = () => {
     return 'Good Evening';
   };
 
+  const handleReferralSubmit = async () => {
+    if (!referralCode.trim()) return;
+    setReferralStatus('submitting');
+    try {
+      await apiClient.post('/internal-api/referral', { referral_code: referralCode });
+      setReferralStatus('success');
+      const res = await apiClient.get('/internal-api/requests/stats');
+      setPoints(res.data.totalPoints || 0);
+      setReferralCode('');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Invalid code');
+      setReferralStatus('idle');
+    }
+  };
+
+  const percent = Math.min((points / goal) * 100, 100);
+  const filledStars = Math.round((points / goal) * 11);
+
   return (
     <section className="section-wrap reveal active">
       <div className="section-title-block">
         <h1>{getGreeting()}, {user?.firstName || user?.name}!</h1>
-        <p>Your impact snapshots and reward progress are shown below.</p>
+        <p>Your journey and impact snapshots are shown below.</p>
       </div>
 
-      <div className="active-requests-card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: '#fff', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #ead7e8', marginBottom: '2rem' }}>
-        <div className="card-icon" style={{ background: '#fdf2f8', width: '64px', height: '64px', borderRadius: '50%', display: 'grid', placeItems: 'center', color: '#ad246d' }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 11l3 3L22 4"></path>
-            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <div className="card-content">
-          <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ad246d' }}>Active Requests</h3>
-          <p style={{ margin: 0, fontSize: '2rem', fontWeight: 900, color: '#3b2e43' }}>{activeCount}</p>
-        </div>
-      </div>
+      <article className="points-card">
+        <p className="points-info">
+          <i className='bx bx-info-circle'></i>
+          Receive 5 stars for every successful referral. Support our community!
+          Star Points <span className="star-inline">★</span> <span>{points}</span>
+        </p>
 
-      <div className="guidelines-actions-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-        <div className="guidelines-box" style={{ background: '#fff', padding: '2rem', borderRadius: '1.5rem', border: '1px solid #ead7e8' }}>
-          <div className="guidelines-head" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', color: '#ad246d' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path>
-            </svg>
-            <h3 style={{ margin: 0 }}>Before You Request</h3>
+        <div className="progress-wrap" aria-label="Reward progress">
+          <div className="progress-bar">
+            <span className="progress-fill" style={{ width: `${percent}%`, transition: 'width 0.7s cubic-bezier(0.4, 0, 0.2, 1)' }}></span>
           </div>
-          <div className="guidelines-items" style={{ marginBottom: '2rem' }}>
-            {[
-              'Gather your medical documents (if applicable)',
-              'Prepare your hair loss story and journey',
-              'Prepare photos of yourself for reference',
-              'Be ready to fill up the request form'
-            ].map((text, i) => (
-              <div key={i} className="guideline-item" style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <span className="dot" style={{ color: '#ad246d' }}>•</span>
-                <span style={{ color: '#5d4d62' }}>{text}</span>
-              </div>
-            ))}
-          </div>
-          <div className="guidelines-request-action">
-            <Link to="/recipient/request" className="soft-btn" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'fit-content' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 5v14M5 12h14"></path>
-              </svg>
-              Request Hair
-            </Link>
-          </div>
+          <span 
+            className="progress-star" 
+            style={{ 
+              left: `calc(${percent}% + 0.8rem - 12px)`, 
+              transition: 'left 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
+              color: points >= goal ? '#f59e0b' : ''
+            }}
+          >★</span>
         </div>
 
-        <div className="recipient-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <Link to="/recipient/tracking" className="ghost-btn" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100px' }}>
-            <i className='bx bx-map-pin' style={{ fontSize: '1.5rem' }}></i> View Status
+        <div className="star-row" aria-hidden="true">
+          {[...Array(11)].map((_, i) => (
+            <span key={i} style={{ color: i < filledStars ? '#f59e0b' : '', transition: 'color 0.3s ease' }}>★</span>
+          ))}
+        </div>
+
+        <p className="reward-line">
+          {points >= goal 
+            ? '🎉 Congratulations! You have reached your milestone goal.' 
+            : `Earn ${goal - points} more points for a special recognition`}
+        </p>
+      </article>
+
+      <section className="quick-actions">
+        <div className="referral-box-wrap">
+          <div className="referral-box">
+            <label htmlFor="referralCode">Referral Code</label>
+            <input 
+              id="referralCode" 
+              type="text" 
+              placeholder="Enter code here" 
+              value={referralCode}
+              onChange={e => setReferralCode(e.target.value)}
+              disabled={referralStatus !== 'idle'}
+            />
+            <button 
+              className="submit-code-btn" 
+              type="button" 
+              onClick={handleReferralSubmit}
+              disabled={referralStatus !== 'idle'}
+            >
+              {referralStatus === 'submitting' ? '...' : 'Submit Code'}
+            </button>
+          </div>
+        </div>
+
+        <div className="action-buttons">
+          <Link className="action-item-btn" to="/recipient/tracking">
+            <i className='bx bx-map-pin'></i> View Status
           </Link>
-          <Link to="/community" className="ghost-btn" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100px' }}>
-            <i className='bx bx-group' style={{ fontSize: '1.5rem' }}></i> Community Support
+          <Link className="action-item-btn" to="/recipient/community">
+            <i className='bx bx-group'></i> Community Support
           </Link>
-          <Link to="/recipient/haircare" className="ghost-btn" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100px' }}>
-            <i className='bx bx-heart' style={{ fontSize: '1.5rem' }}></i> Hair Care
+          <Link className="action-item-btn" to="/recipient/profile">
+            <i className='bx bx-user'></i> My Profile
           </Link>
-          <Link to="/recipient/profile" className="ghost-btn" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100px' }}>
-            <i className='bx bx-user' style={{ fontSize: '1.5rem' }}></i> My Profile
-          </Link>
-          <Link to="/donate-monetary" className="ghost-btn" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gridColumn: 'span 2', height: '100px' }}>
-            <i className='bx bx-donate-heart' style={{ fontSize: '1.5rem' }}></i> Monetary Donation
+          <Link className="action-item-btn" to="/recipient/haircare">
+            <i className='bx bx-heart-circle'></i> Hair Care
           </Link>
         </div>
-      </div>
+      </section>
+
+      <section className="rewards-shell">
+        <div className="rewards-head">
+          <h2>Recipient Actions</h2>
+          <i className='bx bxs-heart' style={{ color: '#bc2f79' }}></i>
+        </div>
+
+        <div className="reward-grid">
+          <article className="reward-card">
+            <h3>Request Hair</h3>
+            <p>Let's boost your confidence. Request hair to support your journey of comfort.</p>
+            <Link className="action-filled-btn" to="/recipient/request">Request Hair</Link>
+          </article>
+
+          <article className="reward-card">
+            <h3>Monetary Donation</h3>
+            <p>Support the cause by making a financial contribution to HairLink.</p>
+            <Link className="action-filled-btn" to="/recipient/monetary">Support Now</Link>
+          </article>
+        </div>
+      </section>
     </section>
   );
 };

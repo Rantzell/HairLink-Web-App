@@ -31,7 +31,7 @@ a {
 }
 
 .dash-main {
-    width: min(980px, 92vw);
+    width: min(1200px, 94vw);
     margin: 0.9rem auto 2rem;
 }
 
@@ -45,7 +45,7 @@ a {
 }
 
 .dash-nav {
-    width: min(980px, 92vw);
+    width: min(1200px, 94vw);
     min-height: 58px;
     margin: 0 auto;
     display: flex;

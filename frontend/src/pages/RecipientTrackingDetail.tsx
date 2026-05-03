@@ -29,11 +29,14 @@ const RecipientTrackingDetail: React.FC = () => {
   const fullName = requestData.user ? `${requestData.user.firstName} ${requestData.user.lastName}` : 'Recipient';
 
   return (
-    <div className="section-wrap tracking-detail-page reveal active">
-      <div className="module-head">
-        <h1>Request Details</h1>
-        <p>Reference #{requestData.reference}</p>
-      </div>
+    <section className="section-wrap donor-module-page reveal active">
+      <header className="module-head">
+        <h1>Request Tracking Detail</h1>
+        <p>Reference: <strong>{requestData.reference}</strong></p>
+        <div className="action-row">
+          <Link className="ghost-btn" to="/recipient/tracking">Back to Tracking List</Link>
+        </div>
+      </header>
 
       <div className="summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.8rem', marginBottom: '1rem' }}>
         <div className="summary-item" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '12px', padding: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -68,21 +71,21 @@ const RecipientTrackingDetail: React.FC = () => {
             <i className='bx bx-user' style={{ color: '#ad246d', fontSize: '1.2rem' }}></i>
           </div>
           <div>
-            <small style={{ display: 'block', color: '#8c7895', fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 800 }}>Name</small>
+            <small style={{ display: 'block', color: '#8c7895', fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 800 }}>Recipient</small>
             <strong style={{ color: '#3b2e43', fontSize: '0.85rem' }}>{fullName}</strong>
           </div>
         </div>
       </div>
 
       <div className="detail-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '1rem', alignItems: 'start' }}>
-        <div className="timeline-section" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.25rem' }}>
+        <div className="module-card" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <i className='bx bx-git-commit' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
-            <h3 style={{ margin: 0 }}>Request Timeline</h3>
+            <h3 style={{ margin: 0 }}>Request Roadmap</h3>
           </div>
-          <div className="timeline" style={{ paddingLeft: '0.5rem' }}>
+          <ul className="timeline" style={{ paddingLeft: '0.5rem', listStyle: 'none' }}>
             {requestData.statusHistories?.map((history, i) => (
-              <div key={i} className="timeline-item" style={{ borderLeft: '2px solid #f2ebf4', paddingLeft: '1.5rem', paddingBottom: '1.25rem', position: 'relative' }}>
+              <li key={i} className="timeline-item" style={{ borderLeft: '2px solid #f2ebf4', paddingLeft: '1.5rem', paddingBottom: '1.25rem', position: 'relative' }}>
                 <div style={{ position: 'absolute', left: '-7px', top: 0, width: '12px', height: '12px', background: '#ad246d', borderRadius: '50%', border: '2px solid #fff' }}></div>
                 <div className="timeline-meta" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                   <strong style={{ fontSize: '0.9rem', color: '#ad246d' }}>{history.status}</strong>
@@ -91,67 +94,41 @@ const RecipientTrackingDetail: React.FC = () => {
                 <div className="timeline-desc" style={{ background: '#fdf7fb', padding: '0.6rem 0.8rem', borderRadius: '8px', border: '1px solid #f2ebf4', fontSize: '0.85rem', color: '#4d3f56' }}>
                   {history.notes || `Status changed to ${history.status}`}
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
 
-        <div className="details-box" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <i className='bx bx-info-square' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
-            <h3 style={{ margin: 0 }}>Request Information</h3>
-          </div>
-          <div className="details-content" style={{ display: 'grid', gap: '0.5rem', fontSize: '0.88rem' }}>
-            <p style={{ margin: 0 }}><strong>Contact Number:</strong> {requestData.contactNumber || 'N/A'}</p>
-            <p style={{ margin: 0 }}><strong>Gender:</strong> {requestData.gender?.toUpperCase() || 'N/A'}</p>
-            <p style={{ margin: 0 }}><strong>Story:</strong> <span style={{ fontStyle: 'italic', color: '#665772' }}>"{requestData.story || 'N/A'}"</span></p>
-            <p style={{ margin: 0 }}><strong>Wig Size:</strong> {requestData.wigLength?.toUpperCase() || 'N/A'}</p>
-            <p style={{ margin: 0, marginBottom: '0.5rem' }}><strong>Wig Color:</strong> {requestData.wigColor?.toUpperCase() || 'N/A'}</p>
+        <div className="side-box" style={{ display: 'grid', gap: '1rem' }}>
+          <div style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <i className='bx bx-info-square' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
+              <h3 style={{ margin: 0 }}>Wig Info</h3>
+            </div>
+            <div style={{ display: 'grid', gap: '0.4rem', fontSize: '0.88rem' }}>
+              <p style={{ margin: 0 }}><strong>Length:</strong> {requestData.wigLength?.toUpperCase()}</p>
+              <p style={{ margin: 0, marginBottom: '0.5rem' }}><strong>Color:</strong> {requestData.wigColor?.toUpperCase()}</p>
+              <div style={{ background: '#fdf7fb', padding: '0.5rem', borderRadius: '8px', border: '1px solid #f2ebf4', fontSize: '0.82rem', fontStyle: 'italic', color: '#665772' }}>
+                "{requestData.story || 'No story provided'}"
+              </div>
+            </div>
           </div>
 
-          <div style={{ marginTop: '1.25rem', borderTop: '1px dashed #ead7e8', paddingTop: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.8rem' }}>
-              <i className='bx bx-paperclip' style={{ color: '#ad246d' }}></i>
-              <h3 style={{ margin: 0, fontSize: '1rem' }}>Attachments</h3>
-            </div>
-            <div className="file-preview-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
-              {requestData.diagnosisPhoto && (
-                <div className="file-preview-item" style={{ width: '100px' }}>
-                  <a href={requestData.diagnosisPhoto} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block', position: 'relative' }}>
-                    <img src={requestData.diagnosisPhoto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Diagnosis" />
-                  </a>
-                  <span style={{ display: 'block', textAlign: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#8c7895', marginTop: '0.25rem' }}>Medical Photo</span>
-                </div>
+          <div style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1rem', textAlign: 'center' }}>
+            <small style={{ display: 'block', marginBottom: '0.5rem', color: '#ad246d', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>Recipient Photo</small>
+            <div style={{ width: '200px', height: '200px', margin: '0 auto', borderRadius: '12px', overflow: 'hidden', background: '#fff5fa', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.05)', border: '1px solid #ead7e8' }}>
+              {requestData.additionalPhoto ? (
+                <a href={requestData.additionalPhoto} target="_blank" rel="noreferrer" style={{ width: '100%', height: '100%', display: 'block' }}>
+                  <img src={requestData.additionalPhoto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Recipient" />
+                </a>
+              ) : (
+                <i className='bx bx-image' style={{ fontSize: '3rem', color: '#ead7e8' }}></i>
               )}
-              {requestData.additionalPhoto && (
-                <div className="file-preview-item" style={{ width: '100px' }}>
-                  <a href={requestData.additionalPhoto} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block', position: 'relative' }}>
-                    <img src={requestData.additionalPhoto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Reference" />
-                  </a>
-                  <span style={{ display: 'block', textAlign: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#8c7895', marginTop: '0.25rem' }}>Reference</span>
-                </div>
-              )}
-              {requestData.documents?.map((url, index) => (
-                <div key={index} className="file-preview-item" style={{ width: '100px' }}>
-                  <a href={url} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block', position: 'relative' }}>
-                    {url.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i) ? (
-                      <img src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`Doc ${index + 1}`} />
-                    ) : (
-                      <div style={{ background: '#fdf7fb', width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}><i className='bx bxs-file-blank' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i></div>
-                    )}
-                  </a>
-                  <span style={{ display: 'block', textAlign: 'center', fontSize: '0.65rem', fontWeight: 700, color: '#8c7895', marginTop: '0.25rem' }}>Doc #{index + 1}</span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
       </div>
-
-      <div className="action-row" style={{ marginTop: '1.5rem', display: 'flex', gap: '0.8rem' }}>
-        <Link to="/recipient/tracking" className="soft-btn" style={{ padding: '0.8rem 2rem', fontWeight: 800 }}>Back to My Request Tracking</Link>
-      </div>
-    </div>
+    </section>
   );
 };
 

@@ -2,40 +2,49 @@
 .quick-actions,
 .rewards-shell {
     background: #fff;
-    border: 1px solid #ead7e8;
-    border-radius: 16px;
-    padding: 0.8rem;
-    box-shadow: 0 12px 26px rgba(73, 20, 52, 0.08);
+    padding: 1.2rem;
+    box-shadow: 0 10px 25px rgba(73, 20, 52, 0.04);
+    margin-bottom: 1rem;
 }
 
 .points-info {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
     align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem 0.8rem;
+    background: #fff;
+    border: 1px solid #f2e6ee;
+    border-radius: 10px;
     color: #4f4258;
-    font-weight: 600;
+    font-weight: 500;
     font-size: 0.86rem;
+    margin-bottom: 1rem;
 }
 
 .points-info i {
     color: #bc2f79;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
 }
 
-.star-inline {
+.points-info span {
+    margin-left: auto;
+    font-weight: 700;
+    color: #bc2f79;
+}
+
+.points-info .star-inline {
     color: #f5ae2a;
-    font-size: 1.1rem;
+    margin-left: 0.5rem;
 }
 
 .progress-wrap {
     position: relative;
-    margin-top: 1.5rem;
-    padding: 0 0.8rem; /* Increased padding to accommodate star overflow */
+    margin: 1rem 0;
+    padding: 0 0.5rem;
 }
 
 .progress-bar {
-    height: 14px;
+    height: 12px;
     border-radius: 999px;
     background: #f2e6ee;
     overflow: hidden;
@@ -44,139 +53,212 @@
 .progress-fill {
     display: block;
     height: 100%;
-    width: 0;
-    border-radius: inherit;
     background: linear-gradient(90deg, #f08dbc, #cf2f84);
-    transition: width 240ms ease;
+    border-radius: inherit;
 }
 
 .progress-star {
     position: absolute;
     top: 50%;
-    left: 0;
-    transform: translateY(-50%); /* Removed translateX to avoid conflict with JS-calculated positioning */
-    font-size: 1.6rem;
+    transform: translateY(-50%);
+    font-size: 1.8rem;
     color: #f2ae2e;
-    transition: left 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    text-shadow: 0 2px 5px rgba(242, 174, 46, 0.5);
+    text-shadow: 0 2px 10px rgba(242, 174, 46, 0.4);
     z-index: 10;
-    pointer-events: none; /* Allow clicks to pass to simulate function if needed */
 }
 
 .star-row {
-    margin-top: 0.8rem;
-    padding: 0 0.8rem; /* Match progress wrap padding exactly */
     display: flex;
     justify-content: space-between;
-    color: #e5d5e1; /* Inactive star color */
-    opacity: 0.9;
-    font-size: 1.1rem;
+    padding: 0 1rem;
+    margin-top: 1rem;
+    color: #e5d5e1;
+    font-size: 1.2rem;
 }
 
 .reward-line {
-    margin-top: 0.5rem;
-    font-weight: 700;
+    margin-top: 1.2rem;
+    font-weight: 600;
     color: #5f4565;
-    font-size: 0.88rem;
+    font-size: 0.95rem;
 }
 
+/* Quick Actions Layout */
 .quick-actions {
-    margin-top: 0.8rem;
     display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 0.9rem;
+    grid-template-columns: 1fr 300px;
+    gap: 1rem;
+    align-items: start;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+.referral-box-wrap {
+    background: #fff;
+    border: 1px solid #ead7e8;
+    border-radius: 18px;
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 10px 25px rgba(73, 20, 52, 0.04);
 }
 
 .referral-box {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+    display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1rem;
+    width: 100%;
 }
 
 .referral-box label {
     font-weight: 700;
     color: #624f69;
+    white-space: nowrap;
+    font-size: 1.1rem;
 }
 
 .referral-box input {
+    flex: 1;
     border: 1px solid #e7d5e5;
-    border-radius: 10px;
-    padding: 0.52rem 0.62rem;
-    font: inherit;
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+    background: #fafafa;
+}
+
+.submit-code-btn {
+    background: #bc2f79;
+    color: #fff;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(188, 47, 121, 0.2);
+}
+
+.submit-code-btn:hover {
+    background: #9d2363;
+    transform: translateY(-2px);
 }
 
 .action-buttons {
-    display: grid;
-    gap: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
 }
 
-.action-buttons .ghost-btn {
+.action-item-btn {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.55rem;
+    gap: 1rem;
+    padding: 0.9rem 1.5rem;
+    background: #fff;
+    border: 1px solid #ead7e8;
+    border-radius: 15px;
+    color: #5f4565;
+    text-decoration: none;
+    font-weight: 700;
+    transition: all 0.2s ease;
 }
 
+.action-item-btn i {
+    font-size: 1.4rem;
+    color: #5f4565;
+}
+
+.action-item-btn:hover {
+    border-color: #bc2f79;
+    color: #bc2f79;
+    transform: translateX(5px);
+}
+
+.action-item-btn:hover i {
+    color: #bc2f79;
+}
+
+/* Claimable Actions */
 .rewards-shell {
-    margin-top: 0.8rem;
+    margin-top: 1rem;
 }
 
 .rewards-head {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 0.8rem;
-    margin-bottom: 0.8rem;
+    margin-bottom: 1rem;
 }
 
 .rewards-head h2 {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.2rem;
-}
-
-.rewards-head i {
-    font-size: 1.2rem;
-    color: #cf2f84;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #4a3452;
 }
 
 .reward-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.8rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
 }
 
 .reward-card {
+    background: #fcf8fc;
+    border: 1px solid #f2e6ee;
+    border-radius: 15px;
+    padding: 1.2rem;
     display: flex;
     flex-direction: column;
-    border: 1px solid #eddce9;
-    background: #fcf8fc;
-    border-radius: 12px;
-    padding: 0.72rem;
 }
 
 .reward-card h3 {
-    font-size: 0.98rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #4a3452;
+    margin-bottom: 0.5rem;
 }
 
 .reward-card p {
+    font-size: 0.9rem;
     color: #665572;
-    margin: 0.35rem 0 0.65rem;
-    font-size: 0.86rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
 }
 
-.reward-card .soft-btn,
-.reward-card button.soft-btn {
-    margin-top: auto;
+.action-filled-btn {
+    background: #bc2f79;
+    color: #fff;
+    text-decoration: none;
+    padding: 0.7rem 1.2rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
     align-self: flex-start;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(188, 47, 121, 0.2);
+}
+
+.action-filled-btn:hover {
+    background: #9d2363;
+    transform: scale(1.05);
 }
 
 @media (max-width: 900px) {
-    .quick-actions,
-    .reward-grid,
-    .referral-box {
+    .quick-actions {
         grid-template-columns: 1fr;
     }
+    .reward-grid {
+        grid-template-columns: 1fr;
+    }
+    .referral-box {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .referral-box input {
+        width: 100%;
+    }
 }
-

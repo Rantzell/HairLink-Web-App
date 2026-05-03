@@ -75,7 +75,7 @@ const CommunityFeed: React.FC = () => {
         <p>Share your journey, updates, and encouragement with the HairLink community.</p>
       </div>
 
-      <div className="community-layout" style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div className="community-layout">
         {/* Create Post */}
         <article className="create-post-box">
           <div className="post-form-header">
