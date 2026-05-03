@@ -3,9 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import path from 'path';
 
 // Load env vars before anything else
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth.routes';
