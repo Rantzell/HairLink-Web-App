@@ -3,7 +3,7 @@ import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 
 const DonorMonetary: React.FC = () => {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [amount, setAmount] = useState('');
   const [purpose, setPurpose] = useState('Wig Production');
   const [proof, setProof] = useState<File | null>(null);

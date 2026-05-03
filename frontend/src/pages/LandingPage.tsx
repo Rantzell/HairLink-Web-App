@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 
@@ -13,8 +13,8 @@ const LandingPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Sliders and Countdown State
-  const [aboutIndex, setAboutIndex] = useState(0);
-  const [partnerIndex, setPartnerIndex] = useState(0);
+  const [aboutIndex, _setAboutIndex] = useState(0);
+  const [partnerIndex, _setPartnerIndex] = useState(0);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {

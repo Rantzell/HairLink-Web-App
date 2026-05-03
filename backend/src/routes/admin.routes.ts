@@ -67,7 +67,7 @@ router.get('/users', ...adminOnly, async (req, res) => {
 // POST /internal-api/admin/users/:id/toggle
 router.post('/users/:id/toggle', ...adminOnly, async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: BigInt(req.params.id) } });
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!user) { res.status(404).json({ message: 'User not found' }); return; }
     await prisma.user.update({ where: { id: user.id }, data: { isActive: !user.isActive } });
     res.json({ message: user.isActive ? 'User deactivated.' : 'User activated.', success: true });

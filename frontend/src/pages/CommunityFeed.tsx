@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
-import type { CommunityPost, CommunityComment } from '../types';
+import type { CommunityPost } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 const CommunityFeed: React.FC = () => {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPostContent, setNewPostContent] = useState('');

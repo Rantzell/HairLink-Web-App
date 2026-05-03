@@ -90,7 +90,7 @@ export const verificationStatusSchema = z.object({
 });
 
 export const assignWigmakerSchema = z.object({
-  wigmaker_id: z.coerce.number().int().positive(),
+  wigmaker_id: z.string().uuid(),
 });
 
 export const trackingStatusSchema = z.object({
@@ -101,7 +101,7 @@ export const trackingStatusSchema = z.object({
 
 export const matchWigSchema = z.object({
   request_reference: z.string().min(1),
-  wig_id: z.coerce.number().int().positive(),
+  wig_id: z.string().uuid(),
 });
 
 // ── Wigmaker ──

@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import prisma from '../config/database';
 
 export interface AuthUser {
-  id: number;
+  id: string;   // UUID from Supabase auth.users
   email: string;
   role: string;
   name: string;
@@ -20,37 +20,75 @@ declare global {
   }
 }
 
+/**
+ * Supabase JWKS endpoint — fetched ONCE at startup and cached by jose.
+ * This enables fast, LOCAL RS256 JWT verification with no network call per request.
+ */
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`)
+);
+
+// High-performance in-memory cache for authenticated users (30s TTL)
+const userCache = new Map<string, { user: AuthUser; expiry: number }>();
+const CACHE_TTL = 30 * 1000;
+
+/**
+ * Verifies the Supabase JWT locally using cached JWKS public keys.
+ * No external API call on every request — fast and reliable.
+ */
 export async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      // Also check for session cookie/token for web auth
-      const token = req.headers['x-auth-token'] as string;
-      if (!token) {
-        res.status(401).json({ error: 'Authentication required' });
-        return;
-      }
-      await verifyAndAttach(token, req, res, next);
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.split(' ')[1]
+      : (req.headers['x-auth-token'] as string | undefined);
+
+    if (!token) {
+      res.status(401).json({ error: 'Authentication required' });
       return;
     }
 
-    const token = authHeader.split(' ')[1];
-    await verifyAndAttach(token, req, res, next);
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid or expired token' });
-  }
-}
+    // Verify JWT locally
+    let payload: any;
+    try {
+      const result = await jwtVerify(token, JWKS, {
+        issuer: `${process.env.SUPABASE_URL}/auth/v1`,
+      });
+      payload = result.payload;
+    } catch (jwtErr: any) {
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
+    }
 
-async function verifyAndAttach(token: string, req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    const userId = payload.sub as string;
+    if (!userId) {
+      res.status(401).json({ error: 'Invalid token payload' });
+      return;
+    }
+
+    // Check memory cache first for extreme speed
+    const cached = userCache.get(userId);
+    if (cached && cached.expiry > Date.now()) {
+      req.user = cached.user;
+      return next();
+    }
+
+    // Look up profile in public.users
     const user = await prisma.user.findUnique({
-      where: { id: Number(decoded.userId) },
-      select: { id: true, email: true, role: true, name: true, firstName: true, lastName: true, isActive: true },
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        name: true,
+        firstName: true,
+        lastName: true,
+        isActive: true,
+      },
     });
 
     if (!user) {
-      res.status(401).json({ error: 'User not found' });
+      res.status(401).json({ error: 'User not found in local database' });
       return;
     }
 
@@ -59,16 +97,21 @@ async function verifyAndAttach(token: string, req: Request, res: Response, next:
       return;
     }
 
-    req.user = {
-      id: Number(user.id),
+    const userData: AuthUser = {
+      id: user.id,
       email: user.email,
       role: user.role,
       name: user.name,
       firstName: user.firstName,
       lastName: user.lastName,
     };
+
+    // Store in cache for 30s
+    userCache.set(userId, { user: userData, expiry: Date.now() + CACHE_TTL });
+
+    req.user = userData;
     next();
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid or expired token' });
+  } catch (err: any) {
+    res.status(401).json({ error: 'Authentication failed' });
   }
 }

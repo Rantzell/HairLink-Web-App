@@ -56,7 +56,7 @@ router.post('/', authenticate, upload.fields([
         reference: req.body.reference,
         hairLength: req.body.hair_length,
         hairColor: req.body.hair_color,
-        treatedHair: req.body.treated_hair || false,
+        treatedHair: req.body.treated_hair === 'true' || req.body.treated_hair === true || req.body.treated_hair === '1',
         address: req.body.address || null,
         reason: req.body.reason || null,
         dropoffLocation: req.body.dropoff_location || null,
@@ -75,6 +75,47 @@ router.post('/', authenticate, upload.fields([
       error: 'Failed to create donation', 
       message: err instanceof Error ? err.message : String(err) 
     });
+  }
+});
+
+// GET /internal-api/donations/stats
+router.get('/stats', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    // 1. Hair Donations: 10 points per completed donation
+    const completedDonations = await prisma.donation.count({
+      where: { userId, status: 'Completed' }
+    });
+    
+    // 2. Referrals: 5 points per referred user
+    const referrals = await prisma.user.count({
+      where: { referredBy: userId }
+    });
+    
+    // 3. Monetary: 1 point per 100 PHP (completed)
+    const monetary = await prisma.monetaryDonation.aggregate({
+      where: { userId, status: 'Completed' },
+      _sum: { amount: true }
+    });
+    
+    const monetaryAmount = Number(monetary._sum.amount || 0);
+    const monetaryPoints = Math.floor(monetaryAmount / 100);
+    
+    const totalPoints = (completedDonations * 10) + (referrals * 5) + monetaryPoints;
+    
+    res.json({
+      totalPoints,
+      breakdown: {
+        hairDonations: completedDonations,
+        referrals,
+        monetaryAmount,
+        monetaryPoints
+      }
+    });
+  } catch (err) {
+    console.error('[Donation] Stats error:', err);
+    res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
 
@@ -144,45 +185,5 @@ router.post('/:reference/delivery-link', authenticate, validate(deliveryLinkSche
   } catch (err) { res.status(500).json({ error: 'Failed to update delivery link' }); }
 });
 
-// GET /internal-api/donations/stats
-router.get('/stats', authenticate, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user!.id;
-    
-    // 1. Hair Donations: 10 points per completed donation
-    const completedDonations = await prisma.donation.count({
-      where: { userId, status: 'Completed' }
-    });
-    
-    // 2. Referrals: 5 points per referred user
-    const referrals = await prisma.user.count({
-      where: { referredBy: userId }
-    });
-    
-    // 3. Monetary: 1 point per 100 PHP (completed)
-    const monetary = await prisma.monetaryDonation.aggregate({
-      where: { userId, status: 'Completed' },
-      _sum: { amount: true }
-    });
-    
-    const monetaryAmount = Number(monetary._sum.amount || 0);
-    const monetaryPoints = Math.floor(monetaryAmount / 100);
-    
-    const totalPoints = (completedDonations * 10) + (referrals * 5) + monetaryPoints;
-    
-    res.json({
-      totalPoints,
-      breakdown: {
-        hairDonations: completedDonations,
-        referrals,
-        monetaryAmount,
-        monetaryPoints
-      }
-    });
-  } catch (err) {
-    console.error('[Donation] Stats error:', err);
-    res.status(500).json({ error: 'Failed to fetch stats' });
-  }
-});
 
 export default router;

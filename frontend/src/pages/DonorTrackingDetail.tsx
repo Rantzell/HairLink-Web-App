@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
-import type { Donation, StatusHistory } from '../types';
+import type { Donation } from '../types';
+import LoadingScreen from '../components/LoadingScreen';
 
 const DonorTrackingDetail: React.FC = () => {
   const { reference } = useParams<{ reference: string }>();
@@ -23,7 +24,7 @@ const DonorTrackingDetail: React.FC = () => {
     fetchDetail();
   }, [reference]);
 
-  if (loading) return <div className="section-wrap">Loading...</div>;
+  if (loading) return <LoadingScreen />;
   if (!donation) return <div className="section-wrap">Donation not found.</div>;
 
   return (

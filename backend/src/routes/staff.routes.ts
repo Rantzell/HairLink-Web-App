@@ -101,7 +101,7 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
       where: { donationId: { in: donations.map(d => d.id) } }, include: { wigmaker: true },
     });
     const wpMap: Record<string, any> = {};
-    for (const wp of wps) wpMap[wp.donationId!.toString()] = s(wp);
+    for (const wp of wps) wpMap[wp.donationId!] = s(wp);
     const requests = await prisma.hairRequest.findMany({
       where: { status: { in: ['Validated', 'In Production', 'Matched', 'In Transit', 'Arrived', 'Completed'] } },
       include: { user: true }, orderBy: { updatedAt: 'desc' },
@@ -116,7 +116,7 @@ router.post('/assign-wigmaker/:reference', ...staffOnly, validate(assignWigmaker
     const donation = await prisma.donation.findFirst({ where: { reference: req.params.reference } });
     if (!donation) { res.status(404).json({ message: 'Not found' }); return; }
     if (donation.status !== 'Received Hair') { res.status(422).json({ message: 'Hair not received yet.', success: false }); return; }
-    const wm = await prisma.user.findFirst({ where: { id: BigInt(req.body.wigmaker_id), role: 'wigmaker' } });
+    const wm = await prisma.user.findFirst({ where: { id: req.body.wigmaker_id, role: 'wigmaker' } });
     if (!wm) { res.status(404).json({ message: 'Wigmaker not found' }); return; }
     const tc = 'WG-' + crypto.createHash('md5').update(donation.reference + Date.now()).digest('hex').substring(0, 6).toUpperCase();
     const due = new Date(); due.setDate(due.getDate() + 30);
@@ -153,7 +153,7 @@ router.post('/match-wig', ...staffOnly, validate(matchWigSchema), async (req, re
   try {
     const hr = await prisma.hairRequest.findFirst({ where: { reference: req.body.request_reference } });
     if (!hr) { res.status(404).json({ message: 'Not found' }); return; }
-    const wig = await prisma.wigProduction.findUnique({ where: { id: BigInt(req.body.wig_id) } });
+    const wig = await prisma.wigProduction.findUnique({ where: { id: req.body.wig_id } });
     if (!wig) { res.status(404).json({ message: 'Wig not found' }); return; }
     await prisma.hairRequest.update({ where: { id: hr.id }, data: { status: 'Matched' } });
     await createStatusHistory(REQUEST_TYPE, hr.id, 'Matched', `Matched with Wig #${wig.taskCode}`);

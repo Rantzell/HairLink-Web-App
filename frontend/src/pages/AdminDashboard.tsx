@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
+import LoadingScreen from '../components/LoadingScreen';
 
 const AdminDashboard: React.FC = () => {
   const [data, setData] = useState<any>(null);
@@ -21,7 +22,7 @@ const AdminDashboard: React.FC = () => {
     fetchAdminData();
   }, []);
 
-  if (loading) return <div className="section-wrap">Loading admin workspace...</div>;
+  if (loading) return <LoadingScreen />;
 
   return (
     <section className="section-wrap reveal active admin-page">

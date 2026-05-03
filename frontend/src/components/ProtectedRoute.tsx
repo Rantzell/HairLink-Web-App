@@ -3,6 +3,8 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import type { UserRole } from '../types';
 
+import LoadingScreen from './LoadingScreen';
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
@@ -13,7 +15,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   const location = useLocation();
 
   if (loading) {
-    return <div className="loading-screen">Loading...</div>; // TODO: Replace with skeleton
+    return <LoadingScreen />;
   }
 
   if (!user) {

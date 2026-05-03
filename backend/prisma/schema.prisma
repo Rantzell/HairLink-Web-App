@@ -8,14 +8,16 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// User — profile extension of auth.users (UUID primary key)
+// ──────────────────────────────────────────────────────────────────────────────
 model User {
-  id                Int                 @id @default(autoincrement())
-  name              String
+  id                String              @id @db.Uuid // UUID from auth.users
+  name              String              @default("")
   firstName         String?             @map("first_name")
   lastName          String?             @map("last_name")
   email             String              @unique
   emailVerifiedAt   DateTime?           @map("email_verified_at")
-  password          String
   role              String              @default("donor")
   country           String?
   region            String?
@@ -29,7 +31,6 @@ model User {
   referredBy        String?             @map("referred_by")
   referralCode      String?             @map("referral_code")
   onesignalId       String?             @map("onesignal_id")
-  rememberToken     String?             @map("remember_token")
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @updatedAt @map("updated_at")
   communityComments CommunityComment[]
@@ -45,7 +46,7 @@ model User {
 
 model Donation {
   id                Int             @id @default(autoincrement())
-  userId            Int             @map("user_id")
+  userId            String          @map("user_id") @db.Uuid // UUID FK to auth.users
   reference         String          @unique
   hairLength        String?         @map("hair_length")
   hairColor         String?         @map("hair_color")
@@ -70,7 +71,7 @@ model Donation {
 
 model HairRequest {
   id                   Int             @id @default(autoincrement())
-  userId               Int             @map("user_id")
+  userId               String          @map("user_id") @db.Uuid // UUID FK to auth.users
   reference            String          @unique
   contactNumber        String?         @map("contact_number")
   gender               String?
@@ -98,7 +99,7 @@ model HairRequest {
 model WigProduction {
   id            Int          @id @default(autoincrement())
   taskCode      String       @unique @map("task_code")
-  wigmakerId    Int          @map("wigmaker_id")
+  wigmakerId    String       @map("wigmaker_id") @db.Uuid // UUID FK to auth.users
   donationId    Int?         @map("donation_id")
   hairRequestId Int?         @map("hair_request_id")
   targetLength  String?      @map("target_length")
@@ -117,8 +118,8 @@ model WigProduction {
 }
 
 model CommunityPost {
-  id        String              @id @default(uuid())
-  userId    Int                 @map("user_id")
+  id        Int                 @id @default(autoincrement())
+  userId    String              @map("user_id") @db.Uuid // UUID FK to auth.users
   content   String
   imageUrl  String?             @map("image_url")
   createdAt DateTime            @default(now()) @map("created_at")
@@ -131,12 +132,12 @@ model CommunityPost {
 }
 
 model CommunityComment {
-  id        String             @id @default(uuid())
-  postId    String             @map("post_id")
-  userId    Int                @map("user_id")
+  id        Int                @id @default(autoincrement())
+  postId    Int                @map("post_id")
+  userId    String             @map("user_id") @db.Uuid // UUID FK to auth.users
   content   String?
   imageUrl  String?            @map("image_url")
-  parentId  String?            @map("parent_id")
+  parentId  Int?               @map("parent_id")
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime           @map("updated_at")
   parent    CommunityComment?  @relation("CommentReplies", fields: [parentId], references: [id])
@@ -148,9 +149,9 @@ model CommunityComment {
 }
 
 model CommunityPostLike {
-  id              String        @id
-  communityPostId String        @map("community_post_id")
-  userId          Int           @map("user_id")
+  id              Int           @id @default(autoincrement())
+  communityPostId Int           @map("community_post_id")
+  userId          String        @map("user_id") @db.Uuid // UUID FK to auth.users
   createdAt       DateTime      @default(now()) @map("created_at")
   post            CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
   user            User          @relation(fields: [userId], references: [id])
@@ -161,7 +162,7 @@ model CommunityPostLike {
 
 model StatusHistory {
   id            Int         @id @default(autoincrement())
-  trackableId   Int         @map("trackable_id")
+  trackableId   String      @map("trackable_id") // now String to support UUID refs
   trackableType String      @map("trackable_type")
   status        String
   notes         String?
@@ -175,7 +176,7 @@ model StatusHistory {
 
 model MonetaryDonation {
   id              Int      @id @default(autoincrement())
-  userId          Int      @map("user_id")
+  userId          String   @map("user_id") @db.Uuid // UUID FK to auth.users
   name            String?
   amount          Decimal  @db.Decimal(10, 2)
   currency        String   @default("PHP")

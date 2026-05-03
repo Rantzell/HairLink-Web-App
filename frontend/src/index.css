@@ -6,3 +6,66 @@
 body {
   margin: 0;
 }
+
+/* Premium Loading Screen */
+.premium-loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.loading-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo-pulse img {
+  width: 80px;
+  height: auto;
+  animation: logoPulse 2s ease-in-out infinite;
+}
+
+.loading-bar-container {
+  width: 200px;
+  height: 4px;
+  background: #f0f0f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b81, #ff9a9e);
+  animation: loadingProgress 1.5s ease-in-out infinite;
+  transform-origin: left;
+}
+
+.loading-text {
+  font-family: 'Inter', sans-serif;
+  color: #ff6b81;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+@keyframes logoPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+@keyframes loadingProgress {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}

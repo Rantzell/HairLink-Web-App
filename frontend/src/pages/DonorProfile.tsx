@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
 
 const DonorProfile: React.FC = () => {
-  const { user, setUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editData, setEditData] = useState({
@@ -36,7 +36,7 @@ const DonorProfile: React.FC = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      setUser(res.data.user);
+      updateUser(res.data.user);
       setIsModalOpen(false);
       alert('Profile updated successfully!');
     } catch (err: any) {
@@ -63,8 +63,8 @@ const DonorProfile: React.FC = () => {
       <div className="profile-hero-wrap">
         <div className="profile-avatar-box">
           <div className="profile-avatar-main">
-            {user?.profilePhotoUrl ? (
-              <img src={user.profilePhotoUrl} alt="Profile" />
+            {user?.profile_photo_url ? (
+              <img src={user.profile_photo_url} alt="Profile" />
             ) : (
               initials
             )}

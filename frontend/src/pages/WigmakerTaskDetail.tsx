@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import type { WigProduction, StatusHistory } from '../types';
 import StatusPill from '../components/StatusPill';
 
 const WigmakerTaskDetail: React.FC = () => {
   const { taskCode } = useParams<{ taskCode: string }>();
-  const navigate = useNavigate();
   const [data, setData] = useState<{ task: WigProduction; histories: StatusHistory[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');

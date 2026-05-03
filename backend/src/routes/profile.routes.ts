@@ -43,11 +43,11 @@ router.post('/', authenticate, upload.single('profile_photo'), validate(profileU
     };
 
     if (req.file) {
-      if (user.profilePhotoPath) {
-        await deleteFile('hairlink', `profile-photos/${user.profilePhotoPath}`);
+      if (user.profile_photo_url) {
+        await deleteFile('hairlink', `profile-photos/${user.profile_photo_url}`);
       }
       const path = await uploadFile(req.file, 'hairlink', 'profile-photos');
-      updateData.profilePhotoPath = path.split('/').pop();
+      updateData.profile_photo_url = path.split('/').pop();
     }
 
     const updated = await prisma.user.update({ where: { id: user.id }, data: updateData });

@@ -33,7 +33,7 @@ const StaffRealtimeTracking: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleUpdateStatus = async (reference: string, type: 'donor' | 'recipient', status: string) => {
+  const handleUpdateStatus = async (reference: string, _type: 'donor' | 'recipient', status: string) => {
     setIsSubmitting(true);
     try {
       await apiClient.post(`/internal-api/staff/tracking/${reference}/status`, { status });

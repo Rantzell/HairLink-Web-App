@@ -3,7 +3,7 @@ import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 
 const RecipientMonetary: React.FC = () => {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

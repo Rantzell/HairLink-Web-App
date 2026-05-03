@@ -1,11 +1,12 @@
 export type UserRole = 'donor' | 'recipient' | 'staff' | 'wigmaker' | 'admin';
 
 export interface User {
-  id: string;
+  id: string;         // UUID from auth.users
   name: string;
   firstName: string | null;
   lastName: string | null;
   email: string;
+  emailVerifiedAt: string | null;
   role: UserRole;
   profilePhotoPath: string | null;
   bio: string | null;
@@ -122,7 +123,6 @@ export interface CommunityComment {
 }
 
 export interface AuthResponse {
-  token: string;
   user: User;
   redirect: string;
 }

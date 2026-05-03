@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,7 +10,7 @@ const MonetaryDonation: React.FC = () => {
   const [customAmount, setCustomAmount] = useState('');
   const [currency, setCurrency] = useState('PHP');
   const [activeTab, setActiveTab] = useState<'bank' | 'instapay'>('bank');
-  const [billingName, setBillingName] = useState(user?.firstName ? `${user.firstName} ${user.lastName}` : user?.name || '');
+  const [billingName, _setBillingName] = useState(user?.firstName ? `${user.firstName} ${user.lastName}` : user?.name || '');
   const [amountNumber, setAmountNumber] = useState('');
   const [amountWords, setAmountWords] = useState('');
   const [proofFile, setProofFile] = useState<File | null>(null);

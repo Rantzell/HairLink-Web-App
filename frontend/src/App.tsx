@@ -6,6 +6,7 @@ import AuthLayout from './components/layouts/AuthLayout';
 
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
+import VerifyOtp from './pages/VerifyOtp';
 import DonorDashboard from './pages/DonorDashboard';
 import DonorDonate from './pages/DonorDonate';
 import DonorTracking from './pages/DonorTracking';
@@ -49,6 +50,7 @@ function App() {
           {/* Auth Routes */}
           <Route path="/login" element={<AuthLayout><AuthPage initialMode="login" /></AuthLayout>} />
           <Route path="/register" element={<AuthLayout><AuthPage initialMode="register" /></AuthLayout>} />
+          <Route path="/verify-otp" element={<VerifyOtp />} />
 
           {/* Donor Routes */}
           <Route path="/donor/*" element={

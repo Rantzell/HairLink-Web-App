@@ -86,6 +86,21 @@ router.post('/', authenticate, upload.fields([
   }
 });
 
+// GET /internal-api/requests/stats
+router.get('/stats', authenticate, async (req: Request, res: Response) => {
+  try {
+    const activeCount = await prisma.hairRequest.count({
+      where: {
+        userId: req.user!.id,
+        status: { notIn: ['Completed', 'Rejected'] }
+      }
+    });
+    res.json({ activeCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch request stats' });
+  }
+});
+
 // GET /internal-api/requests/:reference
 router.get('/:reference', authenticate, async (req: Request, res: Response) => {
   try {
@@ -149,19 +164,5 @@ router.post('/:reference/confirm-received', authenticate, async (req: Request, r
   } catch (err) { res.status(500).json({ error: 'Failed to confirm' }); }
 });
 
-// GET /internal-api/requests/stats
-router.get('/stats', authenticate, async (req: Request, res: Response) => {
-  try {
-    const activeCount = await prisma.hairRequest.count({
-      where: {
-        userId: req.user!.id,
-        status: { notIn: ['Completed', 'Rejected'] }
-      }
-    });
-    res.json({ activeCount });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch request stats' });
-  }
-});
 
 export default router;

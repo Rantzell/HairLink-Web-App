@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
+import LoadingScreen from '../components/LoadingScreen';
 
 const DonorDashboard: React.FC = () => {
   const { user } = useAuth();
   const [points, setPoints] = useState(0);
   const [referralCode, setReferralCode] = useState('');
   const [referralStatus, setReferralStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+  const [loading, setLoading] = useState(true);
   const goal = 100;
 
   useEffect(() => {
@@ -17,10 +19,14 @@ const DonorDashboard: React.FC = () => {
         setPoints(res.data.totalPoints);
       } catch (err) {
         console.error('Failed to fetch stats', err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchStats();
   }, []);
+
+  if (loading) return <LoadingScreen />;
 
   const getGreeting = () => {
     const hour = new Date().getHours();

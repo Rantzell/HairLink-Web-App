@@ -20,15 +20,15 @@ router.post('/', upload.single('proofDonation'), validate(monetaryDonationSchema
       proofPath = await uploadFile(req.file, 'hairlink', 'monetary-donations', 'document');
     }
 
-    // User may or may not be authenticated
-    let userId: bigint | null = null;
+    // User may or may not be authenticated (anonymous donations are allowed)
+    let userId: string | null = null;
     try {
-      // Try to get user from auth header without failing
       const authHeader = req.headers.authorization;
-      if (authHeader) {
-        const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET!) as { userId: string };
-        userId = BigInt(decoded.userId);
+      if (authHeader?.startsWith('Bearer ')) {
+        const jwtLib = require('jsonwebtoken');
+        const secret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET!;
+        const decoded = jwtLib.verify(authHeader.split(' ')[1], secret) as { sub?: string; userId?: string };
+        userId = decoded.sub ?? decoded.userId ?? null;
       }
     } catch (_) { /* anonymous donation */ }
 

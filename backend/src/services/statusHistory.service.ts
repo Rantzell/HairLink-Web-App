@@ -5,14 +5,14 @@ import prisma from '../config/database';
  * Replaces Eloquent's morphMany StatusHistory relation.
  *
  * @param trackableType The Eloquent class name — kept as-is for DB compatibility
- * @param trackableId The BigInt ID of the trackable record
- * @param status Status string
- * @param notes Optional notes
- * @param metadata Optional JSON metadata (e.g. preview photos)
+ * @param trackableId   The UUID string ID of the trackable record
+ * @param status        Status string
+ * @param notes         Optional notes
+ * @param metadata      Optional JSON metadata (e.g. preview photos)
  */
 export async function createStatusHistory(
   trackableType: 'App\\Models\\Donation' | 'App\\Models\\HairRequest' | 'App\\Models\\WigProduction',
-  trackableId: number,
+  trackableId: string | number,
   status: string,
   notes?: string | null,
   metadata?: Record<string, any> | null
@@ -20,7 +20,7 @@ export async function createStatusHistory(
   return prisma.statusHistory.create({
     data: {
       trackableType,
-      trackableId,
+      trackableId: String(trackableId),
       status,
       notes: notes || null,
       metadata: metadata || undefined,
@@ -33,11 +33,11 @@ export async function createStatusHistory(
  */
 export async function getStatusHistories(
   trackableType: string,
-  trackableId: number,
+  trackableId: string | number,
   orderDesc = true
 ) {
   return prisma.statusHistory.findMany({
-    where: { trackableType, trackableId },
+    where: { trackableType, trackableId: String(trackableId) },
     orderBy: { createdAt: orderDesc ? 'desc' : 'asc' },
   });
 }
