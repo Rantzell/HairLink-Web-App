@@ -4,9 +4,11 @@ import apiClient from '../api/client';
 import type { WigProduction, StatusHistory } from '../types';
 import StatusPill from '../components/StatusPill';
 
+// Static data removed
+
 const WigmakerTaskDetail: React.FC = () => {
   const { taskCode } = useParams<{ taskCode: string }>();
-  const [data, setData] = useState<{ task: WigProduction; histories: StatusHistory[] } | null>(null);
+  const [data, setData] = useState<{ task: any; histories: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -16,7 +18,9 @@ const WigmakerTaskDetail: React.FC = () => {
     const fetchDetail = async () => {
       try {
         const res = await apiClient.get(`/internal-api/wigmaker/tasks/${taskCode}`);
-        setData(res.data);
+        if (res.data.task) {
+          setData(res.data);
+        }
       } catch (err) {
         console.error('Failed to fetch task detail', err);
       } finally {
@@ -34,7 +38,6 @@ const WigmakerTaskDetail: React.FC = () => {
     setIsSubmitting(true);
     const formData = new FormData();
     
-    // Linear transition logic
     let nextStatus = 'processing';
     if (data.task.status === 'processing') nextStatus = 'completed';
     
@@ -45,7 +48,7 @@ const WigmakerTaskDetail: React.FC = () => {
     try {
       await apiClient.post(`/internal-api/wigmaker/tasks/${taskCode}`, formData);
       alert('Task updated successfully!');
-      window.location.reload(); // Refresh to show new state
+      window.location.reload();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Update failed');
     } finally {
@@ -53,132 +56,169 @@ const WigmakerTaskDetail: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="section-wrap">Loading task...</div>;
-  if (!data) return <div className="section-wrap">Task not found.</div>;
+  if (!data) return <div className="wigmaker-page staff-page" style={{ padding: '2rem', textAlign: 'center' }}>Task not found.</div>;
 
   const { task, histories } = data;
   const isCompleted = task.status === 'completed';
   const nextLabel = task.status === 'assigned' ? 'In Progress' : 'Completed';
 
   return (
-    <section className="section-wrap reveal active wigmaker-page">
-      <div className="section-title-block">
-        <h1>Task {task.taskCode}</h1>
-        <p>Update production progress and notes for this assigned wig build.</p>
+    <section className="wigmaker-page reveal active staff-page">
+      <div className="section-title-block" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Task {task.taskCode}</h1>
+          <p style={{ fontSize: '0.8rem', color: '#8c7895', marginTop: '0.2rem' }}>Review assignment details and update production progress.</p>
+        </div>
+        <Link to="/wigmaker/dashboard" style={{ height: '32px', padding: '0 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderRadius: '8px', border: '1px solid #ead7e8', color: '#5d4d62', fontSize: '0.75rem', fontWeight: 800, textDecoration: 'none', background: '#fff' }}>
+          <i className='bx bx-arrow-back'></i> Back to Dashboard
+        </Link>
       </div>
 
-      <article className="task-detail-shell">
-        <div className="task-detail-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-          <div className="assignment-snapshot-pane" style={{ background: '#fff', padding: '1.5rem', borderRadius: '16px', border: '1px solid #f2ebf4', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <i className='bx bxs-info-circle' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i>
-              <h2 style={{ margin: 0 }}>Assignment Snapshot</h2>
+      <div className="task-detail-shell">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+          {/* Assignment Snapshot */}
+          <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem' }}>
+              <i className='bx bxs-info-circle' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
+              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Assignment Snapshot</h2>
             </div>
-            <ul className="task-meta-list" style={{ listStyle: 'none', padding: 0, fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.5rem' }}><strong>Inventory Ref:</strong> <span style={{ color: '#ad246d', fontWeight: 800 }}>{task.donation?.reference || 'N/A'}</span></li>
-              <li style={{ marginBottom: '0.5rem' }}><strong>Spec:</strong> {task.targetLength} / {task.targetColor}</li>
-              <li style={{ marginBottom: '0.5rem' }}><strong>Window:</strong> {new Date(task.createdAt).toLocaleDateString()} — {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'TBD'}</li>
-            </ul>
-          </div>
+            <div style={{ display: 'grid', gap: '0.8rem', fontSize: '0.85rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#8c7895' }}>Inventory Ref:</span>
+                <strong style={{ color: '#ad246d' }}>{task.donation?.reference || 'N/A'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#8c7895' }}>Wig Specification:</span>
+                <strong style={{ color: '#3b2e43' }}>{task.targetLength} / {task.targetColor}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#8c7895' }}>Production Window:</span>
+                <strong style={{ fontSize: '0.75rem', color: '#5d4d62' }}>{new Date(task.createdAt).toLocaleDateString()} — {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'TBD'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.4rem' }}>
+                <span style={{ color: '#8c7895' }}>Current Stage:</span>
+                <StatusPill status={task.status} />
+              </div>
+            </div>
+          </article>
 
-          <div className="material-snapshot-pane" style={{ background: '#fff', padding: '1.5rem', borderRadius: '16px', border: '1px solid #f2ebf4', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <i className='bx bx-images' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i>
-              <h2 style={{ margin: 0 }}>Material Photos</h2>
+          {/* Material Snapshot */}
+          <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem' }}>
+              <i className='bx bx-images' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
+              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Original Hair Material</h2>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {task.donation?.photoFront && (
-                <a href={task.donation.photoFront} target="_blank" rel="noreferrer" style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ead7e8' }}>
-                  <img src={task.donation.photoFront} alt="Front" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </a>
-              )}
-              {task.donation?.photoSide && (
-                <a href={task.donation.photoSide} target="_blank" rel="noreferrer" style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ead7e8' }}>
-                  <img src={task.donation.photoSide} alt="Side" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      </article>
-
-      {!isCompleted ? (
-        <article className="task-update-shell" style={{ background: '#fff', padding: '1.5rem', borderRadius: '16px', border: '1px solid #f2ebf4', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
-            <i className='bx bx-edit-alt' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i>
-            <h2 style={{ margin: 0 }}>Update Production Status</h2>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group" style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.5rem' }}>Transitioning To</label>
-              <input type="text" value={nextLabel} readOnly style={{ background: '#fdf7fb', border: '1px solid #f1a8cf', color: '#ad246d', fontWeight: 800, padding: '0.6rem 1rem', width: '100%', borderRadius: '8px' }} />
-            </div>
-            <div className="form-group" style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.5rem' }}>Progress Message</label>
-              <textarea 
-                rows={3} 
-                placeholder="Describe your current progress..." 
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                style={{ width: '100%', borderRadius: '12px', border: '1px solid #ead7e8', padding: '1rem' }}
-              ></textarea>
-            </div>
-            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.5rem' }}>Attach Progress Photo (Optional)</label>
-              <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} />
-            </div>
-            <div className="form-actions" style={{ display: 'flex', gap: '1rem' }}>
-              <button type="submit" className="soft-btn" disabled={isSubmitting} style={{ padding: '0.8rem 2rem' }}>
-                {isSubmitting ? 'Saving...' : 'Save Production Update'}
-              </button>
-              <Link to="/wigmaker/dashboard" className="ghost-btn">Cancel</Link>
-            </div>
-          </form>
-        </article>
-      ) : (
-        <div className="completion-banner" style={{ background: '#f0fdf4', color: '#166534', padding: '2rem', borderRadius: '16px', border: '1px solid #bbf7d0', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <i className='bx bxs-check-circle' style={{ fontSize: '2.5rem', color: '#16a34a' }}></i>
-          <div>
-            <strong style={{ fontSize: '1.25rem', display: 'block' }}>Production Completed</strong>
-            <p style={{ margin: 0 }}>This task has been finalized and synced with the inventory system.</p>
-          </div>
-        </div>
-      )}
-
-      <article className="task-history-shell">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
-          <i className='bx bx-history' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i>
-          <h2 style={{ margin: 0 }}>Production History</h2>
-        </div>
-        <div className="table-wrap">
-          <table className="task-table">
-            <thead>
-              <tr>
-                <th>Timestamp</th>
-                <th style={{ width: '70px', textAlign: 'center' }}>Photo</th>
-                <th>Stage</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              {histories.map((h, i) => (
-                <tr key={i}>
-                  <td>{new Date(h.createdAt).toLocaleString()}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    {h.metadata?.preview_photo ? (
-                      <a href={h.metadata.preview_photo} target="_blank" rel="noreferrer" style={{ width: '50px', height: '50px', display: 'block', margin: '0 auto' }}>
-                        <img src={h.metadata.preview_photo} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
-                      </a>
-                    ) : '---'}
-                  </td>
-                  <td><StatusPill status={h.status} /></td>
-                  <td style={{ fontSize: '0.85rem' }}>{h.notes || '---'}</td>
-                </tr>
+            <div style={{ display: 'flex', gap: '1rem', background: '#fdf7fb', padding: '1rem', borderRadius: '15px', border: '1px solid #ead7e8' }}>
+              {[task.donation?.photoFront, task.donation?.photoSide].filter(Boolean).map((img, idx) => (
+                <div key={idx} style={{ width: '80px', height: '80px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #ead7e8', background: '#fff' }}>
+                  <img src={img} alt="Material" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
               ))}
-            </tbody>
-          </table>
+              {![task.donation?.photoFront, task.donation?.photoSide].filter(Boolean).length && (
+                <div style={{ fontSize: '0.75rem', color: '#8c7895', fontStyle: 'italic' }}>No material photos available.</div>
+              )}
+            </div>
+          </article>
+
+          {/* Task Roadmap */}
+          <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem' }}>
+              <i className='bx bx-git-commit' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
+              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Task Roadmap</h2>
+            </div>
+            <div style={{ position: 'relative', paddingLeft: '1.5rem', borderLeft: '2px solid #ead7e8', display: 'grid', gap: '1rem' }}>
+              {[
+                { stage: 'Stage 1: Assigned', desc: 'Material delivery confirmed', done: true },
+                { stage: 'Stage 2: In Progress', desc: 'Wig construction & styling', done: task.status !== 'assigned' },
+                { stage: 'Stage 3: Completed', desc: 'Quality check & delivery', done: task.status === 'completed' }
+              ].map((step, idx) => (
+                <div key={idx} style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: '-1.9rem', top: '0.2rem', width: '10px', height: '10px', borderRadius: '50%', background: step.done ? '#ad246d' : '#ead7e8', border: '2px solid #fff', boxShadow: '0 0 0 2px ' + (step.done ? '#ad246d' : '#ead7e8') }}></div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: step.done ? '#3b2e43' : '#8c7895' }}>{step.stage}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#8c7895' }}>{step.desc}</div>
+                </div>
+              ))}
+            </div>
+          </article>
         </div>
-      </article>
+
+        {/* Update Form */}
+        {!isCompleted ? (
+          <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '2rem', marginBottom: '2.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
+              <i className='bx bx-edit-alt' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Update Production Status</h2>
+            </div>
+            <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div style={{ display: 'grid', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8c7895' }}>Transitioning To</label>
+                  <input type="text" value={nextLabel} readOnly style={{ height: '40px', padding: '0 1rem', borderRadius: '10px', border: '1px solid #f1a8cf', background: '#fdf7fb', color: '#ad246d', fontWeight: 800, fontSize: '0.85rem' }} />
+                </div>
+                <div style={{ display: 'grid', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8c7895' }}>Update Timestamp</label>
+                  <input type="text" value={new Date().toLocaleString()} readOnly style={{ height: '40px', padding: '0 1rem', borderRadius: '10px', border: '1px solid #ead7e8', background: '#fdf7fb', color: '#5d4d62', fontSize: '0.85rem' }} />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8c7895' }}>Progress Message <span style={{ color: '#ad246d' }}>*</span></label>
+                <textarea rows={3} placeholder="Describe your current progress for staff review..." value={notes} onChange={e => setNotes(e.target.value)} required style={{ padding: '1rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.85rem', outline: 'none' }}></textarea>
+              </div>
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8c7895' }}>Attach Progress Photo (Optional)</label>
+                <div style={{ border: '2px dashed #ead7e8', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', background: '#fafafa', cursor: 'pointer' }}>
+                  <i className='bx bx-image-add' style={{ fontSize: '2rem', color: '#ad246d', marginBottom: '0.4rem', display: 'block' }}></i>
+                  <span style={{ fontSize: '0.75rem', color: '#8c7895', fontWeight: 600 }}>Click to upload progress photo</span>
+                  <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} style={{ display: 'none' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                <button type="submit" disabled={isSubmitting} style={{ height: '42px', padding: '0 2rem', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}>
+                  {isSubmitting ? 'Saving...' : 'Save Production Update'}
+                </button>
+              </div>
+            </form>
+          </article>
+        ) : (
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '20px', padding: '2rem', marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a' }}>
+              <i className='bx bxs-check-circle' style={{ fontSize: '2.5rem' }}></i>
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#166534', margin: 0 }}>Production Completed</h3>
+              <p style={{ fontSize: '0.85rem', color: '#166534', margin: '0.2rem 0 0 0', opacity: 0.8 }}>This task has been finalized and verified by the inventory system.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Update History */}
+        <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
+            <i className='bx bx-history' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
+            <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Production Update History</h2>
+          </div>
+          <div style={{ border: '1px solid #ead7e8', borderRadius: '12px', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#fdf7fb', borderBottom: '1px solid #ead7e8' }}>
+                  <th style={{ padding: '0.8rem 1rem', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, color: '#ad246d', textTransform: 'uppercase' }}>Timestamp</th>
+                  <th style={{ padding: '0.8rem 1rem', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, color: '#ad246d', textTransform: 'uppercase' }}>Stage</th>
+                  <th style={{ padding: '0.8rem 1rem', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, color: '#ad246d', textTransform: 'uppercase' }}>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {histories.map((h, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #ead7e8' }}>
+                    <td style={{ padding: '1rem', fontSize: '0.8rem', color: '#5d4d62' }}>{new Date(h.createdAt).toLocaleString()}</td>
+                    <td style={{ padding: '1rem' }}><StatusPill status={h.status} /></td>
+                    <td style={{ padding: '1rem', fontSize: '0.8rem', color: '#8c7895' }}>{h.notes || 'No notes provided.'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </div>
     </section>
   );
 };

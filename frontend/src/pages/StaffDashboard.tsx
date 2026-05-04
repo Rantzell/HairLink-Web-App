@@ -88,11 +88,11 @@ const StaffDashboard: React.FC = () => {
         </div>
         <div className="staff-actions three-col">
           <Link className="staff-action-link" to="/staff/verification/donor">
-            <h3>Donor Hair Verification</h3>
-            <p>Review donor hair submissions and approve or reject with remarks.</p>
+            <h3>Donation Verification</h3>
+            <p>Review hair donation submissions and approve or reject with remarks.</p>
           </Link>
           <Link className="staff-action-link" to="/staff/verification/recipient">
-            <h3>Recipient Request Verification</h3>
+            <h3>Request Verification</h3>
             <p>Validate recipient requests and supporting medical documentation.</p>
           </Link>
           <Link className="staff-action-link" to="/staff/verification/monetary">

@@ -77,10 +77,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {role === 'staff' && (
               <>
                 <Link to="/staff/dashboard" className={isActive('/staff/dashboard') ? 'active' : ''}>Overview</Link>
-                <Link to="/staff/verification/donor" className={location.pathname === '/staff/verification/donor' ? 'active' : ''}>Donor</Link>
-                <Link to="/staff/verification/recipient" className={location.pathname === '/staff/verification/recipient' ? 'active' : ''}>Recipient</Link>
+                <Link to="/staff/verification/donor" className={location.pathname === '/staff/verification/donor' ? 'active' : ''}>Donation</Link>
+                <Link to="/staff/verification/recipient" className={location.pathname === '/staff/verification/recipient' ? 'active' : ''}>Request</Link>
                 <Link to="/staff/verification/monetary" className={location.pathname === '/staff/verification/monetary' ? 'active' : ''}>Monetary</Link>
-                <Link to="/staff/tracking" className={isActive('/staff/tracking') ? 'active' : ''}>Tracking</Link>
+                <div className="nav-dropdown">
+                  <span className={`nav-dropdown-trigger ${location.pathname.includes('/staff/tracking') ? 'active' : ''}`}>Tracking <i className='bx bx-chevron-down'></i></span>
+                  <div className="nav-dropdown-content">
+                    <Link to="/staff/tracking/donation">Donation Trackers</Link>
+                    <Link to="/staff/tracking/recipient">Request Trackers</Link>
+                  </div>
+                </div>
                 <Link to="/staff/wig-stock" className={isActive('/staff/wig-stock') ? 'active' : ''}>Wigs</Link>
                 <Link to="/staff/hair-stock" className={isActive('/staff/hair-stock') ? 'active' : ''}>Hair</Link>
                 <Link to="/staff/matching" className={isActive('/staff/matching') ? 'active' : ''}>Matching</Link>
@@ -90,12 +96,49 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {role === 'admin' && (
               <>
                 <Link to="/admin/dashboard" className={isActive('/admin/dashboard') ? 'active' : ''}>Overview</Link>
-                <Link to="/admin/verification/donor" className={isActive('/admin/verification') ? 'active' : ''}>Verify</Link>
+                <div className="nav-dropdown">
+                  <span className={`nav-dropdown-trigger ${isActive('/admin/verification') ? 'active' : ''}`}>Verify <i className='bx bx-chevron-down'></i></span>
+                  <div className="nav-dropdown-content">
+                    <Link to="/admin/verification?view=donor">Hair Donations</Link>
+                    <Link to="/admin/verification?view=recipient">Recipient Requests</Link>
+                  </div>
+                </div>
                 <Link to="/admin/matching" className={isActive('/admin/matching') ? 'active' : ''}>Matching</Link>
-                <Link to="/admin/operations" className={isActive('/admin/operations') ? 'active' : ''}>Ops</Link>
-                <Link to="/admin/inventory" className={isActive('/admin/inventory') ? 'active' : ''}>Inventory</Link>
-                <Link to="/admin/users" className={isActive('/admin/users') ? 'active' : ''}>Users</Link>
-                <Link to="/admin/reports" className={isActive('/admin/reports') ? 'active' : ''}>Reports</Link>
+                <div className="nav-dropdown">
+                  <span className={`nav-dropdown-trigger ${isActive('/admin/operations') ? 'active' : ''}`}>Ops <i className='bx bx-chevron-down'></i></span>
+                  <div className="nav-dropdown-content">
+                    <Link to="/admin/operations?view=production">Production Oversight</Link>
+                    <Link to="/admin/operations?view=distribution">Distribution Oversight</Link>
+                  </div>
+                </div>
+                <div className="nav-dropdown">
+                  <span className={`nav-dropdown-trigger ${isActive('/admin/inventory') ? 'active' : ''}`}>Inventory <i className='bx bx-chevron-down'></i></span>
+                  <div className="nav-dropdown-content">
+                    <Link to="/admin/inventory?view=overview">Global Overview</Link>
+                    <Link to="/admin/inventory?view=hair">Hair Stock</Link>
+                    <Link to="/admin/inventory?view=wigs">Wig Stock</Link>
+                    <Link to="/admin/inventory?view=donations">Donation Records</Link>
+                  </div>
+                </div>
+                <div className="nav-dropdown">
+                  <span className={`nav-dropdown-trigger ${isActive('/admin/users') ? 'active' : ''}`}>Users <i className='bx bx-chevron-down'></i></span>
+                  <div className="nav-dropdown-content">
+                    <Link to="/admin/users?role=all">All Users</Link>
+                    <Link to="/admin/users?role=donor">Donors</Link>
+                    <Link to="/admin/users?role=recipient">Recipients</Link>
+                    <Link to="/admin/users?role=staff">Staff Accounts</Link>
+                    <Link to="/admin/users?role=wigmaker">Wigmakers</Link>
+                  </div>
+                </div>
+                <div className="nav-dropdown">
+                  <span className={`nav-dropdown-trigger ${isActive('/admin/reports') ? 'active' : ''}`}>Reports <i className='bx bx-chevron-down'></i></span>
+                  <div className="nav-dropdown-content">
+                    <Link to="/admin/reports?type=full">Full Audit</Link>
+                    <Link to="/admin/reports?type=hair">Hair Inventory</Link>
+                    <Link to="/admin/reports?type=wigs">Wig Stock</Link>
+                    <Link to="/admin/reports?type=monetary">Financials</Link>
+                  </div>
+                </div>
               </>
             )}
 

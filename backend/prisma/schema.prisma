@@ -8,186 +8,176 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// User — profile extension of auth.users (UUID primary key)
-// ──────────────────────────────────────────────────────────────────────────────
 model User {
-  id                String              @id @db.Uuid // UUID from auth.users
-  name              String              @default("")
-  firstName         String?             @map("first_name")
-  lastName          String?             @map("last_name")
-  email             String              @unique
-  emailVerifiedAt   DateTime?           @map("email_verified_at")
-  role              String              @default("donor")
+  name              String
+  firstName         String?            @map("first_name")
+  lastName          String?            @map("last_name")
+  email             String             @unique
+  emailVerifiedAt   DateTime?          @map("email_verified_at")
+  role              String             @default("donor")
   country           String?
   region            String?
-  postalCode        String?             @map("postal_code")
+  postalCode        String?            @map("postal_code")
   age               Int?
   gender            String?
   phone             String?
   bio               String?
   profile_photo_url String?
-  isActive          Boolean             @default(true) @map("is_active")
-  referredBy        String?             @map("referred_by")
-  referralCode      String?             @map("referral_code")
-  onesignalId       String?             @map("onesignal_id")
-  createdAt         DateTime            @default(now()) @map("created_at")
-  updatedAt         DateTime            @updatedAt @map("updated_at")
-  communityComments CommunityComment[]
-  likedPosts        CommunityPostLike[]
-  communityPosts    CommunityPost[]
+  isActive          Boolean            @default(true) @map("is_active")
+  referredBy        String?            @map("referred_by")
+  referralCode      String?            @map("referral_code")
+  onesignalId       String?            @map("onesignal_id")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  id                String             @id @db.Uuid
+  password          String?
   donations         Donation[]
   hairRequests      HairRequest[]
   monetaryDonations MonetaryDonation[]
-  wigProductions    WigProduction[]     @relation("WigmakerTasks")
+  notifications     notifications[]
+  user_push_tokens  user_push_tokens[]
+  wigProductions    WigProduction[]
 
+  @@index([email])
+  @@index([role])
   @@map("users")
 }
 
 model Donation {
-  id                Int             @id @default(autoincrement())
-  userId            String          @map("user_id") @db.Uuid // UUID FK to auth.users
-  reference         String          @unique
-  hairLength        String?         @map("hair_length")
-  hairColor         String?         @map("hair_color")
-  treatedHair       Boolean         @default(false) @map("treated_hair")
+  id                Int       @id @default(autoincrement())
+  userId            String?   @map("user_id") @db.Uuid
+  reference         String?   @unique
+  hairLength        String?   @map("hair_length")
+  hairColor         String?   @map("hair_color")
+  treatedHair       Boolean?  @default(false) @map("treated_hair")
   address           String?
   reason            String?
-  status            String          @default("Submitted")
-  certificateNo     String?         @map("certificate_no")
-  photoFront        String?         @map("photo_front")
-  photoSide         String?         @map("photo_side")
-  donorDeliveryLink String?         @map("donor_delivery_link")
-  receivedWigAt     DateTime?       @map("received_wig_at")
-  dropoffLocation   String?         @map("dropoff_location")
-  appointmentAt     DateTime?       @map("appointment_at")
-  createdAt         DateTime        @default(now()) @map("created_at")
-  updatedAt         DateTime        @updatedAt @map("updated_at")
-  user              User            @relation(fields: [userId], references: [id])
+  dropoffLocation   String?   @map("dropoff_location")
+  appointmentAt     DateTime? @map("appointment_at") @db.Timestamptz(6)
+  status            String?   @default("Submitted")
+  certificateNo     String?   @map("certificate_no")
+  receivedWigAt     DateTime? @map("received_wig_at") @db.Timestamptz(6)
+  photoFront        String?   @map("photo_front")
+  photoSide         String?   @map("photo_side")
+  donorDeliveryLink String?   @map("donor_delivery_link")
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user              User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
   wigProductions    WigProduction[]
 
   @@map("donations")
 }
 
 model HairRequest {
-  id                   Int             @id @default(autoincrement())
-  userId               String          @map("user_id") @db.Uuid // UUID FK to auth.users
-  reference            String          @unique
-  contactNumber        String?         @map("contact_number")
-  gender               String?
-  story                String?
-  status               String          @default("Pending")
-  medicalCertificate   String?         @map("medical_certificate")
-  diagnosisPhoto       String?         @map("diagnosis_photo")
-  recipientPhoto       String?         @map("recipient_photo")
-  additionalPhoto      String?         @map("additional_photo")
-  documents            Json?
-  notes                String?
-  wigLength            String?         @map("wig_length")
-  wigColor             String?         @map("wig_color")
-  wigReceivedAt        DateTime?       @map("wig_received_at")
-  deliveryTrackingLink String?         @map("delivery_tracking_link")
-  appointmentAt        DateTime?       @map("appointment_at")
-  createdAt            DateTime        @default(now()) @map("created_at")
-  updatedAt            DateTime        @updatedAt @map("updated_at")
-  user                 User            @relation(fields: [userId], references: [id])
-  wigProductions       WigProduction[]
+  id                 Int       @id @default(autoincrement())
+  userId             String?   @map("user_id") @db.Uuid
+  reference          String?   @unique
+  story              String?
+  wigLength          String?   @map("wig_length")
+  wigColor           String?   @map("wig_color")
+  medicalCertificate String?   @map("medical_certificate")
+  additionalPhoto    String?   @map("additional_photo")
+  notes              String?
+  status             String?   @default("Submitted")
+  createdAt          DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user               User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  wigProductions     WigProduction[]
 
   @@map("hair_requests")
 }
 
 model WigProduction {
-  id            Int          @id @default(autoincrement())
-  taskCode      String       @unique @map("task_code")
-  wigmakerId    String       @map("wigmaker_id") @db.Uuid // UUID FK to auth.users
-  donationId    Int?         @map("donation_id")
-  hairRequestId Int?         @map("hair_request_id")
-  targetLength  String?      @map("target_length")
-  targetColor   String?      @map("target_color")
-  status        String       @default("assigned")
-  dueDate       DateTime?    @map("due_date")
-  deliveryLink  String?      @map("delivery_link")
+  id            Int       @id @default(autoincrement())
+  taskCode      String    @unique @map("task_code")
+  wigmakerId    String    @map("wigmaker_id") @db.Uuid
+  donationId    Int?      @map("donation_id")
+  hairRequestId Int?      @map("hair_request_id")
+  targetLength  String?   @map("target_length")
+  targetColor   String?   @map("target_color")
+  status        String    @default("assigned")
+  dueDate       DateTime? @map("due_date")
+  deliveryLink  String?   @map("delivery_link")
   preview_photo String?
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
   donation      Donation?    @relation(fields: [donationId], references: [id])
   hairRequest   HairRequest? @relation(fields: [hairRequestId], references: [id])
-  wigmaker      User         @relation("WigmakerTasks", fields: [wigmakerId], references: [id])
+  wigmaker      User         @relation(fields: [wigmakerId], references: [id])
 
   @@map("wig_productions")
 }
 
 model CommunityPost {
-  id        Int                 @id @default(autoincrement())
-  userId    String              @map("user_id") @db.Uuid // UUID FK to auth.users
+  id        String              @id
+  userId    String              @map("user_id") @db.Uuid
   content   String
   imageUrl  String?             @map("image_url")
   createdAt DateTime            @default(now()) @map("created_at")
   updatedAt DateTime            @updatedAt @map("updated_at")
   comments  CommunityComment[]
   likedBy   CommunityPostLike[]
-  user      User                @relation(fields: [userId], references: [id])
 
   @@map("community_posts")
 }
 
 model CommunityComment {
-  id        Int                @id @default(autoincrement())
-  postId    Int                @map("post_id")
-  userId    String             @map("user_id") @db.Uuid // UUID FK to auth.users
+  id        String             @id
+  postId    String             @map("post_id")
+  userId    String             @map("user_id") @db.Uuid
   content   String?
   imageUrl  String?            @map("image_url")
-  parentId  Int?               @map("parent_id")
+  parentId  String?            @map("parent_id")
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime           @map("updated_at")
   parent    CommunityComment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies   CommunityComment[] @relation("CommentReplies")
   post      CommunityPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User               @relation(fields: [userId], references: [id])
 
   @@map("community_comments")
 }
 
 model CommunityPostLike {
-  id              Int           @id @default(autoincrement())
-  communityPostId Int           @map("community_post_id")
-  userId          String        @map("user_id") @db.Uuid // UUID FK to auth.users
+  id              String        @id
+  communityPostId String        @map("community_post_id")
+  userId          String        @map("user_id") @db.Uuid
   createdAt       DateTime      @default(now()) @map("created_at")
   post            CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
-  user            User          @relation(fields: [userId], references: [id])
 
   @@unique([communityPostId, userId])
   @@map("community_post_likes")
 }
 
 model StatusHistory {
-  id            Int         @id @default(autoincrement())
-  trackableId   String      @map("trackable_id") // now String to support UUID refs
-  trackableType String      @map("trackable_type")
+  id            Int      @id @default(autoincrement())
+  trackableId   Int      @map("trackable_id")
+  trackableType String   @map("trackable_type")
   status        String
   notes         String?
   metadata      Json?
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@index([trackableId, trackableType])
   @@map("status_histories")
 }
 
 model MonetaryDonation {
-  id              Int      @id @default(autoincrement())
-  userId          String   @map("user_id") @db.Uuid // UUID FK to auth.users
+  id              Int       @id @default(autoincrement())
+  userId          String?   @map("user_id") @db.Uuid
   name            String?
-  amount          Decimal  @db.Decimal(10, 2)
-  currency        String   @default("PHP")
-  paymentMethod   String?  @map("payment_method")
-  referenceNumber String?  @map("reference_number")
-  proofPath       String?  @map("proof_path")
-  status          String   @default("Submitted")
+  email           String?
+  amount          Decimal?  @db.Decimal
+  currency        String?   @default("PHP")
+  paymentMethod   String?   @map("payment_method")
+  referenceNumber String?   @unique @map("reference_number")
+  proofPath       String?   @map("proof_path")
+  status          String?   @default("Submitted")
   remarks         String?
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  user            User     @relation(fields: [userId], references: [id])
+  anonymous       Boolean?  @default(false)
+  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
 
   @@map("monetary_donations")
 }
@@ -246,4 +236,118 @@ model Partnership {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("partnerships")
+}
+
+model cache {
+  key        String @id @db.VarChar(255)
+  value      String
+  expiration Int
+
+  @@index([expiration], map: "cache_expiration_index")
+}
+
+model cache_locks {
+  key        String @id @db.VarChar(255)
+  owner      String @db.VarChar(255)
+  expiration Int
+
+  @@index([expiration], map: "cache_locks_expiration_index")
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement())
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String
+  queue      String
+  payload    String
+  exception  String
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model job_batches {
+  id             String  @id @db.VarChar(255)
+  name           String  @db.VarChar(255)
+  total_jobs     Int
+  pending_jobs   Int
+  failed_jobs    Int
+  failed_job_ids String
+  options        String?
+  cancelled_at   Int?
+  created_at     Int
+  finished_at    Int?
+}
+
+model jobs {
+  id           BigInt @id @default(autoincrement())
+  queue        String @db.VarChar(255)
+  payload      String
+  attempts     Int    @db.SmallInt
+  reserved_at  Int?
+  available_at Int
+  created_at   Int
+
+  @@index([queue], map: "jobs_queue_index")
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement())
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model notifications {
+  id         Int       @id @default(autoincrement())
+  user_id    String?   @db.Uuid
+  title      String
+  message    String?
+  type       String?   @default("general")
+  is_read    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model password_reset_tokens {
+  email      String    @id @db.VarChar(255)
+  token      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement())
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt
+  name           String
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?
+  last_used_at   DateTime? @db.Timestamp(0)
+  expires_at     DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([expires_at], map: "personal_access_tokens_expires_at_index")
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model sessions {
+  id            String  @id @db.VarChar(255)
+  user_id       BigInt?
+  ip_address    String? @db.VarChar(45)
+  user_agent    String?
+  payload       String
+  last_activity Int
+
+  @@index([last_activity], map: "sessions_last_activity_index")
+  @@index([user_id], map: "sessions_user_id_index")
+}
+
+model user_push_tokens {
+  id              Int       @id @default(autoincrement())
+  user_id         String?   @db.Uuid
+  expo_push_token String    @unique
+  platform        String?   @default("unknown")
+  is_active       Boolean?  @default(true)
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime? @default(now()) @db.Timestamptz(6)
+  users           User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }

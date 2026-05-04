@@ -16,17 +16,18 @@ const REQUEST_TYPE = 'App\\Models\\HairRequest' as const;
 const WIG_TYPE = 'App\\Models\\WigProduction' as const;
 
 // BigInt serializer
-function s(obj: any): any {
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj === 'bigint') return obj.toString();
-  if (obj instanceof Date) return obj;
-  if (Array.isArray(obj)) return obj.map(s);
-  if (typeof obj === 'object') {
-    const out: any = {};
-    for (const k of Object.keys(obj)) out[k] = s(obj[k]);
-    return out;
+function s(o: any): any {
+  if (o === null || o === undefined) return o;
+  if (typeof o === 'bigint') return o.toString();
+  if (typeof o === 'object' && o.d && typeof o.toFixed === 'function') return o.toString();
+  if (o instanceof Date) return o;
+  if (Array.isArray(o)) return o.map(s);
+  if (typeof o === 'object') {
+    const r: any = {};
+    for (const k of Object.keys(o)) { r[k] = s(o[k]); }
+    return r;
   }
-  return obj;
+  return o;
 }
 
 // GET /internal-api/staff/dashboard
@@ -40,7 +41,10 @@ router.get('/dashboard', ...staffOnly, async (_req, res) => {
       prisma.wigProduction.count({ where: { status: 'completed' } }),
     ]);
     res.json({ pendingDonations: pd, pendingRequests: pr, totalStock: ts, productionCount: pc, wigStockCount: ws });
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) {
+    console.error('Operations Error:', err);
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
 });
 
 // GET /internal-api/staff/donor-verification
@@ -107,7 +111,7 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
       include: { user: true }, orderBy: { updatedAt: 'desc' },
     });
     res.json({ donations: s(donations), requests: s(requests), wigmakers: s(wigmakers), wigProductions: wpMap });
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) { res.status(500).json({ error: 'Failed', message: err.message }); }
 });
 
 // POST /internal-api/staff/assign-wigmaker/:reference
@@ -122,9 +126,9 @@ router.post('/assign-wigmaker/:reference', ...staffOnly, validate(assignWigmaker
     const due = new Date(); due.setDate(due.getDate() + 30);
     await prisma.wigProduction.create({ data: { taskCode: tc, wigmakerId: wm.id, donationId: donation.id, targetLength: donation.hairLength, targetColor: donation.hairColor, status: 'assigned', dueDate: due } });
     await prisma.donation.update({ where: { id: donation.id }, data: { status: 'In Queue' } });
-    await createStatusHistory(DONATION_TYPE, donation.id, 'In Queue', `Wigmaker: ${wm.firstName} ${wm.lastName}`);
-    res.json({ message: `Assigned to ${wm.firstName} ${wm.lastName}.`, success: true, task_code: tc });
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+    await createStatusHistory(DONATION_TYPE, donation.id, 'In Queue', `Wigmaker: ${wm.firstName || 'Staff'} ${wm.lastName || ''}`);
+    res.json({ message: `Assigned to ${wm.firstName || 'Wigmaker'}.`, success: true, task_code: tc });
+  } catch (err: any) { res.status(500).json({ error: 'Failed', message: err.message }); }
 });
 
 // POST /internal-api/staff/tracking/:reference/status
@@ -139,8 +143,8 @@ router.post('/tracking/:reference/status', ...staffOnly, validate(trackingStatus
     const tt = isDon ? DONATION_TYPE : REQUEST_TYPE;
     const ud: any = { status: ns };
     if (ns === 'Wig Received') ud.receivedWigAt = new Date();
-    if (ns === 'In Transit' && delivery_tracking_link) ud.deliveryTrackingLink = delivery_tracking_link;
-    if (ns === 'Received Hair' && isDon && !record.certificateNo) ud.certificateNo = `CERT-${new Date().getFullYear()}-${record.reference.slice(-6)}`;
+    if (ns === 'In Transit' && delivery_tracking_link) ud.donorDeliveryLink = delivery_tracking_link;
+    if (ns === 'Received Hair' && isDon && record.reference && !record.certificateNo) ud.certificateNo = `CERT-${new Date().getFullYear()}-${record.reference.slice(-6)}`;
     if (isDon) await prisma.donation.update({ where: { id: record.id }, data: ud });
     else await prisma.hairRequest.update({ where: { id: record.id }, data: ud });
     await createStatusHistory(tt, record.id, ns, notes || `Status updated to ${ns} by staff`);
@@ -168,6 +172,7 @@ router.get('/hair-stock', ...staffOnly, async (_req, res) => {
     const dons = await prisma.donation.findMany({ where: { status: 'Completed' } });
     const stock: Record<string, Record<string, number>> = { Short: { Black: 0, Brown: 0, Light: 0 }, Medium: { Black: 0, Brown: 0, Light: 0 }, Long: { Black: 0, Brown: 0, Light: 0 } };
     for (const d of dons) {
+      if (!d.hairLength || !d.hairColor) continue;
       let l = d.hairLength.charAt(0).toUpperCase() + d.hairLength.slice(1).toLowerCase();
       let c = d.hairColor.charAt(0).toUpperCase() + d.hairColor.slice(1).toLowerCase();
       if (c.includes('Black')) c = 'Black'; if (c.includes('Brown')) c = 'Brown';

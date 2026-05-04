@@ -124,6 +124,9 @@ const RecipientDashboard: React.FC = () => {
           <Link className="action-item-btn" to="/recipient/haircare">
             <i className='bx bx-heart-circle'></i> Hair Care
           </Link>
+          <Link className="action-item-btn donate-highlight" to="/recipient/monetary" style={{ border: '1.5px solid #ad246d', color: '#ad246d' }}>
+            <i className='bx bx-donate-heart'></i> Donate Money
+          </Link>
         </div>
       </section>
 

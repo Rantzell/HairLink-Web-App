@@ -14,7 +14,7 @@ const StaffVerificationDetail: React.FC = () => {
     const fetchDetail = async () => {
       try {
         const endpoint = type === 'monetary'
-          ? `/internal-api/staff/verification/monetary/${reference}` // Assuming this exists or works via generic
+          ? `/internal-api/staff/verification/monetary/${reference}`
           : `/internal-api/staff/verification/${type}/${reference}`;
         
         const res = await apiClient.get(endpoint);
@@ -66,84 +66,70 @@ const StaffVerificationDetail: React.FC = () => {
 
   const isDonor = type === 'donor';
   const isMonetary = type === 'monetary';
-  const title = isMonetary ? 'Monetary Donation Verification' : isDonor ? 'Donor Hair Verification' : 'Recipient Request Verification';
+  const title = isMonetary ? 'Monetary Donation Verification' : isDonor ? 'Donation Verification' : 'Request Verification';
 
   return (
     <section className="section-wrap reveal active staff-page">
-      <div className="section-title-block">
-        <h1>{title}</h1>
-        <p>Reference: <strong>{reference}</strong></p>
+      <div className="section-title-block" style={{ marginBottom: '1rem', textAlign: 'center' }}>
+        <h1 style={{ marginBottom: '0.2rem' }}>{title}</h1>
+        <p style={{ marginTop: 0, color: '#8c7895' }}>Reference: <strong style={{ color: '#3b2e43' }}>{reference}</strong></p>
       </div>
 
-      <article className="staff-block verification-detail-shell">
-        <div className="verification-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      <article className="staff-block verification-detail-shell" style={{ marginTop: '0.5rem' }}>
+        <div className="verification-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
           <section>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
               <i className='bx bx-notepad' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i>
               <h2 style={{ margin: 0 }}>Submission Summary</h2>
             </div>
             
-            <div className="summary-card" style={{ background: '#fdf7fb', border: '1px solid #f2ebf4', borderRadius: '12px', padding: '1rem' }}>
-              <ul className="verification-list" style={{ listStyle: 'none', display: 'grid', gap: '0.5rem', padding: 0 }}>
-                {isMonetary ? (
+            <div className="summary-card" style={{ background: '#fdf7fb', border: '1px solid #f2ebf4', borderRadius: '12px', padding: '1.5rem' }}>
+              <ul className="verification-list" style={{ listStyle: 'none', display: 'grid', gap: '0.8rem', padding: 0 }}>
+                {isDonor ? (
                   <>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem' }}>
-                      <i className='bx bx-user' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Donor:</strong> {record.user?.firstName || record.name} {record.user?.lastName || ''}</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem' }}>
-                      <i className='bx bx-money' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Amount:</strong> <strong style={{ color: '#ad246d' }}>{record.currency} {Number(record.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong></span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem' }}>
-                      <i className='bx bx-credit-card' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Ref Number:</strong> {record.referenceNumber || record.reference_number}</span>
-                    </li>
-                  </>
-                ) : isDonor ? (
-                  <>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem' }}>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-user' style={{ color: '#ad246d' }}></i>
                       <span><strong>Donor:</strong> {record.user?.firstName} {record.user?.lastName}</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem' }}>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-cut' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Hair Length:</strong> {record.hairLength}</span>
+                      <span><strong>Hair Length:</strong> {record.hair_length}</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem' }}>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-palette' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Hair Color:</strong> {record.hairColor}</span>
+                      <span><strong>Hair Color:</strong> {record.hair_color}</span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', fontSize: '0.95rem' }}>
+                      <i className='bx bx-message-square-detail' style={{ color: '#ad246d', marginTop: '4px' }}></i>
+                      <span><strong>Reason:</strong> <span style={{ fontStyle: 'italic', color: '#614f68' }}>"{record.reason || 'No reason provided'}"</span></span>
                     </li>
                   </>
                 ) : (
                   <>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem' }}>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-user-voice' style={{ color: '#ad246d' }}></i>
                       <span><strong>Recipient:</strong> {record.user?.firstName} {record.user?.lastName}</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem' }}>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-ruler' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Preferred Wig Size:</strong> <strong>{record.wigLength || 'N/A'}</strong></span>
+                      <span><strong>Preferred Wig Size:</strong> <strong>{record.wig_length || 'N/A'}</strong></span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem' }}>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-paint' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Preferred Color:</strong> <strong>{record.wigColor || 'N/A'}</strong></span>
+                      <span><strong>Preferred Color:</strong> <strong>{record.wig_color || 'N/A'}</strong></span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', fontSize: '0.95rem' }}>
+                      <i className='bx bx-book-content' style={{ color: '#ad246d', marginTop: '4px' }}></i>
+                      <span><strong>Applicant's Story:</strong> <span style={{ fontStyle: 'italic', color: '#614f68' }}>"{record.story || 'No story provided'}"</span></span>
                     </li>
                   </>
                 )}
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.82rem', borderTop: '1px solid #f2ebf4', paddingTop: '0.5rem', marginTop: '0.2rem', color: '#8c7895' }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.85rem', borderTop: '1px solid #f2ebf4', paddingTop: '0.8rem', marginTop: '0.5rem', color: '#8c7895' }}>
                   <i className='bx bx-calendar-check'></i>
                   <span><strong>Submitted:</strong> {new Date(record.createdAt).toLocaleString()}</span>
                 </li>
               </ul>
             </div>
-            
-            {!isMonetary && (
-              <div style={{ marginTop: '1rem', background: '#fff', border: '1px solid #ead7e8', borderRadius: '12px', padding: '1rem' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#ad246d', textTransform: 'uppercase' }}>{isDonor ? 'Reason' : "Recipient's Story"}</h4>
-                <p style={{ margin: 0, fontStyle: 'italic', fontSize: '0.9rem', color: '#614f68' }}>"{isDonor ? record.reason : record.story}"</p>
-              </div>
-            )}
           </section>
 
           <section>
@@ -250,7 +236,23 @@ const StaffVerificationDetail: React.FC = () => {
               className="soft-btn" 
               disabled={isSubmitting}
               onClick={() => handleDecision('approve')}
-              style={{ padding: '0.8rem 2.5rem', fontWeight: 800 }}
+              style={{ 
+                padding: '0 1rem', 
+                height: '32px',
+                minHeight: '32px',
+                maxHeight: '32px',
+                fontWeight: 800, 
+                background: '#ad246d',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
             >
               {isSubmitting ? 'Processing...' : 'Approve Submission'}
             </button>
@@ -259,11 +261,49 @@ const StaffVerificationDetail: React.FC = () => {
               className="ghost-btn" 
               disabled={isSubmitting}
               onClick={() => handleDecision('reject')}
-              style={{ padding: '0.8rem 2.5rem', fontWeight: 800 }}
+              style={{ 
+                padding: '0 1rem', 
+                height: '32px',
+                minHeight: '32px',
+                maxHeight: '32px',
+                fontWeight: 800, 
+                border: '1px solid #ad246d',
+                color: '#ad246d',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                background: 'transparent',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
             >
               Reject Submission
             </button>
-            <Link className="ghost-btn" to={`/staff/verification/${type}`} style={{ marginLeft: 'auto', color: '#8c7895' }}>Return to Queue</Link>
+            <Link 
+              to={`/staff/verification/${type}`} 
+              style={{ 
+                marginLeft: 'auto', 
+                color: '#8c7895', 
+                fontWeight: 600, 
+                fontSize: '0.75rem',
+                padding: '0 1rem',
+                height: '32px',
+                minHeight: '32px',
+                maxHeight: '32px',
+                border: '1px solid #ead7e8',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                background: '#fff',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Return to Queue
+            </Link>
           </div>
         </div>
       </article>

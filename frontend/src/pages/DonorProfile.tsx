@@ -54,13 +54,13 @@ const DonorProfile: React.FC = () => {
 
   return (
     <section className="section-wrap profile-shell reveal active">
-      <header className="profile-head">
-        <h1>My Profile</h1>
-        <p>View your donor account details and contact information.</p>
+      <header className="profile-head" style={{ marginBottom: '0.5rem' }}>
+        <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>My Profile</h1>
+        <p style={{ fontSize: '0.8rem', color: '#8c7895', marginTop: '0.2rem' }}>View your donor account details and contact information.</p>
       </header>
 
       {/* Profile Hero Section */}
-      <div className="profile-hero-wrap">
+      <div className="profile-hero-wrap" style={{ marginBottom: '1rem' }}>
         <div className="profile-avatar-box">
           <div className="profile-avatar-main">
             {user?.profile_photo_url ? (
@@ -82,7 +82,24 @@ const DonorProfile: React.FC = () => {
         </div>
         
         <div className="profile-hero-actions" style={{marginLeft: 'auto'}}>
-          <button className="soft-btn flex items-center gap-2" onClick={() => setIsModalOpen(true)}>
+          <button 
+            className="flex items-center gap-2" 
+            onClick={() => setIsModalOpen(true)}
+            style={{ 
+              background: '#ad246d', 
+              color: '#fff', 
+              border: 'none', 
+              padding: '0.6rem 1.2rem', 
+              borderRadius: '25px', 
+              fontSize: '0.8rem', 
+              fontWeight: 800, 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)'
+            }}
+          >
             <i className='bx bx-edit-alt'></i> Edit Profile
           </button>
         </div>

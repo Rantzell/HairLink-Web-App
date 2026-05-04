@@ -4,7 +4,7 @@
  */
 export function calculateCompatibility(
   request: { wigLength?: string | null; wigColor?: string | null },
-  wig: { targetLength: string; targetColor: string }
+  wig: { targetLength?: string | null; targetColor?: string | null }
 ): number {
   let score = 0;
 
@@ -31,7 +31,7 @@ export function calculateCompatibility(
 
   // Color Match
   const reqColor = (request.wigColor || '').toLowerCase().trim();
-  const wigColor = wig.targetColor.toLowerCase().trim();
+  const wigColor = (wig.targetColor || '').toLowerCase().trim();
 
   if (reqColor === wigColor) {
     score += 40;

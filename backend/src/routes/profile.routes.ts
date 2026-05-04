@@ -12,9 +12,14 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 function s(o: any): any {
   if (o === null || o === undefined) return o;
   if (typeof o === 'bigint') return o.toString();
+  if (typeof o === 'object' && o.d && typeof o.toFixed === 'function') return o.toString();
   if (o instanceof Date) return o;
   if (Array.isArray(o)) return o.map(s);
-  if (typeof o === 'object') { const r: any = {}; for (const k of Object.keys(o)) r[k] = s(o[k]); return r; }
+  if (typeof o === 'object') {
+    const r: any = {};
+    for (const k of Object.keys(o)) { r[k] = s(o[k]); }
+    return r;
+  }
   return o;
 }
 
@@ -24,7 +29,10 @@ router.get('/', authenticate, async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
     if (!user) { res.status(404).json({ error: 'Not found' }); return; }
     res.json(s(user));
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) { 
+    console.error('Profile Fetch Error:', err);
+    res.status(500).json({ error: 'Failed', message: err.message }); 
+  }
 });
 
 // POST /internal-api/profile

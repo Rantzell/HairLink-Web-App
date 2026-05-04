@@ -7,8 +7,10 @@ export interface User {
   lastName: string | null;
   email: string;
   emailVerifiedAt: string | null;
+  email_verified_at?: string | null; // For legacy/direct DB sync
   role: UserRole;
   profilePhotoPath: string | null;
+  profile_photo_url?: string | null; // Public URL for avatars
   bio: string | null;
   country: string | null;
   region: string | null;

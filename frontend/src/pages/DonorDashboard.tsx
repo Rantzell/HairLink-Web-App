@@ -131,6 +131,9 @@ const DonorDashboard: React.FC = () => {
           <Link className="action-item-btn" to="/donor/profile">
             <i className='bx bx-user'></i> My Profile
           </Link>
+          <Link className="action-item-btn donate-highlight" to="/donor/monetary" style={{ border: '1.5px solid #ad246d', color: '#ad246d' }}>
+            <i className='bx bx-donate-heart'></i> Donate Money
+          </Link>
         </div>
       </section>
 

@@ -11,9 +11,15 @@ const adminOnly = [authenticate, requireRole('admin')];
 function s(o: any): any {
   if (o === null || o === undefined) return o;
   if (typeof o === 'bigint') return o.toString();
+  // Handle Prisma Decimal (which has a d property and a toFixed method)
+  if (typeof o === 'object' && o.d && typeof o.toFixed === 'function') return o.toString();
   if (o instanceof Date) return o;
   if (Array.isArray(o)) return o.map(s);
-  if (typeof o === 'object') { const r: any = {}; for (const k of Object.keys(o)) r[k] = s(o[k]); return r; }
+  if (typeof o === 'object') {
+    const r: any = {};
+    for (const k of Object.keys(o)) { r[k] = s(o[k]); }
+    return r;
+  }
   return o;
 }
 
@@ -42,7 +48,10 @@ router.get('/dashboard', ...adminOnly, async (_req, res) => {
       approvedDonations: ad, pendingDonationsCount: pdc, rejectedDonations: rd,
       approvedRequests: ar, pendingRequestsCount: prc, needsMatchRequests: ar, monetaryDonations,
     }));
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) {
+    console.error('Dashboard Error:', err);
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
 });
 
 // GET /internal-api/admin/users
@@ -125,12 +134,21 @@ router.get('/reports', ...adminOnly, async (_req, res) => {
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
+// GET /internal-api/admin/reports/monetary
+router.get('/reports/monetary', ...adminOnly, async (_req, res) => {
+  try {
+    const donations = await prisma.monetaryDonation.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
+    res.json(s(donations));
+  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
 // GET /internal-api/admin/inventory
 router.get('/inventory', ...adminOnly, async (_req, res) => {
   try {
     const dons = await prisma.donation.findMany({ where: { status: 'Completed' } });
     const stock: Record<string, Record<string, number>> = { Short: { Black: 0, Brown: 0, Light: 0 }, Medium: { Black: 0, Brown: 0, Light: 0 }, Long: { Black: 0, Brown: 0, Light: 0 } };
     for (const d of dons) {
+      if (!d.hairLength || !d.hairColor) continue;
       let l = d.hairLength.charAt(0).toUpperCase() + d.hairLength.slice(1).toLowerCase();
       let c = d.hairColor.charAt(0).toUpperCase() + d.hairColor.slice(1).toLowerCase();
       if (c.includes('Black')) c = 'Black'; if (c.includes('Brown')) c = 'Brown';
@@ -140,7 +158,10 @@ router.get('/inventory', ...adminOnly, async (_req, res) => {
     const wigStock = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { donation: true, wigmaker: true }, orderBy: { updatedAt: 'desc' } });
     const allDons = await prisma.donation.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
     res.json(s({ stock, totalHairRecords: dons.length, wigStock, wigCount: wigStock.length, allDonations: allDons, allDonationsCount: allDons.length }));
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) { 
+    console.error('Inventory Error:', err);
+    res.status(500).json({ error: 'Failed', message: err.message }); 
+  }
 });
 
 // GET /internal-api/admin/verification, matching, operations — similar patterns
@@ -149,7 +170,7 @@ router.get('/verification', ...adminOnly, async (_req, res) => {
     const pd = await prisma.donation.findMany({ where: { status: { in: ['Received Hair', 'Submitted'] } }, include: { user: true } });
     const pr = await prisma.hairRequest.findMany({ where: { status: 'Submitted' }, include: { user: true } });
     res.json(s({ pendingDonations: pd, pendingRequests: pr }));
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) { res.status(500).json({ error: 'Failed', message: err.message }); }
 });
 
 router.get('/matching', ...adminOnly, async (_req, res) => {
@@ -173,7 +194,11 @@ router.get('/operations', ...adminOnly, async (_req, res) => {
       prisma.wigProduction.count({ where: { status: { in: ['assigned', 'processing'] } } }),
     ]);
     res.json({ staffCount: sc, wigTasksCount: wt, transitCount: tc, completedCount: cc, pendingDonationsCount: pd, pendingRequestsCount: pr, activeWigmakers: aw, activeWigTasks: at });
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) {
+    console.error('Admin Operations Error:', err);
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
 });
 
+// Schema sync complete
 export default router;

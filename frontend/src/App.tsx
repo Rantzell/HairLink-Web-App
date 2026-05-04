@@ -38,6 +38,10 @@ import AdminUserManagement from './pages/AdminUserManagement';
 import AdminInventory from './pages/AdminInventory';
 import AdminEvents from './pages/AdminEvents';
 import AdminCommunityModeration from './pages/AdminCommunityModeration';
+import AdminReports from './pages/AdminReports';
+import AdminOperations from './pages/AdminOperations';
+import AdminMatching from './pages/AdminMatching';
+import AdminVerification from './pages/AdminVerification';
 
 function App() {
   return (
@@ -98,7 +102,7 @@ function App() {
                   <Route path="dashboard" element={<StaffDashboard />} />
                   <Route path="verification/:type" element={<StaffVerificationList />} />
                   <Route path="verification/:type/:reference" element={<StaffVerificationDetail />} />
-                  <Route path="tracking" element={<StaffRealtimeTracking />} />
+                  <Route path="tracking/:type" element={<StaffRealtimeTracking />} />
                   <Route path="matching" element={<StaffMatching />} />
                   <Route path="wig-stock" element={<StaffWigStock />} />
                   <Route path="hair-stock" element={<StaffHairStock />} />
@@ -116,10 +120,11 @@ function App() {
               <DashboardLayout>
                 <Routes>
                   <Route path="dashboard" element={<WigmakerDashboard />} />
+                  <Route path="production-tasks" element={<WigmakerDashboard />} />
                   <Route path="task/:taskCode" element={<WigmakerTaskDetail />} />
                   <Route path="profile" element={<DonorProfile />} />
                   <Route path="community" element={<CommunityFeed />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  <Route path="*" element={<Navigate to="/wigmaker/dashboard" replace />} />
                 </Routes>
               </DashboardLayout>
             </ProtectedRoute>
@@ -132,15 +137,17 @@ function App() {
                 <Routes>
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="users" element={<AdminUserManagement />} />
-                  <Route path="inventory" element={<AdminInventory />} />
                   <Route path="events" element={<AdminEvents />} />
                   <Route path="community" element={<AdminCommunityModeration />} />
-                  <Route path="verification/:type" element={<StaffVerificationList />} />
-                  <Route path="verification" element={<Navigate to="verification/donor" replace />} />
-                  <Route path="matching" element={<StaffMatching />} />
-                  <Route path="operations" element={<StaffRealtimeTracking />} />
+                  <Route path="verification" element={<AdminVerification />} />
+                  <Route path="verification/donor" element={<Navigate to="/admin/verification" replace />} />
+                  <Route path="verification/recipient" element={<Navigate to="/admin/verification" replace />} />
+                  <Route path="matching" element={<AdminMatching />} />
+                  <Route path="operations" element={<AdminOperations />} />
+                  <Route path="inventory" element={<AdminInventory />} />
                   <Route path="profile" element={<DonorProfile />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  <Route path="reports" element={<AdminReports />} />
+                  <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
                 </Routes>
               </DashboardLayout>
             </ProtectedRoute>

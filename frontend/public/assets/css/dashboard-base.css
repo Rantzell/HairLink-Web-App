@@ -31,8 +31,8 @@ a {
 }
 
 .dash-main {
-    width: min(1200px, 94vw);
-    margin: 0.9rem auto 2rem;
+    width: min(1280px, 92vw);
+    margin: 1.2rem auto 2.5rem;
 }
 
 .dash-header {
@@ -45,8 +45,8 @@ a {
 }
 
 .dash-nav {
-    width: min(1200px, 94vw);
-    min-height: 58px;
+    width: min(1280px, 92vw);
+    min-height: 64px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -103,6 +103,83 @@ a {
     padding: 0.3rem 0.56rem;
     font-size: 0.8rem;
     white-space: nowrap;
+}
+
+/* Nav Dropdown Fix */
+.nav-dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.nav-dropdown-trigger {
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 700;
+    color: #5f4b67;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.nav-dropdown-trigger:hover,
+.nav-dropdown:hover .nav-dropdown-trigger {
+    background: #fff;
+    color: #b12371;
+    box-shadow: 0 2px 8px rgba(73, 20, 52, 0.05);
+}
+
+.nav-dropdown-trigger.active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--dash-primary), var(--dash-primary-strong));
+}
+
+.nav-dropdown-content {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    background: #fff;
+    border: 1px solid #ead7e8;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(73, 20, 52, 0.12);
+    min-width: 170px;
+    padding: 0.4rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nav-dropdown:hover .nav-dropdown-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.nav-dropdown-content a {
+    display: block !important;
+    width: 100% !important;
+    padding: 0.6rem 0.8rem !important;
+    border-radius: 8px !important;
+    font-size: 0.78rem !important;
+    color: #5f4b67 !important;
+    text-align: left !important;
+    background: transparent !important;
+    border: none !important;
+    white-space: nowrap !important;
+}
+
+.nav-dropdown-content a:hover {
+    background: #fdf2f8 !important;
+    color: #ad246d !important;
 }
 
 .dash-burger {
