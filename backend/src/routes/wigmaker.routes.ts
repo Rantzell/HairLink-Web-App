@@ -4,7 +4,7 @@ import prisma from '../config/database';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/requireRole';
 import { validate } from '../middleware/validate';
-import { taskUpdateSchema } from '../schemas';
+import { taskUpdateSchema, materialConfirmationSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { uploadFile } from '../services/storage.service';
 
@@ -45,7 +45,7 @@ router.get('/tasks', ...wmOnly, async (req, res) => {
 // GET /internal-api/wigmaker/tasks/:taskCode
 router.get('/tasks/:taskCode', ...wmOnly, async (req, res) => {
   try {
-    const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode }, include: { donation: true } });
+    const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode }, include: { donation: true, wigmaker: true } });
     if (!task) { res.status(404).json({ message: 'Task not found' }); return; }
     const histories = await getStatusHistories(WIG_TYPE, task.id, true);
     res.json({ task: s(task), histories: s(histories) });
@@ -92,6 +92,31 @@ router.post('/tasks/:taskCode', ...wmOnly, upload.single('previewPhoto'), valida
   } catch (err) {
     console.error('[Wigmaker] Task update error:', err);
     res.status(500).json({ error: 'Failed to update task' });
+  }
+});
+
+// POST /internal-api/wigmaker/tasks/:taskCode/confirm-material
+router.post('/tasks/:taskCode/confirm-material', ...wmOnly, validate(materialConfirmationSchema), async (req, res) => {
+  try {
+    const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode, wigmakerId: req.user!.id } });
+    if (!task) { res.status(404).json({ message: 'Task not found' }); return; }
+    if (task.isReceived) { res.status(400).json({ message: 'Material already confirmed.' }); return; }
+
+    await prisma.wigProduction.update({ where: { id: task.id }, data: { isReceived: true } as any });
+    
+    const notes = req.body.notes || 'Wigmaker confirmed receipt of hair materials.';
+    await createStatusHistory(WIG_TYPE, task.id, 'assigned', notes);
+
+    // Sync donation status
+    if (task.donationId) {
+      await prisma.donation.update({ where: { id: task.donationId }, data: { status: 'In Progress' } });
+      await createStatusHistory(DON_TYPE, task.donationId, 'In Progress', notes);
+    }
+
+    res.json({ message: 'Material receipt confirmed.', success: true });
+  } catch (err) {
+    console.error('[Wigmaker] Confirm material error:', err);
+    res.status(500).json({ error: 'Failed' });
   }
 });
 

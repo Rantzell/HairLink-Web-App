@@ -34,7 +34,7 @@ const StaffVerificationList: React.FC = () => {
 
   const filteredItems = items.filter(item => {
     const name = item.user ? `${item.user.firstName} ${item.user.lastName}` : (item.name || '');
-    const matchesSearch = (item.reference || item.reference_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = (item.reference || item.referenceNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All Status' || item.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
@@ -91,13 +91,13 @@ const StaffVerificationList: React.FC = () => {
               ) : filteredItems.length > 0 ? (
                 filteredItems.map(item => (
                   <tr key={item.id} style={{ borderTop: '1px solid #f2ebf4' }}>
-                    <td style={{ padding: '1.2rem 1rem' }}><strong style={{ color: '#3b2e43' }}>{item.reference || item.reference_number}</strong></td>
+                    <td style={{ padding: '1.2rem 1rem' }}><strong style={{ color: '#3b2e43' }}>{item.reference || item.referenceNumber}</strong></td>
                     <td style={{ padding: '1.2rem 1rem', color: '#5d4d62', fontSize: '0.9rem' }}>{new Date(item.createdAt).toLocaleDateString()}</td>
                     <td style={{ padding: '1.2rem 1rem', color: '#3b2e43', fontWeight: 600 }}>{item.user ? `${item.user.firstName} ${item.user.lastName}` : (item.name || 'Anonymous')}</td>
                     <td style={{ padding: '1.2rem 1rem' }}><StatusPill status={item.status} /></td>
                     <td style={{ padding: '1.2rem 1rem', textAlign: 'right' }}>
                       <Link 
-                        to={`/staff/verification/${type}/${item.reference || item.reference_number}`} 
+                        to={`/staff/verification/${type}/${item.reference || item.referenceNumber}`} 
                         className="soft-btn" 
                         style={{ 
                           padding: '0.5rem 1rem', 

@@ -20,7 +20,7 @@ export async function createStatusHistory(
   return prisma.statusHistory.create({
     data: {
       trackableType,
-      trackableId: String(trackableId),
+      trackableId: Number(trackableId),
       status,
       notes: notes || null,
       metadata: metadata || undefined,
@@ -37,7 +37,7 @@ export async function getStatusHistories(
   orderDesc = true
 ) {
   return prisma.statusHistory.findMany({
-    where: { trackableType, trackableId: String(trackableId) },
+    where: { trackableType, trackableId: Number(trackableId) },
     orderBy: { createdAt: orderDesc ? 'desc' : 'asc' },
   });
 }

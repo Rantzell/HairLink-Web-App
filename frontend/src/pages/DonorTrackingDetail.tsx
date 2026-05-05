@@ -4,25 +4,47 @@ import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import type { Donation } from '../types';
 import LoadingScreen from '../components/LoadingScreen';
+import { getPublicUrl } from '../lib/storage';
 
 const DonorTrackingDetail: React.FC = () => {
   const { reference } = useParams<{ reference: string }>();
   const [donation, setDonation] = useState<Donation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deliveryLink, setDeliveryLink] = useState('');
+  const [isSubmittingLink, setIsSubmittingLink] = useState(false);
+
+  const fetchDetail = async () => {
+    try {
+      const res = await apiClient.get(`/internal-api/donations/${reference}`);
+      setDonation(res.data);
+      setDeliveryLink(res.data.donorDeliveryLink || '');
+    } catch (err) {
+      console.error('Failed to fetch donation detail', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDetail = async () => {
-      try {
-        const res = await apiClient.get(`/internal-api/donations/${reference}`);
-        setDonation(res.data);
-      } catch (err) {
-        console.error('Failed to fetch donation detail', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDetail();
   }, [reference]);
+
+  const handleSubmitLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deliveryLink.trim()) return;
+    setIsSubmittingLink(true);
+    try {
+      await apiClient.post(`/internal-api/donations/${reference}/delivery-link`, { 
+        donor_delivery_link: deliveryLink 
+      });
+      alert('Delivery link submitted successfully!');
+      fetchDetail();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to submit link');
+    } finally {
+      setIsSubmittingLink(false);
+    }
+  };
 
   if (loading) return <LoadingScreen />;
   if (!donation) return <div className="section-wrap">Donation not found.</div>;
@@ -88,6 +110,64 @@ const DonorTrackingDetail: React.FC = () => {
             ))}
           </ul>
 
+          {donation.status === 'Verified' && (
+            <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#fdf7fb', border: '1.5px dashed #ad246d', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+                <i className='bx bx-package' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
+                <h4 style={{ margin: 0, color: '#3b2e43' }}>Submit Delivery Tracking Link</h4>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: '#8c7895', marginBottom: '1rem' }}>
+                Please provide the tracking URL or delivery reference link from your courier (e.g., Grab, Lalamove, J&T) so our staff can monitor the arrival.
+              </p>
+              <form onSubmit={handleSubmitLink} style={{ display: 'flex', gap: '0.75rem' }}>
+                <input 
+                  type="url" 
+                  placeholder="https://tracking-link.com/..." 
+                  value={deliveryLink}
+                  onChange={e => setDeliveryLink(e.target.value)}
+                  required
+                  style={{ flex: 1, padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.85rem' }}
+                />
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingLink}
+                  className="soft-btn"
+                  style={{ background: '#ad246d', color: '#fff', border: 'none', padding: '0 1.5rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}
+                >
+                  {isSubmittingLink ? '...' : donation.donorDeliveryLink ? 'Update Link' : 'Submit Link'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {donation.donorDeliveryLink && donation.status === 'Verified' && (
+            <div style={{ 
+              marginTop: '1.5rem', 
+              padding: '1.25rem', 
+              background: '#f8fafc', 
+              border: '1px solid #e2e8f0', 
+              borderRadius: '12px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '1rem'
+            }}>
+              <div style={{ background: '#fff', width: '40px', height: '40px', borderRadius: '8px', display: 'grid', placeItems: 'center', border: '1px solid #dbeafe', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.05)' }}>
+                <i className='bx bx-link-external' style={{ color: '#3b82f6', fontSize: '1.2rem' }}></i>
+              </div>
+              <div style={{ flex: 1 }}>
+                <small style={{ display: 'block', color: '#64748b', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em', marginBottom: '2px' }}>Delivery Link Sent</small>
+                <a 
+                  href={donation.donorDeliveryLink} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  style={{ color: '#3b82f6', fontSize: '0.88rem', textDecoration: 'underline', fontWeight: 700 }}
+                >
+                  Click to track shipment
+                </a>
+              </div>
+            </div>
+          )}
+
           <div className="action-row" style={{ marginTop: '1rem', borderTop: '1px dashed #f2ebf4', paddingTop: '1rem' }}>
             {['Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].includes(donation.status) && (
               <Link className="soft-btn" to="/donor/certificate" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'fit-content', padding: '0.6rem 1.5rem', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', border: 'none' }}>
@@ -116,8 +196,12 @@ const DonorTrackingDetail: React.FC = () => {
             <small style={{ display: 'block', marginBottom: '0.5rem', color: '#ad246d', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>Donation Reference Photo</small>
             <div id="photoPreview" style={{ width: '200px', height: '200px', margin: '0 auto', borderRadius: '12px', overflow: 'hidden', background: '#fff5fa', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.05)', border: '1px solid #ead7e8' }}>
               {donation.photoFront ? (
-                <a href={donation.photoFront} target="_blank" rel="noreferrer" style={{ width: '100%', height: '100%', display: 'block' }}>
-                  <img src={donation.photoFront} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Donation" />
+                <a href={getPublicUrl('hairlink', donation.photoFront) || '#'} target="_blank" rel="noreferrer" style={{ width: '100%', height: '100%', display: 'block' }}>
+                  <img 
+                    src={getPublicUrl('hairlink', donation.photoFront) || ''} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    alt="Donation" 
+                  />
                 </a>
               ) : (
                 <i className='bx bx-image' style={{ fontSize: '3rem', color: '#ead7e8' }}></i>

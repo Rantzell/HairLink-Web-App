@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, AuthResponse } from '../types';
 import { supabase } from '../lib/supabase';
+import { getProfilePhotoUrl } from '../lib/storage';
 import apiClient from '../api/client';
 
 interface RegisterData {
@@ -59,7 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchProfile = async (): Promise<User | null> => {
     try {
       const response = await apiClient.get<User>('/auth/me');
-      return response.data;
+      const userData = response.data;
+      if (userData && userData.profile_photo_url) {
+        userData.profile_photo_url = getProfilePhotoUrl(userData.profile_photo_url) || userData.profile_photo_url;
+      }
+      return userData;
     } catch {
       return null;
     }
@@ -178,7 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           country: data.country,
           region: data.region,
           postal_code: data.postal_code,
-          age: parseInt(data.age as string),
+          age: data.age ? parseInt(data.age as string) : null,
           gender: data.gender,
           phone: data.phone,
         },
@@ -234,6 +239,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateUser = (updatedUser: User) => {
+    if (updatedUser.profile_photo_url) {
+      updatedUser.profile_photo_url = getProfilePhotoUrl(updatedUser.profile_photo_url) || updatedUser.profile_photo_url;
+    }
     setUser(updatedUser);
   };
 

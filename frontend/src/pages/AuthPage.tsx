@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import PasswordInput from '../components/PasswordInput';
 
 const isDev = import.meta.env.DEV;
 
@@ -9,11 +10,12 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+  const [mode, setMode] = useState<'login' | 'register'>(
+    location.pathname === '/login' ? 'login' : 'register'
+  );
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [showPassword, setShowPassword] = useState(false);
 
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [registerData, setRegisterData] = useState({
@@ -32,10 +34,12 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
   });
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const m = params.get('mode') as 'login' | 'register';
-    if (m) setMode(m);
-  }, [location]);
+    if (location.pathname === '/login') {
+      setMode('login');
+    } else if (location.pathname === '/register') {
+      setMode('register');
+    }
+  }, [location.pathname]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,21 +151,14 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
               {errors.email && <div className="ajax-error" style={{ display: 'block' }}>{errors.email[0]}</div>}
             </div>
 
-            <div className="input-wrapper">
-              <div className="input-box">
-                <input
-                  id="login-password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Password"
-                  value={loginData.password}
-                  onChange={e => setLoginData({ ...loginData, password: e.target.value })}
-                  required
-                />
-                <i className={`bx ${showPassword ? 'bx-hide' : 'bx-show'} password-toggle`} onClick={() => setShowPassword(!showPassword)}></i>
-                <i className='bx bxs-lock-alt lock-icon'></i>
-              </div>
-              {errors.password && <div className="ajax-error" style={{ display: 'block' }}>{errors.password[0]}</div>}
-            </div>
+            <PasswordInput
+              id="login-password"
+              placeholder="Password"
+              value={loginData.password}
+              onChange={e => setLoginData({ ...loginData, password: e.target.value })}
+              error={errors.password}
+              required
+            />
 
             <div className="forgot-link">
               <a href="#">Forgot Password?</a>
@@ -192,16 +189,17 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
               {errors.userType && <div className="ajax-error" style={{ display: 'block', paddingLeft: 0 }}>{errors.userType[0]}</div>}
             </div>
 
+            {/* 1. Name Row */}
             <div className="grid-two-cols">
               <div className="input-wrapper">
-                <div className="input-box input-box--medium">
+                <div className="input-box">
                   <input id="reg-first-name" type="text" placeholder="First Name" value={registerData.first_name} onChange={e => setRegisterData({ ...registerData, first_name: e.target.value })} required />
                   <i className='bx bxs-user'></i>
                 </div>
                 {errors.first_name && <div className="ajax-error" style={{ display: 'block' }}>{errors.first_name[0]}</div>}
               </div>
               <div className="input-wrapper">
-                <div className="input-box input-box--medium">
+                <div className="input-box">
                   <input id="reg-last-name" type="text" placeholder="Last Name" value={registerData.last_name} onChange={e => setRegisterData({ ...registerData, last_name: e.target.value })} required />
                   <i className='bx bxs-user'></i>
                 </div>
@@ -209,15 +207,8 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
               </div>
             </div>
 
+            {/* 2. Location Row (Simplified) */}
             <div className="grid-two-cols">
-              <div className="input-wrapper">
-                <div className="input-box select-wrapper">
-                  <select value={registerData.country} disabled style={{ background: '#f5f3f7', cursor: 'not-allowed' }}>
-                    <option value="ph">Philippines</option>
-                  </select>
-                  <i className='bx bx-world'></i>
-                </div>
-              </div>
               <div className="input-wrapper">
                 <div className="input-box">
                   <input id="reg-region" type="text" placeholder="Region / Province" value={registerData.region} onChange={e => setRegisterData({ ...registerData, region: e.target.value })} required />
@@ -225,28 +216,26 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 </div>
                 {errors.region && <div className="ajax-error" style={{ display: 'block' }}>{errors.region[0]}</div>}
               </div>
-            </div>
-
-            <div className="grid-two-cols">
               <div className="input-wrapper">
-                <div className="input-box input-box--short">
+                <div className="input-box">
                   <input id="reg-postal" type="text" placeholder="Postal Code" value={registerData.postal_code} onChange={e => setRegisterData({ ...registerData, postal_code: e.target.value.replace(/[^0-9]/g, '') })} required />
                   <i className='bx bxs-home'></i>
                 </div>
                 {errors.postal_code && <div className="ajax-error" style={{ display: 'block' }}>{errors.postal_code[0]}</div>}
               </div>
+            </div>
+
+            {/* 3. Profile Row (Age/Gender) */}
+            <div className="grid-two-cols">
               <div className="input-wrapper">
-                <div className="input-box input-box--short">
+                <div className="input-box">
                   <input id="reg-age" type="number" placeholder="Age" value={registerData.age} onChange={e => setRegisterData({ ...registerData, age: e.target.value })} required />
                   <i className='bx bx-calendar'></i>
                 </div>
                 {errors.age && <div className="ajax-error" style={{ display: 'block' }}>{errors.age[0]}</div>}
               </div>
-            </div>
-
-            <div className="grid-two-cols">
               <div className="input-wrapper">
-                <div className="input-box select-wrapper input-box--medium">
+                <div className="input-box select-wrapper">
                   <select id="reg-gender" value={registerData.gender} onChange={e => setRegisterData({ ...registerData, gender: e.target.value })} required>
                     <option value="" disabled>Gender</option>
                     <option value="female">Female</option>
@@ -258,47 +247,128 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 </div>
                 {errors.gender && <div className="ajax-error" style={{ display: 'block' }}>{errors.gender[0]}</div>}
               </div>
+            </div>
+
+            {/* 4. Contact Row (Email/Phone) */}
+            <div className="grid-two-cols">
               <div className="input-wrapper">
-                <div className="phone-prefix-box">
-                  <div className="phone-prefix">
-                    <span className="flag">🇵🇭</span>
-                    <span>+63</span>
+                <div className="input-box">
+                  <input id="reg-email" type="email" placeholder="Email Address" value={registerData.email} onChange={e => setRegisterData({ ...registerData, email: e.target.value })} required />
+                  <i className='bx bxs-envelope'></i>
+                </div>
+                {errors.email && <div className="ajax-error" style={{ display: 'block' }}>{errors.email[0]}</div>}
+              </div>
+              <div className="input-wrapper">
+                <div className="input-box" style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  border: '1px solid #e8d8e8', 
+                  borderRadius: '8px',
+                  background: '#fff',
+                  overflow: 'hidden',
+                  margin: '0.6rem 0',
+                  height: 'calc(1.5em + 0.84rem + 2px)' // Match standard input height exactly
+                }}>
+                  <div style={{ 
+                    padding: '0 0.5rem', 
+                    fontSize: '0.75rem', 
+                    color: '#675c6f', 
+                    borderRight: '1px solid #e8d8e8',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: '#fcfafc',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    🇵🇭 +63
                   </div>
-                  <div className="inner-input-wrapper">
-                    <input id="reg-phone" type="tel" placeholder="9171234567" value={registerData.phone.replace('+63', '')} onChange={e => {
+                  <input 
+                    id="reg-phone" 
+                    type="tel" 
+                    placeholder="9171234567" 
+                    value={registerData.phone.replace('+63', '')} 
+                    onChange={e => {
                       const digits = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
                       setRegisterData({ ...registerData, phone: digits ? '+63' + digits : '' });
-                    }} required />
-                    <i className='bx bxs-phone'></i>
-                  </div>
+                    }} 
+                    style={{ border: 'none', padding: '0 0.58rem', flex: 1, outline: 'none', height: '100%', fontSize: 'inherit' }}
+                    required 
+                  />
+                  <i className='bx bxs-phone' style={{ 
+                    position: 'absolute', 
+                    right: '0.7rem', 
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9f8ba8', 
+                    fontSize: '0.9rem',
+                    pointerEvents: 'none'
+                  }}></i>
                 </div>
                 {errors.phone && <div className="ajax-error" style={{ display: 'block' }}>{errors.phone[0]}</div>}
               </div>
             </div>
 
-            <div className="input-wrapper">
-              <div className="input-box input-box--long">
-                <input id="reg-email" type="email" placeholder="Email Address" value={registerData.email} onChange={e => setRegisterData({ ...registerData, email: e.target.value })} required />
-                <i className='bx bxs-envelope'></i>
-              </div>
-              {errors.email && <div className="ajax-error" style={{ display: 'block' }}>{errors.email[0]}</div>}
-            </div>
-
+            {/* 5. Security Row */}
             <div className="grid-two-cols">
               <div className="input-wrapper">
-                <div className="input-box input-box--medium">
-                  <input id="reg-password" type={showPassword ? 'text' : 'password'} placeholder="Password" value={registerData.password} onChange={e => setRegisterData({ ...registerData, password: e.target.value })} required />
-                  <i className={`bx ${showPassword ? 'bx-hide' : 'bx-show'} password-toggle`} onClick={() => setShowPassword(!showPassword)}></i>
-                  <i className='bx bxs-lock-alt lock-icon'></i>
+                <PasswordInput
+                  id="reg-password"
+                  placeholder="Password"
+                  value={registerData.password}
+                  onChange={e => setRegisterData({ ...registerData, password: e.target.value })}
+                  error={errors.password}
+                  required
+                />
+                {/* Real-time requirements checker */}
+                <div className="password-requirements" style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '4px', 
+                  marginTop: '-4px', 
+                  paddingLeft: '4px',
+                  marginBottom: '8px'
+                }}>
+                  {[
+                    { label: 'At least 8 characters', met: registerData.password.length >= 8 },
+                    { label: 'At least 1 number', met: /[0-9]/.test(registerData.password) },
+                    { label: 'At least 1 symbol (@$!%*?&)', met: /[!@#$%^&*(),.?":{}|<>_]/.test(registerData.password) },
+                  ].map((req, i) => (
+                    <div key={i} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      fontSize: '0.7rem',
+                      color: req.met ? '#2ecc71' : (registerData.password ? '#e74c3c' : '#9f8ba8'),
+                      transition: 'color 0.2s ease'
+                    }}>
+                      <i className={`bx ${req.met ? 'bx-check-circle' : 'bx-circle'}`} style={{ fontSize: '0.8rem' }}></i>
+                      <span>{req.label}</span>
+                    </div>
+                  ))}
                 </div>
-                {errors.password && <div className="ajax-error" style={{ display: 'block' }}>{errors.password[0]}</div>}
               </div>
               <div className="input-wrapper">
-                <div className="input-box input-box--medium">
-                  <input id="reg-confirm-password" type={showPassword ? 'text' : 'password'} placeholder="Confirm Password" value={registerData.password_confirmation} onChange={e => setRegisterData({ ...registerData, password_confirmation: e.target.value })} required />
-                  <i className={`bx ${showPassword ? 'bx-hide' : 'bx-show'} password-toggle`} onClick={() => setShowPassword(!showPassword)}></i>
-                  <i className='bx bxs-lock-alt lock-icon'></i>
-                </div>
+                <PasswordInput
+                  id="reg-confirm-password"
+                  placeholder="Confirm Password"
+                  value={registerData.password_confirmation}
+                  onChange={e => setRegisterData({ ...registerData, password_confirmation: e.target.value })}
+                  required
+                />
+                {registerData.password_confirmation && (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    fontSize: '0.7rem',
+                    marginTop: '-4px',
+                    paddingLeft: '4px',
+                    color: registerData.password === registerData.password_confirmation ? '#2ecc71' : '#e74c3c'
+                  }}>
+                    <i className={`bx ${registerData.password === registerData.password_confirmation ? 'bx-check-circle' : 'bx-x-circle'}`}></i>
+                    <span>{registerData.password === registerData.password_confirmation ? 'Passwords match' : 'Passwords do not match'}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -311,12 +381,12 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
           <div className="toggle-panel toggle-left">
             <h2>Welcome Back!</h2>
             <p>Already part of Strand Up for Cancer?</p>
-            <button type="button" className="btn login-btn" onClick={() => setMode('login')}>Go to Login</button>
+            <button type="button" className="btn login-btn" onClick={() => navigate('/login')}>Go to Login</button>
           </div>
           <div className="toggle-panel toggle-right">
             <h2>Hello, Welcome!</h2>
             <p>Don't have an account yet?</p>
-            <button type="button" className="btn register-btn" onClick={() => setMode('register')}>Go to Register</button>
+            <button type="button" className="btn register-btn" onClick={() => navigate('/register')}>Go to Register</button>
           </div>
         </div>
       </div>

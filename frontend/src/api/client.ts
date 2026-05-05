@@ -6,7 +6,7 @@ console.log('[API] Using API_URL:', API_URL);
 
 const apiClient = axios.create({
   baseURL: API_URL,
-  timeout: 10000, // 10s max — prevents indefinite loading on slow networks
+  timeout: 30000, // 30s max — prevents indefinite loading on slow networks
   headers: {
     'Content-Type': 'application/json',
   },

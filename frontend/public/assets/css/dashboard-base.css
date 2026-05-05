@@ -246,9 +246,17 @@ a {
 }
 
 .ghost-btn {
-    color: #7c3761;
-    border-color: #e7bfd8;
-    background: #fff;
+    color: #ad246d !important;
+    border: 1.5px solid #ad246d !important;
+    background: #ffffff !important;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.ghost-btn:hover {
+    background: #ad246d !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(173, 36, 109, 0.15);
 }
 
 .reveal {

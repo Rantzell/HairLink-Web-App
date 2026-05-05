@@ -70,7 +70,26 @@ const RecipientTracking: React.FC = () => {
                     <td>{r.wigLength}</td>
                     <td>{r.wigColor}</td>
                     <td>
-                      <Link to={`/recipient/tracking/${r.reference}`} className="ghost-btn">Details</Link>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <Link to={`/recipient/tracking/${r.reference}`} className="ghost-btn">Details</Link>
+                        {r.status === 'In Transit' && (
+                          <button 
+                            className="submit-code-btn" 
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', border: 'none', cursor: 'pointer' }}
+                            onClick={async () => {
+                              if (!window.confirm('Confirm you have received your wig?')) return;
+                              try {
+                                await apiClient.post(`/internal-api/requests/${r.reference}/confirm-received`);
+                                window.location.reload();
+                              } catch (err) {
+                                alert('Failed to confirm receipt.');
+                              }
+                            }}
+                          >
+                            Received
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

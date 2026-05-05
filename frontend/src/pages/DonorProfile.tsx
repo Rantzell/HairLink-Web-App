@@ -11,6 +11,8 @@ const DonorProfile: React.FC = () => {
     lastName: user?.lastName || '',
     phone: user?.phone || '',
     bio: user?.bio || '',
+    age: user?.age?.toString() || '',
+    gender: user?.gender || '',
   });
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
 
@@ -28,6 +30,8 @@ const DonorProfile: React.FC = () => {
       formData.append('last_name', editData.lastName);
       formData.append('phone', editData.phone);
       formData.append('bio', editData.bio);
+      formData.append('age', editData.age);
+      formData.append('gender', editData.gender);
       if (profilePhoto) {
         formData.append('profile_photo', profilePhoto);
       }
@@ -64,7 +68,14 @@ const DonorProfile: React.FC = () => {
         <div className="profile-avatar-box">
           <div className="profile-avatar-main">
             {user?.profile_photo_url ? (
-              <img src={user.profile_photo_url} alt="Profile" />
+              <img 
+                src={user.profile_photo_url} 
+                alt="Profile" 
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).parentElement!.innerText = initials;
+                }}
+              />
             ) : (
               initials
             )}
@@ -144,18 +155,20 @@ const DonorProfile: React.FC = () => {
 
         {/* Sidebar Column */}
         <div className="profile-sidebar">
-          {/* Referral Reward Card */}
-          <article className="referral-card-new">
-            <i className='bx bxs-gift bg-icon'></i>
-            <h3 className="detail-label" style={{marginBottom: '1rem'}}>Referral Reward</h3>
-            <div className="referral-code-box">
-              <span className="referral-code-text">{referralCode}</span>
-              <p className="referral-subtext">Share to earn 5 points per donor</p>
-            </div>
-            <button className="submit-code-btn w-full flex items-center justify-center gap-2" onClick={copyToClipboard}>
-              <i className='bx bx-copy'></i> Copy Code
-            </button>
-          </article>
+          {/* Referral Reward Card - Only for Donors */}
+          {user?.role === 'donor' && (
+            <article className="referral-card-new">
+              <i className='bx bxs-gift bg-icon'></i>
+              <h3 className="detail-label" style={{marginBottom: '1rem'}}>Referral Reward</h3>
+              <div className="referral-code-box">
+                <span className="referral-code-text">{referralCode}</span>
+                <p className="referral-subtext">Share to earn 5 points per donor</p>
+              </div>
+              <button className="submit-code-btn w-full flex items-center justify-center gap-2" onClick={copyToClipboard}>
+                <i className='bx bx-copy'></i> Copy Code
+              </button>
+            </article>
+          )}
 
           {/* Impact Stats Card */}
           <article className="stats-card">
@@ -222,6 +235,35 @@ const DonorProfile: React.FC = () => {
                 />
               </div>
 
+              <div className="details-grid-form">
+                <div className="form-group">
+                  <label className="detail-label">Age</label>
+                  <input 
+                    type="number" 
+                    value={editData.age} 
+                    onChange={e => setEditData({...editData, age: e.target.value})}
+                    className="form-input-premium"
+                    min="1"
+                    max="120"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="detail-label">Gender</label>
+                  <select 
+                    value={editData.gender} 
+                    onChange={e => setEditData({...editData, gender: e.target.value})}
+                    className="form-input-premium"
+                    style={{ height: '42px' }}
+                  >
+                    <option value="" disabled>Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="nonbinary">Non-binary</option>
+                    <option value="prefer_not_say">Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+
               <div className="form-group">
                 <label className="detail-label">Quick Bio</label>
                 <textarea 
@@ -238,6 +280,7 @@ const DonorProfile: React.FC = () => {
                 <div className="upload-zone-premium">
                   <input 
                     type="file" 
+                    accept="image/jpeg,image/png,image/webp"
                     onChange={e => setProfilePhoto(e.target.files?.[0] || null)}
                     className="upload-input-hidden"
                   />

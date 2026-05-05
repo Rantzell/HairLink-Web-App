@@ -65,7 +65,7 @@ const RecipientRequest: React.FC = () => {
       data.append('appointment_at', new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString());
 
       documents.forEach(doc => {
-        data.append('documents[]', doc);
+        data.append('documents', doc);
       });
       data.append('additional_photo', additionalPhoto);
 
@@ -181,7 +181,7 @@ const RecipientRequest: React.FC = () => {
                 className={`upload-box-mini ${additionalPhoto ? 'has-content' : ''}`}
                 onClick={() => photoInputRef.current?.click()}
               >
-                <input ref={photoInputRef} type="file" accept=".jpg,.jpeg,.png,.gif,.webp" hidden onChange={handlePhotoChange} />
+                <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handlePhotoChange} />
                 {!additionalPhoto ? (
                   <div className="upload-mini-content">
                     <i className='bx bx-image-add'></i>

@@ -12,7 +12,15 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 const REQUEST_TYPE = 'App\\Models\\HairRequest';
 
 function serializeRequest(r: any) {
-  return { ...r, id: r.id.toString(), userId: r.userId?.toString() || null, user: r.user ? { ...r.user, id: r.user.id.toString() } : undefined };
+  const wp = r.wigProductions?.[0];
+  return { 
+    ...r, 
+    id: r.id.toString(), 
+    userId: r.userId?.toString() || null, 
+    user: r.user ? { ...r.user, id: r.user.id.toString() } : undefined,
+    trackingLink: r.deliveryLink || wp?.deliveryLink || null,
+    wigProduction: wp ? { ...wp, id: wp.id.toString() } : null
+  };
 }
 
 // GET /internal-api/requests
@@ -20,7 +28,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
   try {
     const requests = await prisma.hairRequest.findMany({
       where: { userId: req.user!.id },
-      include: { user: true },
+      include: { user: true, wigProductions: { include: { wigmaker: true } } },
       orderBy: { createdAt: 'desc' },
     });
     const result = await Promise.all(requests.map(async (r) => {
@@ -40,23 +48,36 @@ router.post('/', authenticate, upload.fields([
   { name: 'documents', maxCount: 10 },
 ]), validate(requestCreateSchema), async (req: Request, res: Response) => {
   try {
+    console.log('[HairRequest] Starting submission process...');
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
-    let medCert: string | null = null;
-    let diagPhoto: string | null = null;
-    let recipientPhoto: string | null = null;
-    let additionalPhoto: string | null = null;
-    let documents: string[] = [];
-
-    if (files?.medical_certificate?.[0]) medCert = await uploadFile(files.medical_certificate[0], 'hairlink', 'requests/verification', 'document');
-    if (files?.diagnosis_photo?.[0]) diagPhoto = await uploadFile(files.diagnosis_photo[0], 'hairlink', 'requests/verification');
-    if (files?.recipient_photo?.[0]) recipientPhoto = await uploadFile(files.recipient_photo[0], 'hairlink', 'requests/verification');
-    if (files?.additional_photo?.[0]) additionalPhoto = await uploadFile(files.additional_photo[0], 'hairlink', 'requests/photos');
-    if (files?.documents) {
-      for (const f of files.documents) {
-        documents.push(await uploadFile(f, 'hairlink', 'requests/documents', 'document'));
+    // Helper for optional single files
+    async function uploadOptional(fieldName: string, bucket: string, folder: string, type: 'image' | 'document' = 'image') {
+      const f = files?.[fieldName]?.[0];
+      if (f) {
+        console.log(`[HairRequest] Uploading ${fieldName}...`);
+        return uploadFile(f, bucket, folder, type);
       }
+      return null;
     }
+
+    const [medCert, diagPhoto, recipientPhoto, additionalPhoto] = await Promise.all([
+      uploadOptional('medical_certificate', 'hairlink', 'requests/verification', 'document'),
+      uploadOptional('diagnosis_photo', 'hairlink', 'requests/verification'),
+      uploadOptional('recipient_photo', 'hairlink', 'requests/verification'),
+      uploadOptional('additional_photo', 'hairlink', 'requests/photos'),
+    ]);
+
+    console.log('[HairRequest] Verification photos uploaded.');
+
+    let documents: string[] = [];
+    const docFiles = files?.['documents'];
+    if (docFiles) {
+      console.log(`[HairRequest] Uploading ${docFiles.length} documents...`);
+      documents = await Promise.all(docFiles.map(f => uploadFile(f, 'hairlink', 'requests/documents', 'document')));
+    }
+
+    console.log('[HairRequest] All files uploaded. Creating database record...');
 
     const hairRequest = await prisma.hairRequest.create({
       data: {
@@ -69,7 +90,7 @@ router.post('/', authenticate, upload.fields([
         diagnosisPhoto: diagPhoto,
         recipientPhoto: recipientPhoto,
         additionalPhoto: additionalPhoto,
-        documents: documents.length ? documents : undefined,
+        documents: documents,
         status: 'Submitted',
         appointmentAt: req.body.appointment_at ? new Date(req.body.appointment_at) : null,
         notes: req.body.notes || null,
@@ -78,7 +99,10 @@ router.post('/', authenticate, upload.fields([
       },
     });
 
+    console.log('[HairRequest] Record created. ID:', hairRequest.id);
+
     await createStatusHistory(REQUEST_TYPE, hairRequest.id, 'Submitted');
+    console.log('[HairRequest] Status history created. Responding to client.');
     res.status(201).json(serializeRequest(hairRequest));
   } catch (err) {
     console.error('[HairRequest] Create error:', err);
@@ -106,7 +130,7 @@ router.get('/:reference', authenticate, async (req: Request, res: Response) => {
   try {
     const hairRequest = await prisma.hairRequest.findFirst({
       where: { reference: req.params.reference, userId: req.user!.id },
-      include: { user: true },
+      include: { user: true, wigProductions: { include: { wigmaker: true } } },
     });
     if (!hairRequest) { res.status(404).json({ message: 'Request not found' }); return; }
     const statusHistories = await getStatusHistories(REQUEST_TYPE, hairRequest.id);
@@ -152,7 +176,7 @@ router.post('/:reference/confirm-received', authenticate, async (req: Request, r
     const now = new Date();
     await prisma.hairRequest.update({
       where: { id: hairRequest.id },
-      data: { status: 'Completed', wigReceivedAt: now },
+      data: { status: 'Completed', receivedAt: now },
     });
     await createStatusHistory(REQUEST_TYPE, hairRequest.id, 'Completed', 'Recipient confirmed wig received');
 

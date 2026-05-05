@@ -73,14 +73,22 @@ model HairRequest {
   userId             String?   @map("user_id") @db.Uuid
   reference          String?   @unique
   story              String?
+  contactNumber      String?   @map("contact_number")
+  gender             String?
+  medicalCertificate String?   @map("medical_certificate")
+  diagnosisPhoto     String?   @map("diagnosis_photo")
+  recipientPhoto     String?   @map("recipient_photo")
+  additionalPhoto    String?   @map("additional_photo")
+  documents          String[]
+  appointmentAt      DateTime? @map("appointment_at") @db.Timestamptz(6)
   wigLength          String?   @map("wig_length")
   wigColor           String?   @map("wig_color")
-  medicalCertificate String?   @map("medical_certificate")
-  additionalPhoto    String?   @map("additional_photo")
   notes              String?
   status             String?   @default("Submitted")
   createdAt          DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  receivedAt         DateTime? @map("received_at") @db.Timestamptz(6)
+  deliveryLink       String?   @map("delivery_link")
   user               User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
   wigProductions     WigProduction[]
 
@@ -95,9 +103,11 @@ model WigProduction {
   hairRequestId Int?      @map("hair_request_id")
   targetLength  String?   @map("target_length")
   targetColor   String?   @map("target_color")
-  status        String    @default("assigned")
+  status        String    @default("assigned") // assigned, processing, completed, shipped, received
+  isReceived    Boolean   @default(false) @map("is_received")
   dueDate       DateTime? @map("due_date")
-  deliveryLink  String?   @map("delivery_link")
+  materialDeliveryLink String?   @map("material_delivery_link")
+  deliveryLink         String?   @map("delivery_link")
   preview_photo String?
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")

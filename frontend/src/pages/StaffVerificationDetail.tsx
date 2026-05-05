@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/client';
+import { getPublicUrl } from '../lib/storage';
 
 const StaffVerificationDetail: React.FC = () => {
   const { type, reference } = useParams<{ type: 'donor' | 'recipient' | 'monetary'; reference: string }>();
@@ -93,11 +94,11 @@ const StaffVerificationDetail: React.FC = () => {
                     </li>
                     <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-cut' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Hair Length:</strong> {record.hair_length}</span>
+                      <span><strong>Hair Length:</strong> {record.hairLength}</span>
                     </li>
                     <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-palette' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Hair Color:</strong> {record.hair_color}</span>
+                      <span><strong>Hair Color:</strong> {record.hairColor}</span>
                     </li>
                     <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-message-square-detail' style={{ color: '#ad246d', marginTop: '4px' }}></i>
@@ -111,12 +112,20 @@ const StaffVerificationDetail: React.FC = () => {
                       <span><strong>Recipient:</strong> {record.user?.firstName} {record.user?.lastName}</span>
                     </li>
                     <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
+                      <i className='bx bx-phone' style={{ color: '#ad246d' }}></i>
+                      <span><strong>Contact:</strong> {record.contactNumber || 'N/A'}</span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
+                      <i className='bx bx-male-female' style={{ color: '#ad246d' }}></i>
+                      <span><strong>Gender:</strong> {record.gender || 'N/A'}</span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-ruler' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Preferred Wig Size:</strong> <strong>{record.wig_length || 'N/A'}</strong></span>
+                      <span><strong>Preferred Wig Size:</strong> <strong>{record.wigLength || 'N/A'}</strong></span>
                     </li>
                     <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-paint' style={{ color: '#ad246d' }}></i>
-                      <span><strong>Preferred Color:</strong> <strong>{record.wig_color || 'N/A'}</strong></span>
+                      <span><strong>Preferred Color:</strong> <strong>{record.wigColor || 'N/A'}</strong></span>
                     </li>
                     <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', fontSize: '0.95rem' }}>
                       <i className='bx bx-book-content' style={{ color: '#ad246d', marginTop: '4px' }}></i>
@@ -142,8 +151,8 @@ const StaffVerificationDetail: React.FC = () => {
               {isMonetary ? (
                 record.proofPath && (
                   <div className="file-preview-item" style={{ width: '120px' }}>
-                    <a href={record.proofPath} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', display: 'block', border: '1px solid #ead7e8' }}>
-                      <img src={record.proofPath} alt="Proof" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <a href={getPublicUrl('hairlink', record.proofPath) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', display: 'block', border: '1px solid #ead7e8' }}>
+                      <img src={getPublicUrl('hairlink', record.proofPath) || ''} alt="Proof" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </a>
                     <span style={{ fontSize: '0.7rem', textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>Proof of Payment</span>
                   </div>
@@ -152,16 +161,16 @@ const StaffVerificationDetail: React.FC = () => {
                 <>
                   {record.photoFront && (
                     <div className="file-preview-item" style={{ width: '120px' }}>
-                      <a href={record.photoFront} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', display: 'block', border: '1px solid #ead7e8' }}>
-                        <img src={record.photoFront} alt="Front" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <a href={getPublicUrl('hairlink', record.photoFront) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', display: 'block', border: '1px solid #ead7e8' }}>
+                        <img src={getPublicUrl('hairlink', record.photoFront) || ''} alt="Front" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </a>
                       <span style={{ fontSize: '0.7rem', textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>Reference Photo</span>
                     </div>
                   )}
                   {record.photoSide && (
                     <div className="file-preview-item" style={{ width: '120px' }}>
-                      <a href={record.photoSide} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', display: 'block', border: '1px solid #ead7e8' }}>
-                        <img src={record.photoSide} alt="Side" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <a href={getPublicUrl('hairlink', record.photoSide) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', display: 'block', border: '1px solid #ead7e8' }}>
+                        <img src={getPublicUrl('hairlink', record.photoSide) || ''} alt="Side" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </a>
                       <span style={{ fontSize: '0.7rem', textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>Hair Side</span>
                     </div>
@@ -171,33 +180,41 @@ const StaffVerificationDetail: React.FC = () => {
                 <>
                   {record.medicalCertificate && (
                     <div className="file-preview-item" style={{ width: '100px' }}>
-                      <a href={record.medicalCertificate} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
-                        <img src={record.medicalCertificate} alt="Medical Cert" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <a href={getPublicUrl('hairlink', record.medicalCertificate) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
+                        <img src={getPublicUrl('hairlink', record.medicalCertificate) || ''} alt="Medical Cert" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </a>
                       <span style={{ fontSize: '0.65rem', textAlign: 'center', display: 'block' }}>Medical Cert</span>
                     </div>
                   )}
                   {record.diagnosisPhoto && (
                     <div className="file-preview-item" style={{ width: '100px' }}>
-                      <a href={record.diagnosisPhoto} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
-                        <img src={record.diagnosisPhoto} alt="Diagnosis" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <a href={getPublicUrl('hairlink', record.diagnosisPhoto) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
+                        <img src={getPublicUrl('hairlink', record.diagnosisPhoto) || ''} alt="Diagnosis" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </a>
                       <span style={{ fontSize: '0.65rem', textAlign: 'center', display: 'block' }}>Diagnosis</span>
                     </div>
                   )}
                   {record.recipientPhoto && (
                     <div className="file-preview-item" style={{ width: '100px' }}>
-                      <a href={record.recipientPhoto} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
-                        <img src={record.recipientPhoto} alt="Recipient" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <a href={getPublicUrl('hairlink', record.recipientPhoto) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
+                        <img src={getPublicUrl('hairlink', record.recipientPhoto) || ''} alt="Recipient" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </a>
                       <span style={{ fontSize: '0.65rem', textAlign: 'center', display: 'block' }}>Recipient</span>
                     </div>
                   )}
-                  {record.documents?.map((url: string, i: number) => (
+                  {record.additionalPhoto && (
+                    <div className="file-preview-item" style={{ width: '100px' }}>
+                      <a href={getPublicUrl('hairlink', record.additionalPhoto) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
+                        <img src={getPublicUrl('hairlink', record.additionalPhoto) || ''} alt="Reference" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </a>
+                      <span style={{ fontSize: '0.65rem', textAlign: 'center', display: 'block' }}>Reference Picture</span>
+                    </div>
+                  )}
+                  {record.documents?.map((path: string, i: number) => (
                     <div key={i} className="file-preview-item" style={{ width: '100px' }}>
-                      <a href={url} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block', background: '#fdf7fb' }}>
-                        {url.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i) ? (
-                          <img src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`Doc ${i+1}`} />
+                      <a href={getPublicUrl('hairlink', path) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block', background: '#fdf7fb' }}>
+                        {path.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i) ? (
+                          <img src={getPublicUrl('hairlink', path) || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`Doc ${i+1}`} />
                         ) : (
                           <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}><i className='bx bxs-file-blank' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i></div>
                         )}

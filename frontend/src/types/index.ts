@@ -60,8 +60,9 @@ export interface HairRequest {
   documents: string[] | null;
   additionalPhoto: string | null;
   status: string;
-  deliveryTrackingLink: string | null;
-  wigReceivedAt: string | null;
+  trackingLink: string | null;
+  receivedAt: string | null;
+  wigProduction?: WigProduction | null;
   appointmentAt: string | null;
   notes: string | null;
   wigLength: string | null;

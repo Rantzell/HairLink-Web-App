@@ -14,14 +14,17 @@ export const registerSchema = z.object({
   first_name: z.string().min(1).max(255),
   last_name: z.string().min(1).max(255),
   email: z.string().email().max(255),
-  password: z.string().min(8),
-  password_confirmation: z.string().min(8).optional(),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[!@#$%^&*(),.?":{}|<>_]/, 'Password must contain at least one symbol'),
+  password_confirmation: z.string().optional(),
   country: z.string().max(255).optional(),
   region: z.string().max(255).optional(),
   postal_code: z.string().max(255).optional(),
-  age: z.coerce.number().int().min(1).max(120).optional(),
-  gender: z.string().max(255).optional(),
-  phone: z.string().max(13).optional(),
+  age: z.coerce.number().int().min(1).max(120).optional().nullable(),
+  gender: z.enum(['male', 'female', 'nonbinary', 'prefer_not_say']).optional().nullable(),
+  phone: z.string().max(20).optional().nullable(),
   device_name: z.string().optional(),
 });
 
@@ -32,8 +35,11 @@ export const forgotPasswordSchema = z.object({
 export const resetPasswordSchema = z.object({
   token: z.string().min(1),
   email: z.string().email(),
-  password: z.string().min(8),
-  password_confirmation: z.string().min(8),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[!@#$%^&*(),.?":{}|<>_]/, 'Password must contain at least one symbol'),
+  password_confirmation: z.string(),
 });
 
 // ── Donations ──
@@ -91,6 +97,7 @@ export const verificationStatusSchema = z.object({
 
 export const assignWigmakerSchema = z.object({
   wigmaker_id: z.string().uuid(),
+  material_delivery_link: z.string().url().max(2048).optional(),
 });
 
 export const trackingStatusSchema = z.object({
@@ -101,25 +108,29 @@ export const trackingStatusSchema = z.object({
 
 export const matchWigSchema = z.object({
   request_reference: z.string().min(1),
-  wig_id: z.string().uuid(),
+  wig_id: z.coerce.number().int(),
 });
 
 // ── Wigmaker ──
 export const taskUpdateSchema = z.object({
-  status: z.enum(['assigned', 'processing', 'completed']),
+  status: z.enum(['assigned', 'processing', 'completed', 'shipped', 'received']),
   progressNotes: z.string().min(1),
   updatedAt: z.string().optional(),
   deliveryLink: z.string().url().max(2048).optional(),
+});
+
+export const materialConfirmationSchema = z.object({
+  notes: z.string().optional(),
 });
 
 // ── Profile ──
 export const profileUpdateSchema = z.object({
   first_name: z.string().min(1).max(255),
   last_name: z.string().min(1).max(255),
-  phone: z.string().max(20).optional(),
-  bio: z.string().max(1000).optional(),
-  age: z.coerce.number().int().min(1).max(120).optional(),
-  gender: z.enum(['male', 'female', 'other']).optional(),
+  phone: z.string().max(20).optional().nullable(),
+  bio: z.string().max(1000).optional().nullable(),
+  age: z.coerce.number().int().min(1).max(120).optional().nullable(),
+  gender: z.enum(['male', 'female', 'nonbinary', 'prefer_not_say']).optional().nullable(),
 });
 
 // ── Monetary Donations ──

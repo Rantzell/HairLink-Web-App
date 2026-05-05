@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import type { HairRequest, WigProduction } from '../types';
 
@@ -48,13 +48,24 @@ const StaffMatching: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const targetRef = queryParams.get('reference');
+
   useEffect(() => {
     const fetchMatchingData = async () => {
       try {
         const res = await apiClient.get('/internal-api/staff/rule-matching');
         setRecipients(res.data.recipients);
         setWigs(res.data.wigs);
-        if (res.data.recipients.length > 0) setSelectedRecipient(res.data.recipients[0]);
+        
+        // Auto-select based on reference if provided, otherwise first recipient
+        if (res.data.recipients.length > 0) {
+          const matched = targetRef 
+            ? res.data.recipients.find((r: any) => r.reference === targetRef) 
+            : res.data.recipients[0];
+          setSelectedRecipient(matched || res.data.recipients[0]);
+        }
       } catch (err) {
         console.error('Failed to fetch matching data', err);
       } finally {
@@ -62,7 +73,7 @@ const StaffMatching: React.FC = () => {
       }
     };
     fetchMatchingData();
-  }, []);
+  }, [targetRef]);
 
   const filteredRecipients = recipients.filter(r => 
     `${r.user?.firstName} ${r.user?.lastName}`.toLowerCase().includes(recipientSearch.toLowerCase())
@@ -159,24 +170,7 @@ const StaffMatching: React.FC = () => {
         <section className="match-right">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Available Wigs</h2>
-            <div className="match-tools" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <label style={{ fontWeight: 700, color: '#8c7895', fontSize: '0.75rem' }}>Display:</label>
-              <select 
-                value={matchMode} 
-                onChange={e => setMatchMode(e.target.value as any)}
-                style={{ padding: '0 0.6rem', borderRadius: '6px', border: '1px solid #ead7e8', height: '28px', fontSize: '0.8rem', color: '#5d4d62' }}
-              >
-                <option value="high">High Matches (≥ 85%)</option>
-                <option value="top3">Top 3 Highest Matches</option>
-                <option value="all">All Available Wigs</option>
-              </select>
-            </div>
           </div>
-          
-          <p className="match-rule-note" style={{ fontSize: '0.7rem', color: '#8c7895', background: '#fdf7fb', padding: '0.6rem 1rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f2ebf4', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <i className='bx bx-info-circle' style={{ color: '#ad246d', fontSize: '0.9rem' }}></i>
-            Ranking rule: highest compatibility score first. Tie-breaker: oldest in-stock wig first (FIFO).
-          </p>
 
           <div className="wig-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.2rem' }}>
             {filteredWigs.map(wig => (

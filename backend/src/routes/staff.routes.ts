@@ -63,13 +63,26 @@ router.get('/recipient-verification', ...staffOnly, async (_req, res) => {
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
+// GET /internal-api/staff/monetary-verification
+router.get('/monetary-verification', ...staffOnly, async (_req, res) => {
+  try {
+    const m = await prisma.monetaryDonation.findMany({ where: { status: 'Submitted' }, include: { user: true } });
+    res.json(s(m));
+  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
 // GET /internal-api/staff/verification/:type/:reference
 router.get('/verification/:type/:reference', ...staffOnly, async (req, res) => {
   try {
     const { type, reference } = req.params;
-    const record = type === 'donor'
-      ? await prisma.donation.findFirst({ where: { reference }, include: { user: true } })
-      : await prisma.hairRequest.findFirst({ where: { reference }, include: { user: true } });
+    let record: any = null;
+    if (type === 'donor') {
+      record = await prisma.donation.findFirst({ where: { reference }, include: { user: true } });
+    } else if (type === 'recipient') {
+      record = await prisma.hairRequest.findFirst({ where: { reference }, include: { user: true } });
+    } else if (type === 'monetary') {
+      record = await prisma.monetaryDonation.findFirst({ where: { referenceNumber: reference }, include: { user: true } });
+    }
     if (!record) { res.status(404).json({ message: 'Not found' }); return; }
     res.json(s(record));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
@@ -80,15 +93,27 @@ router.post('/verification/:type/:reference', ...staffOnly, validate(verificatio
   try {
     const { type, reference } = req.params;
     const { status, remarks } = req.body;
-    const trackableType = type === 'donor' ? DONATION_TYPE : REQUEST_TYPE;
-    const record = type === 'donor'
-      ? await prisma.donation.findFirst({ where: { reference } })
-      : await prisma.hairRequest.findFirst({ where: { reference } });
+    let record: any = null;
+    if (type === 'donor') {
+      record = await prisma.donation.findFirst({ where: { reference } });
+    } else if (type === 'recipient') {
+      record = await prisma.hairRequest.findFirst({ where: { reference } });
+    } else if (type === 'monetary') {
+      record = await prisma.monetaryDonation.findFirst({ where: { referenceNumber: reference } });
+    }
     if (!record) { res.status(404).json({ message: 'Not found' }); return; }
 
-    if (type === 'donor') await prisma.donation.update({ where: { id: record.id }, data: { status } });
-    else await prisma.hairRequest.update({ where: { id: record.id }, data: { status } });
-    await createStatusHistory(trackableType, record.id, status, remarks);
+    if (type === 'donor') {
+      await prisma.donation.update({ where: { id: record.id }, data: { status } });
+      await createStatusHistory(DONATION_TYPE, record.id, status, remarks);
+    } else if (type === 'recipient') {
+      await prisma.hairRequest.update({ where: { id: record.id }, data: { status } });
+      await createStatusHistory(REQUEST_TYPE, record.id, status, remarks);
+    } else if (type === 'monetary') {
+      await prisma.monetaryDonation.update({ where: { id: record.id }, data: { status, remarks } });
+      // Monetary donations don't typically have status history in this app, 
+      // but we update the remarks field directly.
+    }
     res.json({ message: 'Status updated successfully', success: true });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
@@ -124,7 +149,18 @@ router.post('/assign-wigmaker/:reference', ...staffOnly, validate(assignWigmaker
     if (!wm) { res.status(404).json({ message: 'Wigmaker not found' }); return; }
     const tc = 'WG-' + crypto.createHash('md5').update(donation.reference + Date.now()).digest('hex').substring(0, 6).toUpperCase();
     const due = new Date(); due.setDate(due.getDate() + 30);
-    await prisma.wigProduction.create({ data: { taskCode: tc, wigmakerId: wm.id, donationId: donation.id, targetLength: donation.hairLength, targetColor: donation.hairColor, status: 'assigned', dueDate: due } });
+    await prisma.wigProduction.create({ 
+      data: { 
+        taskCode: tc, 
+        wigmakerId: wm.id, 
+        donationId: donation.id, 
+        targetLength: donation.hairLength, 
+        targetColor: donation.hairColor, 
+        status: 'assigned', 
+        dueDate: due,
+        materialDeliveryLink: req.body.material_delivery_link || null
+      } 
+    });
     await prisma.donation.update({ where: { id: donation.id }, data: { status: 'In Queue' } });
     await createStatusHistory(DONATION_TYPE, donation.id, 'In Queue', `Wigmaker: ${wm.firstName || 'Staff'} ${wm.lastName || ''}`);
     res.json({ message: `Assigned to ${wm.firstName || 'Wigmaker'}.`, success: true, task_code: tc });
@@ -142,11 +178,27 @@ router.post('/tracking/:reference/status', ...staffOnly, validate(trackingStatus
     if (!record) { res.status(404).json({ message: 'Not found' }); return; }
     const tt = isDon ? DONATION_TYPE : REQUEST_TYPE;
     const ud: any = { status: ns };
-    if (ns === 'Wig Received') ud.receivedWigAt = new Date();
-    if (ns === 'In Transit' && delivery_tracking_link) ud.donorDeliveryLink = delivery_tracking_link;
+    if (ns === 'Wig Received') {
+      if (isDon) ud.receivedWigAt = new Date();
+      else ud.receivedAt = new Date();
+    }
+    if (ns === 'In Transit' && delivery_tracking_link) {
+      if (isDon) ud.donorDeliveryLink = delivery_tracking_link;
+      else ud.deliveryLink = delivery_tracking_link;
+    }
     if (ns === 'Received Hair' && isDon && record.reference && !record.certificateNo) ud.certificateNo = `CERT-${new Date().getFullYear()}-${record.reference.slice(-6)}`;
-    if (isDon) await prisma.donation.update({ where: { id: record.id }, data: ud });
-    else await prisma.hairRequest.update({ where: { id: record.id }, data: ud });
+    if (isDon) {
+      await prisma.donation.update({ where: { id: record.id }, data: ud });
+      // Also update wig production status if it exists
+      if (ns === 'Wig Received') {
+        await prisma.wigProduction.updateMany({
+          where: { donationId: record.id, status: { in: ['completed', 'shipped'] } },
+          data: { status: 'received' }
+        });
+      }
+    } else {
+      await prisma.hairRequest.update({ where: { id: record.id }, data: ud });
+    }
     await createStatusHistory(tt, record.id, ns, notes || `Status updated to ${ns} by staff`);
     res.json({ message: `Status updated to ${ns}.`, success: true });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
@@ -186,7 +238,12 @@ router.get('/hair-stock', ...staffOnly, async (_req, res) => {
 // GET /internal-api/staff/wig-stock
 router.get('/wig-stock', ...staffOnly, async (_req, res) => {
   try {
-    const wigs = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { donation: true }, orderBy: { updatedAt: 'desc' }, take: 50 });
+    const wigs = await prisma.wigProduction.findMany({ 
+      where: { status: { in: ['completed', 'received'] } }, 
+      include: { donation: true }, 
+      orderBy: { updatedAt: 'desc' }, 
+      take: 50 
+    });
     res.json(s(wigs));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
@@ -195,7 +252,9 @@ router.get('/wig-stock', ...staffOnly, async (_req, res) => {
 router.get('/matching-list', ...staffOnly, async (_req, res) => {
   try {
     const reqs = await prisma.hairRequest.findMany({ where: { status: { in: ['Validated', 'Matched', 'In Transit', 'Arrived'] } }, include: { user: true }, orderBy: { updatedAt: 'desc' } });
-    const avail = await prisma.wigProduction.findMany({ where: { status: 'completed', hairRequestId: null } });
+    const avail = await prisma.wigProduction.findMany({ 
+      where: { status: { in: ['completed', 'received'] }, hairRequestId: null } 
+    });
     const result = reqs.map(r => {
       if (r.status !== 'Validated') return { ...s(r), best_match: null, match_score: 0 };
       let bw: any = null, ms = -1;
@@ -210,7 +269,10 @@ router.get('/matching-list', ...staffOnly, async (_req, res) => {
 router.get('/rule-matching', ...staffOnly, async (_req, res) => {
   try {
     const recipients = await prisma.hairRequest.findMany({ where: { status: { in: ['Validated', 'Submitted'] } }, include: { user: true } });
-    const wigs = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { donation: true } });
+    const wigs = await prisma.wigProduction.findMany({ 
+      where: { status: { in: ['completed', 'received'] } }, 
+      include: { donation: true } 
+    });
     res.json({ recipients: s(recipients), wigs: s(wigs) });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
