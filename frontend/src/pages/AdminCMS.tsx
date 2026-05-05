@@ -153,7 +153,25 @@ const AdminCMS: React.FC = () => {
                   <label style={{ fontSize: '0.7rem', fontWeight: 700 }}>Content</label>
                   <textarea rows={5} value={announcementForm.content} onChange={e => setAnnouncementForm({...announcementForm, content: e.target.value})} required></textarea>
                 </div>
-                <button type="submit" className="soft-btn" disabled={isSubmitting}>Publish</button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  style={{
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '8px',
+                    background: '#ad246d',
+                    color: '#fff',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    opacity: isSubmitting ? 0.7 : 1,
+                    width: '100%',
+                    marginTop: '0.5rem'
+                  }}
+                >
+                  {isSubmitting ? 'Publishing...' : 'Publish'}
+                </button>
               </form>
             </article>
           ) : (
@@ -180,7 +198,25 @@ const AdminCMS: React.FC = () => {
                     <option value="Inactive">Inactive</option>
                   </select>
                 </div>
-                <button type="submit" className="soft-btn" disabled={isSubmitting}>Save Partner</button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  style={{
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '8px',
+                    background: '#ad246d',
+                    color: '#fff',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    opacity: isSubmitting ? 0.7 : 1,
+                    width: '100%',
+                    marginTop: '0.5rem'
+                  }}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Partner'}
+                </button>
               </form>
             </article>
           )}

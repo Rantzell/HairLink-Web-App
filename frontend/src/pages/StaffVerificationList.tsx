@@ -79,7 +79,7 @@ const StaffVerificationList: React.FC = () => {
                 <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date</th>
                 <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User</th>
                 <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
-                <th style={{ padding: '1rem', textAlign: 'right', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Action</th>
+                <th style={{ padding: '1rem', textAlign: 'center', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -95,7 +95,7 @@ const StaffVerificationList: React.FC = () => {
                     <td style={{ padding: '1.2rem 1rem', color: '#5d4d62', fontSize: '0.9rem' }}>{new Date(item.createdAt).toLocaleDateString()}</td>
                     <td style={{ padding: '1.2rem 1rem', color: '#3b2e43', fontWeight: 600 }}>{item.user ? `${item.user.firstName} ${item.user.lastName}` : (item.name || 'Anonymous')}</td>
                     <td style={{ padding: '1.2rem 1rem' }}><StatusPill status={item.status} /></td>
-                    <td style={{ padding: '1.2rem 1rem', textAlign: 'right' }}>
+                    <td style={{ padding: '1.2rem 1rem', textAlign: 'center' }}>
                       <Link 
                         to={`/staff/verification/${type}/${item.reference || item.referenceNumber}`} 
                         className="soft-btn" 

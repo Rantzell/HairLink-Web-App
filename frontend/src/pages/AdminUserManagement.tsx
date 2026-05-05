@@ -36,6 +36,14 @@ const AdminUserManagement: React.FC = () => {
   };
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const role = params.get('role');
+    if (role && role !== roleFilter) {
+      setRoleFilter(role);
+    }
+  }, [location.search, roleFilter]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       fetchUsers();
     }, 500);
@@ -126,8 +134,19 @@ const AdminUserManagement: React.FC = () => {
         </div>
         <button 
           onClick={() => handleOpenModal()} 
-          className="soft-btn" 
-          style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', borderRadius: '8px', fontWeight: 800 }}
+          style={{ 
+            padding: '0.5rem 1.25rem', 
+            borderRadius: '8px', 
+            background: '#ad246d', 
+            color: '#fff', 
+            border: 'none', 
+            fontWeight: 800, 
+            fontSize: '0.8rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
         >
           <i className='bx bx-user-plus'></i> Create User
         </button>
@@ -198,27 +217,44 @@ const AdminUserManagement: React.FC = () => {
                     </span>
                   </td>
                   <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                       <button 
                         onClick={() => handleOpenModal(user)}
-                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: '#fdf7fb', border: '1px solid #ead7e8', borderRadius: '6px', cursor: 'pointer' }}
+                        style={{ 
+                          padding: '0.35rem 0.8rem', 
+                          fontSize: '0.7rem', 
+                          background: '#fff', 
+                          color: '#ad246d', 
+                          border: '1.5px solid #ead7e8', 
+                          borderRadius: '8px', 
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          fontWeight: 700,
+                          transition: 'all 0.2s'
+                        }}
                       >
-                        Edit
+                        <i className='bx bx-edit-alt' style={{ fontSize: '0.85rem' }}></i> Edit
                       </button>
                       <button 
                         onClick={() => handleToggleActive(user.id)}
                         disabled={isSubmitting}
                         style={{ 
-                          padding: '0.3rem 0.6rem', 
+                          padding: '0.35rem 0.8rem', 
                           fontSize: '0.7rem',
                           background: user.isActive ? '#fff' : '#ad246d',
-                          border: `1px solid ${user.isActive ? '#ead7e8' : '#ad246d'}`,
+                          border: `1.5px solid ${user.isActive ? '#ead7e8' : '#ad246d'}`,
                           color: user.isActive ? '#8c7895' : '#fff',
-                          borderRadius: '6px',
+                          borderRadius: '8px',
                           fontWeight: 800,
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem'
                         }}
                       >
+                        <i className={`bx ${user.isActive ? 'bx-user-x' : 'bx-user-check'}`} style={{ fontSize: '0.85rem' }}></i>
                         {user.isActive ? 'Deactivate' : 'Activate'}
                       </button>
                     </div>
@@ -269,10 +305,39 @@ const AdminUserManagement: React.FC = () => {
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="submit" className="soft-btn" style={{ flex: 1 }} disabled={isSubmitting}>
-                  {editingUser ? 'Update Account' : 'Create Account'}
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  style={{
+                    flex: 1,
+                    padding: '0.6rem 1rem',
+                    borderRadius: '8px',
+                    background: '#ad246d',
+                    color: '#fff',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    opacity: isSubmitting ? 0.7 : 1
+                  }}
+                >
+                  {isSubmitting ? 'Saving...' : (editingUser ? 'Update Account' : 'Create Account')}
                 </button>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="ghost-btn" style={{ flex: 1 }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)} 
+                  style={{
+                    flex: 1,
+                    padding: '0.6rem 1rem',
+                    borderRadius: '8px',
+                    background: '#fff',
+                    color: '#ad246d',
+                    border: '1.5px solid #ead7e8',
+                    fontWeight: 800,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                >
                   Cancel
                 </button>
               </div>

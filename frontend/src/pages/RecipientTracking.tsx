@@ -31,17 +31,32 @@ const RecipientTracking: React.FC = () => {
 
   return (
     <section className="section-wrap donor-module-page reveal active">
-      <header className="module-head">
-        <h1>My Request Tracking</h1>
-        <p>Monitor the status of your hair requests and coordination updates.</p>
-        <div className="tracking-tools">
+      <header className="module-head" style={{ marginBottom: '1.5rem' }}>
+        <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>My Request Tracking</h1>
+        <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.2rem' }}>Monitor the status of your hair requests and coordination updates.</p>
+        <div className="tracking-tools" style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', alignItems: 'center' }}>
           <input 
             type="text" 
-            placeholder="Search by reference, status, or name..."
+            placeholder="Search reference, status..."
             value={filter}
             onChange={e => setFilter(e.target.value)}
+            style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid #ead7e8', fontSize: '0.8rem', width: '250px' }}
           />
-          <Link className="submit-code-btn" to="/recipient/request" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>Submit New Request</Link>
+          <Link 
+            to="/recipient/request" 
+            style={{ 
+              textDecoration: 'none', 
+              fontSize: '0.75rem', 
+              background: '#ad246d', 
+              color: '#fff', 
+              padding: '0.4rem 1.2rem', 
+              borderRadius: '50px', 
+              fontWeight: 800,
+              display: 'inline-block'
+            }}
+          >
+            Submit New Request
+          </Link>
         </div>
       </header>
 
@@ -50,12 +65,12 @@ const RecipientTracking: React.FC = () => {
           <table className="tracking-table">
             <thead>
               <tr>
-                <th>Reference</th>
-                <th>Submitted</th>
-                <th>Status</th>
-                <th>Wig Length</th>
-                <th>Wig Color</th>
-                <th>Action</th>
+                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase' }}>Reference</th>
+                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase' }}>Submitted</th>
+                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase' }}>Status</th>
+                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase' }}>Wig Length</th>
+                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase' }}>Wig Color</th>
+                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase', textAlign: 'center' }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -64,18 +79,41 @@ const RecipientTracking: React.FC = () => {
               ) : filteredRequests.length > 0 ? (
                 filteredRequests.map(r => (
                   <tr key={r.id}>
-                    <td><strong>{r.reference}</strong></td>
-                    <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+                    <td style={{ fontSize: '0.85rem' }}><strong>{r.reference}</strong></td>
+                    <td style={{ fontSize: '0.85rem' }}>{new Date(r.createdAt).toLocaleDateString()}</td>
                     <td><StatusPill status={r.status} /></td>
-                    <td>{r.wigLength}</td>
-                    <td>{r.wigColor}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <Link to={`/recipient/tracking/${r.reference}`} className="ghost-btn">Details</Link>
+                    <td style={{ fontSize: '0.85rem' }}>{r.wigLength}</td>
+                    <td style={{ fontSize: '0.85rem' }}>{r.wigColor}</td>
+                    <td style={{ textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
+                        <Link 
+                          to={`/recipient/tracking/${r.reference}`} 
+                          style={{ 
+                            padding: '0.35rem 0.8rem', 
+                            fontSize: '0.7rem', 
+                            background: '#fff', 
+                            color: '#ad246d', 
+                            border: '1.5px solid #ead7e8', 
+                            borderRadius: '8px', 
+                            textDecoration: 'none',
+                            fontWeight: 700,
+                            display: 'inline-block'
+                          }}
+                        >
+                          Details
+                        </Link>
                         {r.status === 'In Transit' && (
                           <button 
-                            className="submit-code-btn" 
-                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', border: 'none', cursor: 'pointer' }}
+                            style={{ 
+                              padding: '0.35rem 0.8rem', 
+                              fontSize: '0.7rem', 
+                              background: '#ad246d', 
+                              color: '#fff', 
+                              border: 'none', 
+                              borderRadius: '50px', 
+                              fontWeight: 800,
+                              cursor: 'pointer' 
+                            }}
                             onClick={async () => {
                               if (!window.confirm('Confirm you have received your wig?')) return;
                               try {

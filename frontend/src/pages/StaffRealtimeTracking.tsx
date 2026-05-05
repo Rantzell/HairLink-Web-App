@@ -211,7 +211,7 @@ const StaffRealtimeTracking: React.FC = () => {
                 <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Spec / Details</th>
                 <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
                 <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current Stage</th>
-                <th style={{ padding: '1rem', textAlign: 'right', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Action</th>
+                <th style={{ padding: '1rem', textAlign: 'center', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -301,9 +301,9 @@ const StaffRealtimeTracking: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                         {donation.status === 'Verified' && (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                             {donation.donorDeliveryLink ? (
                               <>
                                 <a
@@ -314,7 +314,7 @@ const StaffRealtimeTracking: React.FC = () => {
                                 >
                                   <i className='bx bx-link-external'></i> View Tracking
                                 </a>
-                                <button className="soft-btn" onClick={() => handleUpdateStatus(donation.reference, 'donor', 'Received Hair')} disabled={isSubmitting} style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}>Confirm Received</button>
+                                <button className="soft-btn" onClick={() => handleUpdateStatus(donation.reference, 'donor', 'Received Hair')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Received</button>
                               </>
                             ) : (
                               <span style={{ fontSize: '0.7rem', color: '#8c7895', fontStyle: 'italic', fontWeight: 600 }}>Awaiting Delivery Link...</span>
@@ -346,10 +346,10 @@ const StaffRealtimeTracking: React.FC = () => {
                           </div>
                         )}
                         {donation.status === 'Completed' && !isWigmakerControlled && (
-                          <button className="soft-btn" onClick={() => handleUpdateStatus(donation.reference, 'donor', 'Wig Received')} disabled={isSubmitting} style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}>Confirm Receipt</button>
+                          <button className="soft-btn" onClick={() => handleUpdateStatus(donation.reference, 'donor', 'Wig Received')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Receipt</button>
                         )}
                         {wigProd?.status === 'shipped' && (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                             {wigProd.deliveryLink && (
                               <a 
                                 href={wigProd.deliveryLink} 
@@ -364,7 +364,7 @@ const StaffRealtimeTracking: React.FC = () => {
                               className="soft-btn" 
                               onClick={() => handleUpdateStatus(donation.reference, 'donor', 'Wig Received')} 
                               disabled={isSubmitting} 
-                              style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}
+                              style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}
                             >
                               Confirm Wig Received
                             </button>
@@ -455,9 +455,9 @@ const StaffRealtimeTracking: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                         {request.status === 'Validated' && (
-                          <Link to={`/staff/matching?reference=${request.reference}`} className="soft-btn" style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', textDecoration: 'none', borderRadius: '50px', display: 'inline-block', fontWeight: 800, boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}>Match Wig</Link>
+                          <Link to={`/staff/matching?reference=${request.reference}`} className="soft-btn" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', textDecoration: 'none', borderRadius: '50px', display: 'inline-block', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Match Wig</Link>
                         )}
                         {request.status === 'Matched' && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '180px' }}>
@@ -478,7 +478,7 @@ const StaffRealtimeTracking: React.FC = () => {
                                 handleUpdateStatus(request.reference, 'recipient', 'In Transit', link);
                               }} 
                               disabled={isSubmitting} 
-                              style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}
+                              style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}
                             >
                               Ship Wig
                             </button>

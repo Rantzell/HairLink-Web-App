@@ -344,7 +344,7 @@ const HairCareHub: React.FC = () => {
               </div>
               <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid #f2eef2', textAlign: 'center' }}>
                 <p style={{ color: '#8c7d91', fontSize: '0.9rem', marginBottom: '1rem' }}>Found this guide helpful?</p>
-                <button onClick={() => setSelectedArticle(null)} className="soft-btn" style={{ height: '38px', padding: '0 1.5rem', fontSize: '0.85rem', borderRadius: '50px', background: '#fdf2f8', color: '#ad246d', fontWeight: 700 }}>
+                <button onClick={() => setSelectedArticle(null)} className="soft-btn" style={{ height: '38px', padding: '0 1.5rem', fontSize: '0.85rem', borderRadius: '50px', background: '#ad246d', color: '#fff', fontWeight: 700, boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}>
                    Close Guide
                 </button>
               </div>

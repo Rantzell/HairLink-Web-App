@@ -31,25 +31,49 @@ const RecipientTrackingDetail: React.FC = () => {
 
   return (
     <section className="section-wrap donor-module-page reveal active">
-      <header className="module-head">
-        <h1>Request Tracking Detail</h1>
-        <p>Reference: <strong>{requestData.reference}</strong></p>
-        <div className="action-row" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <Link className="ghost-btn" to="/recipient/tracking">Back to Tracking List</Link>
+      <header className="module-head" style={{ marginBottom: '1.5rem' }}>
+        <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>Request Tracking Detail</h1>
+        <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.2rem' }}>Reference: <strong>{requestData.reference}</strong></p>
+        <div className="action-row" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '1rem' }}>
+          <Link 
+            to="/recipient/tracking" 
+            style={{ 
+              textDecoration: 'none', 
+              fontSize: '0.7rem', 
+              background: '#fff', 
+              color: '#ad246d', 
+              padding: '0.35rem 0.8rem', 
+              borderRadius: '8px', 
+              border: '1.5px solid #ead7e8', 
+              fontWeight: 700,
+              display: 'inline-block'
+            }}
+          >
+            Back to Tracking List
+          </Link>
           {requestData.trackingLink && requestData.status === 'In Transit' && (
             <a 
               href={requestData.trackingLink} 
               target="_blank" 
               rel="noreferrer" 
-              className="submit-code-btn" 
-              style={{ textDecoration: 'none', background: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              style={{ 
+                textDecoration: 'none', 
+                background: '#3b82f6', 
+                color: '#fff', 
+                padding: '0.35rem 0.8rem', 
+                borderRadius: '50px', 
+                fontSize: '0.7rem', 
+                fontWeight: 800, 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem' 
+              }}
             >
               <i className='bx bx-map-pin'></i> Track My Wig
             </a>
           )}
           {requestData.status === 'In Transit' && (
             <button 
-              className="submit-code-btn" 
               onClick={async () => {
                 if (!window.confirm('Confirm you have received your wig?')) return;
                 try {
@@ -59,7 +83,16 @@ const RecipientTrackingDetail: React.FC = () => {
                   alert('Failed to confirm receipt.');
                 }
               }}
-              style={{ border: 'none', cursor: 'pointer' }}
+              style={{ 
+                border: 'none', 
+                cursor: 'pointer', 
+                background: '#ad246d', 
+                color: '#fff', 
+                padding: '0.35rem 0.8rem', 
+                borderRadius: '50px', 
+                fontSize: '0.7rem', 
+                fontWeight: 800 
+              }}
             >
               Confirm Wig Received
             </button>

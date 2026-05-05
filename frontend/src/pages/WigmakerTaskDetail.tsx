@@ -85,24 +85,39 @@ const WigmakerTaskDetail: React.FC = () => {
       task.status === 'shipped' ? 'Shipping: Returning to staff' : 'Assigned';
 
   return (
-    <section className="wigmaker-page reveal active staff-page" style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem 2rem' }}>
+    <section className="wigmaker-page reveal active staff-page" style={{ maxWidth: '100%', margin: '0', padding: '1.5rem 2.5rem' }}>
       {/* Header Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', border: '1px solid #ead7e8', boxShadow: '0 4px 15px rgba(173, 36, 109, 0.03)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', background: '#fff', padding: '1rem 1.5rem', borderRadius: '16px', border: '1px solid #ead7e8', boxShadow: '0 4px 15px rgba(173, 36, 109, 0.03)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: '#fdf2f8', width: '48px', height: '48px', borderRadius: '12px', display: 'grid', placeItems: 'center' }}>
-            <i className='bx bx-task' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i>
+          <div style={{ background: '#fdf2f8', width: '42px', height: '42px', borderRadius: '10px', display: 'grid', placeItems: 'center' }}>
+            <i className='bx bx-task' style={{ color: '#ad246d', fontSize: '1.3rem' }}></i>
           </div>
           <div>
-            <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Task: {task.taskCode}</h1>
+            <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Task: {task.taskCode}</h1>
             <p style={{ fontSize: '0.75rem', color: '#8c7895', margin: 0 }}>Production ID: <span style={{ color: '#ad246d', fontWeight: 700 }}>{task.donation?.reference || 'N/A'}</span></p>
           </div>
         </div>
-        <Link to="/wigmaker/dashboard" style={{ height: '36px', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', border: '1.5px solid #ead7e8', color: '#ad246d', fontSize: '0.75rem', fontWeight: 800, textDecoration: 'none', background: '#fff', transition: 'all 0.2s ease' }} className="ghost-btn">
+        <Link 
+          to="/wigmaker/dashboard" 
+          style={{ 
+            padding: '0.35rem 0.8rem', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.4rem', 
+            borderRadius: '8px', 
+            border: '1.5px solid #ead7e8', 
+            color: '#ad246d', 
+            fontSize: '0.7rem', 
+            fontWeight: 800, 
+            textDecoration: 'none', 
+            background: '#fff' 
+          }}
+        >
           <i className='bx bx-left-arrow-alt'></i> Back to Dashboard
         </Link>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '1.5rem', alignItems: 'start' }}>
         {/* Main Column */}
         <div style={{ display: 'grid', gap: '1.5rem' }}>
 

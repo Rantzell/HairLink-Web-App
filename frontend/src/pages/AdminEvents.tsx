@@ -47,42 +47,73 @@ const AdminEvents: React.FC = () => {
   return (
     <section className="section-wrap reveal active admin-page">
       <header style={{ padding: '0.6rem 0 0.2rem' }}>
-        <p style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ad246d', marginBottom: '0.2rem' }}>Admin · Events</p>
-        <h1 style={{ fontSize: '2.1rem', color: '#261d2b', margin: 0 }}>Update Events</h1>
-        <p style={{ color: '#665772', fontSize: '0.88rem', marginTop: '0.25rem' }}>Schedule and publish HairLink community events and donation drives.</p>
+        <p style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ad246d', marginBottom: '0.1rem' }}>Admin · Events</p>
+        <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>Update Events</h1>
+        <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.1rem' }}>Schedule and publish HairLink community events and donation drives.</p>
       </header>
 
       <article className="admin-card" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '24px', padding: '1.5rem', marginBottom: '2rem' }}>
-        <h2 style={{ margin: '0 0 1.5rem 0' }}><i className='bx bx-calendar-plus' style={{ color: '#ad246d' }}></i> Add New Event</h2>
+        <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 1.2rem 0', color: '#261d2b' }}><i className='bx bx-calendar-plus' style={{ color: '#ad246d' }}></i> Add New Event</h2>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.4rem' }}>Event Title *</label>
+              <label style={{ display: 'block', fontWeight: 700, fontSize: '0.75rem', marginBottom: '0.3rem', color: '#665772' }}>Event Title *</label>
               <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Donation Drive" required />
             </div>
             <div className="form-group">
-              <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.4rem' }}>Date *</label>
+              <label style={{ display: 'block', fontWeight: 700, fontSize: '0.75rem', marginBottom: '0.3rem', color: '#665772' }}>Date *</label>
               <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} required />
             </div>
           </div>
           <div className="form-group">
-            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.4rem' }}>Description</label>
+            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.75rem', marginBottom: '0.3rem', color: '#665772' }}>Description</label>
             <textarea rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Event details..."></textarea>
           </div>
           <div className="form-group">
-            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.4rem' }}>Location</label>
+            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.75rem', marginBottom: '0.3rem', color: '#665772' }}>Location</label>
             <input type="text" value={form.location} onChange={e => setForm({...form, location: e.target.value})} placeholder="Venue..." />
           </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button className="soft-btn" type="submit" disabled={isSubmitting}>Save Event</button>
-            <button className="ghost-btn" type="reset" onClick={() => setForm({title: '', date: '', description: '', location: ''})}>Clear</button>
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button 
+              type="submit" 
+              disabled={isSubmitting}
+              style={{
+                padding: '0.5rem 1.25rem',
+                borderRadius: '8px',
+                background: '#ad246d',
+                color: '#fff',
+                border: 'none',
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                opacity: isSubmitting ? 0.7 : 1
+              }}
+            >
+              {isSubmitting ? 'Saving...' : 'Save Event'}
+            </button>
+            <button 
+              type="reset" 
+              onClick={() => setForm({title: '', date: '', description: '', location: ''})}
+              style={{
+                padding: '0.5rem 1.25rem',
+                borderRadius: '8px',
+                background: '#fff',
+                color: '#ad246d',
+                border: '1.5px solid #ead7e8',
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}
+            >
+              Clear
+            </button>
           </div>
         </form>
       </article>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
         <article className="admin-card" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '24px', padding: '1.5rem' }}>
-          <h2 style={{ margin: '0 0 1.5rem 0' }}><i className='bx bx-calendar-event' style={{ color: '#ad246d' }}></i> Upcoming</h2>
+          <h2 style={{ fontSize: '0.95rem', fontWeight: 800, margin: '0 0 1.2rem 0', color: '#261d2b' }}><i className='bx bx-calendar-event' style={{ color: '#ad246d' }}></i> Upcoming</h2>
           <div className="event-list" style={{ display: 'grid', gap: '1rem' }}>
             {data.upcomingEvents.map((ev: any) => (
               <div key={ev.id} className="event-item" style={{ display: 'flex', gap: '1rem', padding: '1rem', background: '#fdf7fb', borderRadius: '12px' }}>
@@ -101,7 +132,7 @@ const AdminEvents: React.FC = () => {
         </article>
 
         <article className="admin-card" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '24px', padding: '1.5rem' }}>
-          <h2 style={{ margin: '0 0 1.5rem 0' }}><i className='bx bx-history' style={{ color: '#ad246d' }}></i> Past Events</h2>
+          <h2 style={{ fontSize: '0.95rem', fontWeight: 800, margin: '0 0 1.2rem 0', color: '#261d2b' }}><i className='bx bx-history' style={{ color: '#ad246d' }}></i> Past Events</h2>
           <div className="table-wrap">
             <table className="admin-table">
               <thead>

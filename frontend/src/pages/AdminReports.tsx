@@ -305,7 +305,6 @@ const AdminReports: React.FC = () => {
           <a 
             href={`${apiClient.defaults.baseURL}/internal-api/admin/reports/export/csv`}
             download
-            className="soft-btn"
             style={{ 
               padding: '0.5rem 1.25rem', 
               borderRadius: '8px', 
@@ -317,7 +316,8 @@ const AdminReports: React.FC = () => {
               textDecoration: 'none',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.5rem',
+              cursor: 'pointer'
             }}
           >
             <i className='bx bx-download'></i> Download CSV

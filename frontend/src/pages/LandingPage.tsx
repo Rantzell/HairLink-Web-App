@@ -13,8 +13,8 @@ const LandingPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Sliders and Countdown State
-  const [aboutIndex, _setAboutIndex] = useState(0);
-  const [partnerIndex, _setPartnerIndex] = useState(0);
+  const [aboutIndex, setAboutIndex] = useState(0);
+  const [partnerIndex, setPartnerIndex] = useState(0);
   const [nextEvent, setNextEvent] = useState<any>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
@@ -65,6 +65,22 @@ const LandingPage: React.FC = () => {
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     return () => observer.disconnect();
+  }, []);
+
+  // Auto-slide Partners
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPartnerIndex(prev => (prev + 1) % 2);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-slide About
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAboutIndex(prev => (prev + 1) % 2);
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const handlePartnershipSubmit = async (e: React.FormEvent) => {
@@ -165,25 +181,40 @@ const LandingPage: React.FC = () => {
           </article>
         </div>
 
-        <section className="event-panel reveal">
-          <div className="event-overlay"></div>
-          <div className="event-top">
-            <p className="event-meta">
-              {nextEvent 
+        <section className="event-panel-premium-compact reveal">
+          <div className="premium-compact-inner">
+            <div className="event-badge">
+              <i className='bx bx-calendar'></i> {nextEvent 
                 ? `${new Date(nextEvent.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} | ${nextEvent.location}`
                 : 'No upcoming events scheduled'}
-            </p>
-            <h3>{nextEvent ? nextEvent.title : 'Upcoming Event'}</h3>
-            <a href="#about" className="btn btn-primary">Read More</a>
-          </div>
-          <div className="event-bottom">
-            <div className="event-starts"><h4>The Event Starts at</h4></div>
-            <div className="countdown">
-              <div className="count-item"><span>{countdown.days.toString().padStart(2, '0')}</span><small>Days</small></div>
-              <div className="count-item"><span>{countdown.hours.toString().padStart(2, '0')}</span><small>Hours</small></div>
-              <div className="count-item"><span>{countdown.minutes.toString().padStart(2, '0')}</span><small>Minutes</small></div>
-              <div className="count-item"><span>{countdown.seconds.toString().padStart(2, '0')}</span><small>Seconds</small></div>
             </div>
+            <h2 className="event-title-serif-compact">{nextEvent ? nextEvent.title : 'Hearts of Hope Gala'}</h2>
+            
+            <div className="premium-countdown-mini">
+              <div className="mini-count-item">
+                <div className="mini-box"><span>{countdown.days.toString().padStart(2, '0')}</span></div>
+                <small>Days</small>
+              </div>
+              <div className="mini-sep">:</div>
+              <div className="mini-count-item">
+                <div className="mini-box"><span>{countdown.hours.toString().padStart(2, '0')}</span></div>
+                <small>Hours</small>
+              </div>
+              <div className="mini-sep">:</div>
+              <div className="mini-count-item">
+                <div className="mini-box"><span>{countdown.minutes.toString().padStart(2, '0')}</span></div>
+                <small>Min</small>
+              </div>
+              <div className="mini-sep">:</div>
+              <div className="mini-count-item">
+                <div className="mini-box"><span>{countdown.seconds.toString().padStart(2, '0')}</span></div>
+                <small>Sec</small>
+              </div>
+            </div>
+            
+            <Link to="/donate-monetary" className="premium-donate-btn-mini">
+              <i className='bx bxs-heart'></i> Donate Now
+            </Link>
           </div>
         </section>
       </section>

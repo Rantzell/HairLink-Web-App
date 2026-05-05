@@ -51,11 +51,26 @@ const DonorTrackingDetail: React.FC = () => {
 
   return (
     <section className="section-wrap donor-module-page reveal active">
-      <header className="module-head">
-        <h1>Donation Tracking Detail</h1>
-        <p>Reference: <strong>{donation.reference}</strong></p>
-        <div className="action-row">
-          <Link className="ghost-btn" to="/donor/tracking">Back to Tracking List</Link>
+      <header className="module-head" style={{ marginBottom: '1.5rem' }}>
+        <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>Donation Tracking Detail</h1>
+        <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.2rem' }}>Reference: <strong>{donation.reference}</strong></p>
+        <div className="action-row" style={{ marginTop: '1rem' }}>
+          <Link 
+            to="/donor/tracking" 
+            style={{ 
+              textDecoration: 'none', 
+              fontSize: '0.7rem', 
+              background: '#fff', 
+              color: '#ad246d', 
+              padding: '0.35rem 0.8rem', 
+              borderRadius: '8px', 
+              border: '1.5px solid #ead7e8', 
+              fontWeight: 700,
+              display: 'inline-block'
+            }}
+          >
+            Back to Tracking List
+          </Link>
         </div>
       </header>
 
