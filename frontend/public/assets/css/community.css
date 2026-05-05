@@ -116,6 +116,64 @@
     background: #ffe8f2;
 }
 
+.post-image-preview {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.5rem;
+    background: #fdf2f8;
+    border-radius: 12px;
+    border: 1px solid #fce7f3;
+}
+
+.post-image-preview img {
+    width: 80px !important;
+    height: 80px !important;
+    min-width: 80px !important;
+    min-height: 80px !important;
+    max-width: 80px !important;
+    max-height: 80px !important;
+    object-fit: cover !important;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(207, 47, 132, 0.1);
+}
+
+.post-image-preview .remove-preview {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #cf2f84;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 6px rgba(207, 47, 132, 0.3);
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.post-image-preview .remove-preview:hover {
+    background: #b02870;
+    transform: scale(1.1);
+}
+
+.post-image-preview .file-name-display {
+    font-size: 0.85rem;
+    color: #cf2f84;
+    font-weight: 500;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .file-name-display {
     font-size: 0.8rem;
     color: #6b5b6d;

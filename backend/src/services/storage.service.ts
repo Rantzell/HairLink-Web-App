@@ -41,6 +41,8 @@ export async function uploadFile(
       upsert: false,
     });
 
+  console.log(`[Storage] Upload attempt: bucket=${bucket}, path=${fileName}, type=${file.mimetype}, success=${!error}`);
+
   if (error) {
     console.error('[Storage] Upload error:', error);
     throw Object.assign(new Error('File upload failed'), { status: 500 });

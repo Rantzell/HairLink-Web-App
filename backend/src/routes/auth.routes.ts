@@ -11,11 +11,22 @@ const router = Router();
  */
 router.get('/me', authenticate, async (req: Request, res: Response) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+    let user = await prisma.user.findUnique({ where: { id: req.user!.id } });
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
+
+    // Ensure user has a referral code
+    if (!user.referralCode) {
+      const crypto = require('crypto');
+      const code = 'HL-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { referralCode: code }
+      });
+    }
+
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch profile' });

@@ -20,13 +20,18 @@ import profileRoutes from './routes/profile.routes';
 import monetaryRoutes from './routes/monetary.routes';
 import referralRoutes from './routes/referral.routes';
 import partnershipRoutes from './routes/partnership.routes';
+import publicRoutes from './routes/public.routes';
 
 const app = express();
 
 // ── Security ──
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: [
+    process.env.CORS_ORIGIN || 'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175'
+  ],
   credentials: true,
 }));
 
@@ -65,9 +70,10 @@ app.use('/internal-api/staff', staffRoutes);
 app.use('/internal-api/wigmaker', wigmakerRoutes);
 app.use('/internal-api/admin', adminRoutes);
 app.use('/internal-api/profile', profileRoutes);
-app.use('/internal-api/monetary-donations', monetaryRoutes);
+app.use('/internal-api/monetary', monetaryRoutes);
 app.use('/internal-api/referral', referralRoutes);
 app.use('/internal-api/partnerships', partnershipRoutes);
+app.use('/api/public', publicRoutes);
 
 // Mobile API routes (React Native — same controllers, /api prefix)
 app.use('/api/auth', authLimiter, authRoutes);

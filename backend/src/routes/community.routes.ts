@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import { v4 as uuidv4 } from 'uuid';
 import prisma from '../config/database';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -42,16 +43,24 @@ router.get('/posts', authenticate, async (req: Request, res: Response) => {
     });
 
     const result = posts.map((p) => {
-      const likesCount = p.likedBy.length;
-      const isLiked = p.likedBy.some((l) => l.userId === userId);
-      const { likedBy, ...rest } = p;
-      return { ...serializePost(rest), likes: likesCount, is_liked: isLiked };
+      try {
+        const likesCount = p.likedBy ? p.likedBy.length : 0;
+        const isLiked = p.likedBy ? p.likedBy.some((l) => l.userId === userId) : false;
+        const { likedBy, ...rest } = p;
+        return { ...serializePost(rest), likes: likesCount, is_liked: isLiked };
+      } catch (err) {
+        console.error(`[Community] Serialization error for post ${p.id}:`, err);
+        throw err;
+      }
     });
 
     res.json(result);
   } catch (err) {
     console.error('[Community] Posts error:', err);
-    res.status(500).json({ error: 'Failed to fetch posts' });
+    res.status(500).json({ 
+      error: 'Failed to fetch posts',
+      message: err instanceof Error ? err.message : String(err)
+    });
   }
 });
 
@@ -59,6 +68,7 @@ router.get('/posts', authenticate, async (req: Request, res: Response) => {
 router.post('/posts', authenticate, upload.single('image'), async (req: Request, res: Response) => {
   try {
     const content = req.body.content;
+    console.log('[Community] Creating post: content=', content, 'file=', req.file ? req.file.originalname : 'none');
     if (!content) { res.status(400).json({ error: 'Content is required' }); return; }
 
     let imageUrl: string | null = null;
@@ -68,7 +78,12 @@ router.post('/posts', authenticate, upload.single('image'), async (req: Request,
     }
 
     const post = await prisma.communityPost.create({
-      data: { userId: req.user!.id, content, imageUrl },
+      data: { 
+        id: uuidv4(),
+        userId: req.user!.id, 
+        content, 
+        imageUrl 
+      },
       include: { user: true, comments: true },
     });
 
@@ -101,7 +116,14 @@ router.post('/posts/:postId/comments', authenticate, upload.single('image'), asy
     }
 
     const comment = await prisma.communityComment.create({
-      data: { postId, userId: req.user!.id, parentId, content: content || '', imageUrl },
+      data: { 
+        id: uuidv4(),
+        postId, 
+        userId: req.user!.id, 
+        parentId, 
+        content: content || '', 
+        imageUrl 
+      },
       include: { user: true },
     });
 
@@ -126,7 +148,7 @@ router.post('/posts/:postId/like', authenticate, async (req: Request, res: Respo
     if (existing) {
       await prisma.communityPostLike.delete({ where: { id: existing.id } });
     } else {
-      await prisma.communityPostLike.create({ data: { userId, communityPostId: postId } });
+      await prisma.communityPostLike.create({ data: { id: uuidv4(), userId, communityPostId: postId } });
       isLiked = true;
     }
 

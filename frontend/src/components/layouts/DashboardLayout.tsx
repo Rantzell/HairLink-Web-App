@@ -25,11 +25,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   const role = user?.role;
 
+  const getDashboardPath = () => {
+    switch (role) {
+      case 'admin': return '/admin/dashboard';
+      case 'staff': return '/staff/dashboard';
+      case 'donor': return '/donor/dashboard';
+      case 'recipient': return '/recipient/dashboard';
+      case 'wigmaker': return '/wigmaker/dashboard';
+      default: return '/';
+    }
+  };
+
   return (
     <div className="dash-container">
       <header className="dash-header">
         <nav className="dash-nav" aria-label="Dashboard navigation">
-          <Link className="dash-brand" to="/" aria-label="HairLink home">
+          <Link className="dash-brand" to={getDashboardPath()} aria-label="HairLink home">
             <img src="/assets/images/landing/pink-ribbon.png" alt="Pink ribbon icon" />
             <span>HairLink</span>
           </Link>
@@ -46,7 +57,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </button>
 
           <div className={`dash-links ${isMenuOpen ? 'open' : ''} ${['staff', 'admin'].includes(role || '') ? 'dash-links-staff' : ''}`}>
-            <Link to="/" className={isActive('/') && location.pathname === '/' ? 'active' : ''}>Home</Link>
+            {/* Home removed when logged in */}
 
             {role === 'donor' && (
               <>
@@ -131,12 +142,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   </div>
                 </div>
                 <div className="nav-dropdown">
-                  <span className={`nav-dropdown-trigger ${isActive('/admin/reports') ? 'active' : ''}`}>Reports <i className='bx bx-chevron-down'></i></span>
+                  <span className={`nav-dropdown-trigger ${isActive('/admin/reports') || isActive('/admin/cms') || isActive('/admin/events') ? 'active' : ''}`}>System <i className='bx bx-chevron-down'></i></span>
                   <div className="nav-dropdown-content">
-                    <Link to="/admin/reports?type=full">Full Audit</Link>
-                    <Link to="/admin/reports?type=hair">Hair Inventory</Link>
-                    <Link to="/admin/reports?type=wigs">Wig Stock</Link>
-                    <Link to="/admin/reports?type=monetary">Financials</Link>
+                    <Link to="/admin/cms">Content (CMS)</Link>
+                    <Link to="/admin/events">Events Schedule</Link>
+                    <Link to="/admin/reports?type=full">System Reports</Link>
                   </div>
                 </div>
               </>

@@ -301,7 +301,27 @@ const AdminReports: React.FC = () => {
           <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.1rem' }}>Generate comprehensive operational audits for inventory and finance.</p>
         </div>
         
-            
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <a 
+            href={`${apiClient.defaults.baseURL}/internal-api/admin/reports/export/csv`}
+            download
+            className="soft-btn"
+            style={{ 
+              padding: '0.5rem 1.25rem', 
+              borderRadius: '8px', 
+              background: '#fdf2f8', 
+              color: '#ad246d', 
+              border: '1px solid #ead7e8',
+              fontWeight: 800, 
+              fontSize: '0.8rem',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <i className='bx bx-download'></i> Download CSV
+          </a>
           <button 
             onClick={handlePrint}
             style={{ 
@@ -320,6 +340,7 @@ const AdminReports: React.FC = () => {
           >
             <i className='bx bx-printer'></i> Print Current
           </button>
+        </div>
       </header>
 
       {/* Selectable Report Content */}

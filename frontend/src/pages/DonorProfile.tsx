@@ -19,7 +19,7 @@ const DonorProfile: React.FC = () => {
   const initials = user ? (user.firstName?.[0] || user.name?.[0] || 'U').toUpperCase() + (user.lastName?.[0] || '').toUpperCase() : '??';
   const fullName = user ? (user.firstName ? `${user.firstName} ${user.lastName}` : user.name) : 'Donor';
 
-  const referralCode = `HL-${(user?.id || '0').toString().padStart(8, '0').slice(-8).toUpperCase()}`;
+  const referralCode = user?.referralCode || 'NOT-GENERATED';
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();

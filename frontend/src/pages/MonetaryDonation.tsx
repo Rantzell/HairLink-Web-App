@@ -62,7 +62,9 @@ const MonetaryDonation: React.FC = () => {
     formData.append('proof', proofFile);
 
     try {
-      await apiClient.post('/internal-api/monetary/donate', formData);
+      await apiClient.post('/internal-api/monetary/donate', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       alert('Thank you for your donation! It has been submitted for verification.');
       navigate(user?.role === 'recipient' ? '/recipient/dashboard' : '/donor/dashboard');
     } catch (err) {

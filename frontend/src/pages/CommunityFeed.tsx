@@ -33,10 +33,15 @@ const CommunityFeed: React.FC = () => {
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append('content', newPostContent);
-    if (newPostFile) formData.append('image', newPostFile);
+    if (newPostFile) {
+      formData.append('image', newPostFile);
+      console.log('[Community] Sending file:', newPostFile.name, newPostFile.size);
+    }
 
     try {
-      await apiClient.post('/internal-api/community/posts', formData);
+      await apiClient.post('/internal-api/community/posts', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setNewPostContent('');
       setNewPostFile(null);
       fetchPosts();
@@ -93,10 +98,18 @@ const CommunityFeed: React.FC = () => {
             <div className="post-actions-panel visible">
               <div className="image-upload-wrapper">
                 <label className="image-upload-btn">
-                  <i className='bx bx-image-add'></i> {newPostFile ? 'Photo Selected' : 'Add Photo'}
-                  <input type="file" hidden onChange={e => setNewPostFile(e.target.files?.[0] || null)} />
+                  <i className='bx bx-image-add'></i> {newPostFile ? 'Change Photo' : 'Add Photo'}
+                  <input type="file" hidden accept="image/*" onChange={e => setNewPostFile(e.target.files?.[0] || null)} />
                 </label>
-                {newPostFile && <span className="file-name-display">{newPostFile.name}</span>}
+                {newPostFile && (
+                  <div className="post-image-preview">
+                    <img src={URL.createObjectURL(newPostFile)} alt="Preview" />
+                    <button type="button" className="remove-preview" onClick={() => setNewPostFile(null)}>
+                      <i className='bx bx-x'></i>
+                    </button>
+                    <span className="file-name-display">{newPostFile.name}</span>
+                  </div>
+                )}
               </div>
               <div className="form-actions">
                 <button type="submit" className="soft-btn" disabled={isSubmitting || (!newPostContent.trim() && !newPostFile)}>

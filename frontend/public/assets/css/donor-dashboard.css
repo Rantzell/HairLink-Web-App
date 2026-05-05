@@ -40,7 +40,6 @@
 .progress-wrap {
     position: relative;
     margin: 1rem 0;
-    padding: 0 0.5rem;
 }
 
 .progress-bar {
@@ -60,11 +59,12 @@
 .progress-star {
     position: absolute;
     top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.8rem;
+    transform: translate(-50%, -50%);
+    font-size: 1.4rem;
     color: #f2ae2e;
     text-shadow: 0 2px 10px rgba(242, 174, 46, 0.4);
     z-index: 10;
+    pointer-events: none;
 }
 
 .star-row {

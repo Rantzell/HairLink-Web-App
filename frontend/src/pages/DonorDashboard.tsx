@@ -68,29 +68,29 @@ const DonorDashboard: React.FC = () => {
           Star Points <span className="star-inline">★</span> <span>{points}</span>
         </p>
 
-        <div className="progress-wrap" aria-label="Reward progress">
-          <div className="progress-bar">
-            <span className="progress-fill" style={{ width: `${percent}%`, transition: 'width 0.7s cubic-bezier(0.4, 0, 0.2, 1)' }}></span>
+        <div className="progress-wrap" aria-label="Reward progress" style={{ padding: '0 15px', position: 'relative', margin: '1.5rem 0 1rem' }}>
+          <div className="progress-bar" style={{ margin: 0 }}>
+            <span className="progress-fill" style={{ width: `calc(${percent}% + (${percent / 100} * 67px))`, transition: 'width 0.7s cubic-bezier(0.4, 0, 0.2, 1)' }}></span>
           </div>
-          <span 
-            className="progress-star" 
-            style={{ 
-              left: `calc(${percent}% + 0.8rem - 12px)`, 
+          <span
+            className="progress-star"
+            style={{
+              left: `calc(${percent}% + 15px - (${percent / 100} * 30px) + 8px)`,
               transition: 'left 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
               color: points >= goal ? '#f59e0b' : ''
             }}
           >★</span>
         </div>
 
-        <div className="star-row" aria-hidden="true">
+        <div className="star-row" aria-hidden="true" style={{ padding: '0 15px', margin: '0.5rem 0 0', display: 'flex', justifyContent: 'space-between' }}>
           {[...Array(11)].map((_, i) => (
             <span key={i} style={{ color: i < filledStars ? '#f59e0b' : '', transition: 'color 0.3s ease' }}>★</span>
           ))}
         </div>
 
         <p className="reward-line">
-          {points >= goal 
-            ? '🎉 Congratulations! You can now claim your free wig reward.' 
+          {points >= goal
+            ? '🎉 Congratulations! You can now claim your free wig reward.'
             : `Earn ${goal - points} more points for a free wig`}
         </p>
       </article>
@@ -99,17 +99,17 @@ const DonorDashboard: React.FC = () => {
         <div className="referral-box-wrap">
           <div className="referral-box">
             <label htmlFor="referralCode">Referral Code</label>
-            <input 
-              id="referralCode" 
-              type="text" 
-              placeholder="Enter code here" 
+            <input
+              id="referralCode"
+              type="text"
+              placeholder="Enter code here"
               value={referralCode}
               onChange={e => setReferralCode(e.target.value)}
               disabled={referralStatus !== 'idle'}
             />
-            <button 
-              className="submit-code-btn" 
-              type="button" 
+            <button
+              className="submit-code-btn"
+              type="button"
               onClick={handleReferralSubmit}
               disabled={referralStatus !== 'idle'}
             >

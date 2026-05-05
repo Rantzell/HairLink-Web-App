@@ -8,17 +8,25 @@ const AdminUserManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [userForm, setUserForm] = useState({
+    email: '',
+    password: '',
+    role: 'donor',
+    firstName: '',
+    lastName: '',
+    name: '',
+    isActive: true
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const r = params.get('role');
-    if (r) setRoleFilter(r);
-  }, [location.search]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = async (searchStr = filter, roleStr = roleFilter) => {
     try {
-      const res = await apiClient.get('/internal-api/admin/users');
+      setLoading(true);
+      const res = await apiClient.get('/internal-api/admin/users', {
+        params: { search: searchStr, role: roleStr }
+      });
       setData(res.data);
     } catch (err) {
       console.error('Failed to fetch users', err);
@@ -28,13 +36,20 @@ const AdminUserManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchUsers();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [filter]);
 
-  const handleToggleActive = async (userId: string) => {
+  useEffect(() => {
+    fetchUsers();
+  }, [roleFilter]);
+
+  const handleToggleActive = async (id: string) => {
     setIsSubmitting(true);
     try {
-      await apiClient.post(`/internal-api/admin/users/${userId}/toggle`);
+      await apiClient.patch(`/internal-api/admin/users/${id}/toggle-active`);
       fetchUsers();
     } catch (err) {
       console.error('Toggle failed', err);
@@ -43,30 +58,79 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
+  const handleOpenModal = (user: any = null) => {
+    if (user) {
+      setEditingUser(user);
+      setUserForm({
+        email: user.email,
+        password: '', // Don't show password
+        role: user.role,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        name: user.name || '',
+        isActive: user.isActive
+      });
+    } else {
+      setEditingUser(null);
+      setUserForm({
+        email: '',
+        password: '',
+        role: 'donor',
+        firstName: '',
+        lastName: '',
+        name: '',
+        isActive: true
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSaveUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      if (editingUser) {
+        await apiClient.put(`/internal-api/admin/users/${editingUser.id}`, userForm);
+      } else {
+        await apiClient.post('/internal-api/admin/users', userForm);
+      }
+      setIsModalOpen(false);
+      fetchUsers();
+    } catch (err) {
+      console.error('Save failed', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) return <div className="section-wrap">Loading user management...</div>;
   if (!data) return <div className="section-wrap">Error: Could not load user registry. Please verify your connection.</div>;
 
-  const filteredUsers = (data.users as any[]).filter(u => {
-    const matchesSearch = `${u.firstName} ${u.lastName}`.toLowerCase().includes(filter.toLowerCase()) ||
-                        u.email.toLowerCase().includes(filter.toLowerCase());
-    const matchesRole = roleFilter === 'all' || u.role.toLowerCase() === roleFilter.toLowerCase();
-    return matchesSearch && matchesRole;
-  });
+  const filteredUsers = data.users || [];
 
   return (
     <section className="section-wrap reveal active admin-page" style={{ padding: '1rem' }}>
-      <header style={{ padding: '0.2rem 0' }}>
-        <p style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ad246d', marginBottom: '0.1rem' }}>Admin · Users</p>
-        <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>
-          {roleFilter === 'all' ? 'User Management' : 
-           roleFilter === 'donor' ? 'Donor Registry' : 
-           roleFilter === 'recipient' ? 'Recipient Registry' : 
-           roleFilter === 'staff' ? 'Staff Accounts' : 'Wigmaker Registry'}
-        </h1>
-        <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.1rem' }}>
-          {roleFilter === 'all' ? 'View and manage all registered accounts across every role.' : 
-           `Oversight and management for all registered ${roleFilter} accounts.`}
-        </p>
+      <header style={{ padding: '0.2rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <p style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ad246d', marginBottom: '0.1rem' }}>Admin · Users</p>
+          <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>
+            {roleFilter === 'all' ? 'User Management' : 
+             roleFilter === 'donor' ? 'Donor Registry' : 
+             roleFilter === 'recipient' ? 'Recipient Registry' : 
+             roleFilter === 'staff' ? 'Staff Accounts' : 'Wigmaker Registry'}
+          </h1>
+          <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.1rem' }}>
+            {roleFilter === 'all' ? 'View and manage all registered accounts across every role.' : 
+             `Oversight and management for all registered ${roleFilter} accounts.`}
+          </p>
+        </div>
+        <button 
+          onClick={() => handleOpenModal()} 
+          className="soft-btn" 
+          style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', borderRadius: '8px', fontWeight: 800 }}
+        >
+          <i className='bx bx-user-plus'></i> Create User
+        </button>
       </header>
 
       <div className="inv-summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', margin: '0.75rem 0' }}>
@@ -118,13 +182,13 @@ const AdminUserManagement: React.FC = () => {
                 <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Role</th>
                 <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Registered</th>
                 <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Status</th>
-                <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Action</th>
+                <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.map((user: any) => (
                 <tr key={user.id}>
-                  <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}><strong>{user.firstName} {user.lastName}</strong></td>
+                  <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}><strong>{user.displayName}</strong></td>
                   <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>{user.email}</td>
                   <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}><span className={`role-badge ${user.role}`} style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem' }}>{user.role.toUpperCase()}</span></td>
                   <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>{new Date(user.createdAt).toLocaleDateString()}</td>
@@ -134,23 +198,30 @@ const AdminUserManagement: React.FC = () => {
                     </span>
                   </td>
                   <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>
-                    <button 
-                      onClick={() => handleToggleActive(user.id)}
-                      disabled={isSubmitting}
-                      style={{ 
-                        padding: '0.3rem 0.7rem', 
-                        fontSize: '0.7rem',
-                        background: '#fff',
-                        border: `1px solid ${user.isActive ? '#ead7e8' : '#ad246d'}`,
-                        color: user.isActive ? '#8c7895' : '#ad246d',
-                        borderRadius: '6px',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      {user.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button 
+                        onClick={() => handleOpenModal(user)}
+                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: '#fdf7fb', border: '1px solid #ead7e8', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleToggleActive(user.id)}
+                        disabled={isSubmitting}
+                        style={{ 
+                          padding: '0.3rem 0.6rem', 
+                          fontSize: '0.7rem',
+                          background: user.isActive ? '#fff' : '#ad246d',
+                          border: `1px solid ${user.isActive ? '#ead7e8' : '#ad246d'}`,
+                          color: user.isActive ? '#8c7895' : '#fff',
+                          borderRadius: '6px',
+                          fontWeight: 800,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {user.isActive ? 'Deactivate' : 'Activate'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -158,6 +229,57 @@ const AdminUserManagement: React.FC = () => {
           </table>
         </div>
       </article>
+
+      {/* Create/Edit User Modal */}
+      {isModalOpen && (
+        <div className="modal" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', position: 'fixed', inset: 0, zIndex: 1000 }}>
+          <div className="modal-content" style={{ background: '#fff', padding: '2rem', borderRadius: '20px', width: '450px', maxWidth: '90%' }}>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '1.5rem', color: '#ad246d' }}>
+              {editingUser ? 'Edit User Account' : 'Create New User Account'}
+            </h2>
+            <form onSubmit={handleSaveUser} style={{ display: 'grid', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>First Name</label>
+                  <input type="text" value={userForm.firstName} onChange={e => setUserForm({...userForm, firstName: e.target.value})} required />
+                </div>
+                <div className="form-group">
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Last Name</label>
+                  <input type="text" value={userForm.lastName} onChange={e => setUserForm({...userForm, lastName: e.target.value})} required />
+                </div>
+              </div>
+              <div className="form-group">
+                <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Email Address</label>
+                <input type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} required />
+              </div>
+              {!editingUser && (
+                <div className="form-group">
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Password</label>
+                  <input type="password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} placeholder="Default: password123" />
+                </div>
+              )}
+              <div className="form-group">
+                <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Assigned Role</label>
+                <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid #ead7e8' }}>
+                  <option value="donor">Donor</option>
+                  <option value="recipient">Recipient</option>
+                  <option value="staff">Internal Staff</option>
+                  <option value="wigmaker">Wigmaker Partner</option>
+                  <option value="admin">System Administrator</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                <button type="submit" className="soft-btn" style={{ flex: 1 }} disabled={isSubmitting}>
+                  {editingUser ? 'Update Account' : 'Create Account'}
+                </button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="ghost-btn" style={{ flex: 1 }}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

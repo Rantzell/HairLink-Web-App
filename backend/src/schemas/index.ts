@@ -140,6 +140,7 @@ export const monetaryDonationSchema = z.object({
   email: z.string().email().max(255).optional(),
   payment_method: z.string().min(1),
   currency: z.string().default('PHP'),
+  is_anonymous: z.string().optional().transform(v => v === '1'),
 });
 
 // ── Referrals ──

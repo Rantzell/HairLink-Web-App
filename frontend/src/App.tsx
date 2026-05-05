@@ -42,6 +42,7 @@ import AdminReports from './pages/AdminReports';
 import AdminOperations from './pages/AdminOperations';
 import AdminMatching from './pages/AdminMatching';
 import AdminVerification from './pages/AdminVerification';
+import AdminCMS from './pages/AdminCMS';
 
 function App() {
   return (
@@ -145,6 +146,7 @@ function App() {
                   <Route path="matching" element={<AdminMatching />} />
                   <Route path="operations" element={<AdminOperations />} />
                   <Route path="inventory" element={<AdminInventory />} />
+                  <Route path="cms" element={<AdminCMS />} />
                   <Route path="profile" element={<DonorProfile />} />
                   <Route path="reports" element={<AdminReports />} />
                   <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />

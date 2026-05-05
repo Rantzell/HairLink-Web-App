@@ -15,16 +15,31 @@ const LandingPage: React.FC = () => {
   // Sliders and Countdown State
   const [aboutIndex, _setAboutIndex] = useState(0);
   const [partnerIndex, _setPartnerIndex] = useState(0);
+  const [nextEvent, setNextEvent] = useState<any>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
-    // Countdown logic
-    const eventDate = new Date('2024-04-18T00:00:00').getTime();
+    const fetchNextEvent = async () => {
+      try {
+        const res = await apiClient.get('/api/public/events/next');
+        if (res.data) setNextEvent(res.data);
+      } catch (err) {
+        console.error('Failed to fetch next event', err);
+      }
+    };
+    fetchNextEvent();
+  }, []);
+
+  useEffect(() => {
+    if (!nextEvent) return;
+
+    const eventDate = new Date(nextEvent.date).getTime();
     const timer = setInterval(() => {
       const now = new Date().getTime();
       const distance = eventDate - now;
       if (distance < 0) {
         clearInterval(timer);
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
       setCountdown({
@@ -36,7 +51,7 @@ const LandingPage: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [nextEvent]);
 
   // Intersection Observer for "reveal" animation
   useEffect(() => {
@@ -80,10 +95,10 @@ const LandingPage: React.FC = () => {
     <div className="landing-root">
       <header className="site-header" id="home">
         <nav className="navbar">
-          <a href="#" className="brand">
+          <Link to="/" className="brand">
             <img src="/assets/images/landing/pink-ribbon.png" alt="HairLink ribbon" className="brand-ribbon" />
             <span>HairLink</span>
-          </a>
+          </Link>
           <div className="menu">
             <a href="#home">Home</a>
             <a href="#services">How It Works</a>
@@ -153,8 +168,12 @@ const LandingPage: React.FC = () => {
         <section className="event-panel reveal">
           <div className="event-overlay"></div>
           <div className="event-top">
-            <p className="event-meta">April 18, 2024 | Philippine General Hospital, Taft Ave.</p>
-            <h3>Upcoming Event</h3>
+            <p className="event-meta">
+              {nextEvent 
+                ? `${new Date(nextEvent.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} | ${nextEvent.location}`
+                : 'No upcoming events scheduled'}
+            </p>
+            <h3>{nextEvent ? nextEvent.title : 'Upcoming Event'}</h3>
             <a href="#about" className="btn btn-primary">Read More</a>
           </div>
           <div className="event-bottom">

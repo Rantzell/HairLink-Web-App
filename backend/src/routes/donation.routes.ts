@@ -82,10 +82,11 @@ router.post('/', authenticate, upload.fields([
 router.get('/stats', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
+    console.log(`[Stats] Fetching for user: ${userId}`);
     
-    // 1. Hair Donations: 10 points per completed donation
-    const completedDonations = await prisma.donation.count({
-      where: { userId, status: 'Completed' }
+    // 1. Hair Donations: 10 points per donation record
+    const hairDonationsCount = await prisma.donation.count({
+      where: { userId }
     });
     
     // 2. Referrals: 5 points per referred user
@@ -93,23 +94,28 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
       where: { referredBy: userId }
     });
     
-    // 3. Monetary: 1 point per 100 PHP (completed)
+    // 3. Monetary: 1 point per 100 PHP (Any status)
     const monetary = await prisma.monetaryDonation.aggregate({
-      where: { userId, status: 'Completed' },
-      _sum: { amount: true }
+      where: { userId },
+      _sum: { amount: true },
+      _count: true
     });
     
     const monetaryAmount = Number(monetary._sum.amount || 0);
+    const monetaryCount = monetary._count || 0;
     const monetaryPoints = Math.floor(monetaryAmount / 100);
     
-    const totalPoints = (completedDonations * 10) + (referrals * 5) + monetaryPoints;
+    const totalPoints = (hairDonationsCount * 10) + (referrals * 5) + monetaryPoints;
     
+    console.log(`[Stats] User ${userId}: Hair=${hairDonationsCount}, Ref=${referrals}, MonAmt=${monetaryAmount}, MonCount=${monetaryCount}, Total=${totalPoints}`);
+
     res.json({
       totalPoints,
       breakdown: {
-        hairDonations: completedDonations,
+        hairDonations: hairDonationsCount,
         referrals,
         monetaryAmount,
+        monetaryCount,
         monetaryPoints
       }
     });
