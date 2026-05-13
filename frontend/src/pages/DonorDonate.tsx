@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
+import ConfirmModal from '../components/ConfirmModal';
 
 const DonorDonate: React.FC = () => {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ const DonorDonate: React.FC = () => {
   });
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -29,13 +31,17 @@ const DonorDonate: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.hairLength || !formData.hairColor || !formData.address || !formData.reason || !file) {
       alert('Please fill in all required fields and upload a photo.');
       return;
     }
+    setShowConfirm(true);
+  };
 
+  const doSubmit = async () => {
+    setShowConfirm(false);
     setIsSubmitting(true);
     try {
       const data = new FormData();
@@ -52,7 +58,7 @@ const DonorDonate: React.FC = () => {
       const apptAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
       data.append('appointment_at', apptAt);
       
-      data.append('photo_front', file);
+      data.append('photo_front', file!);
 
       await apiClient.post('/internal-api/donations', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -257,6 +263,16 @@ const DonorDonate: React.FC = () => {
           </div>
         </form>
       </article>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={doSubmit}
+        title="Submit Donation"
+        message="Are you sure you want to submit your hair donation? Please make sure all details are correct before confirming."
+        confirmText="Yes, Submit Donation"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

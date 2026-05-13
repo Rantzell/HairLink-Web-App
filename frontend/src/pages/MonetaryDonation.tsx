@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const MonetaryDonation: React.FC = () => {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ const MonetaryDonation: React.FC = () => {
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const amountPills = [50, 100, 150, 200, 250];
 
@@ -45,13 +47,17 @@ const MonetaryDonation: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amountNumber || !proofFile) {
       alert('Please fill in all required fields and upload proof of donation.');
       return;
     }
+    setShowConfirm(true);
+  };
 
+  const doSubmit = async () => {
+    setShowConfirm(false);
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append('amount', customAmount || activeAmount?.toString() || '0');
@@ -59,7 +65,7 @@ const MonetaryDonation: React.FC = () => {
     formData.append('currency', currency);
     formData.append('payment_method', activeTab);
     formData.append('is_anonymous', isAnonymous ? '1' : '0');
-    formData.append('proof', proofFile);
+    formData.append('proof', proofFile!);
 
     try {
       await apiClient.post('/internal-api/monetary/donate', formData, {
@@ -320,6 +326,16 @@ const MonetaryDonation: React.FC = () => {
           </button>
         </div>
       </form>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={doSubmit}
+        title="Confirm Monetary Donation"
+        message={`You are about to submit a donation of ${currency} ${amountNumber || customAmount}${isAnonymous ? ' (anonymously)' : ''}. Please ensure your proof of payment is correct before proceeding.`}
+        confirmText="Yes, Submit Donation"
+        isConfirming={isSubmitting}
+      />
     </div>
   );
 };

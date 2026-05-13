@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const RecipientMonetary: React.FC = () => {
   const { user: _user } = useAuth();
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [requests, setRequests] = useState<any[]>([]);
   const [stats, setStats] = useState({ approved: 0, pending: 0 });
 
@@ -27,10 +29,14 @@ const RecipientMonetary: React.FC = () => {
     fetchHistory();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !reason) return;
+    setShowConfirm(true);
+  };
 
+  const doSubmit = async () => {
+    setShowConfirm(false);
     setIsSubmitting(true);
     try {
       await apiClient.post('/internal-api/recipient/monetary', { amount, reason });
@@ -151,6 +157,16 @@ const RecipientMonetary: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={doSubmit}
+        title="Submit Aid Request"
+        message={`You are requesting ₱${Number(amount).toLocaleString()} in financial assistance. Our team will review your request. Proceed?`}
+        confirmText="Yes, Submit Request"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

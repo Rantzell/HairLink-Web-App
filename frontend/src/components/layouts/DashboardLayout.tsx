@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import NotificationBell from '../NotificationBell';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -152,7 +153,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </>
             )}
 
-            <a href="#" className="logout-btn" onClick={handleLogout}>Logout</a>
+            {['donor', 'recipient'].includes(role || '') && <NotificationBell />}
+             <a href="#" className="logout-btn" onClick={handleLogout}>Logout</a>
           </div>
         </nav>
       </header>

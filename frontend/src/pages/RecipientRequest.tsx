@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
+import ConfirmModal from '../components/ConfirmModal';
 
 const RecipientRequest: React.FC = () => {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ const RecipientRequest: React.FC = () => {
   const [documents, setDocuments] = useState<File[]>([]);
   const [additionalPhoto, setAdditionalPhoto] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const docsInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -44,13 +46,17 @@ const RecipientRequest: React.FC = () => {
     setDocuments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.story || !formData.wigLength || !formData.wigColor || documents.length === 0 || !additionalPhoto) {
       alert('Please fill all required fields and upload the necessary documents.');
       return;
     }
+    setShowConfirm(true);
+  };
 
+  const doSubmit = async () => {
+    setShowConfirm(false);
     setIsSubmitting(true);
     try {
       const data = new FormData();
@@ -67,7 +73,7 @@ const RecipientRequest: React.FC = () => {
       documents.forEach(doc => {
         data.append('documents', doc);
       });
-      data.append('additional_photo', additionalPhoto);
+      data.append('additional_photo', additionalPhoto!);
 
       await apiClient.post('/internal-api/requests', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -237,6 +243,16 @@ const RecipientRequest: React.FC = () => {
           </div>
         </form>
       </article>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={doSubmit}
+        title="Submit Wig Request"
+        message="Are you sure you want to submit your wig request? Please ensure all your information and documents are correct."
+        confirmText="Yes, Submit Request"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

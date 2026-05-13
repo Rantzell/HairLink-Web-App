@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
-import StatusPill from '../components/StatusPill';
+
 
 const AdminReports: React.FC = () => {
   const location = useLocation();

@@ -21,6 +21,7 @@ import monetaryRoutes from './routes/monetary.routes';
 import referralRoutes from './routes/referral.routes';
 import partnershipRoutes from './routes/partnership.routes';
 import publicRoutes from './routes/public.routes';
+import notificationRoutes from './routes/notification.routes';
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use('/internal-api/profile', profileRoutes);
 app.use('/internal-api/monetary', monetaryRoutes);
 app.use('/internal-api/referral', referralRoutes);
 app.use('/internal-api/partnerships', partnershipRoutes);
+app.use('/internal-api/notifications', notificationRoutes);
 app.use('/api/public', publicRoutes);
 
 // Mobile API routes (React Native — same controllers, /api prefix)
@@ -81,6 +83,7 @@ app.use('/api/donations', donationRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

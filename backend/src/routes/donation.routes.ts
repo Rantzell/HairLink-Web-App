@@ -6,6 +6,7 @@ import { validate } from '../middleware/validate';
 import { donationCreateSchema, donationStatusSchema, deliveryLinkSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { uploadFile, getPublicUrl } from '../services/storage.service';
+import { notifyDonationStatus } from '../services/notification.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -129,7 +130,7 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
 router.get('/:reference', authenticate, async (req: Request, res: Response) => {
   try {
     const donation = await prisma.donation.findFirst({
-      where: { reference: req.params.reference, userId: req.user!.id },
+      where: { reference: req.params.reference as string, userId: req.user!.id },
       include: { user: true },
     });
     if (!donation) { res.status(404).json({ message: 'Donation not found' }); return; }
@@ -153,7 +154,7 @@ router.post('/:reference/status', authenticate, validate(donationStatusSchema), 
       const updateData: any = { status: newStatus };
 
       if (newStatus === 'Received Hair' && !donation.certificateNo) {
-        updateData.certificateNo = `CERT-${new Date().getFullYear()}-${donation.reference.slice(-6)}`;
+        updateData.certificateNo = `CERT-${new Date().getFullYear()}-${(donation.reference as string).slice(-6)}`;
       }
       if (newStatus === 'Wig Received') {
         updateData.receivedWigAt = new Date();
@@ -161,6 +162,9 @@ router.post('/:reference/status', authenticate, validate(donationStatusSchema), 
 
       await prisma.donation.update({ where: { id: donation.id }, data: updateData });
       await createStatusHistory(DONATION_TYPE, donation.id, newStatus, req.body.remarks);
+
+      const { notifyDonationStatus } = await import('../services/notification.service');
+      if (donation.userId) await notifyDonationStatus(donation.userId, newStatus, donation.reference!);
     }
 
     const updated = await prisma.donation.findUnique({ where: { id: donation.id }, include: { user: true } });
@@ -176,7 +180,7 @@ router.post('/:reference/status', authenticate, validate(donationStatusSchema), 
 router.post('/:reference/delivery-link', authenticate, validate(deliveryLinkSchema), async (req: Request, res: Response) => {
   try {
     const donation = await prisma.donation.findFirst({
-      where: { reference: req.params.reference, userId: req.user!.id },
+      where: { reference: req.params.reference as string, userId: req.user!.id },
     });
     if (!donation) { res.status(404).json({ message: 'Donation not found' }); return; }
 

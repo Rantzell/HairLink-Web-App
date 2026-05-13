@@ -10,36 +10,36 @@ datasource db {
 
 model User {
   name              String
-  firstName         String?            @map("first_name")
-  lastName          String?            @map("last_name")
-  email             String             @unique
-  emailVerifiedAt   DateTime?          @map("email_verified_at")
-  role              String             @default("donor")
+  firstName         String?             @map("first_name")
+  lastName          String?             @map("last_name")
+  email             String              @unique
+  emailVerifiedAt   DateTime?           @map("email_verified_at")
+  role              String              @default("donor")
   country           String?
   region            String?
-  postalCode        String?            @map("postal_code")
+  postalCode        String?             @map("postal_code")
   age               Int?
   gender            String?
   phone             String?
   bio               String?
   profile_photo_url String?
-  isActive          Boolean            @default(true) @map("is_active")
-  referredBy        String?            @map("referred_by")
-  referralCode      String?            @map("referral_code")
-  onesignalId       String?            @map("onesignal_id")
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
-  id                String             @id @db.Uuid
+  isActive          Boolean             @default(true) @map("is_active")
+  referredBy        String?             @map("referred_by")
+  referralCode      String?             @map("referral_code")
+  onesignalId       String?             @map("onesignal_id")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  id                String              @id @db.Uuid
   password          String?
+  communityComments CommunityComment[]
+  communityLikes    CommunityPostLike[]
+  communityPosts    CommunityPost[]
   donations         Donation[]
   hairRequests      HairRequest[]
   monetaryDonations MonetaryDonation[]
   notifications     notifications[]
   user_push_tokens  user_push_tokens[]
   wigProductions    WigProduction[]
-  communityPosts    CommunityPost[]
-  communityComments CommunityComment[]
-  communityLikes    CommunityPostLike[]
 
   @@index([email])
   @@index([role])
@@ -47,26 +47,27 @@ model User {
 }
 
 model Donation {
-  id                Int             @id @default(autoincrement())
-  userId            String?         @map("user_id") @db.Uuid
-  reference         String?         @unique
-  hairLength        String?         @map("hair_length")
-  hairColor         String?         @map("hair_color")
-  treatedHair       Boolean?        @default(false) @map("treated_hair")
+  id                Int            @id @default(autoincrement())
+  userId            String?        @map("user_id") @db.Uuid
+  reference         String?        @unique
+  hairLength        String?        @map("hair_length")
+  hairColor         String?        @map("hair_color")
+  treatedHair       Boolean?       @default(false) @map("treated_hair")
   address           String?
   reason            String?
-  dropoffLocation   String?         @map("dropoff_location")
-  appointmentAt     DateTime?       @map("appointment_at") @db.Timestamptz(6)
-  status            String?         @default("Submitted")
-  certificateNo     String?         @map("certificate_no")
-  receivedWigAt     DateTime?       @map("received_wig_at") @db.Timestamptz(6)
-  photoFront        String?         @map("photo_front")
-  photoSide         String?         @map("photo_side")
-  donorDeliveryLink String?         @map("donor_delivery_link")
-  createdAt         DateTime?       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime?       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  user              User?           @relation(fields: [userId], references: [id], onUpdate: NoAction)
-  wigProductions    WigProduction[]
+  dropoffLocation   String?        @map("dropoff_location")
+  appointmentAt     DateTime?      @map("appointment_at") @db.Timestamptz(6)
+  status            String?        @default("Submitted")
+  certificateNo     String?        @map("certificate_no")
+  receivedWigAt     DateTime?      @map("received_wig_at") @db.Timestamptz(6)
+  photoFront        String?        @map("photo_front")
+  photoSide         String?        @map("photo_side")
+  donorDeliveryLink String?        @map("donor_delivery_link")
+  createdAt         DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  wigProductionId   Int?           @map("wig_production_id")
+  user              User?          @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  wigProduction     WigProduction? @relation(fields: [wigProductionId], references: [id])
 
   @@map("donations")
 }
@@ -102,7 +103,6 @@ model WigProduction {
   id                   Int          @id @default(autoincrement())
   taskCode             String       @unique @map("task_code")
   wigmakerId           String       @map("wigmaker_id") @db.Uuid
-  donationId           Int?         @map("donation_id")
   hairRequestId        Int?         @map("hair_request_id")
   targetLength         String?      @map("target_length")
   targetColor          String?      @map("target_color")
@@ -114,7 +114,7 @@ model WigProduction {
   updatedAt            DateTime     @updatedAt @map("updated_at")
   materialDeliveryLink String?      @map("material_delivery_link")
   isReceived           Boolean      @default(false) @map("is_received")
-  donation             Donation?    @relation(fields: [donationId], references: [id])
+  donations            Donation[]
   hairRequest          HairRequest? @relation(fields: [hairRequestId], references: [id])
   wigmaker             User         @relation(fields: [wigmakerId], references: [id])
 
@@ -128,9 +128,9 @@ model CommunityPost {
   imageUrl  String?             @map("image_url")
   createdAt DateTime            @default(now()) @map("created_at")
   updatedAt DateTime            @updatedAt @map("updated_at")
-  user      User                @relation(fields: [userId], references: [id])
   comments  CommunityComment[]
   likedBy   CommunityPostLike[]
+  user      User                @relation(fields: [userId], references: [id])
 
   @@map("community_posts")
 }
@@ -144,10 +144,10 @@ model CommunityComment {
   parentId  String?            @map("parent_id")
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime           @updatedAt @map("updated_at")
-  user      User               @relation(fields: [userId], references: [id])
   parent    CommunityComment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies   CommunityComment[] @relation("CommentReplies")
   post      CommunityPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id])
 
   @@map("community_comments")
 }
@@ -157,8 +157,8 @@ model CommunityPostLike {
   communityPostId String        @map("community_post_id")
   userId          String        @map("user_id") @db.Uuid
   createdAt       DateTime      @default(now()) @map("created_at")
-  user            User          @relation(fields: [userId], references: [id])
   post            CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id])
 
   @@unique([communityPostId, userId])
   @@map("community_post_likes")
@@ -252,6 +252,14 @@ model Partnership {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("partnerships")
+}
+
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
 }
 
 model cache {

@@ -3,11 +3,15 @@ import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import type { HairRequest } from '../types';
+import ConfirmModal from '../components/ConfirmModal';
 
 const RecipientTracking: React.FC = () => {
   const [requests, setRequests] = useState<HairRequest[]>([]);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingRef, setPendingRef] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -23,11 +27,26 @@ const RecipientTracking: React.FC = () => {
     fetchRequests();
   }, []);
 
-  const filteredRequests = requests.filter(r => 
+  const filteredRequests = requests.filter(r =>
     r.reference.toLowerCase().includes(filter.toLowerCase()) ||
     r.status.toLowerCase().includes(filter.toLowerCase()) ||
     (r.user?.firstName + ' ' + r.user?.lastName).toLowerCase().includes(filter.toLowerCase())
   );
+
+  const doConfirmReceived = async () => {
+    if (!pendingRef) return;
+    setShowConfirm(false);
+    setIsConfirming(true);
+    try {
+      await apiClient.post(`/internal-api/requests/${pendingRef}/confirm-received`);
+      window.location.reload();
+    } catch {
+      alert('Failed to confirm receipt.');
+    } finally {
+      setIsConfirming(false);
+      setPendingRef(null);
+    }
+  };
 
   return (
     <section className="section-wrap donor-module-page reveal active">
@@ -112,19 +131,13 @@ const RecipientTracking: React.FC = () => {
                               border: 'none', 
                               borderRadius: '50px', 
                               fontWeight: 800,
-                              cursor: 'pointer' 
+                              cursor: 'pointer',
+                              opacity: isConfirming ? 0.6 : 1
                             }}
-                            onClick={async () => {
-                              if (!window.confirm('Confirm you have received your wig?')) return;
-                              try {
-                                await apiClient.post(`/internal-api/requests/${r.reference}/confirm-received`);
-                                window.location.reload();
-                              } catch (err) {
-                                alert('Failed to confirm receipt.');
-                              }
-                            }}
+                            onClick={() => { setPendingRef(r.reference); setShowConfirm(true); }}
+                            disabled={isConfirming}
                           >
-                            Received
+                            {isConfirming && pendingRef === r.reference ? '...' : 'Received'}
                           </button>
                         )}
                       </div>
@@ -142,6 +155,16 @@ const RecipientTracking: React.FC = () => {
           </table>
         </div>
       </article>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => { setShowConfirm(false); setPendingRef(null); }}
+        onConfirm={doConfirmReceived}
+        title="Confirm Wig Received"
+        message="Please confirm that you have received your wig. This action cannot be undone and will finalize your request."
+        confirmText="Yes, I Received It"
+        isConfirming={isConfirming}
+      />
     </section>
   );
 };

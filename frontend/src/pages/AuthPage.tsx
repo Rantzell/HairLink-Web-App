@@ -5,7 +5,7 @@ import PasswordInput from '../components/PasswordInput';
 
 const isDev = import.meta.env.DEV;
 
-const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMode = 'register' }) => {
+const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMode: _initialMode = 'register' }) => {
   const { login, loginAs, register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

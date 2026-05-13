@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
+import ConfirmModal from '../components/ConfirmModal';
 
 const DonorProfile: React.FC = () => {
   const { user, updateUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [editData, setEditData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -21,8 +23,13 @@ const DonorProfile: React.FC = () => {
 
   const referralCode = user?.referralCode || 'NOT-GENERATED';
 
-  const handleUpdate = async (e: React.FormEvent) => {
+  const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowConfirm(true);
+  };
+
+  const doUpdate = async () => {
+    setShowConfirm(false);
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -305,6 +312,16 @@ const DonorProfile: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={doUpdate}
+        title="Save Profile Changes"
+        message="Save your updated profile information? Your name, photo, and contact details will be updated across HairLink."
+        confirmText="Yes, Save Changes"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

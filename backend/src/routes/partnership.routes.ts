@@ -10,12 +10,12 @@ router.post('/', validate(partnershipSchema), async (req, res) => {
   try {
     await prisma.partnership.create({
       data: {
-        fullName: req.body.full_name,
+        name: req.body.full_name,
         email: req.body.email,
-        phone: req.body.phone || null,
-        organization: req.body.organization || null,
-        message: req.body.message,
-        status: 'pending',
+        contact: req.body.phone || null,
+        description: req.body.message,
+        type: req.body.organization || 'Organization',
+        status: 'Active',
       },
     });
     res.json({ success: true, message: 'Partnership inquiry submitted!' });

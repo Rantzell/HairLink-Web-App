@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import { getPublicUrl } from '../lib/storage';
+import ConfirmModal from '../components/ConfirmModal';
 
 const StaffVerificationDetail: React.FC = () => {
   const { type, reference } = useParams<{ type: 'donor' | 'recipient' | 'monetary'; reference: string }>();
@@ -10,6 +11,8 @@ const StaffVerificationDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [remarks, setRemarks] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingDecision, setPendingDecision] = useState<'approve' | 'reject' | null>(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -252,7 +255,7 @@ const StaffVerificationDetail: React.FC = () => {
               type="button" 
               className="soft-btn" 
               disabled={isSubmitting}
-              onClick={() => handleDecision('approve')}
+              onClick={() => { setPendingDecision('approve'); setShowConfirm(true); }}
               style={{ 
                 padding: '0 1rem', 
                 height: '32px',
@@ -277,7 +280,7 @@ const StaffVerificationDetail: React.FC = () => {
               type="button" 
               className="ghost-btn" 
               disabled={isSubmitting}
-              onClick={() => handleDecision('reject')}
+              onClick={() => { setPendingDecision('reject'); setShowConfirm(true); }}
               style={{ 
                 padding: '0 1rem', 
                 height: '32px',
@@ -324,6 +327,27 @@ const StaffVerificationDetail: React.FC = () => {
           </div>
         </div>
       </article>
+
+      <ConfirmModal
+        isOpen={showConfirm && pendingDecision === 'approve'}
+        onClose={() => { setShowConfirm(false); setPendingDecision(null); }}
+        onConfirm={() => { setShowConfirm(false); handleDecision('approve'); }}
+        title="Approve Submission"
+        message="Are you sure you want to approve this submission? This will update the applicant's status."
+        confirmText="Yes, Approve"
+        isConfirming={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={showConfirm && pendingDecision === 'reject'}
+        onClose={() => { setShowConfirm(false); setPendingDecision(null); }}
+        onConfirm={() => { setShowConfirm(false); handleDecision('reject'); }}
+        title="Reject Submission"
+        message="Are you sure you want to reject this submission? The applicant will be notified."
+        confirmText="Yes, Reject"
+        variant="danger"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

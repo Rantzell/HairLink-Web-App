@@ -6,6 +6,7 @@ import { validate } from '../middleware/validate';
 import { requestCreateSchema, requestStatusSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { uploadFile } from '../services/storage.service';
+import { notifyRequestStatus, notifyDonationStatus } from '../services/notification.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -129,7 +130,7 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
 router.get('/:reference', authenticate, async (req: Request, res: Response) => {
   try {
     const hairRequest = await prisma.hairRequest.findFirst({
-      where: { reference: req.params.reference, userId: req.user!.id },
+      where: { reference: req.params.reference as string, userId: req.user!.id },
       include: { user: true, wigProductions: { include: { wigmaker: true } } },
     });
     if (!hairRequest) { res.status(404).json({ message: 'Request not found' }); return; }
@@ -152,6 +153,8 @@ router.post('/:reference/status', authenticate, validate(requestStatusSchema), a
     if (hairRequest.status !== newStatus) {
       await prisma.hairRequest.update({ where: { id: hairRequest.id }, data: { status: newStatus } });
       await createStatusHistory(REQUEST_TYPE, hairRequest.id, newStatus);
+
+      if (hairRequest.userId) await notifyRequestStatus(hairRequest.userId, newStatus, hairRequest.reference!);
     }
 
     const updated = await prisma.hairRequest.findUnique({ where: { id: hairRequest.id }, include: { user: true } });
@@ -164,7 +167,7 @@ router.post('/:reference/status', authenticate, validate(requestStatusSchema), a
 router.post('/:reference/confirm-received', authenticate, async (req: Request, res: Response) => {
   try {
     const hairRequest = await prisma.hairRequest.findFirst({
-      where: { reference: req.params.reference, userId: req.user!.id },
+      where: { reference: req.params.reference as string, userId: req.user!.id },
     });
     if (!hairRequest) { res.status(404).json({ message: 'Request not found' }); return; }
 
@@ -179,6 +182,18 @@ router.post('/:reference/confirm-received', authenticate, async (req: Request, r
       data: { status: 'Completed', receivedAt: now },
     });
     await createStatusHistory(REQUEST_TYPE, hairRequest.id, 'Completed', 'Recipient confirmed wig received');
+
+    if (hairRequest.userId) await notifyRequestStatus(hairRequest.userId, 'Completed', hairRequest.reference!);
+
+    // Notify linked donors (batch)
+    const wp = await prisma.wigProduction.findFirst({ where: { hairRequestId: hairRequest.id }, include: { donations: true } });
+    if (wp?.donations) {
+      for (const don of wp.donations) {
+        if (don.userId) {
+          await notifyDonationStatus(don.userId, 'Wig Received', don.reference!);
+        }
+      }
+    }
 
     res.json({
       message: 'Wig received confirmed! Your request is now complete.',

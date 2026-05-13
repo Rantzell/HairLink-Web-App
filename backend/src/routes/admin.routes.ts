@@ -272,7 +272,7 @@ router.get('/inventory', ...adminOnly, async (_req, res) => {
 
       if (stock[l]?.[c] !== undefined) stock[l][c]++;
     }
-    const wigStock = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { donation: true, wigmaker: true }, orderBy: { updatedAt: 'desc' } });
+    const wigStock = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { donations: true, wigmaker: true }, orderBy: { updatedAt: 'desc' } });
     const allDons = await prisma.donation.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
     res.json(s({ stock, totalHairRecords: dons.length, wigStock, wigCount: wigStock.length, allDonations: allDons, allDonationsCount: allDons.length }));
   } catch (err: any) { 
@@ -294,7 +294,7 @@ router.get('/matching', ...adminOnly, async (_req, res) => {
   try {
     const ad = await prisma.donation.findMany({ where: { status: 'Completed' }, include: { user: true } });
     const ar = await prisma.hairRequest.findMany({ where: { status: 'Validated' }, include: { user: true } });
-    const cw = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { donation: true } });
+    const cw = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { donations: true } });
     res.json(s({ availableDonations: ad, approvedRequests: ar, completedWigs: cw, readyToMatch: ar.length, allocatedWigs: cw.length }));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
@@ -331,6 +331,44 @@ router.get('/reports/export/csv', ...adminOnly, async (_req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename=monetary_donations.csv');
     res.send(csv);
   } catch (err) { res.status(500).json({ error: 'Failed to export' }); }
+});
+
+// GET /internal-api/admin/site-settings
+router.get('/site-settings', ...adminOnly, async (_req, res) => {
+  try {
+    const rows = await (prisma as any).siteSetting.findMany();
+    const map: Record<string, any> = {};
+    for (const row of rows) {
+      map[row.key] = row.value;
+    }
+    res.json(map);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
+});
+
+// PUT /internal-api/admin/site-settings
+// Body: { key: string, value: any }[]  — upserts each entry
+router.put('/site-settings', ...adminOnly, async (req, res) => {
+  try {
+    const entries: { key: string; value: any }[] = req.body;
+    if (!Array.isArray(entries)) {
+      res.status(400).json({ error: 'Body must be an array of { key, value }' });
+      return;
+    }
+    await Promise.all(
+      entries.map((e) =>
+        (prisma as any).siteSetting.upsert({
+          where: { key: e.key },
+          update: { value: e.value },
+          create: { key: e.key, value: e.value },
+        })
+      )
+    );
+    res.json({ message: 'Settings saved', success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
 });
 
 // Schema sync complete

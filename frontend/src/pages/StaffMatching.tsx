@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
-import type { HairRequest, WigProduction } from '../types';
+import ConfirmModal from '../components/ConfirmModal';
 
 // Matching Logic (Mirroring the service)
 export function calculateCompatibility(
@@ -43,10 +43,11 @@ const StaffMatching: React.FC = () => {
   const [recipients, setRecipients] = useState<any[]>([]);
   const [wigs, setWigs] = useState<any[]>([]);
   const [selectedRecipient, setSelectedRecipient] = useState<any | null>(null);
-  const [matchMode, setMatchMode] = useState<'high' | 'top3' | 'all'>('high');
   const [recipientSearch, setRecipientSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showMatchConfirm, setShowMatchConfirm] = useState(false);
+  const [pendingWigId, setPendingWigId] = useState<string | null>(null);
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -90,20 +91,23 @@ const StaffMatching: React.FC = () => {
   }, [selectedRecipient, wigs]);
 
   const filteredWigs = useMemo(() => {
-    if (matchMode === 'all') return scoredWigs;
-    if (matchMode === 'top3') return scoredWigs.slice(0, 3);
     return scoredWigs.filter(w => w.score >= 85);
-  }, [scoredWigs, matchMode]);
+  }, [scoredWigs]);
 
-  const handleMatch = async (wigId: string) => {
+  const handleMatch = (wigId: string) => {
     if (!selectedRecipient) return;
-    if (!window.confirm('Confirm matching this wig to the recipient?')) return;
-    
+    setPendingWigId(wigId);
+    setShowMatchConfirm(true);
+  };
+
+  const doMatch = async () => {
+    if (!selectedRecipient || !pendingWigId) return;
+    setShowMatchConfirm(false);
     setIsSubmitting(true);
     try {
       await apiClient.post('/internal-api/staff/match-wig', {
         request_reference: selectedRecipient.reference,
-        wig_id: wigId
+        wig_id: pendingWigId
       });
       alert('Matching successful!');
       navigate('/staff/tracking');
@@ -111,8 +115,11 @@ const StaffMatching: React.FC = () => {
       alert(err.response?.data?.message || 'Matching failed');
     } finally {
       setIsSubmitting(false);
+      setPendingWigId(null);
     }
   };
+
+  if (loading) return <div className="section-wrap">Loading matching data...</div>;
 
   return (
     <section className="section-wrap reveal active staff-page">
@@ -221,6 +228,16 @@ const StaffMatching: React.FC = () => {
           </div>
         </section>
       </article>
+
+      <ConfirmModal
+        isOpen={showMatchConfirm}
+        onClose={() => { setShowMatchConfirm(false); setPendingWigId(null); }}
+        onConfirm={doMatch}
+        title="Confirm Wig Match"
+        message={`Match this wig to ${selectedRecipient ? `${selectedRecipient.user?.firstName} ${selectedRecipient.user?.lastName}` : 'the selected recipient'}? This will update the request status to Matched.`}
+        confirmText="Yes, Assign Wig"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

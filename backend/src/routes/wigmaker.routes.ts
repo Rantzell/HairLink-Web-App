@@ -7,6 +7,7 @@ import { validate } from '../middleware/validate';
 import { taskUpdateSchema, materialConfirmationSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { uploadFile } from '../services/storage.service';
+import { notifyDonationStatus } from '../services/notification.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -26,7 +27,7 @@ function s(o: any): any {
 // GET /internal-api/wigmaker/dashboard
 router.get('/dashboard', ...wmOnly, async (req, res) => {
   try {
-    const tasks = await prisma.wigProduction.findMany({ where: { wigmakerId: req.user!.id }, include: { donation: true } });
+    const tasks = await prisma.wigProduction.findMany({ where: { wigmakerId: req.user!.id }, include: { donations: true } as any });
     res.json(s(tasks));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
@@ -34,7 +35,7 @@ router.get('/dashboard', ...wmOnly, async (req, res) => {
 // GET /internal-api/wigmaker/tasks
 router.get('/tasks', ...wmOnly, async (req, res) => {
   try {
-    const tasks = await prisma.wigProduction.findMany({ where: { wigmakerId: req.user!.id }, include: { donation: true }, orderBy: { updatedAt: 'desc' } });
+    const tasks = await prisma.wigProduction.findMany({ where: { wigmakerId: req.user!.id }, include: { donations: true } as any, orderBy: { updatedAt: 'desc' } });
     const q = tasks.filter(t => t.status === 'assigned').length;
     const p = tasks.filter(t => t.status === 'processing').length;
     const c = tasks.filter(t => t.status === 'completed').length;
@@ -45,7 +46,7 @@ router.get('/tasks', ...wmOnly, async (req, res) => {
 // GET /internal-api/wigmaker/tasks/:taskCode
 router.get('/tasks/:taskCode', ...wmOnly, async (req, res) => {
   try {
-    const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode }, include: { donation: true, wigmaker: true } });
+    const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode as string }, include: { donations: true, wigmaker: true } as any });
     if (!task) { res.status(404).json({ message: 'Task not found' }); return; }
     const histories = await getStatusHistories(WIG_TYPE, task.id, true);
     res.json({ task: s(task), histories: s(histories) });
@@ -55,7 +56,7 @@ router.get('/tasks/:taskCode', ...wmOnly, async (req, res) => {
 // POST /internal-api/wigmaker/tasks/:taskCode
 router.post('/tasks/:taskCode', ...wmOnly, upload.single('previewPhoto'), validate(taskUpdateSchema), async (req, res) => {
   try {
-    const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode, wigmakerId: req.user!.id } });
+    const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode as string, wigmakerId: req.user!.id } });
     if (!task) { res.status(404).json({ message: 'Task not found' }); return; }
 
     const { status, progressNotes, updatedAt, deliveryLink } = req.body;
@@ -75,15 +76,18 @@ router.post('/tasks/:taskCode', ...wmOnly, upload.single('previewPhoto'), valida
       await prisma.statusHistory.update({ where: { id: history.id }, data: { createdAt: new Date(updatedAt) } });
     }
 
-    // Sync linked donation status
-    if (task.donationId) {
+    // Sync linked donations status
+    const tasksWithDonations = await prisma.wigProduction.findUnique({ where: { id: task.id }, include: { donations: true } as any }) as any;
+    if ((tasksWithDonations?.donations as any[])?.length) {
       const statusMap: Record<string, string> = { assigned: 'In Queue', processing: 'In Progress', completed: 'Completed' };
       const newDonStatus = statusMap[status];
       if (newDonStatus) {
-        const don = await prisma.donation.findUnique({ where: { id: task.donationId } });
-        if (don && don.status !== newDonStatus) {
-          await prisma.donation.update({ where: { id: don.id }, data: { status: newDonStatus } });
-          await createStatusHistory(DON_TYPE, don.id, newDonStatus, progressNotes);
+        for (const don of (tasksWithDonations.donations as any[])) {
+          if (don.status !== newDonStatus) {
+            await prisma.donation.update({ where: { id: don.id }, data: { status: newDonStatus } });
+            await createStatusHistory(DON_TYPE, don.id, newDonStatus, progressNotes);
+            if (don.userId) await notifyDonationStatus(don.userId, newDonStatus, don.reference!);
+          }
         }
       }
     }
@@ -98,7 +102,7 @@ router.post('/tasks/:taskCode', ...wmOnly, upload.single('previewPhoto'), valida
 // POST /internal-api/wigmaker/tasks/:taskCode/confirm-material
 router.post('/tasks/:taskCode/confirm-material', ...wmOnly, validate(materialConfirmationSchema), async (req, res) => {
   try {
-    const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode, wigmakerId: req.user!.id } });
+    const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode as string, wigmakerId: req.user!.id } });
     if (!task) { res.status(404).json({ message: 'Task not found' }); return; }
     if (task.isReceived) { res.status(400).json({ message: 'Material already confirmed.' }); return; }
 
@@ -107,10 +111,14 @@ router.post('/tasks/:taskCode/confirm-material', ...wmOnly, validate(materialCon
     const notes = req.body.notes || 'Wigmaker confirmed receipt of hair materials.';
     await createStatusHistory(WIG_TYPE, task.id, 'assigned', notes);
 
-    // Sync donation status
-    if (task.donationId) {
-      await prisma.donation.update({ where: { id: task.donationId }, data: { status: 'In Progress' } });
-      await createStatusHistory(DON_TYPE, task.donationId, 'In Progress', notes);
+    // Sync donations status
+    const taskWithDon = await prisma.wigProduction.findUnique({ where: { id: task.id }, include: { donations: true } as any }) as any;
+    if ((taskWithDon?.donations as any[])?.length) {
+      for (const don of (taskWithDon.donations as any[])) {
+        await prisma.donation.update({ where: { id: don.id }, data: { status: 'In Progress' } });
+        await createStatusHistory(DON_TYPE, don.id, 'In Progress', notes);
+        if (don.userId) await notifyDonationStatus(don.userId, 'In Progress', don.reference!);
+      }
     }
 
     res.json({ message: 'Material receipt confirmed.', success: true });

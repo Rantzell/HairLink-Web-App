@@ -4,6 +4,7 @@ import apiClient from '../api/client';
 import type { Donation, HairRequest, User, WigProduction } from '../types';
 import { getPublicUrl, getProfilePhotoUrl } from '../lib/storage';
 import StatusPill from '../components/StatusPill';
+import ConfirmModal from '../components/ConfirmModal';
 
 const StaffRealtimeTracking: React.FC = () => {
   const { type } = useParams<{ type: 'donation' | 'recipient' }>();
@@ -21,6 +22,18 @@ const StaffRealtimeTracking: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [materialLinks, setMaterialLinks] = useState<Record<string, string>>({});
+  const [selectedDonations, setSelectedDonations] = useState<string[]>([]);
+  const [batchWigmakerId, setBatchWigmakerId] = useState('');
+  const [batchMaterialLink, setBatchMaterialLink] = useState('');
+  const [showActionConfirm, setShowActionConfirm] = useState(false);
+  const [showBatchConfirm, setShowBatchConfirm] = useState(false);
+  type PendingAction = { reference: string; _type: 'donor' | 'recipient'; status: string; link?: string; label: string };
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+
+  const triggerAction = (ref: string, _type: 'donor' | 'recipient', status: string, label: string, link?: string) => {
+    setPendingAction({ reference: ref, _type, status, label, link });
+    setShowActionConfirm(true);
+  };
 
   const fetchData = async () => {
     try {
@@ -52,27 +65,43 @@ const StaffRealtimeTracking: React.FC = () => {
     }
   };
 
-  const handleAssignWigmaker = async (reference: string, wigmakerId: string) => {
-    if (!wigmakerId) return;
-    const materialLink = materialLinks[reference] || '';
+  const handleAssignBatch = () => {
+    if (selectedDonations.length !== 6) {
+      alert('You must select exactly 6 donations to create a batch.');
+      return;
+    }
+    if (!batchWigmakerId) {
+      alert('Please select a wigmaker.');
+      return;
+    }
+    setShowBatchConfirm(true);
+  };
+
+  const doAssignBatch = async () => {
+    setShowBatchConfirm(false);
     setIsSubmitting(true);
     try {
-      await apiClient.post(`/internal-api/staff/assign-wigmaker/${reference}`, {
-        wigmaker_id: wigmakerId,
-        material_delivery_link: materialLink
+      await apiClient.post('/internal-api/staff/assign-batch', {
+        wigmaker_id: batchWigmakerId,
+        donation_references: selectedDonations,
+        material_delivery_link: batchMaterialLink
       });
+      alert('Batch assigned successfully!');
+      setSelectedDonations([]);
+      setBatchWigmakerId('');
+      setBatchMaterialLink('');
       fetchData();
-      // Clear link after success
-      setMaterialLinks(prev => {
-        const next = { ...prev };
-        delete next[reference];
-        return next;
-      });
     } catch (err: any) {
       alert(err.response?.data?.message || 'Assignment failed');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const toggleSelection = (ref: string) => {
+    setSelectedDonations(prev => 
+      prev.includes(ref) ? prev.filter(r => r !== ref) : [...prev, ref]
+    );
   };
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -173,6 +202,71 @@ const StaffRealtimeTracking: React.FC = () => {
         </div>
       </div>
 
+      {isDonation && selectedDonations.length > 0 && (
+        <div className="batch-action-bar" style={{ 
+          position: 'sticky', 
+          top: '20px', 
+          zIndex: 100, 
+          background: '#ad246d', 
+          padding: '1rem 1.5rem', 
+          borderRadius: '16px', 
+          marginBottom: '1.5rem', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          gap: '1rem',
+          color: '#fff',
+          boxShadow: '0 10px 30px rgba(173, 36, 109, 0.3)',
+          animation: 'slideDown 0.3s ease'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ background: '#fff', color: '#ad246d', width: '32px', height: '32px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontWeight: 900 }}>
+              {selectedDonations.length}
+            </div>
+            <div style={{ fontWeight: 800 }}>
+              {selectedDonations.length === 6 
+                ? 'Batch ready to assign! 🚀' 
+                : `Select ${6 - selectedDonations.length} more donations for a batch (6 required)`}
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '1rem', flex: 1, maxWidth: '600px' }}>
+            <input 
+              type="text" 
+              placeholder="Batch delivery link (optional)..." 
+              value={batchMaterialLink}
+              onChange={(e) => setBatchMaterialLink(e.target.value)}
+              style={{ flex: 1, height: '36px', padding: '0 1rem', borderRadius: '8px', border: 'none', fontSize: '0.8rem', outline: 'none' }}
+            />
+            <select 
+              value={batchWigmakerId}
+              onChange={(e) => setBatchWigmakerId(e.target.value)}
+              style={{ flex: 1, height: '36px', padding: '0 1rem', borderRadius: '8px', border: 'none', fontSize: '0.8rem', fontWeight: 700, color: '#ad246d', cursor: 'pointer' }}
+            >
+              <option value="">Select Wigmaker...</option>
+              {data.wigmakers.map(wm => <option key={wm.id} value={wm.id}>{wm.firstName} {wm.lastName}</option>)}
+            </select>
+            <button 
+              onClick={handleAssignBatch}
+              disabled={selectedDonations.length !== 6 || !batchWigmakerId || isSubmitting}
+              style={{ 
+                height: '36px', 
+                padding: '0 1.5rem', 
+                borderRadius: '8px', 
+                border: 'none', 
+                background: selectedDonations.length === 6 ? '#fff' : 'rgba(255,255,255,0.3)', 
+                color: selectedDonations.length === 6 ? '#ad246d' : '#fff', 
+                fontWeight: 900, 
+                cursor: selectedDonations.length === 6 ? 'pointer' : 'not-allowed',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {isSubmitting ? '...' : 'Assign Batch'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Global Search Bar (Left Aligned) */}
       <div className="search-container" style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.2rem' }}>
         <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
@@ -205,6 +299,9 @@ const StaffRealtimeTracking: React.FC = () => {
           <table className="tracking-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead style={{ background: '#fdf7fb' }}>
               <tr>
+                <th style={{ padding: '1rem', textAlign: 'center', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {isDonation && <i className='bx bx-check-double'></i>}
+                </th>
                 <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Photo</th>
                 <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reference</th>
                 <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Donor/User</th>
@@ -224,6 +321,27 @@ const StaffRealtimeTracking: React.FC = () => {
 
                   return (
                     <tr key={donation.id} style={{ borderTop: '1px solid #f2ebf4', transition: 'all 0.3s ease', cursor: 'default' }} className="tracking-row">
+                      <td style={{ padding: '1rem', textAlign: 'center' }}>
+                        {donation.status === 'Received Hair' && (
+                          <div 
+                            onClick={() => toggleSelection(donation.reference)}
+                            style={{ 
+                              width: '24px', 
+                              height: '24px', 
+                              borderRadius: '6px', 
+                              border: `2px solid ${selectedDonations.includes(donation.reference) ? '#ad246d' : '#ead7e8'}`,
+                              background: selectedDonations.includes(donation.reference) ? '#ad246d' : '#fff',
+                              display: 'grid',
+                              placeItems: 'center',
+                              cursor: 'pointer',
+                              margin: '0 auto',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            {selectedDonations.includes(donation.reference) && <i className='bx bx-check' style={{ color: '#fff', fontSize: '1.1rem' }}></i>}
+                          </div>
+                        )}
+                      </td>
                       <td style={{ padding: '1rem' }}>
                         <div className="avatar-preview" style={{ width: '56px', height: '56px', borderRadius: '14px', overflow: 'hidden', border: '2px solid #fff', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.08)', background: '#fdf7fb', position: 'relative' }}>
                           {photoUrl ? (
@@ -314,7 +432,7 @@ const StaffRealtimeTracking: React.FC = () => {
                                 >
                                   <i className='bx bx-link-external'></i> View Tracking
                                 </a>
-                                <button className="soft-btn" onClick={() => handleUpdateStatus(donation.reference, 'donor', 'Received Hair')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Received</button>
+                                <button className="soft-btn" onClick={() => triggerAction(donation.reference, 'donor', 'Received Hair', 'Confirm Received')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Received</button>
                               </>
                             ) : (
                               <span style={{ fontSize: '0.7rem', color: '#8c7895', fontStyle: 'italic', fontWeight: 600 }}>Awaiting Delivery Link...</span>
@@ -322,31 +440,13 @@ const StaffRealtimeTracking: React.FC = () => {
                           </div>
                         )}
                         {donation.status === 'Received Hair' && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '180px' }}>
-                            <div style={{ position: 'relative' }}>
-                              <i className='bx bx-link' style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#ad246d', fontSize: '0.9rem' }}></i>
-                              <input
-                                type="text"
-                                placeholder="Delivery tracking link..."
-                                value={materialLinks[donation.reference] || ''}
-                                onChange={(e) => setMaterialLinks(prev => ({ ...prev, [donation.reference]: e.target.value }))}
-                                style={{ width: '100%', padding: '0.5rem 0.75rem 0.5rem 2rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.7rem', outline: 'none' }}
-                              />
-                            </div>
-                            <select
-                              className="custom-select"
-                              onChange={(e) => handleAssignWigmaker(donation.reference, e.target.value)}
-                              disabled={isSubmitting}
-                              defaultValue=""
-                              style={{ padding: '0.6rem 1.2rem', borderRadius: '50px', border: '1.5px solid #ead7e8', fontSize: '0.75rem', color: '#ad246d', fontWeight: 800, background: '#fff', cursor: 'pointer', width: '100%' }}
-                            >
-                              <option value="" disabled>Assign Wigmaker...</option>
-                              {data.wigmakers.map(wm => <option key={wm.id} value={wm.id}>{wm.firstName} {wm.lastName}</option>)}
-                            </select>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+                             <span style={{ fontSize: '0.75rem', color: '#ad246d', fontWeight: 800 }}>Ready for Batching</span>
+                             <span style={{ fontSize: '0.65rem', color: '#8c7895', fontWeight: 600 }}>Select 6 items above</span>
                           </div>
                         )}
                         {donation.status === 'Completed' && !isWigmakerControlled && (
-                          <button className="soft-btn" onClick={() => handleUpdateStatus(donation.reference, 'donor', 'Wig Received')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Receipt</button>
+                          <button className="soft-btn" onClick={() => triggerAction(donation.reference, 'donor', 'Wig Received', 'Confirm Receipt')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Receipt</button>
                         )}
                         {wigProd?.status === 'shipped' && (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
@@ -362,7 +462,7 @@ const StaffRealtimeTracking: React.FC = () => {
                             )}
                             <button 
                               className="soft-btn" 
-                              onClick={() => handleUpdateStatus(donation.reference, 'donor', 'Wig Received')} 
+                              onClick={() => triggerAction(donation.reference, 'donor', 'Wig Received', 'Confirm Wig Received', wigProd.deliveryLink || undefined)} 
                               disabled={isSubmitting} 
                               style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}
                             >
@@ -384,6 +484,7 @@ const StaffRealtimeTracking: React.FC = () => {
 
                   return (
                     <tr key={request.id} style={{ borderTop: '1px solid #f2ebf4', transition: 'all 0.3s ease', cursor: 'default' }} className="tracking-row">
+                      <td style={{ padding: '1rem' }}></td>
                       <td style={{ padding: '1rem' }}>
                         <div className="avatar-preview" style={{ width: '56px', height: '56px', borderRadius: '14px', overflow: 'hidden', border: '2px solid #fff', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.08)', background: '#fdf7fb', position: 'relative' }}>
                           {photoUrl ? (
@@ -475,7 +576,7 @@ const StaffRealtimeTracking: React.FC = () => {
                               className="soft-btn" 
                               onClick={() => {
                                 const link = materialLinks[request.reference];
-                                handleUpdateStatus(request.reference, 'recipient', 'In Transit', link);
+                                triggerAction(request.reference, 'recipient', 'In Transit', 'Ship Wig', link);
                               }} 
                               disabled={isSubmitting} 
                               style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}
@@ -504,6 +605,31 @@ const StaffRealtimeTracking: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showActionConfirm}
+        onClose={() => { setShowActionConfirm(false); setPendingAction(null); }}
+        onConfirm={() => {
+          if (!pendingAction) return;
+          setShowActionConfirm(false);
+          handleUpdateStatus(pendingAction.reference, pendingAction._type, pendingAction.status, pendingAction.link);
+          setPendingAction(null);
+        }}
+        title={pendingAction?.label || 'Confirm Action'}
+        message={`Are you sure you want to ${pendingAction?.status === 'In Transit' ? 'mark this wig as shipped and notify the recipient' : pendingAction?.status === 'Received Hair' ? 'confirm receipt of this hair donation' : 'confirm receipt of this finished wig'}?`}
+        confirmText={`Yes, ${pendingAction?.label || 'Confirm'}`}
+        isConfirming={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={showBatchConfirm}
+        onClose={() => setShowBatchConfirm(false)}
+        onConfirm={doAssignBatch}
+        title="Assign Batch to Wigmaker"
+        message={`Assign ${selectedDonations.length} selected donations to the chosen wigmaker? This will notify the wigmaker and update all donation statuses.`}
+        confirmText="Yes, Assign Batch"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

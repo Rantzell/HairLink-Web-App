@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
+import ConfirmModal from '../components/ConfirmModal';
 
 const AdminUserManagement: React.FC = () => {
   const location = useLocation();
@@ -20,6 +21,9 @@ const AdminUserManagement: React.FC = () => {
     isActive: true
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showToggleConfirm, setShowToggleConfirm] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [pendingToggleUser, setPendingToggleUser] = useState<any>(null);
 
   const fetchUsers = async (searchStr = filter, roleStr = roleFilter) => {
     try {
@@ -63,7 +67,13 @@ const AdminUserManagement: React.FC = () => {
       console.error('Toggle failed', err);
     } finally {
       setIsSubmitting(false);
+      setPendingToggleUser(null);
     }
+  };
+
+  const requestToggle = (user: any) => {
+    setPendingToggleUser(user);
+    setShowToggleConfirm(true);
   };
 
   const handleOpenModal = (user: any = null) => {
@@ -93,8 +103,13 @@ const AdminUserManagement: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveUser = async (e: React.FormEvent) => {
+  const handleSaveUser = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowSaveConfirm(true);
+  };
+
+  const doSaveUser = async () => {
+    setShowSaveConfirm(false);
     setIsSubmitting(true);
     try {
       if (editingUser) {
@@ -238,7 +253,7 @@ const AdminUserManagement: React.FC = () => {
                         <i className='bx bx-edit-alt' style={{ fontSize: '0.85rem' }}></i> Edit
                       </button>
                       <button 
-                        onClick={() => handleToggleActive(user.id)}
+                        onClick={() => requestToggle(user)}
                         disabled={isSubmitting}
                         style={{ 
                           padding: '0.35rem 0.8rem', 
@@ -345,6 +360,26 @@ const AdminUserManagement: React.FC = () => {
           </div>
         </div>
       )}
+      <ConfirmModal
+        isOpen={showToggleConfirm}
+        onClose={() => { setShowToggleConfirm(false); setPendingToggleUser(null); }}
+        onConfirm={() => { setShowToggleConfirm(false); if (pendingToggleUser) handleToggleActive(pendingToggleUser.id); }}
+        title={pendingToggleUser?.isActive ? 'Deactivate Account' : 'Activate Account'}
+        message={`Are you sure you want to ${pendingToggleUser?.isActive ? 'deactivate' : 'activate'} the account of ${pendingToggleUser?.displayName}? ${pendingToggleUser?.isActive ? 'They will no longer be able to log in.' : 'They will regain access to HairLink.'}`}
+        confirmText={pendingToggleUser?.isActive ? 'Yes, Deactivate' : 'Yes, Activate'}
+        variant={pendingToggleUser?.isActive ? 'danger' : undefined}
+        isConfirming={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={showSaveConfirm}
+        onClose={() => setShowSaveConfirm(false)}
+        onConfirm={doSaveUser}
+        title={editingUser ? 'Update User Account' : 'Create User Account'}
+        message={editingUser ? `Save changes to ${userForm.firstName} ${userForm.lastName}'s account?` : `Create a new ${userForm.role} account for ${userForm.firstName} ${userForm.lastName}?`}
+        confirmText={editingUser ? 'Yes, Update Account' : 'Yes, Create Account'}
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

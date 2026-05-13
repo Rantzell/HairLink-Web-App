@@ -5,6 +5,7 @@ import StatusPill from '../components/StatusPill';
 import type { Donation } from '../types';
 import LoadingScreen from '../components/LoadingScreen';
 import { getPublicUrl } from '../lib/storage';
+import ConfirmModal from '../components/ConfirmModal';
 
 const DonorTrackingDetail: React.FC = () => {
   const { reference } = useParams<{ reference: string }>();
@@ -12,6 +13,7 @@ const DonorTrackingDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [deliveryLink, setDeliveryLink] = useState('');
   const [isSubmittingLink, setIsSubmittingLink] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const fetchDetail = async () => {
     try {
@@ -29,9 +31,14 @@ const DonorTrackingDetail: React.FC = () => {
     fetchDetail();
   }, [reference]);
 
-  const handleSubmitLink = async (e: React.FormEvent) => {
+  const handleSubmitLink = (e: React.FormEvent) => {
     e.preventDefault();
     if (!deliveryLink.trim()) return;
+    setShowConfirm(true);
+  };
+
+  const doSubmitLink = async () => {
+    setShowConfirm(false);
     setIsSubmittingLink(true);
     try {
       await apiClient.post(`/internal-api/donations/${reference}/delivery-link`, { 
@@ -225,6 +232,16 @@ const DonorTrackingDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={doSubmitLink}
+        title="Submit Delivery Link"
+        message="Are you sure you want to submit this delivery tracking link? Our staff will use it to monitor the arrival of your donation."
+        confirmText={donation?.donorDeliveryLink ? 'Yes, Update Link' : 'Yes, Submit Link'}
+        isConfirming={isSubmittingLink}
+      />
     </section>
   );
 };

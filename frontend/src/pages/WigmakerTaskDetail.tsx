@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import type { WigProduction, StatusHistory } from '../types';
+
 import StatusPill from '../components/StatusPill';
 import LoadingScreen from '../components/LoadingScreen';
 import { getPublicUrl } from '../lib/storage';
+import ConfirmModal from '../components/ConfirmModal';
 
 // Static data removed
 
@@ -18,6 +19,9 @@ const WigmakerTaskDetail: React.FC = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [targetStatus, setTargetStatus] = useState<string | null>(null);
   const [customDate, setCustomDate] = useState(new Date().toISOString().slice(0, 16));
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showMaterialConfirm, setShowMaterialConfirm] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -35,15 +39,26 @@ const WigmakerTaskDetail: React.FC = () => {
     fetchDetail();
   }, [taskCode]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!data) return;
-    if (!notes) return;
+    if (!data || !notes) return;
+    setShowConfirm(true);
+  };
 
+  const requestStatusUpdate = (status: string) => {
+    if (!notes) { alert('Please add a progress note before updating.'); return; }
+    setPendingStatus(status);
+    setTargetStatus(status);
+    setShowConfirm(true);
+  };
+
+  const doSubmit = async () => {
+    setShowConfirm(false);
+    if (!data) return;
     setIsSubmitting(true);
     const formData = new FormData();
-    const finalStatus = targetStatus || nextStatus;
-    
+    const finalStatus = pendingStatus || targetStatus || nextStatus;
+
     formData.append('status', finalStatus);
     formData.append('progressNotes', notes);
     formData.append('updatedAt', new Date(customDate).toISOString());
@@ -57,11 +72,17 @@ const WigmakerTaskDetail: React.FC = () => {
       console.error('Update failed:', err);
     } finally {
       setIsSubmitting(false);
+      setPendingStatus(null);
       setTargetStatus(null);
     }
   };
 
-  const handleConfirmMaterial = async () => {
+  const handleConfirmMaterial = () => {
+    setShowMaterialConfirm(true);
+  };
+
+  const doConfirmMaterial = async () => {
+    setShowMaterialConfirm(false);
     setIsSubmitting(true);
     try {
       await apiClient.post(`/internal-api/wigmaker/tasks/${taskCode}/confirm-material`);
@@ -77,12 +98,7 @@ const WigmakerTaskDetail: React.FC = () => {
   if (!data) return <div className="wigmaker-page staff-page" style={{ padding: '5rem', textAlign: 'center', color: '#8c7895' }}>Task not found.</div>;
 
   const { task, histories } = data;
-  const isCompleted = task.status === 'received';
   const nextStatus = task.status === 'processing' ? 'completed' : 'shipped';
-  const nextLabel = task.status === 'processing' ? 'Completed: Finished & Quality Check' : 'Shipping: Returning to staff';
-  const currentLabel = task.status === 'processing' ? 'In Progress: Wig construction & styling' :
-    task.status === 'completed' ? 'Completed: Finished & Quality Check' :
-      task.status === 'shipped' ? 'Shipping: Returning to staff' : 'Assigned';
 
   return (
     <section className="wigmaker-page reveal active staff-page" style={{ maxWidth: '100%', margin: '0', padding: '1.5rem 2.5rem' }}>
@@ -97,20 +113,20 @@ const WigmakerTaskDetail: React.FC = () => {
             <p style={{ fontSize: '0.75rem', color: '#8c7895', margin: 0 }}>Production ID: <span style={{ color: '#ad246d', fontWeight: 700 }}>{task.donation?.reference || 'N/A'}</span></p>
           </div>
         </div>
-        <Link 
-          to="/wigmaker/dashboard" 
-          style={{ 
-            padding: '0.35rem 0.8rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.4rem', 
-            borderRadius: '8px', 
-            border: '1.5px solid #ead7e8', 
-            color: '#ad246d', 
-            fontSize: '0.7rem', 
-            fontWeight: 800, 
-            textDecoration: 'none', 
-            background: '#fff' 
+        <Link
+          to="/wigmaker/dashboard"
+          style={{
+            padding: '0.35rem 0.8rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            borderRadius: '8px',
+            border: '1.5px solid #ead7e8',
+            color: '#ad246d',
+            fontSize: '0.7rem',
+            fontWeight: 800,
+            textDecoration: 'none',
+            background: '#fff'
           }}
         >
           <i className='bx bx-left-arrow-alt'></i> Back to Dashboard
@@ -196,9 +212,9 @@ const WigmakerTaskDetail: React.FC = () => {
               <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1.25rem' }}>
                   <div>
-                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Current Status</label>
+                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Next Status</label>
                     <div style={{ height: '42px', padding: '0 1rem', borderRadius: '10px', border: '1.5px solid #f1a8cf', background: '#fdf7fb', color: '#ad246d', fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
-                      <i className='bx bx-check-double' style={{ marginRight: '6px' }}></i> {task.status === 'assigned' ? 'Assigned (Materials Received)' : 'In Progress'}
+                      <i className='bx bx-check-double' style={{ marginRight: '6px' }}></i> {task.status === 'assigned' ? 'In Progress' : 'Production Finished'}
                     </div>
                   </div>
                   <div>
@@ -237,10 +253,10 @@ const WigmakerTaskDetail: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                   <div>
                     <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Update Timestamp</label>
-                    <input 
-                      type="datetime-local" 
-                      value={customDate} 
-                      onChange={e => setCustomDate(e.target.value)} 
+                    <input
+                      type="datetime-local"
+                      value={customDate}
+                      onChange={e => setCustomDate(e.target.value)}
                       style={{ width: '100%', height: '42px', padding: '0 1rem', borderRadius: '12px', border: '1px solid #ead7e8', fontSize: '0.85rem', color: '#5d4d62' }}
                     />
                   </div>
@@ -250,22 +266,27 @@ const WigmakerTaskDetail: React.FC = () => {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button 
-                    type="submit" 
-                    onClick={() => setTargetStatus('processing')}
-                    disabled={isSubmitting} 
-                    style={{ flex: 1, height: '42px', borderRadius: '50px', border: '1px solid #ad246d', background: 'transparent', color: '#ad246d', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}
-                  >
-                    {isSubmitting && targetStatus === 'processing' ? '...' : (task.status === 'assigned' ? 'Start Production (30%)' : 'Save Progress Only')}
-                  </button>
-                  <button 
-                    type="submit" 
-                    onClick={() => setTargetStatus('completed')}
-                    disabled={isSubmitting} 
-                    style={{ flex: 1.5, height: '42px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}
-                  >
-                    {isSubmitting && targetStatus === 'completed' ? '...' : 'Complete & Quality Check (80%)'}
-                  </button>
+                  {task.status === 'assigned' ? (
+                    <button
+                      type="button"
+                      onClick={() => requestStatusUpdate('processing')}
+                      disabled={isSubmitting}
+                      style={{ flex: 1, height: '42px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}
+                    >
+                      {isSubmitting && pendingStatus === 'processing' ? '...' : 'Start Production'}
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => requestStatusUpdate('completed')}
+                        disabled={isSubmitting}
+                        style={{ flex: 1, height: '42px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}
+                      >
+                        {isSubmitting && pendingStatus === 'completed' ? '...' : 'Production Finished'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </form>
             </article>
@@ -312,10 +333,10 @@ const WigmakerTaskDetail: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                   <div>
                     <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Shipping Date</label>
-                    <input 
-                      type="datetime-local" 
-                      value={customDate} 
-                      onChange={e => setCustomDate(e.target.value)} 
+                    <input
+                      type="datetime-local"
+                      value={customDate}
+                      onChange={e => setCustomDate(e.target.value)}
                       style={{ width: '100%', height: '42px', padding: '0 1rem', borderRadius: '12px', border: '1px solid #ead7e8', fontSize: '0.85rem', color: '#5d4d62' }}
                     />
                   </div>
@@ -338,7 +359,7 @@ const WigmakerTaskDetail: React.FC = () => {
                   <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Final Message (Optional)</label>
                   <textarea rows={2} placeholder="Any final notes for the staff..." value={notes} onChange={e => setNotes(e.target.value)} style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid #ead7e8', fontSize: '0.85rem', outline: 'none', background: '#fafafa' }}></textarea>
                 </div>
-                <button type="submit" disabled={isSubmitting} style={{ height: '42px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}>
+                <button type="submit" disabled={isSubmitting} style={{ height: '42px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }} onClick={(e) => { e.preventDefault(); setShowConfirm(true); }}>
                   {isSubmitting ? 'Processing...' : 'Submit Tracking & Mark as Shipped'}
                 </button>
               </form>
@@ -392,19 +413,19 @@ const WigmakerTaskDetail: React.FC = () => {
             <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#3b2e43', margin: '0.5rem 0' }}>
               {
                 task.status === 'received' ? '100%' :
-                task.status === 'shipped' ? '90%' :
-                task.status === 'completed' ? '80%' :
-                task.status === 'processing' ? '30%' :
-                task.isReceived ? '10%' : '0%'
+                  task.status === 'shipped' ? '90%' :
+                    task.status === 'completed' ? '80%' :
+                      task.status === 'processing' ? '30%' :
+                        task.isReceived ? '10%' : '0%'
               }
             </div>
             <div style={{ height: '6px', background: '#f2f2f2', borderRadius: '10px', overflow: 'hidden' }}>
-              <div style={{ 
+              <div style={{
                 width: task.status === 'received' ? '100%' :
-                       task.status === 'shipped' ? '90%' :
-                       task.status === 'completed' ? '80%' :
-                       task.status === 'processing' ? '30%' :
-                       task.isReceived ? '10%' : '0%', 
+                  task.status === 'shipped' ? '90%' :
+                    task.status === 'completed' ? '80%' :
+                      task.status === 'processing' ? '30%' :
+                        task.isReceived ? '10%' : '0%',
                 height: '100%', background: 'linear-gradient(90deg, #ad246d, #ff6bb5)', borderRadius: '10px', transition: 'width 0.8s ease'
               }}></div>
             </div>
@@ -440,26 +461,45 @@ const WigmakerTaskDetail: React.FC = () => {
                   <tr key={i} style={{ borderBottom: i === histories.length - 1 ? 'none' : '1px solid #f8f8f8' }}>
                     <td style={{ padding: '1rem', fontSize: '0.8rem', color: '#5d4d62' }}>{new Date(h.createdAt).toLocaleString()}</td>
                     <td style={{ padding: '1rem' }}><StatusPill status={h.status} label={statusLabels[h.status]} /></td>
-                  <td style={{ padding: '1rem', fontSize: '0.8rem', color: '#8c7895', lineHeight: 1.5 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-                      <div style={{ flex: 1 }}>{h.notes || 'No message provided.'}</div>
-                      {h.metadata?.preview_photo && (
-                        <div
-                          style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ead7e8', flexShrink: 0, cursor: 'pointer' }}
-                          onClick={() => window.open(getPublicUrl('hairlink', h.metadata.preview_photo), '_blank')}
-                        >
-                          <img src={getPublicUrl('hairlink', h.metadata.preview_photo)} alt="Log Attachment" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                      )}
-                    </div>
-                  </td>
+                    <td style={{ padding: '1rem', fontSize: '0.8rem', color: '#8c7895', lineHeight: 1.5 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                        <div style={{ flex: 1 }}>{h.notes || 'No message provided.'}</div>
+                        {h.metadata?.preview_photo && (
+                          <div
+                            style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ead7e8', flexShrink: 0, cursor: 'pointer' }}
+                            onClick={() => window.open(getPublicUrl('hairlink', h.metadata.preview_photo), '_blank')}
+                          >
+                            <img src={getPublicUrl('hairlink', h.metadata.preview_photo)} alt="Log Attachment" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        )}
+                      </div>
+                    </td>
                   </tr>
-                  );
-                })}
+                );
+              })}
             </tbody>
           </table>
         </div>
       </article>
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => { setShowConfirm(false); setPendingStatus(null); }}
+        onConfirm={doSubmit}
+        title={pendingStatus === 'completed' ? 'Production Finished?' : pendingStatus === 'processing' ? 'Start Production?' : 'Submit Update?'}
+        message={pendingStatus === 'completed' ? 'Mark this task as production finished and ready for the next stage?' : pendingStatus === 'processing' ? 'Start production on this task? This will update the status for linked donors.' : 'Submit this tracking update and mark the wig as shipped?'}
+        confirmText="Yes, Confirm"
+        isConfirming={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={showMaterialConfirm}
+        onClose={() => setShowMaterialConfirm(false)}
+        onConfirm={doConfirmMaterial}
+        title="Confirm Hair Materials Received"
+        message="Confirm that you have received the hair materials from staff? This action cannot be undone."
+        confirmText="Yes, Materials Received"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

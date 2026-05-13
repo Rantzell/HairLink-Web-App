@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const DonorMonetary: React.FC = () => {
   const { user: _user } = useAuth();
@@ -8,6 +9,7 @@ const DonorMonetary: React.FC = () => {
   const [purpose, setPurpose] = useState('Wig Production');
   const [proof, setProof] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [donations, setDonations] = useState<any[]>([]);
   const [stats, setStats] = useState({ total: 0, points: 0 });
 
@@ -28,15 +30,19 @@ const DonorMonetary: React.FC = () => {
     fetchHistory();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !proof) return;
+    setShowConfirm(true);
+  };
 
+  const doSubmit = async () => {
+    setShowConfirm(false);
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append('amount', amount);
     formData.append('purpose', purpose);
-    formData.append('proof', proof);
+    formData.append('proof', proof!);
 
     try {
       await apiClient.post('/internal-api/donor/monetary', formData);
@@ -173,6 +179,16 @@ const DonorMonetary: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={doSubmit}
+        title="Confirm Monetary Donation"
+        message={`You are about to submit a donation of ₱${Number(amount).toLocaleString()}. This will be reviewed by our team. Proceed?`}
+        confirmText="Yes, Submit Donation"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

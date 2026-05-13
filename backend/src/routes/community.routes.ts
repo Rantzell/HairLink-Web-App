@@ -6,6 +6,7 @@ import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { postCreateSchema, commentCreateSchema } from '../schemas';
 import { uploadFile, getPublicUrl } from '../services/storage.service';
+import { notifyCommunityInteraction } from '../services/notification.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -97,7 +98,7 @@ router.post('/posts', authenticate, upload.single('image'), async (req: Request,
 // POST /internal-api/community/posts/:postId/comments
 router.post('/posts/:postId/comments', authenticate, upload.single('image'), async (req: Request, res: Response) => {
   try {
-    const postId = req.params.postId;
+    const postId = req.params.postId as string;
     const post = await prisma.communityPost.findUnique({ where: { id: postId } });
     if (!post) { res.status(404).json({ message: 'Post not found' }); return; }
 
@@ -127,7 +128,15 @@ router.post('/posts/:postId/comments', authenticate, upload.single('image'), asy
       include: { user: true },
     });
 
-    res.status(201).json({ ...comment, user: comment.user ? { ...comment.user, id: comment.user.id.toString() } : undefined });
+    // Notify post owner
+    if (post.userId !== req.user!.id) {
+      const actorName = (comment.user as any).firstName 
+        ? `${(comment.user as any).firstName} ${(comment.user as any).lastName || ''}`.trim()
+        : 'Someone';
+      await notifyCommunityInteraction(post.userId, actorName, postId, 'comment');
+    }
+
+    res.status(201).json({ ...comment, user: (comment as any).user ? { ...(comment as any).user, id: (comment as any).user.id.toString() } : undefined });
   } catch (err) {
     console.error('[Community] Create comment error:', err);
     res.status(500).json({ error: 'Failed to create comment' });
@@ -137,7 +146,7 @@ router.post('/posts/:postId/comments', authenticate, upload.single('image'), asy
 // POST /internal-api/community/posts/:postId/like
 router.post('/posts/:postId/like', authenticate, async (req: Request, res: Response) => {
   try {
-    const postId = req.params.postId;
+    const postId = req.params.postId as string;
     const userId = req.user!.id;
 
     const existing = await prisma.communityPostLike.findFirst({
@@ -148,8 +157,16 @@ router.post('/posts/:postId/like', authenticate, async (req: Request, res: Respo
     if (existing) {
       await prisma.communityPostLike.delete({ where: { id: existing.id } });
     } else {
+      const post = await prisma.communityPost.findUnique({ where: { id: postId }, include: { user: true } });
       await prisma.communityPostLike.create({ data: { id: uuidv4(), userId, communityPostId: postId } });
       isLiked = true;
+
+      // Notify owner
+      if (post && post.userId !== userId) {
+        const actor = await prisma.user.findUnique({ where: { id: userId } });
+        const actorName = actor?.firstName ? `${actor.firstName} ${actor.lastName || ''}`.trim() : 'Someone';
+        await notifyCommunityInteraction(post.userId, actorName, postId, 'like');
+      }
     }
 
     const likesCount = await prisma.communityPostLike.count({ where: { communityPostId: postId } });
@@ -160,7 +177,7 @@ router.post('/posts/:postId/like', authenticate, async (req: Request, res: Respo
 // DELETE /internal-api/community/posts/:postId
 router.delete('/posts/:postId', authenticate, async (req: Request, res: Response) => {
   try {
-    const post = await prisma.communityPost.findUnique({ where: { id: req.params.postId } });
+    const post = await prisma.communityPost.findUnique({ where: { id: req.params.postId as string } });
     if (!post) { res.status(404).json({ message: 'Post not found' }); return; }
     if (post.userId !== req.user!.id && req.user!.role !== 'admin') {
       res.status(403).json({ message: 'Unauthorized deletion' }); return;
@@ -173,7 +190,7 @@ router.delete('/posts/:postId', authenticate, async (req: Request, res: Response
 // DELETE /internal-api/community/comments/:commentId
 router.delete('/comments/:commentId', authenticate, async (req: Request, res: Response) => {
   try {
-    const comment = await prisma.communityComment.findUnique({ where: { id: req.params.commentId } });
+    const comment = await prisma.communityComment.findUnique({ where: { id: req.params.commentId as string } });
     if (!comment) { res.status(404).json({ message: 'Comment not found' }); return; }
     if (comment.userId !== req.user!.id && req.user!.role !== 'admin') {
       res.status(403).json({ message: 'Unauthorized deletion' }); return;

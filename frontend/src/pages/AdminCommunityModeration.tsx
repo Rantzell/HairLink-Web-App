@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
+import ConfirmModal from '../components/ConfirmModal';
 
 const AdminCommunityModeration: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -21,16 +24,23 @@ const AdminCommunityModeration: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleDelete = async (postId: string) => {
-    if (!window.confirm('Are you sure you want to delete this post?')) return;
+  const handleDelete = (postId: string) => {
+    setPendingDeleteId(postId);
+    setShowDeleteConfirm(true);
+  };
+
+  const doDelete = async () => {
+    if (!pendingDeleteId) return;
+    setShowDeleteConfirm(false);
     setIsDeleting(true);
     try {
-      await apiClient.delete(`/internal-api/admin/community/${postId}`);
+      await apiClient.delete(`/internal-api/admin/community/${pendingDeleteId}`);
       fetchData();
     } catch (err) {
       console.error('Delete failed', err);
     } finally {
       setIsDeleting(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -114,6 +124,17 @@ const AdminCommunityModeration: React.FC = () => {
           ))}
         </div>
       </article>
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => { setShowDeleteConfirm(false); setPendingDeleteId(null); }}
+        onConfirm={doDelete}
+        title="Delete Community Post"
+        message="Are you sure you want to permanently delete this post? This action cannot be undone."
+        confirmText="Yes, Delete Post"
+        variant="danger"
+        isConfirming={isDeleting}
+      />
     </section>
   );
 };

@@ -23,4 +23,19 @@ router.get('/events/next', async (_req, res) => {
   }
 });
 
+// GET /api/public/site-settings
+// Returns all site settings as a flat { key: value } map — no auth required
+router.get('/site-settings', async (_req, res) => {
+  try {
+    const rows = await (prisma as any).siteSetting.findMany();
+    const map: Record<string, any> = {};
+    for (const row of rows) {
+      map[row.key] = row.value;
+    }
+    res.json(map);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch site settings' });
+  }
+});
+
 export default router;

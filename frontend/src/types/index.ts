@@ -81,7 +81,7 @@ export interface WigProduction {
   hairRequestId: string | null;
   targetLength: string;
   targetColor: string;
-  status: 'assigned' | 'processing' | 'completed' | 'matched';
+  status: 'assigned' | 'processing' | 'completed' | 'matched' | 'received' | 'shipped';
   deliveryLink: string | null;
   dueDate: string | null;
   createdAt: string;

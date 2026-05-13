@@ -4,11 +4,14 @@ import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import type { HairRequest } from '../types';
 import { getPublicUrl } from '../lib/storage';
+import ConfirmModal from '../components/ConfirmModal';
 
 const RecipientTrackingDetail: React.FC = () => {
   const { reference } = useParams<{ reference: string }>();
   const [requestData, setRequestData] = useState<HairRequest | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showWigConfirm, setShowWigConfirm] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -23,6 +26,19 @@ const RecipientTrackingDetail: React.FC = () => {
     };
     fetchDetail();
   }, [reference]);
+
+  const doConfirmReceived = async () => {
+    setShowWigConfirm(false);
+    setIsConfirming(true);
+    try {
+      await apiClient.post(`/internal-api/requests/${requestData?.reference}/confirm-received`);
+      window.location.reload();
+    } catch {
+      alert('Failed to confirm receipt.');
+    } finally {
+      setIsConfirming(false);
+    }
+  };
 
   if (loading) return <div className="section-wrap">Loading...</div>;
   if (!requestData) return <div className="section-wrap">Request not found.</div>;
@@ -74,15 +90,8 @@ const RecipientTrackingDetail: React.FC = () => {
           )}
           {requestData.status === 'In Transit' && (
             <button 
-              onClick={async () => {
-                if (!window.confirm('Confirm you have received your wig?')) return;
-                try {
-                  await apiClient.post(`/internal-api/requests/${requestData.reference}/confirm-received`);
-                  window.location.reload();
-                } catch (err) {
-                  alert('Failed to confirm receipt.');
-                }
-              }}
+              onClick={() => setShowWigConfirm(true)}
+              disabled={isConfirming}
               style={{ 
                 border: 'none', 
                 cursor: 'pointer', 
@@ -94,7 +103,7 @@ const RecipientTrackingDetail: React.FC = () => {
                 fontWeight: 800 
               }}
             >
-              Confirm Wig Received
+              {isConfirming ? '...' : 'Confirm Wig Received'}
             </button>
           )}
         </div>
@@ -207,6 +216,16 @@ const RecipientTrackingDetail: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showWigConfirm}
+        onClose={() => setShowWigConfirm(false)}
+        onConfirm={doConfirmReceived}
+        title="Confirm Wig Received"
+        message="Please confirm that you have received your wig. This action cannot be undone and will finalize your request."
+        confirmText="Yes, I Received It"
+        isConfirming={isConfirming}
+      />
     </section>
   );
 };

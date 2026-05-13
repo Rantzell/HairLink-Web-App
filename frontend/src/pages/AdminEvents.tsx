@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
+import ConfirmModal from '../components/ConfirmModal';
 
 const AdminEvents: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({ title: '', date: '', description: '', location: '' });
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const fetchEvents = async () => {
     try {
@@ -22,9 +24,14 @@ const AdminEvents: React.FC = () => {
     fetchEvents();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.date) return;
+    setShowConfirm(true);
+  };
+
+  const doSubmit = async () => {
+    setShowConfirm(false);
     setIsSubmitting(true);
     try {
       await apiClient.post('/internal-api/admin/events', {
@@ -155,6 +162,16 @@ const AdminEvents: React.FC = () => {
           </div>
         </article>
       </div>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={doSubmit}
+        title="Publish Event"
+        message={`Publish "${form.title}" scheduled on ${form.date ? new Date(form.date).toLocaleDateString() : ''}? This will appear on the public HairLink events page.`}
+        confirmText="Yes, Publish Event"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };
