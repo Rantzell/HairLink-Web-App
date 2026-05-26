@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import '../styles/RecipientDashboard.css';
 
 const RecipientDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -19,8 +20,8 @@ const RecipientDashboard: React.FC = () => {
         <p>Your journey and impact snapshots are shown below.</p>
       </div>
 
-      <section className="quick-actions" style={{ marginTop: '2rem' }}>
-        <div className="action-buttons" style={{ gridColumn: 'span 2' }}>
+      <section className="quick-actions quick-actions-mt">
+        <div className="action-buttons action-buttons-span2">
           <Link className="action-item-btn" to="/recipient/tracking">
             <i className='bx bx-map-pin'></i> View Status
           </Link>
@@ -36,13 +37,13 @@ const RecipientDashboard: React.FC = () => {
         </div>
       </section>
 
-      <section className="rewards-shell" style={{ marginTop: '3rem' }}>
+      <section className="rewards-shell rewards-shell-mt">
         <div className="rewards-head">
           <h2>Recipient Actions</h2>
-          <i className='bx bxs-heart' style={{ color: '#bc2f79' }}></i>
+          <i className="bx bxs-heart rewards-head-icon"></i>
         </div>
 
-        <div className="reward-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', maxWidth: '600px' }}>
+        <div className="reward-grid reward-grid-single">
           <article className="reward-card">
             <h3>Request Hair</h3>
             <p>Let's boost your confidence. Request hair to support your journey of comfort.</p>
@@ -55,3 +56,5 @@ const RecipientDashboard: React.FC = () => {
 };
 
 export default RecipientDashboard;
+
+

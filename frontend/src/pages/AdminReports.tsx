@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 
@@ -53,53 +54,53 @@ const AdminReports: React.FC = () => {
     switch(reportType) {
       case 'monetary':
         return (
-          <div className="report-document" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '2rem' }}>
-            <div className="report-header" style={{ borderBottom: '2px solid #ad246d', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
+          <div className="report-document admin-report-doc">
+            <div className="report-header admin-report-doc-header">
               <div>
-                <h2 style={{ color: '#ad246d', margin: 0, fontSize: '1.5rem', fontWeight: 900 }}>Financial Oversight Report</h2>
-                <p style={{ margin: '0.2rem 0', color: '#8c7895', fontSize: '0.8rem' }}>Complete audit of monetary contributions and financial status.</p>
+                <h2 className="admin-report-doc-title">Financial Oversight Report</h2>
+                <p className="admin-report-doc-subtitle">Complete audit of monetary contributions and financial status.</p>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '0.7rem' }}>HL-FIN-AUDIT-{new Date().getFullYear()}</p>
-                <p style={{ margin: 0, color: '#8c7895', fontSize: '0.65rem' }}>{data.timestamp}</p>
+              <div className="admin-match-score-wrap">
+                <p className="admin-report-id">HL-FIN-AUDIT-{new Date().getFullYear()}</p>
+                <p className="admin-report-timestamp">{data.timestamp}</p>
               </div>
             </div>
 
-            <section style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
-                <div style={{ background: '#fdf7fb', padding: '1.25rem', borderRadius: '12px', border: '1px solid #ead7e8', textAlign: 'center' }}>
-                  <small style={{ color: '#8c7895', display: 'block', fontSize: '0.65rem' }}>TOTAL FUNDS RAISED</small>
-                  <strong style={{ fontSize: '1.8rem', color: '#ad246d' }}>₱{data.summary.monetaryTotal?.toLocaleString()}</strong>
+            <section className="admin-report-section">
+              <div className="admin-report-two-col">
+                <div className="admin-report-kpi-card">
+                  <small className="admin-report-kpi-label">TOTAL FUNDS RAISED</small>
+                  <strong className="admin-report-kpi-value">₱{data.summary.monetaryTotal?.toLocaleString()}</strong>
                 </div>
-                <div style={{ background: '#fdf7fb', padding: '1.25rem', borderRadius: '12px', border: '1px solid #ead7e8', textAlign: 'center' }}>
-                  <small style={{ color: '#8c7895', display: 'block', fontSize: '0.65rem' }}>TOTAL CONTRIBUTORS</small>
-                  <strong style={{ fontSize: '1.8rem', color: '#ad246d' }}>{monetaryData.length} contributors</strong>
+                <div className="admin-report-kpi-card">
+                  <small className="admin-report-kpi-label">TOTAL CONTRIBUTORS</small>
+                  <strong className="admin-report-kpi-value">{monetaryData.length} contributors</strong>
                 </div>
               </div>
             </section>
 
             <section>
-              <h3 style={{ fontSize: '0.85rem', color: '#ad246d', textTransform: 'uppercase', marginBottom: '0.8rem', borderBottom: '1px solid #f2ebf4' }}>Contribution Log</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
+              <h3 className="admin-report-section-title">Contribution Log</h3>
+              <table className="admin-report-table">
                 <thead>
-                  <tr style={{ background: '#fdf7fb' }}>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Reference</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Contributor Name / Email</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Amount</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Method</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Date</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Status</th>
+                  <tr className="admin-compact-table-head-row">
+                    <th className="admin-report-th">Reference</th>
+                    <th className="admin-report-th">Contributor Name / Email</th>
+                    <th className="admin-report-th">Amount</th>
+                    <th className="admin-report-th">Method</th>
+                    <th className="admin-report-th">Date</th>
+                    <th className="admin-report-th">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {monetaryData.map((m: any) => (
                     <tr key={m.id}>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}><strong>{m.referenceNumber}</strong></td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{m.name || m.user?.firstName || 'Anonymous'} <br/><small>{m.email || m.user?.email}</small></td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>₱{m.amount?.toLocaleString()}</td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{m.paymentMethod}</td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{new Date(m.createdAt).toLocaleDateString()}</td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{m.status}</td>
+                      <td className="admin-report-td"><strong>{m.referenceNumber}</strong></td>
+                      <td className="admin-report-td">{m.name || m.user?.firstName || 'Anonymous'} <br/><small>{m.email || m.user?.email}</small></td>
+                      <td className="admin-report-td">₱{m.amount?.toLocaleString()}</td>
+                      <td className="admin-report-td">{m.paymentMethod}</td>
+                      <td className="admin-report-td">{new Date(m.createdAt).toLocaleDateString()}</td>
+                      <td className="admin-report-td">{m.status}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -109,26 +110,26 @@ const AdminReports: React.FC = () => {
         );
       case 'hair':
         return (
-          <div className="report-document" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '2rem' }}>
-            <div className="report-header" style={{ borderBottom: '2px solid #ad246d', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
+          <div className="report-document admin-report-doc">
+            <div className="report-header admin-report-doc-header">
               <div>
-                <h2 style={{ color: '#ad246d', margin: 0, fontSize: '1.5rem', fontWeight: 900 }}>Complete Hair Inventory Audit</h2>
-                <p style={{ margin: '0.2rem 0', color: '#8c7895', fontSize: '0.8rem' }}>Exhaustive log of hair stock categorization and donation records.</p>
+                <h2 className="admin-report-doc-title">Complete Hair Inventory Audit</h2>
+                <p className="admin-report-doc-subtitle">Exhaustive log of hair stock categorization and donation records.</p>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '0.7rem' }}>HL-AUDIT-HAIR-{new Date().getFullYear()}</p>
-                <p style={{ margin: 0, color: '#8c7895', fontSize: '0.65rem' }}>{data.timestamp}</p>
+              <div className="admin-match-score-wrap">
+                <p className="admin-report-id">HL-AUDIT-HAIR-{new Date().getFullYear()}</p>
+                <p className="admin-report-timestamp">{data.timestamp}</p>
               </div>
             </div>
 
-            <section style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '0.85rem', color: '#ad246d', textTransform: 'uppercase', marginBottom: '0.8rem', borderBottom: '1px solid #f2ebf4' }}>1. Stock Categorization</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+            <section className="admin-report-section">
+              <h3 className="admin-report-section-title">1. Stock Categorization</h3>
+              <div className="admin-three-col-no-mb">
                 {['Short', 'Medium', 'Long'].map(len => (
-                  <div key={len} style={{ background: '#fdf7fb', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ead7e8' }}>
-                    <h4 style={{ margin: '0 0 0.4rem 0', fontSize: '0.8rem' }}>{len} Strands</h4>
+                  <div key={len} className="admin-report-mini-card">
+                    <h4 className="admin-report-mini-title">{len} Strands</h4>
                     {['Black', 'Brown', 'Light', 'Gray', 'Other'].map(col => (
-                      <div key={col} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0', borderBottom: '1px solid #f2ebf4', fontSize: '0.7rem' }}>
+                      <div key={col} className="admin-report-mini-row">
                         <span>{col}</span>
                         <strong>{data.inventory.stock[len]?.[col] || 0}</strong>
                       </div>
@@ -139,27 +140,27 @@ const AdminReports: React.FC = () => {
             </section>
 
             <section>
-              <h3 style={{ fontSize: '0.85rem', color: '#ad246d', textTransform: 'uppercase', marginBottom: '0.8rem', borderBottom: '1px solid #f2ebf4' }}>2. Full Donation History</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
+              <h3 className="admin-report-section-title">2. Full Donation History</h3>
+              <table className="admin-report-table">
                 <thead>
-                  <tr style={{ background: '#fdf7fb' }}>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Ref No.</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Donor Name</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Length</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Color</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Date</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Status</th>
+                  <tr className="admin-compact-table-head-row">
+                    <th className="admin-report-th">Ref No.</th>
+                    <th className="admin-report-th">Donor Name</th>
+                    <th className="admin-report-th">Length</th>
+                    <th className="admin-report-th">Color</th>
+                    <th className="admin-report-th">Date</th>
+                    <th className="admin-report-th">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.inventory.allDonations.map((d: any) => (
                     <tr key={d.id}>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}><strong>{d.reference}</strong></td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{d.user?.firstName} {d.user?.lastName}</td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{d.hairLength}</td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{d.hairColor}</td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{new Date(d.createdAt).toLocaleDateString()}</td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{d.status}</td>
+                      <td className="admin-report-td"><strong>{d.reference}</strong></td>
+                      <td className="admin-report-td">{d.user?.firstName} {d.user?.lastName}</td>
+                      <td className="admin-report-td">{d.hairLength}</td>
+                      <td className="admin-report-td">{d.hairColor}</td>
+                      <td className="admin-report-td">{new Date(d.createdAt).toLocaleDateString()}</td>
+                      <td className="admin-report-td">{d.status}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -169,55 +170,55 @@ const AdminReports: React.FC = () => {
         );
       case 'wigs':
         return (
-          <div className="report-document" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '2rem' }}>
-            <div className="report-header" style={{ borderBottom: '2px solid #ad246d', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
+          <div className="report-document admin-report-doc">
+            <div className="report-header admin-report-doc-header">
               <div>
-                <h2 style={{ color: '#ad246d', margin: 0, fontSize: '1.5rem', fontWeight: 900 }}>Complete Wig Stock & Production Audit</h2>
-                <p style={{ margin: '0.2rem 0', color: '#8c7895', fontSize: '0.8rem' }}>Exhaustive inventory of finished wigs and manufacturing history.</p>
+                <h2 className="admin-report-doc-title">Complete Wig Stock & Production Audit</h2>
+                <p className="admin-report-doc-subtitle">Exhaustive inventory of finished wigs and manufacturing history.</p>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '0.7rem' }}>HL-AUDIT-WIG-{new Date().getFullYear()}</p>
-                <p style={{ margin: 0, color: '#8c7895', fontSize: '0.65rem' }}>{data.timestamp}</p>
+              <div className="admin-match-score-wrap">
+                <p className="admin-report-id">HL-AUDIT-WIG-{new Date().getFullYear()}</p>
+                <p className="admin-report-timestamp">{data.timestamp}</p>
               </div>
             </div>
 
-            <section style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-                <div style={{ background: '#fdf7fb', padding: '1rem', borderRadius: '10px', border: '1px solid #ead7e8', textAlign: 'center' }}>
-                  <small style={{ color: '#8c7895', display: 'block', fontSize: '0.65rem' }}>CURRENT INVENTORY</small>
-                  <strong style={{ fontSize: '1.5rem', color: '#ad246d' }}>{data.inventory.wigCount} wigs</strong>
+            <section className="admin-report-section">
+              <div className="admin-three-col-no-mb">
+                <div className="admin-report-center-card">
+                  <small className="admin-report-kpi-label">CURRENT INVENTORY</small>
+                  <strong className="admin-action-link-icon">{data.inventory.wigCount} wigs</strong>
                 </div>
-                <div style={{ background: '#fdf7fb', padding: '1rem', borderRadius: '10px', border: '1px solid #ead7e8', textAlign: 'center' }}>
-                  <small style={{ color: '#8c7895', display: 'block', fontSize: '0.65rem' }}>PRODUCTION YIELD</small>
-                  <strong style={{ fontSize: '1.5rem', color: '#ad246d' }}>{data.inventory.allDonationsCount} units</strong>
+                <div className="admin-report-center-card">
+                  <small className="admin-report-kpi-label">PRODUCTION YIELD</small>
+                  <strong className="admin-action-link-icon">{data.inventory.allDonationsCount} units</strong>
                 </div>
-                <div style={{ background: '#fdf7fb', padding: '1rem', borderRadius: '10px', border: '1px solid #ead7e8', textAlign: 'center' }}>
-                  <small style={{ color: '#8c7895', display: 'block', fontSize: '0.65rem' }}>FULFILLMENT</small>
-                  <strong style={{ fontSize: '1.5rem', color: '#ad246d' }}>{data.dashboard.requestsCount} recipients</strong>
+                <div className="admin-report-center-card">
+                  <small className="admin-report-kpi-label">FULFILLMENT</small>
+                  <strong className="admin-action-link-icon">{data.dashboard.requestsCount} recipients</strong>
                 </div>
               </div>
             </section>
 
             <section>
-              <h3 style={{ fontSize: '0.85rem', color: '#ad246d', textTransform: 'uppercase', marginBottom: '0.8rem', borderBottom: '1px solid #f2ebf4' }}>Finished Wig Stock Log</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
+              <h3 className="admin-report-section-title">Finished Wig Stock Log</h3>
+              <table className="admin-report-table">
                 <thead>
-                  <tr style={{ background: '#fdf7fb' }}>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Task Code</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Wigmaker</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Target Length</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Target Color</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid #ead7e8' }}>Stock Date</th>
+                  <tr className="admin-compact-table-head-row">
+                    <th className="admin-report-th">Task Code</th>
+                    <th className="admin-report-th">Wigmaker</th>
+                    <th className="admin-report-th">Target Length</th>
+                    <th className="admin-report-th">Target Color</th>
+                    <th className="admin-report-th">Stock Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.inventory.wigStock.map((w: any) => (
                     <tr key={w.id}>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}><strong>{w.taskCode}</strong></td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{w.wigmaker?.firstName} {w.wigmaker?.lastName}</td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{w.targetLength}</td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{w.targetColor}</td>
-                      <td style={{ padding: '0.5rem', borderBottom: '1px solid #f2ebf4' }}>{new Date(w.updatedAt).toLocaleDateString()}</td>
+                      <td className="admin-report-td"><strong>{w.taskCode}</strong></td>
+                      <td className="admin-report-td">{w.wigmaker?.firstName} {w.wigmaker?.lastName}</td>
+                      <td className="admin-report-td">{w.targetLength}</td>
+                      <td className="admin-report-td">{w.targetColor}</td>
+                      <td className="admin-report-td">{new Date(w.updatedAt).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -227,61 +228,61 @@ const AdminReports: React.FC = () => {
         );
       default: // 'full'
         return (
-          <div className="report-document" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '2rem' }}>
-            <div className="report-header" style={{ borderBottom: '2px solid #ad246d', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
+          <div className="report-document admin-report-doc">
+            <div className="report-header admin-report-doc-header">
               <div>
-                <h2 style={{ color: '#ad246d', margin: 0, fontSize: '1.6rem', fontWeight: 900 }}>HairLink Comprehensive System Audit</h2>
-                <p style={{ margin: '0.2rem 0', color: '#8c7895', fontSize: '0.85rem' }}>Global operational report including all inventory, financial, and participant data.</p>
+                <h2 className="admin-report-doc-title">HairLink Comprehensive System Audit</h2>
+                <p className="admin-report-doc-subtitle">Global operational report including all inventory, financial, and participant data.</p>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '0.75rem' }}>HL-FULL-AUDIT-{new Date().getFullYear()}</p>
-                <p style={{ margin: 0, color: '#8c7895', fontSize: '0.7rem' }}>{data.timestamp}</p>
+              <div className="admin-match-score-wrap">
+                <p className="admin-report-id">HL-FULL-AUDIT-{new Date().getFullYear()}</p>
+                <p className="admin-report-timestamp">{data.timestamp}</p>
               </div>
             </div>
 
-            <section style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', textAlign: 'center' }}>
-                <div><small style={{ color: '#8c7895' }}>HAIR DONATIONS</small><p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>{data.dashboard.donationsCount}</p></div>
-                <div><small style={{ color: '#8c7895' }}>MONETARY TOTAL</small><p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>₱{data.summary.monetaryTotal?.toLocaleString()}</p></div>
-                <div><small style={{ color: '#8c7895' }}>FULFILLMENT</small><p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>{data.dashboard.requestsCount}</p></div>
-                <div><small style={{ color: '#8c7895' }}>INVENTORY</small><p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>{data.inventory.wigCount}</p></div>
+            <section className="admin-report-section">
+              <div className="admin-four-col-grid">
+                <div><small className="admin-match-meta">HAIR DONATIONS</small><p className="admin-section-title">{data.dashboard.donationsCount}</p></div>
+                <div><small className="admin-match-meta">MONETARY TOTAL</small><p className="admin-section-title">₱{data.summary.monetaryTotal?.toLocaleString()}</p></div>
+                <div><small className="admin-match-meta">FULFILLMENT</small><p className="admin-section-title">{data.dashboard.requestsCount}</p></div>
+                <div><small className="admin-match-meta">INVENTORY</small><p className="admin-section-title">{data.inventory.wigCount}</p></div>
               </div>
             </section>
 
-            <section style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '0.85rem', color: '#ad246d', textTransform: 'uppercase', marginBottom: '0.8rem', borderBottom: '1px solid #f2ebf4' }}>Operational Breakdown</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <section className="admin-report-section">
+              <h3 className="admin-report-section-title">Operational Breakdown</h3>
+              <div className="admin-two-col-grid-2rem">
                 <div>
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem' }}>Stock Inventory</h4>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0', borderBottom: '1px solid #f2ebf4', fontSize: '0.75rem' }}><span>Raw Hair Strands</span><strong>{data.inventory.totalHairRecords} units</strong></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0', borderBottom: '1px solid #f2ebf4', fontSize: '0.75rem' }}><span>Finished Wigs</span><strong>{data.inventory.wigCount} wigs</strong></div>
+                  <h4 className="admin-report-mini-title">Stock Inventory</h4>
+                  <div className="admin-report-row"><span>Raw Hair Strands</span><strong>{data.inventory.totalHairRecords} units</strong></div>
+                  <div className="admin-report-row"><span>Finished Wigs</span><strong>{data.inventory.wigCount} wigs</strong></div>
                 </div>
                 <div>
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem' }}>Financial Summary</h4>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0', borderBottom: '1px solid #f2ebf4', fontSize: '0.75rem' }}><span>Total Contributions</span><strong>₱{data.summary.monetaryTotal?.toLocaleString()}</strong></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0', borderBottom: '1px solid #f2ebf4', fontSize: '0.75rem' }}><span>Contributor Base</span><strong>{monetaryData.length} contributors</strong></div>
+                  <h4 className="admin-report-mini-title">Financial Summary</h4>
+                  <div className="admin-report-row"><span>Total Contributions</span><strong>₱{data.summary.monetaryTotal?.toLocaleString()}</strong></div>
+                  <div className="admin-report-row"><span>Contributor Base</span><strong>{monetaryData.length} contributors</strong></div>
                 </div>
               </div>
             </section>
 
             <section>
-              <h3 style={{ fontSize: '0.85rem', color: '#ad246d', textTransform: 'uppercase', marginBottom: '0.8rem', borderBottom: '1px solid #f2ebf4' }}>Global Operational Logs (Recent)</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.65rem' }}>
+              <h3 className="admin-report-section-title">Global Operational Logs (Recent)</h3>
+              <table className="admin-report-table">
                 <thead>
-                  <tr style={{ background: '#fdf7fb' }}>
-                    <th style={{ textAlign: 'left', padding: '0.4rem', borderBottom: '1px solid #ead7e8' }}>Reference</th>
-                    <th style={{ textAlign: 'left', padding: '0.4rem', borderBottom: '1px solid #ead7e8' }}>Activity</th>
-                    <th style={{ textAlign: 'left', padding: '0.4rem', borderBottom: '1px solid #ead7e8' }}>Participant</th>
-                    <th style={{ textAlign: 'left', padding: '0.4rem', borderBottom: '1px solid #ead7e8' }}>Date</th>
+                  <tr className="admin-compact-table-head-row">
+                    <th className="admin-report-th">Reference</th>
+                    <th className="admin-report-th">Activity</th>
+                    <th className="admin-report-th">Participant</th>
+                    <th className="admin-report-th">Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.dashboard.monetaryDonations.slice(0, 5).map((m: any) => (
                     <tr key={m.id}>
-                      <td style={{ padding: '0.4rem', borderBottom: '1px solid #f2ebf4' }}>{m.referenceNumber}</td>
-                      <td style={{ padding: '0.4rem', borderBottom: '1px solid #f2ebf4' }}>Monetary Donation (₱{m.amount})</td>
-                      <td style={{ padding: '0.4rem', borderBottom: '1px solid #f2ebf4' }}>{m.name || 'Anonymous'}</td>
-                      <td style={{ padding: '0.4rem', borderBottom: '1px solid #f2ebf4' }}>{new Date(m.createdAt).toLocaleDateString()}</td>
+                      <td className="admin-report-td">{m.referenceNumber}</td>
+                      <td className="admin-report-td">Monetary Donation (₱{m.amount})</td>
+                      <td className="admin-report-td">{m.name || 'Anonymous'}</td>
+                      <td className="admin-report-td">{new Date(m.createdAt).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -293,50 +294,25 @@ const AdminReports: React.FC = () => {
   };
 
   return (
-    <section className="section-wrap reveal active admin-page" id="reportRoot" style={{ padding: '1rem' }}>
-      <header className="no-print" style={{ padding: '0.2rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+    <section className="section-wrap reveal active admin-page admin-page-pad" id="reportRoot">
+      <header className="no-print admin-report-header-row">
         <div>
-          <p style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ad246d', marginBottom: '0.1rem' }}>Admin · Analytics</p>
-          <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>System Reports</h1>
-          <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.1rem' }}>Generate comprehensive operational audits for inventory and finance.</p>
+          <p className="admin-page-kicker">Admin · Analytics</p>
+          <h1 className="admin-page-title">System Reports</h1>
+          <p className="admin-page-subtitle">Generate comprehensive operational audits for inventory and finance.</p>
         </div>
         
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div className="admin-btn-actions">
           <a 
             href={`${apiClient.defaults.baseURL}/internal-api/admin/reports/export/csv`}
             download
-            style={{ 
-              padding: '0.5rem 1.25rem', 
-              borderRadius: '8px', 
-              background: '#fdf2f8', 
-              color: '#ad246d', 
-              border: '1px solid #ead7e8',
-              fontWeight: 800, 
-              fontSize: '0.8rem',
-              textDecoration: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              cursor: 'pointer'
-            }}
+            className="admin-btn-icon"
           >
             <i className='bx bx-download'></i> Download CSV
           </a>
           <button 
             onClick={handlePrint}
-            style={{ 
-              padding: '0.5rem 1.25rem', 
-              borderRadius: '8px', 
-              background: '#ad246d', 
-              color: '#fff', 
-              border: 'none', 
-              fontWeight: 800, 
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
+            className="admin-btn-print"
           >
             <i className='bx bx-printer'></i> Print Current
           </button>

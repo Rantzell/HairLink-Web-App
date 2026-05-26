@@ -1,3 +1,4 @@
+import '../styles/StaffRealtimeTracking.css';
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import apiClient from '../api/client';
@@ -122,82 +123,23 @@ const StaffRealtimeTracking: React.FC = () => {
 
   const isDonation = type === 'donation';
 
-  // Add styles to the document head
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .tracking-row:hover {
-        background: #fdf8fb !important;
-        transform: scale(1.002);
-        box-shadow: 0 4px 20px rgba(173, 36, 109, 0.05);
-        z-index: 10;
-        position: relative;
-      }
-      .tracking-row {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .avatar-preview:hover img {
-        transform: scale(1.1);
-      }
-      .avatar-preview img {
-        transition: transform 0.4s ease;
-      }
-      .tracking-table th {
-        backdrop-filter: blur(8px);
-        background: rgba(253, 247, 251, 0.9) !important;
-        position: sticky;
-        top: 0;
-        z-index: 20;
-      }
-      .soft-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(173, 36, 109, 0.3) !important;
-      }
-      .soft-btn:active {
-        transform: translateY(0);
-      }
-      .custom-select {
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ad246d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 0.8rem center;
-        background-size: 1rem;
-        padding-right: 2.5rem !important;
-        transition: all 0.2s ease;
-      }
-      .custom-select:hover {
-        border-color: #ad246d !important;
-        box-shadow: 0 0 0 3px rgba(173, 36, 109, 0.1);
-      }
-      .custom-select:focus {
-        outline: none;
-        border-color: #ad246d !important;
-        box-shadow: 0 0 0 3px rgba(173, 36, 109, 0.2);
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      if (document.head.contains(style)) {
-        document.head.removeChild(style);
-      }
-    };
-  }, []);
+  
 
   if (loading) return <div className="section-wrap">Loading tracking data...</div>;
 
   return (
-    <section className="section-wrap reveal active staff-page" style={{ maxWidth: '100%', margin: '0' }}>
-      <div className="section-title-block" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <section className="section-wrap reveal active staff-page tracking-page">
+      <div className="section-title-block tracking-title-block">
         <div>
-          <h1 style={{ fontFamily: 'Outfit', fontSize: '2.2rem', fontWeight: 900, color: '#3b2e43', marginBottom: '0.2rem' }}>
+          <h1 className="tracking-page-title">
             {type === 'donation' ? 'Donation Trackers' : 'Request Trackers'}
           </h1>
-          <p style={{ fontSize: '0.95rem', color: '#8c7895' }}>
+          <p className="tracking-page-subtitle">
             {type === 'donation' ? 'Monitor hair contributions and professional production stages.' : 'Monitor real-time status and manage workflow for wig requests.'}
           </p>
         </div>
         <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)' }}>
-          <span style={{ width: '8px', height: '8px', background: '#ad246d', borderRadius: '50%' }}></span>
+          <span className="tracking-active-dot"></span>
           {isDonation ? filteredDonations.length : filteredRequests.length} Active {isDonation ? 'Donations' : 'Requests'}
         </div>
       </div>
@@ -219,29 +161,29 @@ const StaffRealtimeTracking: React.FC = () => {
           boxShadow: '0 10px 30px rgba(173, 36, 109, 0.3)',
           animation: 'slideDown 0.3s ease'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ background: '#fff', color: '#ad246d', width: '32px', height: '32px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontWeight: 900 }}>
+          <div className="batch-action-left">
+            <div className="batch-count-badge">
               {selectedDonations.length}
             </div>
-            <div style={{ fontWeight: 800 }}>
+            <div className="batch-status-text">
               {selectedDonations.length === 6 
                 ? 'Batch ready to assign! 🚀' 
                 : `Select ${6 - selectedDonations.length} more donations for a batch (6 required)`}
             </div>
           </div>
           
-          <div style={{ display: 'flex', gap: '1rem', flex: 1, maxWidth: '600px' }}>
+          <div className="batch-action-right">
             <input 
               type="text" 
               placeholder="Batch delivery link (optional)..." 
               value={batchMaterialLink}
               onChange={(e) => setBatchMaterialLink(e.target.value)}
-              style={{ flex: 1, height: '36px', padding: '0 1rem', borderRadius: '8px', border: 'none', fontSize: '0.8rem', outline: 'none' }}
+              className="batch-input"
             />
             <select 
               value={batchWigmakerId}
               onChange={(e) => setBatchWigmakerId(e.target.value)}
-              style={{ flex: 1, height: '36px', padding: '0 1rem', borderRadius: '8px', border: 'none', fontSize: '0.8rem', fontWeight: 700, color: '#ad246d', cursor: 'pointer' }}
+              className="batch-select custom-select"
             >
               <option value="">Select Wigmaker...</option>
               {data.wigmakers.map(wm => <option key={wm.id} value={wm.id}>{wm.firstName} {wm.lastName}</option>)}
@@ -268,8 +210,8 @@ const StaffRealtimeTracking: React.FC = () => {
       )}
 
       {/* Global Search Bar (Left Aligned) */}
-      <div className="search-container" style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.2rem' }}>
-        <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
+      <div className="search-container tracking-search-container">
+        <div className="tracking-search-wrapper">
           <i className='bx bx-search' style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#ad246d', fontSize: '1.1rem' }}></i>
           <input
             type="text"
@@ -294,21 +236,21 @@ const StaffRealtimeTracking: React.FC = () => {
         </div>
       </div>
 
-      <div className="tracking-list-layout" style={{ marginTop: '0' }}>
+      <div className="tracking-list-layout tracking-list-layout-margin">
         <div className="tracking-table-wrap" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(73, 20, 52, 0.05)' }}>
-          <table className="tracking-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead style={{ background: '#fdf7fb' }}>
+          <table className="tracking-table tracking-table">
+            <thead className="tracking-thead">
               <tr>
-                <th style={{ padding: '1rem', textAlign: 'center', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <th className="tracking-th tracking-th-center">
                   {isDonation && <i className='bx bx-check-double'></i>}
                 </th>
-                <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Photo</th>
-                <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reference</th>
-                <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Donor/User</th>
-                <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Spec / Details</th>
-                <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
-                <th style={{ padding: '1rem', textAlign: 'left', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current Stage</th>
-                <th style={{ padding: '1rem', textAlign: 'center', color: '#ad246d', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Action</th>
+                <th className="tracking-th">Photo</th>
+                <th className="tracking-th">Reference</th>
+                <th className="tracking-th">Donor/User</th>
+                <th className="tracking-th">Spec / Details</th>
+                <th className="tracking-th">Status</th>
+                <th className="tracking-th">Current Stage</th>
+                <th className="tracking-th tracking-th-center">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -320,85 +262,74 @@ const StaffRealtimeTracking: React.FC = () => {
                   const photoUrl = donation.photoFront ? getPublicUrl('hairlink', donation.photoFront) : null;
 
                   return (
-                    <tr key={donation.id} style={{ borderTop: '1px solid #f2ebf4', transition: 'all 0.3s ease', cursor: 'default' }} className="tracking-row">
-                      <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <tr key={donation.id} className="tracking-row tracking-row">
+                      <td className="tracking-cell-center">
                         {donation.status === 'Received Hair' && (
                           <div 
                             onClick={() => toggleSelection(donation.reference)}
-                            style={{ 
-                              width: '24px', 
-                              height: '24px', 
-                              borderRadius: '6px', 
-                              border: `2px solid ${selectedDonations.includes(donation.reference) ? '#ad246d' : '#ead7e8'}`,
-                              background: selectedDonations.includes(donation.reference) ? '#ad246d' : '#fff',
-                              display: 'grid',
-                              placeItems: 'center',
-                              cursor: 'pointer',
-                              margin: '0 auto',
-                              transition: 'all 0.2s ease'
-                            }}
+                            className={selectedDonations.includes(donation.reference) ? 'tracking-checkbox checked' : 'tracking-checkbox'}
                           >
-                            {selectedDonations.includes(donation.reference) && <i className='bx bx-check' style={{ color: '#fff', fontSize: '1.1rem' }}></i>}
+                            {selectedDonations.includes(donation.reference) && <i className="bx bx-check tracking-checkbox-icon"></i>}
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '1rem' }}>
+                      <td className="tracking-cell">
                         <div className="avatar-preview" style={{ width: '56px', height: '56px', borderRadius: '14px', overflow: 'hidden', border: '2px solid #fff', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.08)', background: '#fdf7fb', position: 'relative' }}>
                           {photoUrl ? (
-                            <img src={photoUrl} alt="Donation" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={photoUrl} alt="Donation" className="tracking-avatar-img" />
                           ) : (
-                            <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
-                              <i className='bx bx-image-alt' style={{ color: '#ecd8e8', fontSize: '1.4rem' }}></i>
+                            <div className="tracking-avatar-placeholder">
+                              <i className="bx bx-image-alt tracking-avatar-icon"></i>
                             </div>
                           )}
-                          <div style={{ position: 'absolute', bottom: 0, right: 0, width: '14px', height: '14px', background: '#10b981', border: '2px solid #fff', borderRadius: '50%' }}></div>
+                          <div className="tracking-status-dot green"></div>
                         </div>
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ color: '#ad246d', fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Ref: {(donation.reference || '').split('-')[0]}</span>
-                          <strong style={{ color: '#2d2333', fontSize: '1rem', letterSpacing: '-0.01em' }}>{donation.reference || 'N/A'}</strong>
-                          <div style={{ fontSize: '0.75rem', color: '#8c7895', marginTop: '0.2rem' }}>
+                      <td className="tracking-cell">
+                        <div className="tracking-ref-col">
+                          <span className="tracking-ref-prefix">Ref: {(donation.reference || '').split('-')[0]}</span>
+                          <strong className="tracking-ref-value">{donation.reference || 'N/A'}</strong>
+                          <div className="tracking-ref-date">
                             <i className='bx bx-time-five' style={{ marginRight: '4px', verticalAlign: 'middle' }}></i>
                             {donation.createdAt ? new Date(donation.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#fff0f8', display: 'grid', placeItems: 'center', color: '#ad246d', fontWeight: 800, fontSize: '0.8rem', border: '1px solid #f8dceb', overflow: 'hidden' }}>
+                      <td className="tracking-cell">
+                        <div className="tracking-user-col">
+                          <div className="tracking-user-avatar tracking-user-avatar-donor">
                             {donation.user?.profile_photo_url ? (
                               <img
                                 src={getProfilePhotoUrl(donation.user.profile_photo_url) || ''}
                                 alt="User"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                className="tracking-avatar-img"
                               />
                             ) : (
                               `${donation.user?.firstName?.[0] || ''}${donation.user?.lastName?.[0] || ''}`
                             )}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 700, color: '#3b2e43', fontSize: '0.9rem' }}>{donation.user?.firstName} {donation.user?.lastName}</div>
-                            <div style={{ fontSize: '0.7rem', color: '#ad246d', fontWeight: 700, textTransform: 'uppercase' }}>Donor</div>
+                            <div className="tracking-user-name">{donation.user?.firstName} {donation.user?.lastName}</div>
+                            <div className="tracking-user-role-donor">Donor</div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                          <span style={{ background: '#fdf7fb', border: '1px solid #f2ebf4', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', color: '#5d4d62', fontWeight: 600 }}>{donation.hairLength}</span>
-                          <span style={{ background: '#fdf7fb', border: '1px solid #f2ebf4', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', color: '#5d4d62', fontWeight: 600 }}>{donation.hairColor}</span>
+                      <td className="tracking-cell">
+                        <div className="tracking-specs-col">
+                          <span className="tracking-spec-pill-donor">{donation.hairLength}</span>
+                          <span className="tracking-spec-pill-donor">{donation.hairColor}</span>
                         </div>
                       </td>
-                      <td style={{ padding: '1rem' }}>
+                      <td className="tracking-cell">
                         <StatusPill status={donation.status} />
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ width: '160px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase' }}>Workflow</span>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#ad246d' }}>{Math.round(((stageIndex + 1) / 6) * 100)}%</span>
+                      <td className="tracking-cell">
+                        <div className="tracking-progress-col">
+                          <div className="tracking-progress-head">
+                            <span className="tracking-progress-label">Workflow</span>
+                            <span className="tracking-progress-percent">{Math.round(((stageIndex + 1) / 6) * 100)}%</span>
                           </div>
-                          <div style={{ height: '8px', background: '#f2f2f2', borderRadius: '10px', position: 'relative', overflow: 'hidden' }}>
+                          <div className="tracking-progress-bar-bg">
                             <div style={{
                               position: 'absolute', left: 0, top: 0, bottom: 0,
                               width: `${((stageIndex + 1) / 6) * 100}%`,
@@ -407,7 +338,7 @@ const StaffRealtimeTracking: React.FC = () => {
                               boxShadow: '0 0 8px rgba(173, 36, 109, 0.3)'
                             }}></div>
                           </div>
-                          <div style={{ fontSize: '0.68rem', color: '#5d4d62', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <div className="tracking-progress-status">
                             <i className={`bx ${wigProd?.status === 'received' ? 'bx-check-circle' : (isWigmakerControlled ? 'bx-sync bx-spin' : 'bx-map-pin')}`} style={{ color: wigProd?.status === 'received' ? '#10b981' : '#ad246d' }}></i>
                             {isWigmakerControlled ? (
                               wigProd?.status === 'assigned' ? `Assigned to ${wigProd?.wigmaker?.firstName}` : 
@@ -419,43 +350,43 @@ const StaffRealtimeTracking: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <td className="tracking-action-cell">
                         {donation.status === 'Verified' && (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                          <div className="tracking-action-col">
                             {donation.donorDeliveryLink ? (
                               <>
                                 <a
                                   href={donation.donorDeliveryLink}
                                   target="_blank"
                                   rel="noreferrer"
-                                  style={{ fontSize: '0.7rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', background: '#eff6ff', padding: '0.3rem 0.6rem', borderRadius: '6px', border: '1px solid #dbeafe' }}
+                                  className="tracking-link-btn"
                                 >
                                   <i className='bx bx-link-external'></i> View Tracking
                                 </a>
                                 <button className="soft-btn" onClick={() => triggerAction(donation.reference, 'donor', 'Received Hair', 'Confirm Received')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Received</button>
                               </>
                             ) : (
-                              <span style={{ fontSize: '0.7rem', color: '#8c7895', fontStyle: 'italic', fontWeight: 600 }}>Awaiting Delivery Link...</span>
+                              <span className="tracking-awaiting-text">Awaiting Delivery Link...</span>
                             )}
                           </div>
                         )}
                         {donation.status === 'Received Hair' && (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-                             <span style={{ fontSize: '0.75rem', color: '#ad246d', fontWeight: 800 }}>Ready for Batching</span>
-                             <span style={{ fontSize: '0.65rem', color: '#8c7895', fontWeight: 600 }}>Select 6 items above</span>
+                          <div className="tracking-batch-ready-col">
+                             <span className="tracking-batch-ready-title">Ready for Batching</span>
+                             <span className="tracking-batch-ready-sub">Select 6 items above</span>
                           </div>
                         )}
                         {donation.status === 'Completed' && !isWigmakerControlled && (
                           <button className="soft-btn" onClick={() => triggerAction(donation.reference, 'donor', 'Wig Received', 'Confirm Receipt')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Receipt</button>
                         )}
                         {wigProd?.status === 'shipped' && (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                          <div className="tracking-action-col">
                             {wigProd.deliveryLink && (
                               <a 
                                 href={wigProd.deliveryLink} 
                                 target="_blank" 
                                 rel="noreferrer" 
-                                style={{ fontSize: '0.65rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', background: '#eff6ff', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #dbeafe' }}
+                                className="tracking-link-btn"
                               >
                                 <i className='bx bx-link-external'></i> Wig Tracking
                               </a>
@@ -470,9 +401,9 @@ const StaffRealtimeTracking: React.FC = () => {
                             </button>
                           </div>
                         )}
-                        {isWigmakerControlled && wigProd?.status === 'assigned' && <span style={{ color: '#8c7895', fontSize: '0.75rem', fontStyle: 'italic', fontWeight: 700 }}>Waiting to be received...</span>}
-                        {isWigmakerControlled && wigProd?.status === 'processing' && <span style={{ color: '#8c7895', fontSize: '0.75rem', fontStyle: 'italic', fontWeight: 700 }}>Production in Progress...</span>}
-                        {isWigmakerControlled && wigProd?.status === 'completed' && <span style={{ color: '#8c7895', fontSize: '0.75rem', fontStyle: 'italic', fontWeight: 700 }}>Wig Quality Checking...</span>}
+                        {isWigmakerControlled && wigProd?.status === 'assigned' && <span className="tracking-awaiting-text">Waiting to be received...</span>}
+                        {isWigmakerControlled && wigProd?.status === 'processing' && <span className="tracking-awaiting-text">Production in Progress...</span>}
+                        {isWigmakerControlled && wigProd?.status === 'completed' && <span className="tracking-awaiting-text">Wig Quality Checking...</span>}
                       </td>
                     </tr>
                   );
@@ -483,65 +414,65 @@ const StaffRealtimeTracking: React.FC = () => {
                   const photoUrl = request.additionalPhoto ? getPublicUrl('hairlink', request.additionalPhoto) : null;
 
                   return (
-                    <tr key={request.id} style={{ borderTop: '1px solid #f2ebf4', transition: 'all 0.3s ease', cursor: 'default' }} className="tracking-row">
-                      <td style={{ padding: '1rem' }}></td>
-                      <td style={{ padding: '1rem' }}>
+                    <tr key={request.id} className="tracking-row tracking-row">
+                      <td className="tracking-cell"></td>
+                      <td className="tracking-cell">
                         <div className="avatar-preview" style={{ width: '56px', height: '56px', borderRadius: '14px', overflow: 'hidden', border: '2px solid #fff', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.08)', background: '#fdf7fb', position: 'relative' }}>
                           {photoUrl ? (
-                            <img src={photoUrl} alt="Request" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={photoUrl} alt="Request" className="tracking-avatar-img" />
                           ) : (
-                            <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
-                              <i className='bx bx-user-circle' style={{ color: '#ecd8e8', fontSize: '1.4rem' }}></i>
+                            <div className="tracking-avatar-placeholder">
+                              <i className="bx bx-user-circle tracking-avatar-icon"></i>
                             </div>
                           )}
-                          <div style={{ position: 'absolute', bottom: 0, right: 0, width: '14px', height: '14px', background: '#3b82f6', border: '2px solid #fff', borderRadius: '50%' }}></div>
+                          <div className="tracking-status-dot blue"></div>
                         </div>
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ color: '#ad246d', fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Ref: {(request.reference || '').split('-')[0]}</span>
-                          <strong style={{ color: '#2d2333', fontSize: '1rem', letterSpacing: '-0.01em' }}>{request.reference || 'N/A'}</strong>
-                          <div style={{ fontSize: '0.75rem', color: '#8c7895', marginTop: '0.2rem' }}>
+                      <td className="tracking-cell">
+                        <div className="tracking-ref-col">
+                          <span className="tracking-ref-prefix">Ref: {(request.reference || '').split('-')[0]}</span>
+                          <strong className="tracking-ref-value">{request.reference || 'N/A'}</strong>
+                          <div className="tracking-ref-date">
                             <i className='bx bx-calendar' style={{ marginRight: '4px', verticalAlign: 'middle' }}></i>
                             {request.createdAt ? new Date(request.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'May 04, 2026'}
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#f0f7ff', display: 'grid', placeItems: 'center', color: '#3b82f6', fontWeight: 800, fontSize: '0.8rem', border: '1px solid #dbeafe', overflow: 'hidden' }}>
+                      <td className="tracking-cell">
+                        <div className="tracking-user-col">
+                          <div className="tracking-user-avatar tracking-user-avatar-recipient">
                             {request.user?.profile_photo_url ? (
                               <img
                                 src={getProfilePhotoUrl(request.user.profile_photo_url) || ''}
                                 alt="User"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                className="tracking-avatar-img"
                               />
                             ) : (
                               `${request.user?.firstName?.[0] || ''}${request.user?.lastName?.[0] || ''}`
                             )}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 700, color: '#3b2e43', fontSize: '0.9rem' }}>{request.user?.firstName} {request.user?.lastName}</div>
-                            <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase' }}>Recipient</div>
+                            <div className="tracking-user-name">{request.user?.firstName} {request.user?.lastName}</div>
+                            <div className="tracking-user-role-recipient">Recipient</div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                          <span style={{ background: '#f7faff', border: '1px solid #e0ebff', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', color: '#1e40af', fontWeight: 600 }}>{request.wigLength}</span>
-                          <span style={{ background: '#f7faff', border: '1px solid #e0ebff', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', color: '#1e40af', fontWeight: 600 }}>{request.wigColor}</span>
+                      <td className="tracking-cell">
+                        <div className="tracking-specs-col">
+                          <span className="tracking-spec-pill-recipient">{request.wigLength}</span>
+                          <span className="tracking-spec-pill-recipient">{request.wigColor}</span>
                         </div>
                       </td>
-                      <td style={{ padding: '1rem' }}>
+                      <td className="tracking-cell">
                         <StatusPill status={request.status} />
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ width: '160px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase' }}>Progress</span>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#ad246d' }}>{Math.round(((stageIndex + 1) / 4) * 100)}%</span>
+                      <td className="tracking-cell">
+                        <div className="tracking-progress-col">
+                          <div className="tracking-progress-head">
+                            <span className="tracking-progress-label">Progress</span>
+                            <span className="tracking-progress-percent">{Math.round(((stageIndex + 1) / 4) * 100)}%</span>
                           </div>
-                          <div style={{ height: '8px', background: '#f2f2f2', borderRadius: '10px', position: 'relative', overflow: 'hidden' }}>
+                          <div className="tracking-progress-bar-bg">
                             <div style={{
                               position: 'absolute', left: 0, top: 0, bottom: 0,
                               width: `${((stageIndex + 1) / 4) * 100}%`,
@@ -550,26 +481,26 @@ const StaffRealtimeTracking: React.FC = () => {
                               boxShadow: '0 0 8px rgba(173, 36, 109, 0.3)'
                             }}></div>
                           </div>
-                          <div style={{ fontSize: '0.68rem', color: '#5d4d62', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <div className="tracking-progress-status">
                             <i className='bx bx-map-pin' style={{ color: '#ad246d' }}></i>
                             {request.status}
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <td className="tracking-action-cell">
                         {request.status === 'Validated' && (
-                          <Link to={`/staff/matching?reference=${request.reference}`} className="soft-btn" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', textDecoration: 'none', borderRadius: '50px', display: 'inline-block', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Match Wig</Link>
+                          <Link to={`/staff/matching?reference=${request.reference} soft-btn`} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', textDecoration: 'none', borderRadius: '50px', display: 'inline-block', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Match Wig</Link>
                         )}
                         {request.status === 'Matched' && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '180px' }}>
-                            <div style={{ position: 'relative' }}>
+                          <div className="tracking-action-col-wide">
+                            <div className="tracking-input-wrapper">
                               <i className='bx bx-link' style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#ad246d', fontSize: '0.9rem' }}></i>
                               <input
                                 type="text"
                                 placeholder="Recipient tracking link..."
                                 value={materialLinks[request.reference] || ''}
                                 onChange={(e) => setMaterialLinks(prev => ({ ...prev, [request.reference]: e.target.value }))}
-                                style={{ width: '100%', padding: '0.5rem 0.75rem 0.5rem 2rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.7rem', outline: 'none' }}
+                                className="tracking-input"
                               />
                             </div>
                             <button 
@@ -586,7 +517,7 @@ const StaffRealtimeTracking: React.FC = () => {
                           </div>
                         )}
                         {request.status === 'In Transit' && (
-                          <span style={{ color: '#8c7895', fontSize: '0.75rem', fontStyle: 'italic', fontWeight: 700 }}>Awaiting Recipient Confirmation...</span>
+                          <span className="tracking-awaiting-text">Awaiting Recipient Confirmation...</span>
                         )}
                       </td>
                     </tr>
@@ -595,8 +526,8 @@ const StaffRealtimeTracking: React.FC = () => {
               )}
               {((isDonation && data.donations.length === 0) || (!isDonation && data.requests.length === 0)) && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '4rem 0', color: '#8c7895' }}>
-                    <i className='bx bx-search' style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '1rem' }}></i>
+                  <td colSpan={7} className="tracking-empty-col">
+                    <i className="bx bx-search tracking-empty-icon"></i>
                     <p>No active {isDonation ? 'donation' : 'request'} trackers found.</p>
                   </td>
                 </tr>

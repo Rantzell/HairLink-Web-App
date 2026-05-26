@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
+import '../styles/StaffDashboard.css';
 
 interface StaffStats {
   pendingDonations: number;
@@ -132,7 +133,7 @@ const StaffDashboard: React.FC = () => {
           <h2>Matching and Allocation</h2>
           <span>Recipient pairing and release preparation</span>
         </div>
-        <div className="staff-actions" style={{ gridTemplateColumns: '1fr' }}>
+        <div className="staff-actions staff-actions-single-col">
           <Link className="staff-action-link" to="/staff/matching">
             <h3>Recipient Matching List</h3>
             <p>Review matched wigs and release scheduling progress.</p>

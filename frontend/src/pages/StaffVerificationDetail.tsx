@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import { getPublicUrl } from '../lib/storage';
 import ConfirmModal from '../components/ConfirmModal';
+import '../styles/StaffVerificationDetail.css';
 
 const StaffVerificationDetail: React.FC = () => {
   const { type, reference } = useParams<{ type: 'donor' | 'recipient' | 'monetary'; reference: string }>();
@@ -74,69 +75,69 @@ const StaffVerificationDetail: React.FC = () => {
 
   return (
     <section className="section-wrap reveal active staff-page">
-      <div className="section-title-block" style={{ marginBottom: '1rem', textAlign: 'center' }}>
-        <h1 style={{ marginBottom: '0.2rem' }}>{title}</h1>
-        <p style={{ marginTop: 0, color: '#8c7895' }}>Reference: <strong style={{ color: '#3b2e43' }}>{reference}</strong></p>
+      <div className="section-title-block detail-title-block">
+        <h1 className="detail-title">{title}</h1>
+        <p className="detail-reference-text">Reference: <strong className="detail-reference-strong">{reference}</strong></p>
       </div>
 
-      <article className="staff-block verification-detail-shell" style={{ marginTop: '0.5rem' }}>
-        <div className="verification-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+      <article className="staff-block verification-detail-shell detail-shell">
+        <div className="verification-grid detail-grid">
           <section>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-              <i className='bx bx-notepad' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i>
-              <h2 style={{ margin: 0 }}>Submission Summary</h2>
+            <div className="detail-section-head">
+              <i className="bx bx-notepad detail-section-icon"></i>
+              <h2 className="detail-section-title">Submission Summary</h2>
             </div>
             
-            <div className="summary-card" style={{ background: '#fdf7fb', border: '1px solid #f2ebf4', borderRadius: '12px', padding: '1.5rem' }}>
-              <ul className="verification-list" style={{ listStyle: 'none', display: 'grid', gap: '0.8rem', padding: 0 }}>
+            <div className="summary-card detail-summary-card">
+              <ul className="verification-list detail-list">
                 {isDonor ? (
                   <>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
-                      <i className='bx bx-user' style={{ color: '#ad246d' }}></i>
+                    <li className="detail-list-item">
+                      <i className="bx bx-user detail-list-icon"></i>
                       <span><strong>Donor:</strong> {record.user?.firstName} {record.user?.lastName}</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
-                      <i className='bx bx-cut' style={{ color: '#ad246d' }}></i>
+                    <li className="detail-list-item">
+                      <i className="bx bx-cut detail-list-icon"></i>
                       <span><strong>Hair Length:</strong> {record.hairLength}</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
-                      <i className='bx bx-palette' style={{ color: '#ad246d' }}></i>
+                    <li className="detail-list-item">
+                      <i className="bx bx-palette detail-list-icon"></i>
                       <span><strong>Hair Color:</strong> {record.hairColor}</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', fontSize: '0.95rem' }}>
-                      <i className='bx bx-message-square-detail' style={{ color: '#ad246d', marginTop: '4px' }}></i>
-                      <span><strong>Reason:</strong> <span style={{ fontStyle: 'italic', color: '#614f68' }}>"{record.reason || 'No reason provided'}"</span></span>
+                    <li className="detail-list-item-start">
+                      <i className="bx bx-message-square-detail detail-list-icon-start"></i>
+                      <span><strong>Reason:</strong> <span className="detail-italic-text">"{record.reason || 'No reason provided'}"</span></span>
                     </li>
                   </>
                 ) : (
                   <>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
-                      <i className='bx bx-user-voice' style={{ color: '#ad246d' }}></i>
+                    <li className="detail-list-item">
+                      <i className="bx bx-user-voice detail-list-icon"></i>
                       <span><strong>Recipient:</strong> {record.user?.firstName} {record.user?.lastName}</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
-                      <i className='bx bx-phone' style={{ color: '#ad246d' }}></i>
+                    <li className="detail-list-item">
+                      <i className="bx bx-phone detail-list-icon"></i>
                       <span><strong>Contact:</strong> {record.contactNumber || 'N/A'}</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
-                      <i className='bx bx-male-female' style={{ color: '#ad246d' }}></i>
+                    <li className="detail-list-item">
+                      <i className="bx bx-male-female detail-list-icon"></i>
                       <span><strong>Gender:</strong> {record.gender || 'N/A'}</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
-                      <i className='bx bx-ruler' style={{ color: '#ad246d' }}></i>
+                    <li className="detail-list-item">
+                      <i className="bx bx-ruler detail-list-icon"></i>
                       <span><strong>Preferred Wig Size:</strong> <strong>{record.wigLength || 'N/A'}</strong></span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem' }}>
-                      <i className='bx bx-paint' style={{ color: '#ad246d' }}></i>
+                    <li className="detail-list-item">
+                      <i className="bx bx-paint detail-list-icon"></i>
                       <span><strong>Preferred Color:</strong> <strong>{record.wigColor || 'N/A'}</strong></span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.8rem', fontSize: '0.95rem' }}>
-                      <i className='bx bx-book-content' style={{ color: '#ad246d', marginTop: '4px' }}></i>
-                      <span><strong>Applicant's Story:</strong> <span style={{ fontStyle: 'italic', color: '#614f68' }}>"{record.story || 'No story provided'}"</span></span>
+                    <li className="detail-list-item-start">
+                      <i className="bx bx-book-content detail-list-icon-start"></i>
+                      <span><strong>Applicant's Story:</strong> <span className="detail-italic-text">"{record.story || 'No story provided'}"</span></span>
                     </li>
                   </>
                 )}
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.85rem', borderTop: '1px solid #f2ebf4', paddingTop: '0.8rem', marginTop: '0.5rem', color: '#8c7895' }}>
+                <li className="detail-list-date">
                   <i className='bx bx-calendar-check'></i>
                   <span><strong>Submitted:</strong> {new Date(record.createdAt).toLocaleString()}</span>
                 </li>
@@ -145,84 +146,84 @@ const StaffVerificationDetail: React.FC = () => {
           </section>
 
           <section>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem' }}>
-              <i className='bx bx-paperclip' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i>
-              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Attached Files</h2>
+            <div className="detail-section-head">
+              <i className="bx bx-paperclip detail-section-icon"></i>
+              <h2 className="detail-section-title">Attached Files</h2>
             </div>
             
-            <div className="file-preview-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+            <div className="file-preview-grid detail-file-preview-grid">
               {isMonetary ? (
                 record.proofPath && (
-                  <div className="file-preview-item" style={{ width: '120px' }}>
-                    <a href={getPublicUrl('hairlink', record.proofPath) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', display: 'block', border: '1px solid #ead7e8' }}>
-                      <img src={getPublicUrl('hairlink', record.proofPath) || ''} alt="Proof" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div className="file-preview-item detail-file-preview-item">
+                    <a href={getPublicUrl('hairlink', record.proofPath) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail detail-file-thumbnail">
+                      <img src={getPublicUrl('hairlink', record.proofPath) || ''} alt="Proof" className="detail-file-img" />
                     </a>
-                    <span style={{ fontSize: '0.7rem', textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>Proof of Payment</span>
+                    <span className="detail-file-label">Proof of Payment</span>
                   </div>
                 )
               ) : isDonor ? (
                 <>
                   {record.photoFront && (
-                    <div className="file-preview-item" style={{ width: '120px' }}>
-                      <a href={getPublicUrl('hairlink', record.photoFront) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', display: 'block', border: '1px solid #ead7e8' }}>
-                        <img src={getPublicUrl('hairlink', record.photoFront) || ''} alt="Front" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div className="file-preview-item detail-file-preview-item">
+                      <a href={getPublicUrl('hairlink', record.photoFront) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail detail-file-thumbnail">
+                        <img src={getPublicUrl('hairlink', record.photoFront) || ''} alt="Front" className="detail-file-img" />
                       </a>
-                      <span style={{ fontSize: '0.7rem', textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>Reference Photo</span>
+                      <span className="detail-file-label">Reference Photo</span>
                     </div>
                   )}
                   {record.photoSide && (
-                    <div className="file-preview-item" style={{ width: '120px' }}>
-                      <a href={getPublicUrl('hairlink', record.photoSide) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', display: 'block', border: '1px solid #ead7e8' }}>
-                        <img src={getPublicUrl('hairlink', record.photoSide) || ''} alt="Side" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div className="file-preview-item detail-file-preview-item">
+                      <a href={getPublicUrl('hairlink', record.photoSide) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail detail-file-thumbnail">
+                        <img src={getPublicUrl('hairlink', record.photoSide) || ''} alt="Side" className="detail-file-img" />
                       </a>
-                      <span style={{ fontSize: '0.7rem', textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>Hair Side</span>
+                      <span className="detail-file-label">Hair Side</span>
                     </div>
                   )}
                 </>
               ) : (
                 <>
                   {record.medicalCertificate && (
-                    <div className="file-preview-item" style={{ width: '100px' }}>
-                      <a href={getPublicUrl('hairlink', record.medicalCertificate) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
-                        <img src={getPublicUrl('hairlink', record.medicalCertificate) || ''} alt="Medical Cert" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div className="file-preview-item detail-file-preview-item-small">
+                      <a href={getPublicUrl('hairlink', record.medicalCertificate) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail detail-file-thumbnail-small">
+                        <img src={getPublicUrl('hairlink', record.medicalCertificate) || ''} alt="Medical Cert" className="detail-file-img" />
                       </a>
-                      <span style={{ fontSize: '0.65rem', textAlign: 'center', display: 'block' }}>Medical Cert</span>
+                      <span className="detail-file-label-small">Medical Cert</span>
                     </div>
                   )}
                   {record.diagnosisPhoto && (
-                    <div className="file-preview-item" style={{ width: '100px' }}>
-                      <a href={getPublicUrl('hairlink', record.diagnosisPhoto) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
-                        <img src={getPublicUrl('hairlink', record.diagnosisPhoto) || ''} alt="Diagnosis" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div className="file-preview-item detail-file-preview-item-small">
+                      <a href={getPublicUrl('hairlink', record.diagnosisPhoto) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail detail-file-thumbnail-small">
+                        <img src={getPublicUrl('hairlink', record.diagnosisPhoto) || ''} alt="Diagnosis" className="detail-file-img" />
                       </a>
-                      <span style={{ fontSize: '0.65rem', textAlign: 'center', display: 'block' }}>Diagnosis</span>
+                      <span className="detail-file-label-small">Diagnosis</span>
                     </div>
                   )}
                   {record.recipientPhoto && (
-                    <div className="file-preview-item" style={{ width: '100px' }}>
-                      <a href={getPublicUrl('hairlink', record.recipientPhoto) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
-                        <img src={getPublicUrl('hairlink', record.recipientPhoto) || ''} alt="Recipient" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div className="file-preview-item detail-file-preview-item-small">
+                      <a href={getPublicUrl('hairlink', record.recipientPhoto) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail detail-file-thumbnail-small">
+                        <img src={getPublicUrl('hairlink', record.recipientPhoto) || ''} alt="Recipient" className="detail-file-img" />
                       </a>
-                      <span style={{ fontSize: '0.65rem', textAlign: 'center', display: 'block' }}>Recipient</span>
+                      <span className="detail-file-label-small">Recipient</span>
                     </div>
                   )}
                   {record.additionalPhoto && (
-                    <div className="file-preview-item" style={{ width: '100px' }}>
-                      <a href={getPublicUrl('hairlink', record.additionalPhoto) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block' }}>
-                        <img src={getPublicUrl('hairlink', record.additionalPhoto) || ''} alt="Reference" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div className="file-preview-item detail-file-preview-item-small">
+                      <a href={getPublicUrl('hairlink', record.additionalPhoto) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail detail-file-thumbnail-small">
+                        <img src={getPublicUrl('hairlink', record.additionalPhoto) || ''} alt="Reference" className="detail-file-img" />
                       </a>
-                      <span style={{ fontSize: '0.65rem', textAlign: 'center', display: 'block' }}>Reference Picture</span>
+                      <span className="detail-file-label-small">Reference Picture</span>
                     </div>
                   )}
                   {record.documents?.map((path: string, i: number) => (
-                    <div key={i} className="file-preview-item" style={{ width: '100px' }}>
-                      <a href={getPublicUrl('hairlink', path) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail" style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #ead7e8', overflow: 'hidden', display: 'block', background: '#fdf7fb' }}>
+                    <div key={i} className="file-preview-item detail-file-preview-item-small">
+                      <a href={getPublicUrl('hairlink', path) || '#'} target="_blank" rel="noreferrer" className="file-thumbnail detail-file-thumbnail-small">
                         {path.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i) ? (
-                          <img src={getPublicUrl('hairlink', path) || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`Doc ${i+1}`} />
+                          <img src={getPublicUrl('hairlink', path) || ''} className="detail-file-img" alt={`Doc ${i+1}`} />
                         ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}><i className='bx bxs-file-blank' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i></div>
+                          <div className="detail-doc-icon-wrapper"><i className="bx bxs-file-blank detail-section-icon"></i></div>
                         )}
                       </a>
-                      <span style={{ fontSize: '0.65rem', textAlign: 'center', display: 'block' }}>Doc #{i+1}</span>
+                      <span className="detail-file-label-small">Doc #{i+1}</span>
                     </div>
                   ))}
                 </>
@@ -232,95 +233,44 @@ const StaffVerificationDetail: React.FC = () => {
         </div>
       </article>
 
-      <article className="staff-block" style={{ marginTop: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
-          <i className='bx bx-check-shield' style={{ color: '#ad246d', fontSize: '1.5rem' }}></i>
-          <h2 style={{ margin: 0 }}>Verification Decision</h2>
+      <article className="staff-block detail-decision-block">
+        <div className="detail-decision-head">
+          <i className="bx bx-check-shield detail-section-icon"></i>
+          <h2 className="detail-section-title">Verification Decision</h2>
         </div>
         
         <div className="verification-form">
-          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label style={{ fontWeight: 700, color: '#4d3f56', display: 'block', marginBottom: '0.5rem' }}>Validation Remarks <span className="required">*</span></label>
+          <div className="form-group detail-form-group">
+            <label className="detail-form-label">Validation Remarks <span className="required">*</span></label>
             <textarea 
               rows={3} 
               placeholder="Explain the rationale for this decision..." 
               value={remarks}
               onChange={e => setRemarks(e.target.value)}
-              style={{ width: '100%', borderRadius: '12px', border: '1px solid #ead7e8', padding: '1rem' }}
+              className="detail-form-textarea"
             ></textarea>
           </div>
 
-          <div className="form-actions" style={{ display: 'flex', gap: '1rem' }}>
+          <div className="form-actions detail-form-actions">
             <button 
               type="button" 
-              className="soft-btn" 
+              className="soft-btn detail-btn detail-btn-approve" 
               disabled={isSubmitting}
               onClick={() => { setPendingDecision('approve'); setShowConfirm(true); }}
-              style={{ 
-                padding: '0 1rem', 
-                height: '32px',
-                minHeight: '32px',
-                maxHeight: '32px',
-                fontWeight: 800, 
-                background: '#ad246d',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease'
-              }}
             >
               {isSubmitting ? 'Processing...' : 'Approve Submission'}
             </button>
             <button 
               type="button" 
-              className="ghost-btn" 
+              className="ghost-btn detail-btn detail-btn-reject" 
               disabled={isSubmitting}
               onClick={() => { setPendingDecision('reject'); setShowConfirm(true); }}
-              style={{ 
-                padding: '0 1rem', 
-                height: '32px',
-                minHeight: '32px',
-                maxHeight: '32px',
-                fontWeight: 800, 
-                border: '1px solid #ad246d',
-                color: '#ad246d',
-                borderRadius: '8px',
-                fontSize: '0.75rem',
-                background: 'transparent',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease'
-              }}
             >
               Reject Submission
             </button>
             <Link 
               to={`/staff/verification/${type}`} 
-              style={{ 
-                marginLeft: 'auto', 
-                color: '#8c7895', 
-                fontWeight: 600, 
-                fontSize: '0.75rem',
-                padding: '0 1rem',
-                height: '32px',
-                minHeight: '32px',
-                maxHeight: '32px',
-                border: '1px solid #ead7e8',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                background: '#fff',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease'
-              }}
+              className="detail-btn detail-btn-return"
             >
               Return to Queue
             </Link>

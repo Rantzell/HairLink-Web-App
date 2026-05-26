@@ -1,0 +1,23 @@
+/* RecipientDashboard.css */
+
+.quick-actions-mt {
+  margin-top: 2rem;
+}
+
+.action-buttons-span2 {
+  grid-column: span 2;
+}
+
+.rewards-shell-mt {
+  margin-top: 3rem;
+}
+
+.rewards-head-icon {
+  color: #bc2f79;
+}
+
+.reward-grid-single {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 600px;
+}

@@ -1,0 +1,128 @@
+/* RecipientMonetary.css */
+
+/* Layout */
+.recipient-monetary-layout {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .recipient-monetary-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card headings */
+.module-card-title {
+  margin-bottom: 1.5rem;
+  font-weight: 800;
+}
+
+.module-card-title-sm {
+  margin-bottom: 1rem;
+  font-weight: 800;
+}
+
+/* Form */
+.monetary-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.monetary-form-input {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 12px;
+  border: 1px solid #ead7e8;
+  font: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.monetary-form-input:focus {
+  border-color: #ad246d;
+}
+
+.monetary-form-textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 12px;
+  border: 1px solid #ead7e8;
+  resize: none;
+  font: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.monetary-form-textarea:focus {
+  border-color: #ad246d;
+}
+
+.monetary-submit-btn {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+/* Guidelines sidebar */
+.guidelines-list {
+  padding-left: 1.2rem;
+  color: #665772;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.guidelines-list li {
+  margin-bottom: 0.8rem;
+}
+
+.guidelines-note {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #fdf7fb;
+  border-radius: 12px;
+  border: 1px solid #f2ebf4;
+}
+
+.guidelines-note p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ad246d;
+}
+
+/* History card */
+.module-card-mt {
+  margin-top: 1.5rem;
+}
+
+/* Table */
+.monetary-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.monetary-table thead tr {
+  text-align: left;
+  border-bottom: 2px solid #f2ebf4;
+}
+
+.monetary-table th {
+  padding: 1rem;
+}
+
+.monetary-table td {
+  padding: 1rem;
+}
+
+.monetary-table tbody tr {
+  border-bottom: 1px solid #f2ebf4;
+}
+
+.monetary-table-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #8c7895;
+}

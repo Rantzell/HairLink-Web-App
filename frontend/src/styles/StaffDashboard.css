@@ -1,0 +1,5 @@
+/* StaffDashboard.css */
+
+.staff-actions-single-col {
+  grid-template-columns: 1fr;
+}

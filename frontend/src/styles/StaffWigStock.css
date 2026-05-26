@@ -1,0 +1,304 @@
+/* StaffWigStock.css */
+
+.staff-wig-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.staff-wig-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #3b2e43;
+  margin: 0;
+}
+
+.staff-wig-tools {
+  display: flex;
+  gap: 0.6rem;
+  flex: 1;
+  justify-content: flex-end;
+  max-width: 700px;
+  align-items: center;
+}
+
+.staff-wig-search-wrapper {
+  position: relative;
+  flex: 1;
+  max-width: 300px;
+}
+
+.staff-wig-search-icon {
+  position: absolute;
+  left: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ad246d;
+  font-size: 0.9rem;
+}
+
+.staff-wig-search-input {
+  width: 100%;
+  padding: 0 1rem 0 2.2rem;
+  border-radius: 8px;
+  border: 1px solid #ead7e8;
+  height: 32px;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.staff-wig-search-input:focus {
+  border-color: #ad246d;
+}
+
+.staff-wig-search-btn {
+  height: 32px;
+  padding: 0 0.8rem;
+  font-weight: 800;
+  background: #ad246d;
+  color: #fff;
+  border-radius: 8px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  cursor: pointer;
+  width: auto;
+  transition: opacity 0.2s ease;
+}
+
+.staff-wig-search-btn:hover {
+  opacity: 0.9;
+}
+
+.staff-wig-filter-wrapper {
+  position: relative;
+}
+
+.staff-wig-filter-btn {
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  padding: 0 0.8rem;
+  font-weight: 800;
+  border: 1px solid #ead7e8;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: #5d4d62;
+  background: #fff;
+  cursor: pointer;
+  width: auto;
+  transition: all 0.2s ease;
+}
+
+.staff-wig-filter-btn.active {
+  background: #fdf7fb;
+  border-color: #ad246d;
+  color: #ad246d;
+}
+
+.staff-wig-filter-btn:hover:not(.active) {
+  border-color: #ad246d;
+}
+
+.staff-wig-filter-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background: #fff;
+  border: 1px solid #ead7e8;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  min-width: 200px;
+  z-index: 100;
+}
+
+.staff-wig-filter-dropdown-title {
+  margin: 0 0 0.8rem 0;
+  font-size: 0.8rem;
+  color: #ad246d;
+}
+
+.staff-wig-filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.staff-wig-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 6px;
+  color: #5d4d62;
+  transition: all 0.2s ease;
+}
+
+.staff-wig-filter-option.selected {
+  background: #fdf7fb;
+  color: #ad246d;
+}
+
+.staff-wig-filter-radio {
+  accent-color: #ad246d;
+}
+
+.staff-wig-print-btn {
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  padding: 0 0.8rem;
+  font-weight: 800;
+  border: 1px solid #ead7e8;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: #5d4d62;
+  background: #fff;
+  cursor: pointer;
+  width: auto;
+  transition: all 0.2s ease;
+}
+
+.staff-wig-print-btn:hover {
+  border-color: #ad246d;
+  background: #fafafa;
+}
+
+.staff-wig-table-wrap {
+  background: #fff;
+  border-radius: 15px;
+  border: 1px solid #f2ebf4;
+  overflow: hidden;
+}
+
+.staff-wig-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.staff-wig-thead {
+  background: #fdf7fb;
+}
+
+.staff-wig-th {
+  padding: 1rem;
+  text-align: left;
+  color: #ad246d;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.staff-wig-th-photo {
+  width: 70px;
+  text-align: center;
+  color: #ad246d;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.staff-wig-tr-body {
+  border-top: 1px solid #f2ebf4;
+  transition: background 0.2s ease;
+}
+
+.staff-wig-tr-body:hover {
+  background: #fafafa;
+}
+
+.staff-wig-td {
+  padding: 1.2rem 1rem;
+  vertical-align: middle;
+  color: #5d4d62;
+}
+
+.staff-wig-td.stock-id {
+  color: #3b2e43;
+  font-weight: 800;
+}
+
+.staff-wig-td-center {
+  text-align: center;
+  vertical-align: middle;
+  padding: 0.3rem;
+}
+
+.staff-wig-thumbnail-box {
+  width: 42px;
+  height: 42px;
+  display: inline-block;
+  margin: 0 auto;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #ead7e8;
+}
+
+.staff-wig-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.staff-wig-thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #fdf7fb;
+  display: grid;
+  place-items: center;
+}
+
+.staff-wig-thumbnail-placeholder-icon {
+  color: #ead7e8;
+}
+
+.staff-wig-status-pill {
+  background: #d4edda;
+  color: #155724;
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.staff-wig-loading {
+  text-align: center;
+  padding: 3rem;
+  color: #8c7895;
+}
+
+.staff-wig-loading-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.staff-wig-empty {
+  text-align: center;
+  padding: 4rem;
+  color: #8c7895;
+}
+
+.staff-wig-empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}

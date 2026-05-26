@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import '../styles/Admin.css';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -16,13 +17,13 @@ const GOOGLE_FONTS = ['Inter','Poppins','Manrope','Nunito','Lato','Roboto','Play
 
 // ─── Section input components ─────────────────────────────────────────────────
 const Field: React.FC<{ label: string; value: string; onChange: (v: string) => void; multiline?: boolean }> = ({ label, value, onChange, multiline }) => (
-  <div style={{ marginBottom: '0.75rem' }}>
-    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</label>
+  <div className="admin-cms-field">
+    <label className="admin-cms-field-label">{label}</label>
     {multiline
       ? <textarea rows={3} value={value} onChange={e => onChange(e.target.value)}
-          style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.82rem', outline: 'none', resize: 'vertical', background: '#fdf7fb' }} />
+          className="admin-cms-textarea" />
       : <input type="text" value={value} onChange={e => onChange(e.target.value)}
-          style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.82rem', outline: 'none', background: '#fdf7fb' }} />}
+          className="admin-cms-input" />}
   </div>
 );
 
@@ -244,46 +245,26 @@ const AdminCMS: React.FC = () => {
 
   if (loading) return <div className="section-wrap">Loading CMS...</div>;
 
-  const card: React.CSSProperties  = { background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.5rem' };
-  const tabBtn = (active: boolean): React.CSSProperties => ({
-    padding: '0.45rem 1rem', borderRadius: '8px 8px 0 0', border: 'none', cursor: 'pointer',
-    fontWeight: 800, fontSize: '0.8rem',
-    background: active ? '#fff' : 'transparent',
-    color: active ? '#ad246d' : '#8c7895',
-    borderBottom: active ? '2px solid #ad246d' : '2px solid transparent',
-  });
-  const sectionPill = (active: boolean): React.CSSProperties => ({
-    padding: '0.35rem 0.9rem', borderRadius: '20px', border: '1px solid #ead7e8', cursor: 'pointer',
-    fontWeight: 700, fontSize: '0.75rem',
-    background: active ? '#ad246d' : '#fdf7fb',
-    color: active ? '#fff' : '#8c7895',
-  });
-  const saveBtn: React.CSSProperties = {
-    padding: '0.55rem 1.5rem', borderRadius: '10px', background: saveSuccess ? '#22c55e' : '#ad246d',
-    color: '#fff', border: 'none', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer',
-    display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'background 0.3s ease',
-  };
-
   return (
-    <section className="section-wrap reveal active admin-page" style={{ padding: '1rem' }}>
-      <header style={{ padding: '0.2rem 0', marginBottom: '1rem' }}>
-        <p style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ad246d', marginBottom: '0.1rem' }}>Admin · CMS</p>
-        <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>Content Management</h1>
-        <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.1rem' }}>Edit landing page content, announcements, and partnerships.</p>
+    <section className="section-wrap reveal active admin-page admin-page-pad">
+      <header className="admin-cms-page-header">
+        <p className="admin-page-kicker">Admin · CMS</p>
+        <h1 className="admin-page-title">Content Management</h1>
+        <p className="admin-page-subtitle">Edit landing page content, announcements, and partnerships.</p>
       </header>
 
-      <div style={{ display: 'flex', gap: '0.25rem', borderBottom: '2px solid #ead7e8', marginBottom: '1.5rem' }}>
-        <button onClick={() => setActiveTab('landing')}       style={tabBtn(activeTab === 'landing')}>🏠 Landing Page</button>
-        <button onClick={() => setActiveTab('announcements')} style={tabBtn(activeTab === 'announcements')}>📢 Announcements</button>
-        <button onClick={() => setActiveTab('partnerships')}  style={tabBtn(activeTab === 'partnerships')}>🤝 Partnerships</button>
+      <div className="admin-cms-tab-row">
+        <button onClick={() => setActiveTab('landing')}       className={`admin-cms-page-tab${activeTab === 'landing' ? ' active' : ''}`}>🏠 Landing Page</button>
+        <button onClick={() => setActiveTab('announcements')} className={`admin-cms-page-tab${activeTab === 'announcements' ? ' active' : ''}`}>📢 Announcements</button>
+        <button onClick={() => setActiveTab('partnerships')}  className={`admin-cms-page-tab${activeTab === 'partnerships' ? ' active' : ''}`}>🤝 Partnerships</button>
       </div>
 
       {activeTab === 'landing' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '1.5rem', alignItems: 'start' }}>
-          <aside style={{ ...card, padding: '1rem', display: 'grid', gap: '0.5rem' }}>
-            <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#ad246d', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Sections</p>
+        <div className="admin-cms-sidebar-grid">
+          <aside className="admin-card-rounded admin-cms-sidebar-aside">
+            <p className="admin-page-kicker">Sections</p>
             {(['hero', 'stats', 'services', 'about', 'footer', 'branding', 'images', 'typography'] as LandingSection[]).map(sec => (
-              <button key={sec} onClick={() => setLandingSection(sec)} style={sectionPill(landingSection === sec)}>
+              <button key={sec} onClick={() => setLandingSection(sec)} className={`admin-cms-section-pill${landingSection === sec ? ' active' : ''}`}>
                 {{ 
                   hero: '🎯 Hero', 
                   stats: '📊 Stats', 
@@ -297,22 +278,22 @@ const AdminCMS: React.FC = () => {
               </button>
             ))}
 
-            <div style={{ marginTop: '1rem', borderTop: '1px solid #f2ebf4', paddingTop: '1rem', display: 'grid', gap: '0.75rem' }}>
-              <button onClick={handleSaveLanding} disabled={saving} style={saveBtn}>
+            <div className="admin-cms-reset-section">
+              <button onClick={handleSaveLanding} disabled={saving} className={`admin-cms-save-btn${saveSuccess ? ' success' : ''}`}>
                 <i className={`bx ${saveSuccess ? 'bx-check' : 'bx-save'}`}></i>
                 {saving ? 'Saving…' : saveSuccess ? 'Saved!' : 'Save All'}
               </button>
-              <button onClick={handleResetDefaults} disabled={saving} style={{ padding: '0.5rem', borderRadius: '10px', background: 'transparent', color: '#8c7895', border: '1.5px solid #ead7e8', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+              <button onClick={handleResetDefaults} disabled={saving} className="admin-cms-reset-btn">
                 <i className='bx bx-rotate-left'></i> Reset to Default
               </button>
-              <p style={{ fontSize: '0.62rem', color: '#8c7895', marginTop: '0.2rem' }}>Changes apply to the public landing page immediately.</p>
+              <p className="admin-cms-note">Changes apply to the public landing page immediately.</p>
             </div>
           </aside>
 
-          <div style={card}>
+          <div className="admin-card-rounded">
             {landingSection === 'hero' && (
               <>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', marginBottom: '1.25rem' }}>🎯 Hero Section</h2>
+                <h2 className="admin-cms-section-title">🎯 Hero Section</h2>
                 <Field label="Main Heading (H1)" value={hero.heading} onChange={v => setHero({ ...hero, heading: v })} />
                 <Field label="Subheading / Tagline" value={hero.subheading} onChange={v => setHero({ ...hero, subheading: v })} />
                 <Field label="CTA Button Label" value={hero.ctaLabel} onChange={v => setHero({ ...hero, ctaLabel: v })} />
@@ -321,10 +302,10 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'stats' && (
               <>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', marginBottom: '1.25rem' }}>📊 Hero Stats</h2>
+                <h2 className="admin-cms-section-title">📊 Hero Stats</h2>
                 {stats.map((stat, i) => (
-                  <div key={i} style={{ background: '#fdf7fb', border: '1px solid #f2ebf4', borderRadius: '12px', padding: '1rem', marginBottom: '0.75rem' }}>
-                    <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#ad246d', marginBottom: '0.5rem' }}>Stat {i + 1}</p>
+                  <div key={i} className="admin-cms-item-card">
+                    <p className="admin-cms-item-label">Stat {i + 1}</p>
                     <Field label="Value (e.g. 2,500+)" value={stat.value} onChange={v => { const s = [...stats]; s[i] = { ...s[i], value: v }; setStats(s); }} />
                     <Field label="Label (e.g. Hair Donations)" value={stat.label} onChange={v => { const s = [...stats]; s[i] = { ...s[i], label: v }; setStats(s); }} />
                   </div>
@@ -334,10 +315,10 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'services' && (
               <>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', marginBottom: '1.25rem' }}>⚙️ How It Works — Service Cards</h2>
+                <h2 className="admin-cms-section-title">⚙️ How It Works — Service Cards</h2>
                 {services.map((svc, i) => (
-                  <div key={i} style={{ background: '#fdf7fb', border: '1px solid #f2ebf4', borderRadius: '12px', padding: '1rem', marginBottom: '0.75rem' }}>
-                    <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#ad246d', marginBottom: '0.5rem' }}>Card {i + 1}</p>
+                  <div key={i} className="admin-cms-item-card">
+                    <p className="admin-cms-item-label">Card {i + 1}</p>
                     <Field label="Title" value={svc.title} onChange={v => { const s = [...services]; s[i] = { ...s[i], title: v }; setServices(s); }} />
                     <Field label="Description" value={svc.description} onChange={v => { const s = [...services]; s[i] = { ...s[i], description: v }; setServices(s); }} multiline />
                     <Field label="Button Label" value={svc.ctaLabel} onChange={v => { const s = [...services]; s[i] = { ...s[i], ctaLabel: v }; setServices(s); }} />
@@ -348,7 +329,7 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'about' && (
               <>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', marginBottom: '1.25rem' }}>ℹ️ About Section</h2>
+                <h2 className="admin-cms-section-title">ℹ️ About Section</h2>
                 <Field label="Section Heading" value={about.heading} onChange={v => setAbout({ ...about, heading: v })} />
                 <Field label="Body Paragraph" value={about.body} onChange={v => setAbout({ ...about, body: v })} multiline />
               </>
@@ -356,7 +337,7 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'footer' && (
               <>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', marginBottom: '1.25rem' }}>🔻 Footer</h2>
+                <h2 className="admin-cms-section-title">🔻 Footer</h2>
                 <Field label="Organization Name" value={footer.orgName} onChange={v => setFooter({ ...footer, orgName: v })} />
                 <Field label="Address (use \\n for line break)" value={footer.address} onChange={v => setFooter({ ...footer, address: v })} multiline />
               </>
@@ -364,65 +345,65 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'branding' && (
               <>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', marginBottom: '1.25rem' }}>🎨 Branding</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <h2 className="admin-cms-section-title">🎨 Branding</h2>
+                <div className="admin-two-col-grid">
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px' }}>Primary Color</label>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <input type="color" value={branding.primaryColor} onChange={e => setBranding({ ...branding, primaryColor: e.target.value })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '4px' }} />
-                      <input type="text" value={branding.primaryColor} onChange={e => setBranding({ ...branding, primaryColor: e.target.value })} style={{ flex: 1, padding: '0.6rem', borderRadius: '10px', border: '1px solid #ead7e8' }} />
+                    <label className="admin-cms-field-label">Primary Color</label>
+                    <div className="admin-cms-color-row">
+                      <input type="color" value={branding.primaryColor} onChange={e => setBranding({ ...branding, primaryColor: e.target.value })} className="admin-cms-color-picker" />
+                      <input type="text" value={branding.primaryColor} onChange={e => setBranding({ ...branding, primaryColor: e.target.value })} className="admin-cms-color-text" />
                     </div>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px' }}>Button Text Color</label>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <input type="color" value={branding.primaryTextColor} onChange={e => setBranding({ ...branding, primaryTextColor: e.target.value })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '4px' }} />
-                      <input type="text" value={branding.primaryTextColor} onChange={e => setBranding({ ...branding, primaryTextColor: e.target.value })} style={{ flex: 1, padding: '0.6rem', borderRadius: '10px', border: '1px solid #ead7e8' }} />
+                    <label className="admin-cms-field-label">Button Text Color</label>
+                    <div className="admin-cms-color-row">
+                      <input type="color" value={branding.primaryTextColor} onChange={e => setBranding({ ...branding, primaryTextColor: e.target.value })} className="admin-cms-color-picker" />
+                      <input type="text" value={branding.primaryTextColor} onChange={e => setBranding({ ...branding, primaryTextColor: e.target.value })} className="admin-cms-color-text" />
                     </div>
                   </div>
                 </div>
-                <div style={{ marginTop: '1rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px' }}>Button Border Radius (px)</label>
-                  <input type="range" min="0" max="30" value={parseInt(branding.btnRadius)} onChange={e => setBranding({ ...branding, btnRadius: `${e.target.value}px` })} style={{ width: '100%' }} />
-                  <div style={{ fontSize: '0.7rem', color: '#8c7895', textAlign: 'right' }}>{branding.btnRadius}</div>
+                <div className="admin-cms-range-wrap">
+                  <label className="admin-cms-field-label">Button Border Radius (px)</label>
+                  <input type="range" min="0" max="30" value={parseInt(branding.btnRadius)} onChange={e => setBranding({ ...branding, btnRadius: `${e.target.value}px` })} className="admin-cms-range" />
+                  <div className="admin-cms-range-value">{branding.btnRadius}</div>
                 </div>
               </>
             )}
 
             {landingSection === 'images' && (
               <>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', marginBottom: '1.25rem' }}>🖼️ Images</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                <h2 className="admin-cms-section-title">🖼️ Images</h2>
+                <div className="admin-cms-img-grid">
                   {(Object.keys(images) as (keyof ImagesSettings)[]).map(key => (
-                    <div key={key} style={{ background: '#fdf7fb', border: '1px solid #f2ebf4', borderRadius: '12px', padding: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    <div key={key} className="admin-hair-col">
+                      <label className="admin-cms-field-label">
                         {key.replace(/([A-Z])/g, ' $1').trim()}
                       </label>
-                      <div style={{ width: '100%', height: '100px', background: '#fff', borderRadius: '8px', border: '1px dashed #ead7e8', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: '10px' }}>
+                      <div className="admin-cms-img-preview">
                         {images[key] ? (
-                          <img src={images[key]} alt={key} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                          <img src={images[key]} alt={key} className="admin-cms-img-preview-img" />
                         ) : (
-                          <i className='bx bx-image' style={{ fontSize: '2rem', color: '#ead7e8' }}></i>
+                          <i className="bx bx-image admin-cms-img-placeholder-icon"></i>
                         )}
                       </div>
                       <input 
                         type="file" 
                         accept="image/*" 
                         id={`upload-${key}`} 
-                        style={{ display: 'none' }} 
+                        className="admin-hidden" 
                         onChange={e => e.target.files?.[0] && handleImageUpload(key, e.target.files[0])}
                       />
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div className="admin-cms-upload-row">
                         <button 
                           onClick={() => document.getElementById(`upload-${key}`)?.click()} 
                           disabled={uploadingKey === key}
-                          style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid #ad246d', background: 'transparent', color: '#ad246d', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                          className="admin-cms-upload-btn"
                         >
                           {uploadingKey === key ? 'Uploading...' : 'Change'}
                         </button>
                         <button 
                           onClick={() => setImages(prev => ({ ...prev, [key]: '' }))}
-                          style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #ead7e8', background: '#fdf7fb', color: '#8c7895', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                          className="admin-cms-clear-btn"
                           title="Reset to default"
                         >
                           <i className='bx bx-undo'></i>
@@ -436,24 +417,24 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'typography' && (
               <>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', marginBottom: '1.25rem' }}>🔡 Typography</h2>
-                <div style={{ display: 'grid', gap: '1.5rem' }}>
+                <h2 className="admin-cms-section-title">🔡 Typography</h2>
+                <div className="admin-cms-font-grid">
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px' }}>Headings Font</label>
+                    <label className="admin-cms-field-label">Headings Font</label>
                     <select 
                       value={typography.headingFont} 
                       onChange={e => setTypography({ ...typography, headingFont: e.target.value })}
-                      style={{ width: '100%', padding: '0.6rem', borderRadius: '10px', border: '1px solid #ead7e8', fontFamily: typography.headingFont }}
+                      className="admin-cms-font-select" style={{ fontFamily: typography.headingFont }}
                     >
                       {GOOGLE_FONTS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px' }}>Body Font</label>
+                    <label className="admin-cms-field-label">Body Font</label>
                     <select 
                       value={typography.bodyFont} 
                       onChange={e => setTypography({ ...typography, bodyFont: e.target.value })}
-                      style={{ width: '100%', padding: '0.6rem', borderRadius: '10px', border: '1px solid #ead7e8', fontFamily: typography.bodyFont }}
+                      className="admin-cms-font-select" style={{ fontFamily: typography.bodyFont }}
                     >
                       {GOOGLE_FONTS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
                     </select>
@@ -466,9 +447,9 @@ const AdminCMS: React.FC = () => {
       )}
 
       {activeTab === 'announcements' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
-          <article style={card}>
-            <h2 style={{ fontSize: '1rem', marginBottom: '1rem' }}><i className='bx bx-news'></i> Published Announcements</h2>
+        <div className="admin-sidebar-layout">
+          <article className="admin-card-rounded">
+            <h2 className="admin-card-subtitle"><i className='bx bx-news'></i> Published Announcements</h2>
             <div className="table-wrap">
               <table className="admin-table">
                 <thead><tr><th>Title</th><th>Category</th><th>Author</th><th>Date</th></tr></thead>
@@ -486,15 +467,15 @@ const AdminCMS: React.FC = () => {
             </div>
           </article>
           <aside>
-            <article style={card}>
-              <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>New Announcement</h3>
-              <form onSubmit={handleCreateAnnouncement} style={{ display: 'grid', gap: '0.75rem' }}>
+            <article className="admin-card-rounded">
+              <h3 className="admin-cms-card-title">New Announcement</h3>
+              <form onSubmit={handleCreateAnnouncement} className="admin-form-grid">
                 <div className="form-group">
-                  <label style={{ fontSize: '0.7rem', fontWeight: 700 }}>Title</label>
+                  <label className="admin-form-label-sm">Title</label>
                   <input type="text" value={announcementForm.title} onChange={e => setAnnouncementForm({...announcementForm, title: e.target.value})} required />
                 </div>
                 <div className="form-group">
-                  <label style={{ fontSize: '0.7rem', fontWeight: 700 }}>Category</label>
+                  <label className="admin-form-label-sm">Category</label>
                   <select value={announcementForm.category} onChange={e => setAnnouncementForm({...announcementForm, category: e.target.value})}>
                     <option value="Care">Wig Care</option>
                     <option value="Styling">Styling</option>
@@ -503,10 +484,10 @@ const AdminCMS: React.FC = () => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label style={{ fontSize: '0.7rem', fontWeight: 700 }}>Content</label>
+                  <label className="admin-form-label-sm">Content</label>
                   <textarea rows={5} value={announcementForm.content} onChange={e => setAnnouncementForm({...announcementForm, content: e.target.value})} required></textarea>
                 </div>
-                <button type="submit" disabled={isSubmitting} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', background: '#ad246d', color: '#fff', border: 'none', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', opacity: isSubmitting ? 0.7 : 1, width: '100%', marginTop: '0.5rem' }}>
+                <button type="submit" disabled={isSubmitting} className="admin-btn-primary-full">
                   {isSubmitting ? 'Publishing...' : 'Publish'}
                 </button>
               </form>
@@ -516,9 +497,9 @@ const AdminCMS: React.FC = () => {
       )}
 
       {activeTab === 'partnerships' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
-          <article style={card}>
-            <h2 style={{ fontSize: '1rem', marginBottom: '1rem' }}><i className='bx bx-briefcase'></i> Active Partnerships</h2>
+        <div className="admin-sidebar-layout">
+          <article className="admin-card-rounded">
+            <h2 className="admin-card-subtitle"><i className='bx bx-briefcase'></i> Active Partnerships</h2>
             <div className="table-wrap">
               <table className="admin-table">
                 <thead><tr><th>Partner</th><th>Type</th><th>Contact</th><th>Status</th></tr></thead>
@@ -536,30 +517,30 @@ const AdminCMS: React.FC = () => {
             </div>
           </article>
           <aside>
-            <article style={card}>
-              <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>New Partnership</h3>
-              <form onSubmit={handleCreatePartnership} style={{ display: 'grid', gap: '0.75rem' }}>
+            <article className="admin-card-rounded">
+              <h3 className="admin-cms-card-title">New Partnership</h3>
+              <form onSubmit={handleCreatePartnership} className="admin-form-grid">
                 <div className="form-group">
-                  <label style={{ fontSize: '0.7rem', fontWeight: 700 }}>Organization Name</label>
+                  <label className="admin-form-label-sm">Organization Name</label>
                   <input type="text" value={partnershipForm.name} onChange={e => setPartnershipForm({...partnershipForm, name: e.target.value})} required />
                 </div>
                 <div className="form-group">
-                  <label style={{ fontSize: '0.7rem', fontWeight: 700 }}>Type</label>
+                  <label className="admin-form-label-sm">Type</label>
                   <input type="text" value={partnershipForm.type} onChange={e => setPartnershipForm({...partnershipForm, type: e.target.value})} placeholder="e.g. Wigmaker, Logistics" />
                 </div>
                 <div className="form-group">
-                  <label style={{ fontSize: '0.7rem', fontWeight: 700 }}>Email / Contact</label>
+                  <label className="admin-form-label-sm">Email / Contact</label>
                   <input type="text" value={partnershipForm.email} onChange={e => setPartnershipForm({...partnershipForm, email: e.target.value})} />
                 </div>
                 <div className="form-group">
-                  <label style={{ fontSize: '0.7rem', fontWeight: 700 }}>Status</label>
+                  <label className="admin-form-label-sm">Status</label>
                   <select value={partnershipForm.status} onChange={e => setPartnershipForm({...partnershipForm, status: e.target.value})}>
                     <option value="Active">Active</option>
                     <option value="Pending">Pending</option>
                     <option value="Inactive">Inactive</option>
                   </select>
                 </div>
-                <button type="submit" disabled={isSubmitting} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', background: '#ad246d', color: '#fff', border: 'none', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', opacity: isSubmitting ? 0.7 : 1, width: '100%', marginTop: '0.5rem' }}>
+                <button type="submit" disabled={isSubmitting} className="admin-btn-primary-full">
                   {isSubmitting ? 'Saving...' : 'Save Partner'}
                 </button>
               </form>

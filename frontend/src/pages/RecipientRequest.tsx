@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
+import '../styles/RecipientRequest.css';
 
 const RecipientRequest: React.FC = () => {
   const { user } = useAuth();
@@ -115,15 +116,15 @@ const RecipientRequest: React.FC = () => {
           <div className="form-grid two-col">
             <label>
               Full Name <span>*</span>
-              <input type="text" value={user?.firstName ? `${user.firstName} ${user.lastName}` : (user?.name || '')} readOnly style={{ background: '#f5f3f7', cursor: 'not-allowed' }} />
+              <input type="text" value={user?.firstName ? `${user.firstName} ${user.lastName}` : (user?.name || '')} readOnly className="field-readonly" />
             </label>
             <label>
               Contact Number <span>*</span>
-              <input type="tel" value={user?.phone || ''} readOnly style={{ background: '#f5f3f7', cursor: 'not-allowed' }} />
+              <input type="tel" value={user?.phone || ''} readOnly className="field-readonly" />
             </label>
             <label>
               Gender <span>*</span>
-              <select value={user?.gender || ''} disabled style={{ background: '#f5f3f7', cursor: 'not-allowed' }}>
+              <select value={user?.gender || ''} disabled className="field-readonly">
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -133,7 +134,7 @@ const RecipientRequest: React.FC = () => {
             </label>
             <label>
               Email Address <span>*</span>
-              <input type="email" value={user?.email || ''} readOnly style={{ background: '#f5f3f7', cursor: 'not-allowed' }} />
+              <input type="email" value={user?.email || ''} readOnly className="field-readonly" />
             </label>
           </div>
 
@@ -155,7 +156,7 @@ const RecipientRequest: React.FC = () => {
             </label>
           </div>
 
-          <div className="form-grid two-col" style={{ gap: '1.5rem' }}>
+          <div className="form-grid two-col upload-grid-gap">
             {/* Ultra-Compact Multi-File Upload */}
             <div className="upload-section-mini">
               <label className="upload-label-main">Supporting Documents <span>*</span></label>

@@ -7,14 +7,14 @@ interface StatusPillProps {
 }
 
 const StatusPill: React.FC<StatusPillProps> = ({ status, label, className = '' }) => {
-  const normalizedStatus = status.toLowerCase().trim().replace(/\s+/g, '-');
+  const normalizedStatus = status ? String(status).toLowerCase().trim().replace(/\s+/g, '-') : 'unknown';
   
   // Map normalized status to the CSS classes defined in module CSS files
   const statusClass = `status-${normalizedStatus}`;
 
   return (
     <span className={`status-pill ${statusClass} ${className}`}>
-      {label || status.charAt(0).toUpperCase() + status.slice(1)}
+      {label || (status ? String(status).charAt(0).toUpperCase() + String(status).slice(1) : 'Unknown')}
     </span>
   );
 };

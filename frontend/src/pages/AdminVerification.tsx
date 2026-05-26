@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
@@ -51,59 +52,59 @@ const AdminVerification: React.FC = () => {
   const currentItems = data[view];
 
   return (
-    <section className="section-wrap reveal active admin-page" style={{ padding: '1rem' }}>
-      <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <section className="section-wrap reveal active admin-page admin-page-pad">
+      <header className="admin-header-row-end">
         <div>
-          <p style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ad246d', marginBottom: '0.1rem' }}>Admin · Oversight</p>
-          <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>Verification Oversight</h1>
-          <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.1rem' }}>Monitor the status of donor and recipient verification queues.</p>
+          <p className="admin-page-kicker">Admin · Oversight</p>
+          <h1 className="admin-page-title">Verification Oversight</h1>
+          <p className="admin-page-subtitle">Monitor the status of donor and recipient verification queues.</p>
         </div>
       </header>
 
       {/* Queue Health Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div style={{ background: '#fff', border: '1px solid #ead7e8', padding: '0.8rem', borderRadius: '12px', textAlign: 'center' }}>
-          <small style={{ display: 'block', color: '#8c7895', fontSize: '0.6rem', textTransform: 'uppercase' }}>Donor Pending</small>
-          <strong style={{ fontSize: '1.2rem', color: '#ad246d' }}>{data.donor.filter(i => i.status === 'Pending').length}</strong>
+      <div className="admin-three-col-grid">
+        <div className="admin-mini-stat">
+          <small className="admin-mini-stat-label">Donor Pending</small>
+          <strong className="admin-mini-stat-value">{data.donor.filter(i => i.status === 'Pending').length}</strong>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #ead7e8', padding: '0.8rem', borderRadius: '12px', textAlign: 'center' }}>
-          <small style={{ display: 'block', color: '#8c7895', fontSize: '0.6rem', textTransform: 'uppercase' }}>Recipient Pending</small>
-          <strong style={{ fontSize: '1.2rem', color: '#ad246d' }}>{data.recipient.filter(i => i.status === 'Pending').length}</strong>
+        <div className="admin-mini-stat">
+          <small className="admin-mini-stat-label">Recipient Pending</small>
+          <strong className="admin-mini-stat-value">{data.recipient.filter(i => i.status === 'Pending').length}</strong>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #ead7e8', padding: '0.8rem', borderRadius: '12px', textAlign: 'center' }}>
-          <small style={{ display: 'block', color: '#8c7895', fontSize: '0.6rem', textTransform: 'uppercase' }}>Monetary Pending</small>
-          <strong style={{ fontSize: '1.2rem', color: '#ad246d' }}>{data.monetary.filter(i => i.status === 'Pending').length}</strong>
+        <div className="admin-mini-stat">
+          <small className="admin-mini-stat-label">Monetary Pending</small>
+          <strong className="admin-mini-stat-value">{data.monetary.filter(i => i.status === 'Pending').length}</strong>
         </div>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1rem', overflow: 'hidden' }}>
-        <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f2ebf4', display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-          <div style={{ background: '#fdf7fb', padding: '0.4rem', borderRadius: '8px', border: '1px solid #ead7e8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className={`bx ${view === 'donor' ? 'bx-cut' : view === 'recipient' ? 'bx-heart' : 'bx-donate-heart'}`} style={{ color: '#ad246d', fontSize: '1.25rem' }}></i>
+      <div className="admin-ops-card">
+        <div className="admin-ops-card-header">
+          <div className="admin-ops-icon-wrap">
+            <i className={`bx ${view === 'donor' ? 'bx-cut' : view === 'recipient' ? 'bx-heart' : 'bx-donate-heart'} admin-stat-icon`}></i>
           </div>
-          <h2 style={{ fontSize: '0.85rem', fontWeight: 800, margin: 0, color: '#3b2e43' }}>
+          <h2 className="admin-ops-card-title">
             {view === 'donor' ? 'Hair Donation Verification Queue' : view === 'recipient' ? 'Recipient Request Verification Queue' : 'Monetary Contribution Verification Queue'}
           </h2>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+        <table className="admin-compact-table">
           <thead>
-            <tr style={{ background: '#fdf7fb', borderBottom: '1px solid #ead7e8' }}>
-              <th style={{ textAlign: 'left', padding: '0.75rem' }}>Reference</th>
-              <th style={{ textAlign: 'left', padding: '0.75rem' }}>Submission Date</th>
-              <th style={{ textAlign: 'left', padding: '0.75rem' }}>User / Participant</th>
-              <th style={{ textAlign: 'left', padding: '0.75rem' }}>Verification Status</th>
-              <th style={{ textAlign: 'left', padding: '0.75rem' }}>Admin Note</th>
+            <tr className="admin-compact-table-head-row">
+              <th className="admin-compact-th">Reference</th>
+              <th className="admin-compact-th">Submission Date</th>
+              <th className="admin-compact-th">User / Participant</th>
+              <th className="admin-compact-th">Verification Status</th>
+              <th className="admin-compact-th">Admin Note</th>
             </tr>
           </thead>
           <tbody>
             {currentItems.map((item: any) => (
-              <tr key={item.id} style={{ borderBottom: '1px solid #f2ebf4' }}>
-                <td style={{ padding: '0.75rem' }}><strong>{item.reference || item.reference_number}</strong></td>
-                <td style={{ padding: '0.75rem', color: '#8c7895' }}>{new Date(item.createdAt).toLocaleDateString()}</td>
-                <td style={{ padding: '0.75rem' }}>{item.user ? `${item.user.firstName} ${item.user.lastName}` : (item.name || 'Anonymous')}</td>
-                <td style={{ padding: '0.75rem' }}><StatusPill status={item.status} /></td>
-                <td style={{ padding: '0.75rem', color: '#8c7895', fontSize: '0.7rem' }}>
+              <tr key={item.id} className="admin-compact-tr">
+                <td className="admin-compact-td"><strong>{item.reference || item.reference_number}</strong></td>
+                <td className="admin-compact-td admin-td-muted">{new Date(item.createdAt).toLocaleDateString()}</td>
+                <td className="admin-compact-td">{item.user ? `${item.user.firstName} ${item.user.lastName}` : (item.name || 'Anonymous')}</td>
+                <td className="admin-compact-td"><StatusPill status={item.status} /></td>
+                <td className="admin-compact-td admin-td-note">
                   {item.status === 'Pending' ? 'Awaiting staff review' : `Verified on ${new Date(item.updatedAt).toLocaleDateString()}`}
                 </td>
               </tr>
@@ -112,10 +113,10 @@ const AdminVerification: React.FC = () => {
         </table>
         
         {currentItems.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#8c7895' }}>
-            <i className='bx bx-check-shield' style={{ fontSize: '2rem', opacity: 0.3 }}></i>
-            <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', fontWeight: 800 }}>Queue Clear</p>
-            <p style={{ margin: '0.1rem 0 0', fontSize: '0.7rem' }}>No verification requests in this category.</p>
+          <div className="admin-empty-state">
+            <i className="bx bx-check-shield admin-icon-faded"></i>
+            <p className="admin-empty-title">Queue Clear</p>
+            <p className="admin-empty-subtitle">No verification requests in this category.</p>
           </div>
         )}
       </div>

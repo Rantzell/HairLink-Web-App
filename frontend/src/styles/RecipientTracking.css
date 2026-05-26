@@ -1,0 +1,136 @@
+/* RecipientTracking.css */
+
+/* Header */
+.tracking-module-head {
+  margin-bottom: 1.5rem;
+}
+
+.tracking-module-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #261d2b;
+  margin: 0;
+}
+
+.tracking-module-subtitle {
+  color: #665772;
+  font-size: 0.75rem;
+  margin-top: 0.2rem;
+}
+
+/* Toolbar */
+.tracking-tools-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tracking-search-input {
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #ead7e8;
+  font-size: 0.8rem;
+  width: 250px;
+  font: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.tracking-search-input:focus {
+  border-color: #ad246d;
+}
+
+.tracking-new-request-btn {
+  text-decoration: none;
+  font-size: 0.75rem;
+  background: #ad246d;
+  color: #fff;
+  padding: 0.4rem 1.2rem;
+  border-radius: 50px;
+  font-weight: 800;
+  display: inline-block;
+  transition: opacity 0.2s ease;
+}
+
+.tracking-new-request-btn:hover {
+  opacity: 0.9;
+}
+
+/* Table head */
+.tracking-table-th {
+  font-size: 0.75rem;
+  color: #ad246d;
+  text-transform: uppercase;
+}
+
+.tracking-table-th-center {
+  font-size: 0.75rem;
+  color: #ad246d;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Table cells */
+.tracking-td-text {
+  font-size: 0.85rem;
+}
+
+.tracking-td-center {
+  text-align: center;
+}
+
+.tracking-td-loading {
+  text-align: center;
+  padding: 2rem;
+}
+
+.tracking-td-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #7a687f;
+}
+
+/* Action cell */
+.tracking-actions-cell {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.tracking-details-btn {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.7rem;
+  background: #fff;
+  color: #ad246d;
+  border: 1.5px solid #ead7e8;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.tracking-details-btn:hover {
+  border-color: #ad246d;
+  background: #fdf7fb;
+}
+
+.tracking-received-btn {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.7rem;
+  background: #ad246d;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.tracking-received-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

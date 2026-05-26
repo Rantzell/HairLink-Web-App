@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
@@ -45,12 +46,12 @@ const AdminInventory: React.FC = () => {
   );
 
   return (
-    <section className="section-wrap reveal active admin-page" style={{ padding: '1rem' }}>
-      <header style={{ padding: '0.2rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <section className="section-wrap reveal active admin-page admin-page-pad">
+      <header className="admin-report-header-row">
         <div>
-          <p style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ad246d', marginBottom: '0.1rem' }}>Admin · Inventory</p>
-          <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>Inventory Control</h1>
-          <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.1rem' }}>System-wide oversight of hair stock, wig stock, and donation history.</p>
+          <p className="admin-page-kicker">Admin · Inventory</p>
+          <h1 className="admin-page-title">Inventory Control</h1>
+          <p className="admin-page-subtitle">System-wide oversight of hair stock, wig stock, and donation history.</p>
         </div>
         
       </header>
@@ -58,32 +59,32 @@ const AdminInventory: React.FC = () => {
       {/* Summary Grid - Always Visible or just on Overview? Let's keep it on Overview for a cleaner look */}
       {view === 'overview' && (
         <>
-          <div className="inv-summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', margin: '0.75rem 0' }}>
+          <div className="inv-summary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: "0.75rem", margin: "0.75rem 0" }}>
             {[
               { label: 'Hair Records', count: data.totalHairRecords, icon: 'bx-cut' },
               { label: 'Wig Stock', count: data.wigCount, icon: 'bx-shopping-bag' },
               { label: 'Donation History', count: data.allDonationsCount, icon: 'bx-history' },
               { label: 'Available Stock', count: data.totalHairRecords, icon: 'bx-check-circle' },
             ].map((item, i) => (
-              <div key={i} className="inv-summary-item" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '12px', padding: '0.75rem', textAlign: 'center' }}>
-                <span style={{ display: 'block', fontSize: '0.65rem', color: '#8c7895', fontWeight: 700, textTransform: 'uppercase' }}>{item.label}</span>
-                <strong style={{ fontSize: '1.4rem', color: '#ad246d' }}>{item.count}</strong>
+              <div key={i} className="inv-summary-item admin-mini-stat">
+                <span className="admin-mini-stat-label">{item.label}</span>
+                <strong className="admin-val-pink-lg">{item.count}</strong>
               </div>
             ))}
           </div>
 
-          <article className="admin-card" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1rem' }}>
-            <h3 style={{ borderBottom: '1px solid #ead7e8', paddingBottom: '0.6rem', marginBottom: '1rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <i className='bx bx-transfer-alt' style={{ color: '#ad246d' }}></i> Hair Stock Categorization
+          <article className="admin-card admin-card-white">
+            <h3 className="admin-section-underline">
+              <i className="bx bx-transfer-alt admin-icon-pink"></i> Hair Stock Categorization
             </h3>
-            <div className="hair-stock-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+            <div className="hair-stock-grid admin-hair-stock-grid">
               {['Short', 'Medium', 'Long'].map(len => (
-                <div key={len} className="hair-stock-col" style={{ background: '#fdf7fb', padding: '1rem', borderRadius: '12px', border: '1px solid #f2ebf4' }}>
-                  <h4 style={{ margin: '0 0 0.6rem 0', color: '#ad246d', fontSize: '0.9rem' }}>{len}</h4>
+                <div key={len} className="hair-stock-col admin-hair-col">
+                  <h4 className="admin-hair-col-title">{len}</h4>
                   {['Black', 'Brown', 'Light'].map(col => (
-                    <div key={col} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0', borderBottom: '1px solid #ead7e8', fontSize: '0.8rem' }}>
-                      <span style={{ color: '#665772' }}>{col}</span>
-                      <strong style={{ color: '#ad246d' }}>{data.stock[len]?.[col] || 0}</strong>
+                    <div key={col} className="admin-hair-row">
+                      <span className="admin-hair-color-label">{col}</span>
+                      <strong className="admin-icon-pink">{data.stock[len]?.[col] || 0}</strong>
                     </div>
                   ))}
                 </div>
@@ -94,17 +95,17 @@ const AdminInventory: React.FC = () => {
       )}
 
       {view === 'hair' && (
-        <article className="admin-card" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1rem' }}>
-          <div style={{ marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem' }}><i className='bx bx-cut' style={{ color: '#ad246d' }}></i> Detailed Hair Stock</h3>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: '#8c7895' }}>View-only oversight of received hair donations by category.</p>
+        <article className="admin-card admin-card-white">
+          <div className="admin-card-head-mb">
+            <h3 className="admin-bar-title"><i className="bx bx-cut admin-icon-pink"></i> Detailed Hair Stock</h3>
+            <p className="admin-queue-meta">View-only oversight of received hair donations by category.</p>
           </div>
-          <div className="hair-stock-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+          <div className="hair-stock-grid admin-hair-stock-grid-lg">
             {['Short', 'Medium', 'Long'].map(len => (
-              <div key={len} className="hair-stock-col" style={{ background: '#fdf7fb', padding: '1rem', borderRadius: '12px', border: '1px solid #f2ebf4' }}>
-                <h4 style={{ margin: '0 0 0.75rem 0', color: '#ad246d' }}>{len} CATEGORY</h4>
+              <div key={len} className="hair-stock-col admin-hair-col">
+                <h4 className="admin-hair-col-title-lg">{len} CATEGORY</h4>
                 {['Black', 'Brown', 'Light', 'Gray', 'Other'].map(col => (
-                  <div key={col} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #ead7e8', fontSize: '0.85rem' }}>
+                  <div key={col} className="admin-hair-row-lg">
                     <span>{col} Hair</span>
                     <strong>{data.stock[len]?.[col] || 0}</strong>
                   </div>
@@ -116,38 +117,38 @@ const AdminInventory: React.FC = () => {
       )}
 
       {view === 'wigs' && (
-        <article className="admin-card" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1rem' }}>
-          <div className="admin-bar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem' }}><i className='bx bx-shopping-bag' style={{ color: '#ad246d' }}></i> Completed Wig Stock</h3>
+        <article className="admin-card admin-card-white">
+          <div className="admin-bar admin-bar">
+            <h3 className="admin-bar-title"><i className="bx bx-shopping-bag admin-icon-pink"></i> Completed Wig Stock</h3>
             <input 
               type="text" 
               placeholder="Search wig stock..." 
               value={wigFilter} 
               onChange={e => setWigFilter(e.target.value)}
-              style={{ padding: '0.3rem 0.8rem', borderRadius: '6px', border: '1px solid #ead7e8', fontSize: '0.8rem' }}
+              className="admin-filter-input"
             />
           </div>
           <div className="table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Task Code</th>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Wigmaker</th>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Size</th>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Color</th>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Stock Date</th>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Status</th>
+                  <th className="admin-compact-th">Task Code</th>
+                  <th className="admin-compact-th">Wigmaker</th>
+                  <th className="admin-compact-th">Size</th>
+                  <th className="admin-compact-th">Color</th>
+                  <th className="admin-compact-th">Stock Date</th>
+                  <th className="admin-compact-th">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredWigs.map((wig: any) => (
                   <tr key={wig.id}>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}><strong>{wig.taskCode}</strong></td>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>{wig.wigmaker?.firstName} {wig.wigmaker?.lastName}</td>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>{wig.targetLength}</td>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>{wig.targetColor}</td>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>{new Date(wig.updatedAt).toLocaleDateString()}</td>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}><span className="admin-chip active" style={{ fontSize: '0.65rem' }}>In Stock</span></td>
+                    <td className="admin-compact-td"><strong>{wig.taskCode}</strong></td>
+                    <td className="admin-compact-td">{wig.wigmaker?.firstName} {wig.wigmaker?.lastName}</td>
+                    <td className="admin-compact-td">{wig.targetLength}</td>
+                    <td className="admin-compact-td">{wig.targetColor}</td>
+                    <td className="admin-compact-td">{new Date(wig.updatedAt).toLocaleDateString()}</td>
+                    <td className="admin-compact-td"><span className="admin-chip active admin-chip-sm">In Stock</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -157,38 +158,38 @@ const AdminInventory: React.FC = () => {
       )}
 
       {view === 'donations' && (
-        <article className="admin-card" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1rem' }}>
-          <div className="admin-bar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem' }}><i className='bx bx-history' style={{ color: '#ad246d' }}></i> Donation Records History</h3>
+        <article className="admin-card admin-card-white">
+          <div className="admin-bar admin-bar">
+            <h3 className="admin-bar-title"><i className="bx bx-history admin-icon-pink"></i> Donation Records History</h3>
             <input 
               type="text" 
               placeholder="Search donor history..." 
               value={donFilter} 
               onChange={e => setDonFilter(e.target.value)}
-              style={{ padding: '0.3rem 0.8rem', borderRadius: '6px', border: '1px solid #ead7e8', fontSize: '0.8rem' }}
+              className="admin-filter-input"
             />
           </div>
           <div className="table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Ref</th>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Donor</th>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Length</th>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Color</th>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Submission</th>
-                  <th style={{ fontSize: '0.75rem', padding: '0.6rem' }}>Staff Action</th>
+                  <th className="admin-compact-th">Ref</th>
+                  <th className="admin-compact-th">Donor</th>
+                  <th className="admin-compact-th">Length</th>
+                  <th className="admin-compact-th">Color</th>
+                  <th className="admin-compact-th">Submission</th>
+                  <th className="admin-compact-th">Staff Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredDons.map((don: any) => (
                   <tr key={don.id}>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}><strong>{don.reference}</strong></td>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>{don.user?.firstName} {don.user?.lastName}</td>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>{don.hairLength}</td>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>{don.hairColor}</td>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}>{new Date(don.createdAt).toLocaleDateString()}</td>
-                    <td style={{ fontSize: '0.8rem', padding: '0.6rem' }}><StatusPill status={don.status} /></td>
+                    <td className="admin-compact-td"><strong>{don.reference}</strong></td>
+                    <td className="admin-compact-td">{don.user?.firstName} {don.user?.lastName}</td>
+                    <td className="admin-compact-td">{don.hairLength}</td>
+                    <td className="admin-compact-td">{don.hairColor}</td>
+                    <td className="admin-compact-td">{new Date(don.createdAt).toLocaleDateString()}</td>
+                    <td className="admin-compact-td"><StatusPill status={don.status} /></td>
                   </tr>
                 ))}
               </tbody>

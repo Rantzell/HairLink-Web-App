@@ -4,6 +4,7 @@ import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import type { HairRequest } from '../types';
 import ConfirmModal from '../components/ConfirmModal';
+import '../styles/RecipientTracking.css';
 
 const RecipientTracking: React.FC = () => {
   const [requests, setRequests] = useState<HairRequest[]>([]);
@@ -50,30 +51,18 @@ const RecipientTracking: React.FC = () => {
 
   return (
     <section className="section-wrap donor-module-page reveal active">
-      <header className="module-head" style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>My Request Tracking</h1>
-        <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.2rem' }}>Monitor the status of your hair requests and coordination updates.</p>
-        <div className="tracking-tools" style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', alignItems: 'center' }}>
+      <header className="module-head tracking-module-head">
+        <h1 className="tracking-module-title">My Request Tracking</h1>
+        <p className="tracking-module-subtitle">Monitor the status of your hair requests and coordination updates.</p>
+        <div className="tracking-tools-row">
           <input 
             type="text" 
             placeholder="Search reference, status..."
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid #ead7e8', fontSize: '0.8rem', width: '250px' }}
+            className="tracking-search-input"
           />
-          <Link 
-            to="/recipient/request" 
-            style={{ 
-              textDecoration: 'none', 
-              fontSize: '0.75rem', 
-              background: '#ad246d', 
-              color: '#fff', 
-              padding: '0.4rem 1.2rem', 
-              borderRadius: '50px', 
-              fontWeight: 800,
-              display: 'inline-block'
-            }}
-          >
+          <Link to="/recipient/request" className="tracking-new-request-btn">
             Submit New Request
           </Link>
         </div>
@@ -84,56 +73,33 @@ const RecipientTracking: React.FC = () => {
           <table className="tracking-table">
             <thead>
               <tr>
-                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase' }}>Reference</th>
-                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase' }}>Submitted</th>
-                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase' }}>Status</th>
-                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase' }}>Wig Length</th>
-                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase' }}>Wig Color</th>
-                <th style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase', textAlign: 'center' }}>Action</th>
+                <th className="tracking-table-th">Reference</th>
+                <th className="tracking-table-th">Submitted</th>
+                <th className="tracking-table-th">Status</th>
+                <th className="tracking-table-th">Wig Length</th>
+                <th className="tracking-table-th">Wig Color</th>
+                <th className="tracking-table-th-center">Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>Loading requests...</td></tr>
+                <tr><td colSpan={6} className="tracking-td-loading">Loading requests...</td></tr>
               ) : filteredRequests.length > 0 ? (
                 filteredRequests.map(r => (
                   <tr key={r.id}>
-                    <td style={{ fontSize: '0.85rem' }}><strong>{r.reference}</strong></td>
-                    <td style={{ fontSize: '0.85rem' }}>{new Date(r.createdAt).toLocaleDateString()}</td>
+                    <td className="tracking-td-text"><strong>{r.reference}</strong></td>
+                    <td className="tracking-td-text">{new Date(r.createdAt).toLocaleDateString()}</td>
                     <td><StatusPill status={r.status} /></td>
-                    <td style={{ fontSize: '0.85rem' }}>{r.wigLength}</td>
-                    <td style={{ fontSize: '0.85rem' }}>{r.wigColor}</td>
-                    <td style={{ textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
-                        <Link 
-                          to={`/recipient/tracking/${r.reference}`} 
-                          style={{ 
-                            padding: '0.35rem 0.8rem', 
-                            fontSize: '0.7rem', 
-                            background: '#fff', 
-                            color: '#ad246d', 
-                            border: '1.5px solid #ead7e8', 
-                            borderRadius: '8px', 
-                            textDecoration: 'none',
-                            fontWeight: 700,
-                            display: 'inline-block'
-                          }}
-                        >
+                    <td className="tracking-td-text">{r.wigLength}</td>
+                    <td className="tracking-td-text">{r.wigColor}</td>
+                    <td className="tracking-td-center">
+                      <div className="tracking-actions-cell">
+                        <Link to={`/recipient/tracking/${r.reference}`} className="tracking-details-btn">
                           Details
                         </Link>
                         {r.status === 'In Transit' && (
                           <button 
-                            style={{ 
-                              padding: '0.35rem 0.8rem', 
-                              fontSize: '0.7rem', 
-                              background: '#ad246d', 
-                              color: '#fff', 
-                              border: 'none', 
-                              borderRadius: '50px', 
-                              fontWeight: 800,
-                              cursor: 'pointer',
-                              opacity: isConfirming ? 0.6 : 1
-                            }}
+                            className="tracking-received-btn"
                             onClick={() => { setPendingRef(r.reference); setShowConfirm(true); }}
                             disabled={isConfirming}
                           >
@@ -146,7 +112,7 @@ const RecipientTracking: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#7a687f' }}>
+                  <td colSpan={6} className="tracking-td-empty">
                     {filter ? 'No matching requests found.' : 'No request records yet. Submit your first hair request to begin tracking.'}
                   </td>
                 </tr>

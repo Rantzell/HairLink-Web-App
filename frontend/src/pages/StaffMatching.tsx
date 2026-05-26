@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
+import '../styles/StaffMatching.css';
 
 // Matching Logic (Mirroring the service)
 export function calculateCompatibility(
@@ -123,51 +124,42 @@ const StaffMatching: React.FC = () => {
 
   return (
     <section className="section-wrap reveal active staff-page">
-      <article className="match-layout" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '1.5rem' }}>
+      <article className="match-layout">
         {/* Left: Recipient Selection */}
-        <section className="match-left" style={{ borderRight: '1px solid #f2ebf4', paddingRight: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43', marginBottom: '1rem' }}>Select Recipient</h2>
+        <section className="match-left">
+          <h2 className="match-title">Select Recipient</h2>
           
-          <div style={{ marginBottom: '1rem' }}>
+          <div className="match-search-container">
             <input 
               type="text" 
               placeholder="Search recipient..." 
               value={recipientSearch}
               onChange={(e) => setRecipientSearch(e.target.value)}
-              style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '8px', border: '1px solid #ead7e8', fontSize: '0.8rem', outline: 'none' }}
+              className="match-search-input"
             />
           </div>
 
-          <div className="recipient-facts" style={{ background: '#fdf7fb', padding: '1rem', borderRadius: '12px', marginBottom: '1.2rem', border: '1px solid #ead7e8' }}>
-            <strong style={{ display: 'block', fontSize: '0.9rem', color: '#ad246d', marginBottom: '0.4rem' }}>
+          <div className="recipient-facts">
+            <strong className="recipient-name">
               {selectedRecipient ? `${selectedRecipient.user?.firstName} ${selectedRecipient.user?.lastName}` : 'Select a recipient'}
             </strong>
-            <div style={{ fontSize: '0.75rem', color: '#5d4d62', display: 'grid', gap: '0.2rem' }}>
-              <span>Wig Size: <strong style={{ color: '#ad246d' }}>{selectedRecipient?.wigLength || 'N/A'}</strong></span>
-              <span>Preferred Color: <strong style={{ color: '#ad246d' }}>{selectedRecipient?.wigColor || 'N/A'}</strong></span>
+            <div className="recipient-specs">
+              <span>Wig Size: <strong className="recipient-spec-value">{selectedRecipient?.wigLength || 'N/A'}</strong></span>
+              <span>Preferred Color: <strong className="recipient-spec-value">{selectedRecipient?.wigColor || 'N/A'}</strong></span>
             </div>
           </div>
 
-          <div className="recipient-list" style={{ display: 'grid', gap: '0.5rem' }}>
+          <div className="recipient-list">
             {filteredRecipients.map(rec => (
               <button 
                 key={rec.id}
                 type="button" 
                 className={`recipient-btn ${selectedRecipient?.id === rec.id ? 'active' : ''}`}
                 onClick={() => setSelectedRecipient(rec)}
-                style={{ 
-                  textAlign: 'left', 
-                  padding: '0.8rem', 
-                  borderRadius: '10px', 
-                  border: '1px solid #ead7e8', 
-                  background: selectedRecipient?.id === rec.id ? '#ad246d' : '#fff', 
-                  color: selectedRecipient?.id === rec.id ? '#fff' : '#3b2e43',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer'
-                }}
+                
               >
-                <div style={{ fontWeight: 800, fontSize: '0.8rem' }}>{rec.user?.firstName} {rec.user?.lastName}</div>
-                <small style={{ opacity: 0.8, fontSize: '0.7rem', fontWeight: 600 }}>{rec.status}</small>
+                <div className="recipient-btn-name">{rec.user?.firstName} {rec.user?.lastName}</div>
+                <small className="recipient-btn-status">{rec.status}</small>
               </button>
             ))}
           </div>
@@ -175,43 +167,32 @@ const StaffMatching: React.FC = () => {
 
         {/* Right: Wig Options */}
         <section className="match-right">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Available Wigs</h2>
+          <div className="match-right-header">
+            <h2 className="match-title match-title-margin-0">Available Wigs</h2>
           </div>
 
           <div className="wig-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.2rem' }}>
             {filteredWigs.map(wig => (
               <article key={wig.id} className="wig-option" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '15px', padding: '1.2rem', position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                <div style={{ marginBottom: '0.8rem' }}>
-                  <h4 style={{ margin: '0 0 0.2rem 0', color: '#ad246d', fontSize: '0.85rem', fontWeight: 900 }}>Stock #{wig.taskCode}</h4>
-                  <p style={{ margin: 0, fontSize: '0.65rem', color: '#8c7895', fontWeight: 700 }}>AVAILABLE IN STOCK</p>
+                <div className="wig-option-header">
+                  <h4 className="wig-option-title">Stock #{wig.taskCode}</h4>
+                  <p className="wig-option-subtitle">AVAILABLE IN STOCK</p>
                 </div>
 
-                <div style={{ fontSize: '0.75rem', color: '#5d4d62', display: 'grid', gap: '0.2rem', marginBottom: '1.2rem' }}>
-                  <span>Wig Size: <strong style={{ color: '#3b2e43' }}>{wig.targetLength}</strong></span>
-                  <span>Color: <strong style={{ color: '#3b2e43' }}>{wig.targetColor}</strong></span>
+                <div className="wig-option-specs">
+                  <span>Wig Size: <strong className="wig-spec-value">{wig.targetLength}</strong></span>
+                  <span>Color: <strong className="wig-spec-value">{wig.targetColor}</strong></span>
                 </div>
                 
-                <div style={{ borderTop: '1px solid #f2ebf4', paddingTop: '0.8rem', marginBottom: '1.2rem' }}>
-                  <p style={{ margin: 0, fontSize: '0.65rem', color: '#8c7895', fontWeight: 800, textTransform: 'uppercase' }}>Compatibility</p>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 950, color: wig.score >= 85 ? '#28a745' : '#ad246d', marginTop: '0.1rem' }}>
+                <div className="wig-option-score-wrap">
+                  <p className="wig-score-label">Compatibility</p>
+                  <div className="wig-score-value" style={{ color: wig.score >= 85 ? "#28a745" : "#ad246d" }}>
                     {wig.score}%
                   </div>
                 </div>
 
                 <button 
-                  className="soft-btn" 
-                  style={{ 
-                    width: '100%', 
-                    height: '32px', 
-                    fontWeight: 800, 
-                    background: '#ad246d', 
-                    color: '#fff', 
-                    borderRadius: '8px', 
-                    border: 'none',
-                    fontSize: '0.75rem',
-                    cursor: 'pointer'
-                  }} 
+                  className="soft-btn wig-choose-btn" 
                   onClick={() => handleMatch(wig.id)}
                   disabled={isSubmitting}
                 >
@@ -220,9 +201,9 @@ const StaffMatching: React.FC = () => {
               </article>
             ))}
             {filteredWigs.length === 0 && (
-              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem 1rem', color: '#8c7895', border: '2px dashed #f2ebf4', borderRadius: '15px', background: '#fafafa' }}>
-                <i className='bx bx-search-alt' style={{ fontSize: '2rem', display: 'block', marginBottom: '0.8rem', opacity: 0.3 }}></i>
-                <p style={{ fontSize: '0.75rem', margin: 0 }}>No high-match wig found.</p>
+              <div className="wig-no-match">
+                <i className="bx bx-search-alt wig-no-match-icon"></i>
+                <p className="wig-no-match-text">No high-match wig found.</p>
               </div>
             )}
           </div>

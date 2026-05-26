@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import apiClient from '../api/client';
+import '../styles/VerifyOtp.css';
 
 const dashboardPath: Record<string, string> = {
   admin: '/admin/dashboard',
@@ -102,53 +103,29 @@ const VerifyOtp: React.FC = () => {
   };
 
   return (
-    <main style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #fdf0f5 0%, #f8e8ef 50%, #fce4ec 100%)',
-      fontFamily: "'Manrope', 'Inter', sans-serif",
-      padding: '24px',
-    }}>
-      <div style={{
-        background: '#fff',
-        borderRadius: '24px',
-        boxShadow: '0 20px 60px rgba(214, 51, 108, 0.12)',
-        padding: '48px 40px',
-        width: '100%',
-        maxWidth: '440px',
-        textAlign: 'center',
-      }}>
+    <main className="verify-otp-container">
+      <div className="verify-otp-card">
         {/* Icon */}
-        <div style={{
-          width: '72px', height: '72px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #ff6b9d, #d6336c)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 24px',
-          fontSize: '32px',
-        }}>
+        <div className="verify-otp-icon">
           ✉️
         </div>
 
-        <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#1a1a2e', marginBottom: '8px' }}>
+        <h1 className="verify-otp-title">
           Check your email
         </h1>
-        <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.6, marginBottom: '8px' }}>
+        <p className="verify-otp-text-muted">
           A verification code has been sent to:
         </p>
-        <p style={{ color: '#d6336c', fontWeight: 600, fontSize: '15px', marginBottom: '32px' }}>
+        <p className="verify-otp-email">
           {email}
         </p>
-        <p style={{ color: '#888', fontSize: '13px', marginBottom: '28px' }}>
+        <p className="verify-otp-helper-text">
           This is required once to verify your account. The code expires in 1 hour.
         </p>
 
         <form onSubmit={handleVerify}>
           {/* 6-digit OTP input */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '24px' }}
-               onPaste={handlePaste}>
+          <div className="verify-otp-inputs" onPaste={handlePaste}>
             {otp.map((digit, i) => (
               <input
                 key={i}
@@ -160,31 +137,18 @@ const VerifyOtp: React.FC = () => {
                 value={digit}
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
-                style={{
-                  width: '52px',
-                  height: '60px',
-                  fontSize: '24px',
-                  fontWeight: 700,
-                  textAlign: 'center',
-                  border: `2px solid ${digit ? '#d6336c' : '#e0e0e0'}`,
-                  borderRadius: '12px',
-                  outline: 'none',
-                  color: '#1a1a2e',
-                  background: digit ? '#fdf0f5' : '#fafafa',
-                  transition: 'all 0.2s',
-                  cursor: 'text',
-                }}
+                className={`verify-otp-input ${digit ? 'filled' : ''}`}
               />
             ))}
           </div>
 
           {error && (
-            <p style={{ color: '#e53e3e', fontSize: '13px', marginBottom: '16px', background: '#fff5f5', padding: '10px 16px', borderRadius: '8px', border: '1px solid #fed7d7' }}>
+            <p className="verify-otp-error">
               {error}
             </p>
           )}
           {resendMsg && (
-            <p style={{ color: '#2f855a', fontSize: '13px', marginBottom: '16px', background: '#f0fff4', padding: '10px 16px', borderRadius: '8px', border: '1px solid #c6f6d5' }}>
+            <p className="verify-otp-success">
               {resendMsg}
             </p>
           )}
@@ -193,39 +157,22 @@ const VerifyOtp: React.FC = () => {
             type="submit"
             disabled={loading}
             id="verify-otp-btn"
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: loading ? '#ccc' : 'linear-gradient(135deg, #ff6b9d, #d6336c)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '16px',
-              fontWeight: 700,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              marginBottom: '16px',
-              transition: 'opacity 0.2s',
-            }}
+            className="verify-otp-button"
           >
             {loading ? 'Verifying…' : 'Verify Code'}
           </button>
         </form>
 
-        <div style={{ marginTop: '4px' }}>
-          <span style={{ color: '#888', fontSize: '13px' }}>Didn't receive the code? </span>
+        <div className="verify-otp-resend-wrapper">
+          <span className="verify-otp-resend-label">Didn't receive the code? </span>
           {countdown > 0 ? (
-            <span style={{ color: '#aaa', fontSize: '13px' }}>Resend in {countdown}s</span>
+            <span className="verify-otp-countdown">Resend in {countdown}s</span>
           ) : (
             <button
               id="resend-otp-btn"
               onClick={handleResend}
               disabled={resending}
-              style={{
-                background: 'none', border: 'none',
-                color: '#d6336c', fontWeight: 600, fontSize: '13px',
-                cursor: resending ? 'not-allowed' : 'pointer',
-                textDecoration: 'underline',
-              }}
+              className="verify-otp-resend-btn"
             >
               {resending ? 'Sending…' : 'Resend OTP'}
             </button>
@@ -234,10 +181,7 @@ const VerifyOtp: React.FC = () => {
 
         <button
           onClick={() => navigate('/login')}
-          style={{
-            marginTop: '20px', background: 'none', border: 'none',
-            color: '#aaa', fontSize: '12px', cursor: 'pointer',
-          }}
+          className="verify-otp-back-btn"
         >
           ← Back to Login
         </button>

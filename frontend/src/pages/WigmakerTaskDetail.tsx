@@ -6,8 +6,7 @@ import StatusPill from '../components/StatusPill';
 import LoadingScreen from '../components/LoadingScreen';
 import { getPublicUrl } from '../lib/storage';
 import ConfirmModal from '../components/ConfirmModal';
-
-// Static data removed
+import '../styles/WigmakerTaskDetail.css';
 
 const WigmakerTaskDetail: React.FC = () => {
   const { taskCode } = useParams<{ taskCode: string }>();
@@ -95,88 +94,78 @@ const WigmakerTaskDetail: React.FC = () => {
   };
 
   if (loading) return <LoadingScreen />;
-  if (!data) return <div className="wigmaker-page staff-page" style={{ padding: '5rem', textAlign: 'center', color: '#8c7895' }}>Task not found.</div>;
+  if (!data) return <div className="wigmaker-page staff-page task-detail-not-found">Task not found.</div>;
 
   const { task, histories } = data;
   const nextStatus = task.status === 'processing' ? 'completed' : 'shipped';
+  const progressPercent = task.status === 'received' ? '100%' :
+                         task.status === 'shipped' ? '90%' :
+                         task.status === 'completed' ? '80%' :
+                         task.status === 'processing' ? '30%' :
+                         task.isReceived ? '10%' : '0%';
 
   return (
-    <section className="wigmaker-page reveal active staff-page" style={{ maxWidth: '100%', margin: '0', padding: '1.5rem 2.5rem' }}>
+    <section className="wigmaker-page reveal active staff-page task-detail-section">
       {/* Header Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', background: '#fff', padding: '1rem 1.5rem', borderRadius: '16px', border: '1px solid #ead7e8', boxShadow: '0 4px 15px rgba(173, 36, 109, 0.03)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: '#fdf2f8', width: '42px', height: '42px', borderRadius: '10px', display: 'grid', placeItems: 'center' }}>
-            <i className='bx bx-task' style={{ color: '#ad246d', fontSize: '1.3rem' }}></i>
+      <div className="task-detail-header-card">
+        <div className="task-detail-header-left">
+          <div className="task-detail-header-icon-wrapper">
+            <i className="bx bx-task task-detail-header-icon"></i>
           </div>
           <div>
-            <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Task: {task.taskCode}</h1>
-            <p style={{ fontSize: '0.75rem', color: '#8c7895', margin: 0 }}>Production ID: <span style={{ color: '#ad246d', fontWeight: 700 }}>{task.donation?.reference || 'N/A'}</span></p>
+            <h1 className="task-detail-header-title">Task: {task.taskCode}</h1>
+            <p className="task-detail-header-sub">Production ID: <span className="task-detail-header-sub-ref">{task.donation?.reference || 'N/A'}</span></p>
           </div>
         </div>
-        <Link
-          to="/wigmaker/dashboard"
-          style={{
-            padding: '0.35rem 0.8rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            borderRadius: '8px',
-            border: '1.5px solid #ead7e8',
-            color: '#ad246d',
-            fontSize: '0.7rem',
-            fontWeight: 800,
-            textDecoration: 'none',
-            background: '#fff'
-          }}
-        >
-          <i className='bx bx-left-arrow-alt'></i> Back to Dashboard
+        <Link to="/wigmaker/dashboard" className="task-detail-back-btn">
+          <i className="bx bx-left-arrow-alt"></i> Back to Dashboard
         </Link>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '1.5rem', alignItems: 'start' }}>
+      <div className="task-detail-grid">
         {/* Main Column */}
-        <div style={{ display: 'grid', gap: '1.5rem' }}>
+        <div className="task-detail-main-col">
 
           {/* Details & Material Combined */}
-          <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 200px', gap: '1.5rem' }}>
+          <article className="task-detail-assignment-card">
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem' }}>
-                <i className='bx bxs-info-circle' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
-                <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Assignment Details</h2>
+              <div className="task-detail-card-title-row">
+                <i className="bx bxs-info-circle task-detail-card-title-icon"></i>
+                <h2 className="task-detail-card-title">Assignment Details</h2>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.82rem' }}>
-                <div style={{ background: '#fdf7fb', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #f8eaf1' }}>
-                  <span style={{ display: 'block', color: '#8c7895', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, marginBottom: '2px' }}>Inventory Ref</span>
-                  <strong style={{ color: '#ad246d', fontSize: '0.9rem' }}>{task.donation?.reference || 'N/A'}</strong>
+              <div className="task-detail-info-grid">
+                <div className="task-detail-info-block">
+                  <span className="task-detail-info-block-label">Inventory Ref</span>
+                  <strong className="task-detail-info-block-value highlight">{task.donation?.reference || 'N/A'}</strong>
                 </div>
-                <div style={{ background: '#fdf7fb', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #f8eaf1' }}>
-                  <span style={{ display: 'block', color: '#8c7895', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, marginBottom: '2px' }}>Specification</span>
-                  <strong style={{ color: '#3b2e43', fontSize: '0.9rem' }}>{task.targetLength} / {task.targetColor}</strong>
+                <div className="task-detail-info-block">
+                  <span className="task-detail-info-block-label">Specification</span>
+                  <strong className="task-detail-info-block-value">{task.targetLength} / {task.targetColor}</strong>
                 </div>
-                <div style={{ background: '#fdf7fb', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #f8eaf1' }}>
-                  <span style={{ display: 'block', color: '#8c7895', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, marginBottom: '2px' }}>Started On</span>
-                  <strong style={{ color: '#5d4d62' }}>{new Date(task.createdAt).toLocaleDateString()}</strong>
+                <div className="task-detail-info-block">
+                  <span className="task-detail-info-block-label">Started On</span>
+                  <strong className="task-detail-info-block-value">{new Date(task.createdAt).toLocaleDateString()}</strong>
                 </div>
-                <div style={{ background: '#fdf7fb', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #f8eaf1' }}>
-                  <span style={{ display: 'block', color: '#8c7895', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, marginBottom: '2px' }}>Due Date</span>
-                  <strong style={{ color: '#5d4d62' }}>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'TBD'}</strong>
+                <div className="task-detail-info-block">
+                  <span className="task-detail-info-block-label">Due Date</span>
+                  <strong className="task-detail-info-block-value">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'TBD'}</strong>
                 </div>
               </div>
             </div>
 
-            <div style={{ borderLeft: '1px dashed #ead7e8', paddingLeft: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
-                <i className='bx bx-images' style={{ color: '#ad246d', fontSize: '1.2rem' }}></i>
-                <h2 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Materials</h2>
+            <div className="task-detail-materials-side">
+              <div className="task-detail-card-title-row sub-title">
+                <i className="bx bx-images task-detail-card-title-icon small"></i>
+                <h2 className="task-detail-card-title small">Materials</h2>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div className="task-detail-materials-grid">
                 {[task.donation?.photoFront, task.donation?.photoSide].filter(Boolean).map((img, idx) => (
-                  <div key={idx} style={{ width: '85px', height: '85px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #ead7e8', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
-                    <img src={getPublicUrl('hairlink', img)} alt="Material" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div key={idx} className="task-detail-material-photo-box">
+                    <img src={getPublicUrl('hairlink', img) || undefined} alt="Material" className="task-detail-material-photo" />
                   </div>
                 ))}
                 {![task.donation?.photoFront, task.donation?.photoSide].filter(Boolean).length && (
-                  <div style={{ fontSize: '0.7rem', color: '#8c7895', fontStyle: 'italic' }}>No photos</div>
+                  <div className="task-detail-material-no-photo">No photos</div>
                 )}
               </div>
             </div>
@@ -184,18 +173,18 @@ const WigmakerTaskDetail: React.FC = () => {
 
           {/* Material Tracking Card (Staff -> Wigmaker) */}
           {task.materialDeliveryLink && task.status === 'assigned' && !task.isReceived && (
-            <div style={{ padding: '1.25rem', background: '#f8fafc', border: '1.5px dashed #3b82f6', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-              <div style={{ background: '#fff', width: '44px', height: '44px', borderRadius: '10px', display: 'grid', placeItems: 'center', boxShadow: '0 2px 8px rgba(59, 130, 246, 0.1)', border: '1px solid #dbeafe' }}>
-                <i className='bx bx-package' style={{ color: '#3b82f6', fontSize: '1.4rem' }}></i>
+            <div className="task-detail-status-banner-blue">
+              <div className="task-detail-status-banner-icon-box">
+                <i className="bx bx-package task-detail-status-banner-icon-blue"></i>
               </div>
-              <div style={{ flex: 1 }}>
-                <small style={{ display: 'block', color: '#64748b', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>Staff Sent Materials</small>
-                <a href={task.materialDeliveryLink} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', fontSize: '0.9rem', textDecoration: 'underline', fontWeight: 700 }}>Track Incoming Hair Package</a>
+              <div className="task-detail-status-banner-content">
+                <small className="task-detail-status-banner-label">Staff Sent Materials</small>
+                <a href={task.materialDeliveryLink} target="_blank" rel="noreferrer" className="task-detail-status-banner-link">Track Incoming Hair Package</a>
               </div>
               <button
                 onClick={handleConfirmMaterial}
                 disabled={isSubmitting}
-                style={{ height: '36px', padding: '0 1rem', borderRadius: '50px', border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' }}
+                className="task-detail-status-banner-btn-blue"
               >
                 {isSubmitting ? '...' : 'Confirm Hair Received'}
               </button>
@@ -204,37 +193,37 @@ const WigmakerTaskDetail: React.FC = () => {
 
           {/* Stage 2: Start Production / In Progress Updates */}
           {(task.status === 'processing' || (task.status === 'assigned' && task.isReceived)) && (
-            <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-                <i className='bx bx-edit-alt' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Production Status Update</h2>
+            <article className="task-detail-update-card">
+              <div className="task-detail-card-title-row">
+                <i className="bx bx-edit-alt task-detail-card-title-icon"></i>
+                <h2 className="task-detail-card-title">Production Status Update</h2>
               </div>
-              <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1.25rem' }}>
+              <form onSubmit={handleSubmit} className="task-detail-update-form">
+                <div className="task-detail-form-row-2col">
                   <div>
-                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Next Status</label>
-                    <div style={{ height: '42px', padding: '0 1rem', borderRadius: '10px', border: '1.5px solid #f1a8cf', background: '#fdf7fb', color: '#ad246d', fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
-                      <i className='bx bx-check-double' style={{ marginRight: '6px' }}></i> {task.status === 'assigned' ? 'In Progress' : 'Production Finished'}
+                    <label className="task-detail-form-label">Next Status</label>
+                    <div className="task-detail-form-select-display">
+                      <i className="bx bx-check-double task-detail-form-select-icon"></i> {task.status === 'assigned' ? 'In Progress' : 'Production Finished'}
                     </div>
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Update Photo (Optional)</label>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <label className="task-detail-form-label">Update Photo (Optional)</label>
+                    <div className="task-detail-form-photo-upload-wrapper">
                       {previewUrl && (
-                        <div style={{ position: 'relative', width: '42px', height: '42px', borderRadius: '8px', overflow: 'hidden', border: '1.5px solid #ad246d', flexShrink: 0 }}>
-                          <img src={previewUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div className="task-detail-form-photo-preview">
+                          <img src={previewUrl} alt="Preview" className="task-detail-form-photo-preview-img" />
                           <button
                             type="button"
                             onClick={() => { setFile(null); setPreviewUrl(null); }}
-                            style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(173, 36, 109, 0.8)', color: '#fff', border: 'none', width: '16px', height: '16px', display: 'grid', placeItems: 'center', cursor: 'pointer', fontSize: '10px' }}
+                            className="task-detail-form-photo-preview-remove"
                           >
-                            <i className='bx bx-x'></i>
+                            <i className="bx bx-x"></i>
                           </button>
                         </div>
                       )}
-                      <label style={{ flex: 1, minWidth: 0, height: '42px', padding: '0 1rem', borderRadius: '10px', border: '1px solid #ead7e8', background: '#fff', color: '#5d4d62', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', overflow: 'hidden' }}>
-                        <i className='bx bx-camera' style={{ color: '#ad246d', flexShrink: 0 }}></i>
-                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>{file ? file.name : 'Upload Progress Photo'}</span>
+                      <label className="task-detail-form-photo-upload-label">
+                        <i className="bx bx-camera task-detail-form-photo-upload-icon"></i>
+                        <span className="task-detail-form-photo-upload-text">{file ? file.name : 'Upload Progress Photo'}</span>
                         <input
                           type="file"
                           accept="image/jpeg, image/png, image/webp"
@@ -244,34 +233,34 @@ const WigmakerTaskDetail: React.FC = () => {
                             if (f) setPreviewUrl(URL.createObjectURL(f));
                             else setPreviewUrl(null);
                           }}
-                          style={{ display: 'none' }}
+                          className="task-detail-file-input"
                         />
                       </label>
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                <div className="task-detail-form-row-2col">
                   <div>
-                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Update Timestamp</label>
+                    <label className="task-detail-form-label">Update Timestamp</label>
                     <input
                       type="datetime-local"
                       value={customDate}
                       onChange={e => setCustomDate(e.target.value)}
-                      style={{ width: '100%', height: '42px', padding: '0 1rem', borderRadius: '12px', border: '1px solid #ead7e8', fontSize: '0.85rem', color: '#5d4d62' }}
+                      className="task-detail-form-input-text"
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Progress Message <span style={{ color: '#ad246d' }}>*</span></label>
-                    <textarea rows={2} placeholder="Briefly describe your current progress..." value={notes} onChange={e => setNotes(e.target.value)} required style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '12px', border: '1px solid #ead7e8', fontSize: '0.85rem', outline: 'none', background: '#fafafa' }}></textarea>
+                    <label className="task-detail-form-label">Progress Message <span className="task-detail-form-label-required">*</span></label>
+                    <textarea rows={2} placeholder="Briefly describe your current progress..." value={notes} onChange={e => setNotes(e.target.value)} required className="task-detail-form-textarea"></textarea>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="task-detail-form-actions-flex">
                   {task.status === 'assigned' ? (
                     <button
                       type="button"
                       onClick={() => requestStatusUpdate('processing')}
                       disabled={isSubmitting}
-                      style={{ flex: 1, height: '42px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}
+                      className="task-detail-form-submit-btn"
                     >
                       {isSubmitting && pendingStatus === 'processing' ? '...' : 'Start Production'}
                     </button>
@@ -281,7 +270,7 @@ const WigmakerTaskDetail: React.FC = () => {
                         type="button"
                         onClick={() => requestStatusUpdate('completed')}
                         disabled={isSubmitting}
-                        style={{ flex: 1, height: '42px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }}
+                        className="task-detail-form-submit-btn"
                       >
                         {isSubmitting && pendingStatus === 'completed' ? '...' : 'Production Finished'}
                       </button>
@@ -294,28 +283,28 @@ const WigmakerTaskDetail: React.FC = () => {
 
           {/* Completion Banner */}
           {task.status === 'received' && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '20px', padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#dcfce7', display: 'grid', placeItems: 'center', color: '#16a34a' }}>
-                <i className='bx bxs-check-circle' style={{ fontSize: '2rem' }}></i>
+            <div className="task-detail-success-banner">
+              <div className="task-detail-success-banner-icon">
+                <i className="bx bxs-check-circle task-detail-success-banner-icon-i"></i>
               </div>
               <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#166534', margin: 0 }}>Production Fully Finalized</h3>
-                <p style={{ fontSize: '0.8rem', color: '#166534', margin: '0.1rem 0 0 0', opacity: 0.8 }}>Staff has received the wig and finalized this task.</p>
+                <h3 className="task-detail-success-banner-title">Production Fully Finalized</h3>
+                <p className="task-detail-success-banner-sub">Staff has received the wig and finalized this task.</p>
               </div>
             </div>
           )}
 
           {/* Shipped Status Notice */}
           {task.status === 'shipped' && (
-            <div style={{ background: '#eff6ff', border: '1px solid #dbeafe', borderRadius: '20px', padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#dbeafe', display: 'grid', placeItems: 'center', color: '#3b82f6' }}>
-                <i className='bx bx-paper-plane' style={{ fontSize: '1.8rem' }}></i>
+            <div className="task-detail-info-banner-blue">
+              <div className="task-detail-info-banner-blue-icon">
+                <i className="bx bx-paper-plane task-detail-info-banner-blue-icon-i"></i>
               </div>
               <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e40af', margin: 0 }}>Wig Returned to Staff</h3>
-                <p style={{ fontSize: '0.8rem', color: '#1e40af', margin: '0.1rem 0 0 0', opacity: 0.8 }}>Awaiting staff confirmation of receipt.</p>
+                <h3 className="task-detail-info-banner-blue-title">Wig Returned to Staff</h3>
+                <p className="task-detail-info-banner-blue-sub">Awaiting staff confirmation of receipt.</p>
                 {task.deliveryLink && (
-                  <a href={task.deliveryLink} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: '0.5rem', color: '#2563eb', fontSize: '0.75rem', fontWeight: 700 }}>View Your Return Tracking</a>
+                  <a href={task.deliveryLink} target="_blank" rel="noreferrer" className="task-detail-info-banner-blue-link">View Your Return Tracking</a>
                 )}
               </div>
             </div>
@@ -323,43 +312,43 @@ const WigmakerTaskDetail: React.FC = () => {
 
           {/* Stage 3: Ready for Delivery (Completed Status) */}
           {task.status === 'completed' && (
-            <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-                <i className='bx bx-package' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Wig Return Delivery</h2>
+            <article className="task-detail-update-card">
+              <div className="task-detail-card-title-row">
+                <i className="bx bx-package task-detail-card-title-icon"></i>
+                <h2 className="task-detail-card-title">Wig Return Delivery</h2>
               </div>
-              <p style={{ fontSize: '0.8rem', color: '#8c7895', marginBottom: '1.25rem' }}>Production is finished! Please provide the tracking link for the finished wig being sent back to the staff.</p>
-              <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+              <p className="task-detail-header-sub task-detail-header-sub-margin">Production is finished! Please provide the tracking link for the finished wig being sent back to the staff.</p>
+              <form onSubmit={handleSubmit} className="task-detail-update-form">
+                <div className="task-detail-form-row-2col">
                   <div>
-                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Shipping Date</label>
+                    <label className="task-detail-form-label">Shipping Date</label>
                     <input
                       type="datetime-local"
                       value={customDate}
                       onChange={e => setCustomDate(e.target.value)}
-                      style={{ width: '100%', height: '42px', padding: '0 1rem', borderRadius: '12px', border: '1px solid #ead7e8', fontSize: '0.85rem', color: '#5d4d62' }}
+                      className="task-detail-form-input-text"
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Return Tracking Link <span style={{ color: '#ad246d' }}>*</span></label>
-                    <div style={{ position: 'relative' }}>
-                      <i className='bx bx-link' style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#ad246d' }}></i>
+                    <label className="task-detail-form-label">Return Tracking Link <span className="task-detail-form-label-required">*</span></label>
+                    <div className="task-detail-tracking-input-wrapper">
+                      <i className="bx bx-link task-detail-tracking-input-icon"></i>
                       <input
                         type="url"
                         placeholder="https://courier-tracking-link.com/..."
                         value={task.deliveryLink || ''}
                         onChange={e => setData(prev => ({ ...prev!, task: { ...prev!.task, deliveryLink: e.target.value } }))}
                         required
-                        style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 2.5rem', borderRadius: '12px', border: '1px solid #ead7e8', fontSize: '0.85rem' }}
+                        className="task-detail-tracking-input"
                       />
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#8c7895', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Final Message (Optional)</label>
-                  <textarea rows={2} placeholder="Any final notes for the staff..." value={notes} onChange={e => setNotes(e.target.value)} style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid #ead7e8', fontSize: '0.85rem', outline: 'none', background: '#fafafa' }}></textarea>
+                  <label className="task-detail-form-label">Final Message (Optional)</label>
+                  <textarea rows={2} placeholder="Any final notes for the staff..." value={notes} onChange={e => setNotes(e.target.value)} className="task-detail-form-textarea"></textarea>
                 </div>
-                <button type="submit" disabled={isSubmitting} style={{ height: '42px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)' }} onClick={(e) => { e.preventDefault(); setShowConfirm(true); }}>
+                <button type="submit" disabled={isSubmitting} className="task-detail-form-submit-btn" onClick={(e) => { e.preventDefault(); setShowConfirm(true); }}>
                   {isSubmitting ? 'Processing...' : 'Submit Tracking & Mark as Shipped'}
                 </button>
               </form>
@@ -368,13 +357,13 @@ const WigmakerTaskDetail: React.FC = () => {
         </div>
 
         {/* Sidebar Roadmap */}
-        <aside style={{ display: 'grid', gap: '1.5rem' }}>
-          <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
-              <i className='bx bx-map-pin' style={{ color: '#ad246d', fontSize: '1.2rem' }}></i>
-              <h2 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Task Roadmap</h2>
+        <aside className="task-detail-sidebar">
+          <article className="task-detail-roadmap-card">
+            <div className="task-detail-card-title-row">
+              <i className="bx bx-map-pin task-detail-card-title-icon small"></i>
+              <h2 className="task-detail-card-title small">Task Roadmap</h2>
             </div>
-            <div style={{ position: 'relative', paddingLeft: '1.5rem', borderLeft: '2.5px dashed #f2ebf4', display: 'grid', gap: '1.5rem' }}>
+            <div className="task-detail-roadmap-steps">
               {[
                 { stage: 'Assigned', desc: 'Material delivery confirmed', status: 'assigned' },
                 { stage: 'In Progress', desc: 'Wig construction & styling', status: 'processing' },
@@ -390,62 +379,46 @@ const WigmakerTaskDetail: React.FC = () => {
                 const isDone = isActive || isPast;
 
                 return (
-                  <div key={idx} style={{ position: 'relative' }}>
-                    <div style={{
-                      position: 'absolute', left: '-2.05rem', top: '0.2rem', width: '16px', height: '16px', borderRadius: '50%',
-                      background: isDone ? (isActive ? '#ad246d' : '#fff') : '#fff',
-                      border: '3px solid ' + (isDone ? '#ad246d' : '#ead7e8'),
-                      display: 'grid', placeItems: 'center',
-                      boxShadow: isActive ? '0 0 0 4px rgba(173, 36, 109, 0.1)' : 'none'
-                    }}>
-                      {isPast && <i className='bx bx-check' style={{ color: '#ad246d', fontSize: '0.7rem', fontWeight: 900 }}></i>}
+                  <div key={idx} className="task-detail-roadmap-step">
+                    <div className={`task-detail-roadmap-step-dot ${isPast ? 'past' : isActive ? 'active' : 'upcoming'}`}>
+                      {isPast && <i className="bx bx-check task-detail-roadmap-step-dot-icon"></i>}
                     </div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: isDone ? '#3b2e43' : '#8c7895' }}>{step.stage}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#8c7895', lineHeight: 1.4 }}>{step.desc}</div>
+                    <div className={`task-detail-roadmap-step-title ${isDone ? 'done' : ''}`}>{step.stage}</div>
+                    <div className="task-detail-roadmap-step-desc">{step.desc}</div>
                   </div>
                 );
               })}
             </div>
           </article>
 
-          <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '1.5rem', textAlign: 'center' }}>
-            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#ad246d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current Progress</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#3b2e43', margin: '0.5rem 0' }}>
-              {
-                task.status === 'received' ? '100%' :
-                  task.status === 'shipped' ? '90%' :
-                    task.status === 'completed' ? '80%' :
-                      task.status === 'processing' ? '30%' :
-                        task.isReceived ? '10%' : '0%'
-              }
+          <article className="task-detail-progress-card">
+            <span className="task-detail-progress-label">Current Progress</span>
+            <div className="task-detail-progress-value">
+              {progressPercent}
             </div>
-            <div style={{ height: '6px', background: '#f2f2f2', borderRadius: '10px', overflow: 'hidden' }}>
-              <div style={{
-                width: task.status === 'received' ? '100%' :
-                  task.status === 'shipped' ? '90%' :
-                    task.status === 'completed' ? '80%' :
-                      task.status === 'processing' ? '30%' :
-                        task.isReceived ? '10%' : '0%',
-                height: '100%', background: 'linear-gradient(90deg, #ad246d, #ff6bb5)', borderRadius: '10px', transition: 'width 0.8s ease'
-              }}></div>
+            <div className="task-detail-progress-bar-bg">
+              <div
+                className="task-detail-progress-bar-fill"
+                style={{ width: progressPercent }}
+              ></div>
             </div>
           </article>
         </aside>
       </div>
 
       {/* History Table - Full Width */}
-      <article style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', padding: '1.5rem', marginTop: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-          <i className='bx bx-history' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
-          <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Production Logs</h2>
+      <article className="task-detail-history-card">
+        <div className="task-detail-card-title-row">
+          <i className="bx bx-history task-detail-card-title-icon"></i>
+          <h2 className="task-detail-card-title">Production Logs</h2>
         </div>
-        <div style={{ borderRadius: '12px', border: '1px solid #f2ebf4', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="task-detail-history-table-wrapper">
+          <table className="task-detail-history-table">
             <thead>
-              <tr style={{ background: '#fdf7fb', borderBottom: '1px solid #f2ebf4' }}>
-                <th style={{ padding: '0.8rem 1rem', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: '#ad246d', textTransform: 'uppercase' }}>Timestamp</th>
-                <th style={{ padding: '0.8rem 1rem', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: '#ad246d', textTransform: 'uppercase' }}>Stage</th>
-                <th style={{ padding: '0.8rem 1rem', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: '#ad246d', textTransform: 'uppercase' }}>Update Details</th>
+              <tr className="task-detail-history-tr-head">
+                <th className="task-detail-history-th">Timestamp</th>
+                <th className="task-detail-history-th">Stage</th>
+                <th className="task-detail-history-th">Update Details</th>
               </tr>
             </thead>
             <tbody>
@@ -458,18 +431,18 @@ const WigmakerTaskDetail: React.FC = () => {
                   received: 'Finalized'
                 };
                 return (
-                  <tr key={i} style={{ borderBottom: i === histories.length - 1 ? 'none' : '1px solid #f8f8f8' }}>
-                    <td style={{ padding: '1rem', fontSize: '0.8rem', color: '#5d4d62' }}>{new Date(h.createdAt).toLocaleString()}</td>
-                    <td style={{ padding: '1rem' }}><StatusPill status={h.status} label={statusLabels[h.status]} /></td>
-                    <td style={{ padding: '1rem', fontSize: '0.8rem', color: '#8c7895', lineHeight: 1.5 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-                        <div style={{ flex: 1 }}>{h.notes || 'No message provided.'}</div>
+                  <tr key={i} className="task-detail-history-tr-body">
+                    <td className="task-detail-history-td timestamp">{new Date(h.createdAt).toLocaleString()}</td>
+                    <td className="task-detail-history-td"><StatusPill status={h.status} label={statusLabels[h.status]} /></td>
+                    <td className="task-detail-history-td">
+                      <div className="task-detail-history-notes-flex">
+                        <div className="task-detail-history-notes-text">{h.notes || 'No message provided.'}</div>
                         {h.metadata?.preview_photo && (
                           <div
-                            style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ead7e8', flexShrink: 0, cursor: 'pointer' }}
-                            onClick={() => window.open(getPublicUrl('hairlink', h.metadata.preview_photo), '_blank')}
+                            className="task-detail-history-photo-preview-box"
+                            onClick={() => window.open(getPublicUrl('hairlink', h.metadata.preview_photo) || undefined, '_blank')}
                           >
-                            <img src={getPublicUrl('hairlink', h.metadata.preview_photo)} alt="Log Attachment" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={getPublicUrl('hairlink', h.metadata.preview_photo) || undefined} alt="Log Attachment" className="task-detail-history-photo-img" />
                           </div>
                         )}
                       </div>

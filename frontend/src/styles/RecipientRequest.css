@@ -1,0 +1,10 @@
+/* RecipientRequest.css */
+
+.field-readonly {
+  background: #f5f3f7;
+  cursor: not-allowed;
+}
+
+.upload-grid-gap {
+  gap: 1.5rem;
+}

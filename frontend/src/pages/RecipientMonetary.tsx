@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
+import '../styles/RecipientMonetary.css';
 
 const RecipientMonetary: React.FC = () => {
   const { user: _user } = useAuth();
@@ -74,10 +75,10 @@ const RecipientMonetary: React.FC = () => {
         </div>
       </div>
 
-      <div className="guidelines-actions-container" style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '1.5rem', marginTop: '1.5rem' }}>
+      <div className="recipient-monetary-layout">
         <div className="module-card">
-          <h3 style={{ marginBottom: '1.5rem', fontWeight: 800 }}>Request Assistance</h3>
-          <form onSubmit={handleSubmit} className="form-shell" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+          <h3 className="module-card-title">Request Assistance</h3>
+          <form onSubmit={handleSubmit} className="monetary-form">
             <div className="form-group">
               <label>Requested Amount (PHP)</label>
               <input 
@@ -86,8 +87,7 @@ const RecipientMonetary: React.FC = () => {
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
                 required
-                className="form-input-premium"
-                style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', border: '1px solid #ead7e8' }}
+                className="monetary-form-input"
               />
             </div>
 
@@ -99,58 +99,57 @@ const RecipientMonetary: React.FC = () => {
                 onChange={e => setReason(e.target.value)}
                 required
                 rows={4}
-                className="form-input-premium"
-                style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', border: '1px solid #ead7e8', resize: 'none' }}
+                className="monetary-form-textarea"
               ></textarea>
             </div>
 
-            <button type="submit" className="soft-btn" disabled={isSubmitting || !amount || !reason} style={{ marginTop: '1rem', width: '100%' }}>
+            <button type="submit" className="soft-btn monetary-submit-btn" disabled={isSubmitting || !amount || !reason}>
               {isSubmitting ? 'Submitting...' : 'Submit Request'}
             </button>
           </form>
         </div>
 
         <div className="module-card sidebar-help">
-          <h3 style={{ marginBottom: '1rem', fontWeight: 800 }}>Aid Guidelines</h3>
-          <ul style={{ paddingLeft: '1.2rem', color: '#665772', fontSize: '0.9rem', lineHeight: '1.6' }}>
-            <li style={{ marginBottom: '0.8rem' }}>Assistance is subject to available community funds.</li>
-            <li style={{ marginBottom: '0.8rem' }}>Priority is given to transport and logistical needs for wig fitting.</li>
-            <li style={{ marginBottom: '0.8rem' }}>Approval typically takes 3-5 business days.</li>
+          <h3 className="module-card-title-sm">Aid Guidelines</h3>
+          <ul className="guidelines-list">
+            <li>Assistance is subject to available community funds.</li>
+            <li>Priority is given to transport and logistical needs for wig fitting.</li>
+            <li>Approval typically takes 3-5 business days.</li>
           </ul>
-          <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fdf7fb', borderRadius: '12px', border: '1px solid #f2ebf4' }}>
-            <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#ad246d' }}>
+          <div className="guidelines-note">
+            <p>
               <i className='bx bxs-info-circle'></i> Ensure your profile is fully verified before applying.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="module-card" style={{ marginTop: '1.5rem' }}>
-        <h3 style={{ marginBottom: '1.5rem', fontWeight: 800 }}>Aid History</h3>
+      <div className="module-card module-card-mt">
+        <h3 className="module-card-title">Aid History</h3>
         <div className="table-wrap">
-          <table className="tracking-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="monetary-table">
             <thead>
-              <tr style={{ textAlign: 'left', borderBottom: '2px solid #f2ebf4' }}>
-                <th style={{ padding: '1rem' }}>Reference</th>
-                <th style={{ padding: '1rem' }}>Amount</th>
-                <th style={{ padding: '1rem' }}>Reason</th>
-                <th style={{ padding: '1rem' }}>Status</th>
+              <tr>
+                <th>Reference</th>
+                <th>Amount</th>
+                <th>Reason</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {requests.map((r: any) => (
-                <tr key={r.id} style={{ borderBottom: '1px solid #f2ebf4' }}>
-                  <td style={{ padding: '1rem' }}>#{r.reference}</td>
-                  <td style={{ padding: '1rem' }}>₱{r.amount.toLocaleString()}</td>
-                  <td style={{ padding: '1rem' }}>{r.reason.substring(0, 40)}...</td>
-                  <td style={{ padding: '1rem' }}>
+                <tr key={r.id}>
+                  <td>#{r.reference}</td>
+                  <td>₱{r.amount.toLocaleString()}</td>
+                  <td>{r.reason.substring(0, 40)}...</td>
+                  <td>
                     <span className={`status-pill status-${r.status.toLowerCase()}`}>{r.status}</span>
                   </td>
                 </tr>
               ))}
               {requests.length === 0 && (
                 <tr>
-                  <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: '#8c7895' }}>No aid requests found.</td>
+                  <td colSpan={4} className="monetary-table-empty">No aid requests found.</td>
                 </tr>
               )}
             </tbody>

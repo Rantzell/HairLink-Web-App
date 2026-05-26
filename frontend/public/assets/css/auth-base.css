@@ -200,18 +200,21 @@ body {
 
 .demo-fill-btn {
     margin-top: 0.5rem;
-    border: 1px solid #d88db8;
+    border: none;
     border-radius: 999px;
-    background: #fff;
-    color: #ab266f;
+    background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+    color: #fff;
     font-weight: 800;
-    padding: 0.36rem 0.62rem;
+    padding: 0.4rem 0.7rem;
     font-size: 0.72rem;
     cursor: pointer;
+    box-shadow: 0 4px 10px rgba(167, 31, 104, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .demo-fill-btn:hover {
-    background: #ffe7f3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(167, 31, 104, 0.3);
 }
 
 .demo-switch-row {

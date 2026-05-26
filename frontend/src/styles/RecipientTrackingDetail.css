@@ -1,0 +1,366 @@
+/* RecipientTrackingDetail.css */
+
+/* Header */
+.detail-module-head {
+  margin-bottom: 1.5rem;
+}
+
+.detail-module-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #261d2b;
+  margin: 0;
+}
+
+.detail-module-subtitle {
+  color: #665772;
+  font-size: 0.75rem;
+  margin-top: 0.2rem;
+}
+
+.detail-action-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.detail-back-btn {
+  text-decoration: none;
+  font-size: 0.7rem;
+  background: #fff;
+  color: #ad246d;
+  padding: 0.35rem 0.8rem;
+  border-radius: 8px;
+  border: 1.5px solid #ead7e8;
+  font-weight: 700;
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.detail-back-btn:hover {
+  border-color: #ad246d;
+  background: #fdf7fb;
+}
+
+.detail-track-btn {
+  text-decoration: none;
+  background: #3b82f6;
+  color: #fff;
+  padding: 0.35rem 0.8rem;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 0.2s ease;
+}
+
+.detail-track-btn:hover {
+  opacity: 0.9;
+}
+
+.detail-confirm-btn {
+  border: none;
+  cursor: pointer;
+  background: #ad246d;
+  color: #fff;
+  padding: 0.35rem 0.8rem;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  transition: opacity 0.2s ease;
+}
+
+.detail-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Summary grid */
+.detail-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.detail-summary-card {
+  background: #fff;
+  border: 1px solid #ead7e8;
+  border-radius: 12px;
+  padding: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.detail-summary-icon-wrap {
+  background: #fdf2f8;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.detail-summary-icon {
+  color: #ad246d;
+  font-size: 1.2rem;
+}
+
+.detail-summary-label {
+  display: block;
+  color: #8c7895;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.detail-summary-value {
+  color: #3b2e43;
+  font-size: 0.85rem;
+}
+
+.detail-summary-pill-wrap {
+  margin-top: 0.2rem;
+}
+
+/* Main detail layout */
+.detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Roadmap card */
+.detail-roadmap-card {
+  background: #fff;
+  border: 1px solid #ead7e8;
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.detail-roadmap-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.detail-roadmap-icon {
+  color: #ad246d;
+  font-size: 1.4rem;
+}
+
+.detail-roadmap-title {
+  margin: 0;
+}
+
+.detail-timeline {
+  padding-left: 0.5rem;
+  list-style: none;
+}
+
+.detail-timeline-item {
+  border-left: 2px solid #f2ebf4;
+  padding-left: 1.5rem;
+  padding-bottom: 1.25rem;
+  position: relative;
+}
+
+.detail-timeline-dot {
+  position: absolute;
+  left: -7px;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  background: #ad246d;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.detail-timeline-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.detail-timeline-status {
+  font-size: 0.9rem;
+  color: #ad246d;
+}
+
+.detail-timeline-time {
+  font-size: 0.75rem;
+  color: #8c7895;
+}
+
+.detail-timeline-desc {
+  background: #fdf7fb;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #f2ebf4;
+  font-size: 0.85rem;
+  color: #4d3f56;
+}
+
+/* Side box */
+.detail-side-box {
+  display: grid;
+  gap: 1rem;
+}
+
+.detail-side-card {
+  background: #fff;
+  border: 1px solid #ead7e8;
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.detail-side-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.detail-side-card-icon {
+  color: #ad246d;
+  font-size: 1.4rem;
+}
+
+.detail-side-card-title {
+  margin: 0;
+}
+
+.detail-wig-info-grid {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+}
+
+.detail-wig-info-p {
+  margin: 0;
+}
+
+.detail-wig-story {
+  margin: 0;
+  margin-bottom: 0.5rem;
+}
+
+.detail-wig-story-box {
+  background: #fdf7fb;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #f2ebf4;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: #665772;
+}
+
+/* Photo card */
+.detail-photo-card {
+  background: #fff;
+  border: 1px solid #ead7e8;
+  border-radius: 16px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.detail-photo-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #ad246d;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+}
+
+.detail-photo-frame {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(173, 36, 109, 0.05);
+  border: 1px solid #ead7e8;
+}
+
+.detail-photo-link {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.detail-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-photo-placeholder {
+  font-size: 3rem;
+  color: #ead7e8;
+}
+
+/* Documents card */
+.detail-docs-card {
+  background: #fff;
+  border: 1px solid #ead7e8;
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.detail-docs-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #ad246d;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+}
+
+.detail-docs-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.detail-doc-link {
+  width: 45px;
+  height: 45px;
+  background: #fdf7fb;
+  border: 1px solid #ead7e8;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.detail-doc-link:hover {
+  border-color: #ad246d;
+  background: #fff5fa;
+}
+
+.detail-doc-icon {
+  color: #ad246d;
+  font-size: 1.2rem;
+}

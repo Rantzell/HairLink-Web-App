@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
+import '../styles/StaffMatchingList.css';
 
 const StaffMatchingList: React.FC = () => {
   const [matches, setMatches] = useState<any[]>([]);
@@ -31,63 +32,68 @@ const StaffMatchingList: React.FC = () => {
 
   return (
     <section className="section-wrap reveal active staff-page">
-      <article className="staff-block" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '15px', padding: '2rem', boxShadow: '0 10px 40px rgba(173, 36, 109, 0.04)' }}>
-        <div className="staff-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', gap: '1rem' }}>
-          <div style={{ flex: '1' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Recipient Matching List</h2>
+      <article className="staff-block matching-list-card">
+        <div className="staff-bar matching-list-header">
+          <div className="matching-list-header-left">
+            <h2 className="matching-list-title">Recipient Matching List</h2>
           </div>
-          <div className="staff-tools" style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-            <div style={{ position: 'relative' }}>
-              <i className='bx bx-search' style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#8c7895' }}></i>
+          <div className="staff-tools matching-list-tools">
+            <div className="matching-list-search-wrap">
+              <i className='bx bx-search matching-list-search-icon'></i>
               <input 
                 type="text" 
                 placeholder="Search matching record..." 
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                style={{ height: '32px', padding: '0 10px 0 32px', borderRadius: '8px', border: '1px solid #ead7e8', fontSize: '0.85rem', width: '220px' }}
+                className="matching-list-search-input"
               />
             </div>
             <button 
               type="button" 
-              className="ghost-btn" 
+              className="ghost-btn matching-list-print-btn" 
               onClick={handlePrint}
-              style={{ height: '32px', padding: '0 1rem', fontWeight: 800, border: '1px solid #ead7e8', borderRadius: '8px', fontSize: '0.75rem', color: '#5d4d62', background: '#fff', cursor: 'pointer' }}
             >
               Print List
             </button>
           </div>
         </div>
 
-        <div className="table-wrap" style={{ border: '1px solid #f2ebf4', borderRadius: '12px', overflow: 'hidden' }}>
-          <table className="staff-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+        <div className="table-wrap matching-list-table-wrap">
+          <table className="staff-table matching-list-table">
             <thead>
-              <tr style={{ background: '#fdf7fb', borderBottom: '1px solid #ead7e8' }}>
-                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', color: '#ad246d', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Recipient Name</th>
-                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', color: '#ad246d', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Match Ref</th>
-                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', color: '#ad246d', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Current Status</th>
-                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', color: '#ad246d', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Date Matched</th>
+              <tr className="matching-list-thead-tr">
+                <th className="matching-list-th">Recipient Name</th>
+                <th className="matching-list-th">Match Ref</th>
+                <th className="matching-list-th">Current Status</th>
+                <th className="matching-list-th">Date Matched</th>
               </tr>
             </thead>
             <tbody>
-              {filteredMatches.map((m) => (
-                <tr key={m.id} style={{ borderBottom: '1px solid #f2ebf4', transition: 'background 0.2s ease' }}>
-                  <td style={{ padding: '1.2rem 1rem', fontWeight: 700, color: '#3b2e43' }}>{m.user?.firstName} {m.user?.lastName}</td>
-                  <td style={{ padding: '1.2rem 1rem', color: '#5d4d62', fontFamily: 'monospace', fontWeight: 600 }}>{m.reference}</td>
-                  <td style={{ padding: '1.2rem 1rem' }}>
-                    <span style={{ padding: '0.4rem 0.8rem', borderRadius: '20px', background: '#fdf7fb', color: '#ad246d', fontSize: '0.75rem', fontWeight: 700, border: '1px solid #ead7e8' }}>
-                      {m.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '1.2rem 1rem', color: '#8c7895' }}>{new Date(m.updatedAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-              {filteredMatches.length === 0 && (
+              {loading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: '#8c7895', fontStyle: 'italic' }}>
+                  <td colSpan={4} className="matching-list-empty">
+                    Loading matches...
+                  </td>
+                </tr>
+              ) : filteredMatches.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="matching-list-empty">
                     No matching records found.
                   </td>
                 </tr>
-              )}
+              ) : null}
+              {!loading && filteredMatches.map((m) => (
+                <tr key={m.id} className="matching-list-tr">
+                  <td className="matching-list-td-name">{m.user?.firstName} {m.user?.lastName}</td>
+                  <td className="matching-list-td-ref">{m.reference}</td>
+                  <td className="matching-list-td">
+                    <span className="matching-list-status">
+                      {m.status}
+                    </span>
+                  </td>
+                  <td className="matching-list-td-date">{new Date(m.updatedAt).toLocaleDateString()}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
