@@ -90,23 +90,12 @@ const AdminDashboard: React.FC = () => {
         </article>
       </section>
 
-      <div className="admin-toolbar admin-surface admin-toolbar-surface">
-        <div className="admin-toolbar-copy">
-          <h2 className="admin-toolbar-title">Oversight Shortcuts</h2>
-        </div>
-        <div className="admin-quick-actions admin-quick-links">
-          <Link to="/admin/reports" className="admin-quick-link-btn"><i className='bx bx-history'></i> Approval Logs</Link>
-          <Link to="/admin/matching" className="admin-quick-link-btn"><i className='bx bx-list-ul'></i> Matching Logs</Link>
-          <Link to="/admin/inventory" className="admin-quick-link-btn"><i className='bx bx-package'></i> Stock Status</Link>
-          <Link to="/admin/operations" className="admin-quick-link-btn"><i className='bx bx-line-chart'></i> Operational Logs</Link>
-        </div>
-      </div>
+
 
       <section className="admin-priority-grid admin-priority-grid">
         <article className="admin-focus-card admin-focus-card">
           <div className="admin-focus-head admin-focus-head">
             <div>
-              <p className="admin-section-kicker">OPERATIONAL LOGS</p>
               <h2 className="admin-section-title"><i className='bx bx-transfer-alt'></i> Recent Donors</h2>
             </div>
             <Link to="/admin/reports" className="admin-focus-link">View summary</Link>
@@ -127,7 +116,6 @@ const AdminDashboard: React.FC = () => {
         <article className="admin-focus-card admin-focus-card">
           <div className="admin-focus-head admin-focus-head">
             <div>
-              <p className="admin-section-kicker">OPERATIONAL LOGS</p>
               <h2 className="admin-section-title"><i className='bx bx-user-check'></i> Recipient Activity</h2>
             </div>
             <Link to="/admin/matching" className="admin-focus-link">View summary</Link>

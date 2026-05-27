@@ -176,13 +176,19 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
     const due = new Date();
     due.setDate(due.getDate() + 30); // 30 days default
 
+    const firstDonation = donations[0];
+    const targetLength = firstDonation?.hairLength || 'Medium';
+    const targetColor = firstDonation?.hairColor || 'Black';
+
     const task = await prisma.wigProduction.create({
       data: {
         taskCode: tc,
         wigmakerId: wm.id,
         status: 'assigned',
         dueDate: due,
-        materialDeliveryLink: material_delivery_link || null
+        materialDeliveryLink: material_delivery_link || null,
+        targetLength,
+        targetColor
       }
     });
 
@@ -264,6 +270,9 @@ router.post('/match-wig', ...staffOnly, validate(matchWigSchema), async (req, re
     await prisma.hairRequest.update({ where: { id: hr.id }, data: { status: 'Matched' } });
     await createStatusHistory(REQUEST_TYPE, hr.id, 'Matched', `Matched with Wig #${wig.taskCode}`);
     await prisma.wigProduction.update({ where: { id: wig.id }, data: { hairRequestId: hr.id, status: 'matched' } });
+    // Notify the recipient that their wig has been matched
+    const { notifyRequestStatus } = await import('../services/notification.service');
+    if (hr.userId) await notifyRequestStatus(hr.userId, 'Matched', hr.reference as string);
     res.json({ message: `Matched with Wig #${wig.taskCode}.`, success: true });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
@@ -271,7 +280,7 @@ router.post('/match-wig', ...staffOnly, validate(matchWigSchema), async (req, re
 // GET /internal-api/staff/hair-stock
 router.get('/hair-stock', ...staffOnly, async (_req, res) => {
   try {
-    const dons = await prisma.donation.findMany({ where: { status: 'Completed' } });
+    const dons = await prisma.donation.findMany({ where: { status: 'Received Hair' } });
     const stock: Record<string, Record<string, number>> = { Short: { Black: 0, Brown: 0, Light: 0 }, Medium: { Black: 0, Brown: 0, Light: 0 }, Long: { Black: 0, Brown: 0, Light: 0 } };
     for (const d of dons) {
       if (!d.hairLength || !d.hairColor) continue;

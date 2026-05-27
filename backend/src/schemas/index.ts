@@ -98,13 +98,13 @@ export const verificationStatusSchema = z.object({
 export const assignWigmakerSchema = z.object({
   wigmaker_id: z.string().uuid(),
   donation_references: z.array(z.string()).length(6, 'Exactly 6 donations are required to start production.'),
-  material_delivery_link: z.string().url().max(2048).optional(),
+  material_delivery_link: z.string().url().max(2048).or(z.literal('')).transform(val => val === '' ? undefined : val).optional().nullable(),
 });
 
 export const trackingStatusSchema = z.object({
   status: z.string().min(1),
   notes: z.string().optional(),
-  delivery_tracking_link: z.string().url().max(2048).optional(),
+  delivery_tracking_link: z.string().url().max(2048).or(z.literal('')).transform(val => val === '' ? undefined : val).optional().nullable(),
 });
 
 export const matchWigSchema = z.object({
@@ -117,7 +117,9 @@ export const taskUpdateSchema = z.object({
   status: z.enum(['assigned', 'processing', 'completed', 'shipped', 'received']),
   progressNotes: z.string().min(1),
   updatedAt: z.string().optional(),
-  deliveryLink: z.string().url().max(2048).optional(),
+  deliveryLink: z.string().url().max(2048).or(z.literal('')).transform(val => val === '' ? undefined : val).optional().nullable(),
+  wigLength: z.enum(['short', 'long']).optional(),
+  wigColor: z.enum(['black', 'brown', 'light']).optional(),
 });
 
 export const materialConfirmationSchema = z.object({

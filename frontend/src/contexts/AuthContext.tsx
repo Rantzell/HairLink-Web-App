@@ -118,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isDemo = email.endsWith('@hairlink.local');
     if (!isDemo && !profile.emailVerifiedAt) {
       await supabase.auth.signOut();
-      await supabase.auth.signInWithOtp({ email });
+      await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
       setUser(null);
       return { user: profile, redirect: `/verify-otp?email=${encodeURIComponent(email)}` };
     }

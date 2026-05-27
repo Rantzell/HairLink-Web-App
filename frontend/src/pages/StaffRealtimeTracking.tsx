@@ -30,6 +30,10 @@ const StaffRealtimeTracking: React.FC = () => {
   const [showBatchConfirm, setShowBatchConfirm] = useState(false);
   type PendingAction = { reference: string; _type: 'donor' | 'recipient'; status: string; link?: string; label: string };
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [batchOpen, setBatchOpen] = useState<Record<number, boolean>>({});
+  const [pendingBatchRefs, setPendingBatchRefs] = useState<string[]>([]);
+  const [pendingBatchStatus, setPendingBatchStatus] = useState<{ status: string; link?: string } | null>(null);
+  const [showBatchActionConfirm, setShowBatchActionConfirm] = useState(false);
 
   const triggerAction = (ref: string, _type: 'donor' | 'recipient', status: string, label: string, link?: string) => {
     setPendingAction({ reference: ref, _type, status, label, link });
@@ -123,7 +127,49 @@ const StaffRealtimeTracking: React.FC = () => {
 
   const isDonation = type === 'donation';
 
-  
+  // Group batched donations by wigProductionId
+  const batchGroups = new Map<number, { wp: any; donations: typeof filteredDonations }>();
+  const soloDonations: typeof filteredDonations = [];
+  for (const d of filteredDonations) {
+    const wpId = (d as any).wigProductionId as number | null;
+    if (wpId) {
+      const wp = data.wigProductions[d.id];
+      if (wp) {
+        if (!batchGroups.has(wpId)) batchGroups.set(wpId, { wp, donations: [] });
+        batchGroups.get(wpId)!.donations.push(d);
+      } else {
+        soloDonations.push(d);
+      }
+    } else {
+      soloDonations.push(d);
+    }
+  }
+
+  const triggerBatchAction = (refs: string[], status: string, link?: string) => {
+    setPendingBatchRefs(refs);
+    setPendingBatchStatus({ status, link });
+    setShowBatchActionConfirm(true);
+  };
+
+  const doBatchStatusUpdate = async () => {
+    setShowBatchActionConfirm(false);
+    setIsSubmitting(true);
+    try {
+      for (const ref of pendingBatchRefs) {
+        await apiClient.post(`/internal-api/staff/tracking/${ref}/status`, {
+          status: pendingBatchStatus!.status,
+          delivery_tracking_link: pendingBatchStatus!.link,
+        });
+      }
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Batch update failed');
+    } finally {
+      setIsSubmitting(false);
+      setPendingBatchRefs([]);
+      setPendingBatchStatus(null);
+    }
+  };
 
   if (loading) return <div className="section-wrap">Loading tracking data...</div>;
 
@@ -242,7 +288,6 @@ const StaffRealtimeTracking: React.FC = () => {
                 <th className="tracking-th">Photo</th>
                 <th className="tracking-th">Reference</th>
                 <th className="tracking-th">Donor/User</th>
-                <th className="tracking-th">Spec / Details</th>
                 <th className="tracking-th">Status</th>
                 <th className="tracking-th">Current Stage</th>
                 <th className="tracking-th tracking-th-center">Action</th>
@@ -250,7 +295,113 @@ const StaffRealtimeTracking: React.FC = () => {
             </thead>
             <tbody>
               {isDonation ? (
-                filteredDonations.map((donation) => {
+                <>
+                  {/* ── Batch Rows ── */}
+                  {Array.from(batchGroups.entries()).map(([wpId, { wp, donations: bd }]) => {
+                    const isOpen = !!batchOpen[wpId];
+                    const stageLabel =
+                      wp.status === 'assigned' ? `Assigned to ${wp.wigmaker?.firstName || 'Wigmaker'}` :
+                      wp.status === 'processing' ? `Crafting by ${wp.wigmaker?.firstName || 'Wigmaker'}` :
+                      wp.status === 'completed' ? `Finished by ${wp.wigmaker?.firstName || 'Wigmaker'}` :
+                      wp.status === 'shipped' ? 'Awaiting Wig Delivery' : 'Completed';
+                    return (
+                      <React.Fragment key={`batch-${wpId}`}>
+                        <tr className="tracking-row tracking-batch-main-row">
+                          <td className="tracking-cell-center">
+                            <div className="tracking-batch-layer-icon"><i className="bx bx-layer"></i></div>
+                          </td>
+                          <td className="tracking-cell">
+                            <div className="tracking-batch-pkg-cell"><i className="bx bx-package"></i></div>
+                          </td>
+                          <td className="tracking-cell">
+                            <div className="tracking-ref-col">
+                              <span className="tracking-ref-prefix tracking-batch-ref-label">Batch Ref</span>
+                              <strong className="tracking-ref-value">{wp.taskCode}</strong>
+                              <div className="tracking-batch-count">{bd.length} donations merged</div>
+                            </div>
+                          </td>
+                          <td className="tracking-cell">
+                            <button
+                              className="tracking-batch-toggle-btn"
+                              onClick={() => setBatchOpen(prev => ({ ...prev, [wpId]: !isOpen }))}
+                            >
+                              <i className={`bx ${isOpen ? 'bx-chevron-up' : 'bx-chevron-down'}`}></i>
+                              {isOpen ? 'Hide' : 'View'} {bd.length} Donors
+                            </button>
+                          </td>
+                          <td className="tracking-cell"><StatusPill status={wp.status} /></td>
+                          <td className="tracking-cell">
+                            <div className="tracking-progress-col">
+                              <div className="tracking-progress-status">
+                                <i className={`bx ${wp.status === 'received' ? 'bx-check-circle' : 'bx-sync bx-spin'}`}
+                                   style={{ color: wp.status === 'received' ? '#10b981' : '#ad246d' }}></i>
+                                {stageLabel}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="tracking-action-cell">
+                            {wp.status === 'shipped' && (
+                              <div className="tracking-action-col">
+                                {wp.deliveryLink && (
+                                  <a href={wp.deliveryLink} target="_blank" rel="noreferrer" className="tracking-link-btn">
+                                    <i className='bx bx-link-external'></i> Wig Tracking
+                                  </a>
+                                )}
+                                <button
+                                  className="soft-btn"
+                                  onClick={() => triggerBatchAction(bd.map(d => d.reference), 'Wig Received', wp.deliveryLink || undefined)}
+                                  disabled={isSubmitting}
+                                  style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800 }}
+                                >
+                                  Confirm Batch Received
+                                </button>
+                              </div>
+                            )}
+                            {wp.status === 'assigned' && <span className="tracking-awaiting-text">Waiting to be received...</span>}
+                            {wp.status === 'processing' && <span className="tracking-awaiting-text">Production in Progress...</span>}
+                            {wp.status === 'completed' && <span className="tracking-awaiting-text">Wig Quality Checking...</span>}
+                          </td>
+                        </tr>
+                        {isOpen && (
+                          <tr className="tracking-batch-expanded-row">
+                            <td colSpan={7} className="tracking-batch-expanded-cell">
+                              <div className="tracking-batch-expanded-inner">
+                                <div className="tracking-batch-expanded-header">
+                                  <i className="bx bx-group"></i> Batch Donors — {wp.taskCode}
+                                </div>
+                                <table className="tracking-batch-inner-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Ref #</th>
+                                      <th>Donor Name</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {bd.map(d => (
+                                      <tr key={d.id}>
+                                        <td><code className="tracking-inner-ref">{d.reference}</code></td>
+                                        <td>
+                                          <div className="tracking-inner-donor">
+                                            <div className="tracking-inner-avatar">
+                                              {(d.user?.firstName?.[0] || '') + (d.user?.lastName?.[0] || '')}
+                                            </div>
+                                            {d.user?.firstName} {d.user?.lastName}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+
+                  {/* ── Solo (un-batched) Donation Rows ── */}
+                  {soloDonations.map((donation) => {
                   const wigProd = data.wigProductions[donation.id];
                   const isWigmakerControlled = !!wigProd || ['In Queue', 'In Progress', 'Processing'].includes(donation.status);
                   const stageIndex = ['Verified', 'Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].indexOf(donation.status);
@@ -307,12 +458,6 @@ const StaffRealtimeTracking: React.FC = () => {
                             <div className="tracking-user-name">{donation.user?.firstName} {donation.user?.lastName}</div>
                             <div className="tracking-user-role-donor">Donor</div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="tracking-cell">
-                        <div className="tracking-specs-col">
-                          <span className="tracking-spec-pill-donor">{donation.hairLength}</span>
-                          <span className="tracking-spec-pill-donor">{donation.hairColor}</span>
                         </div>
                       </td>
                       <td className="tracking-cell">
@@ -402,7 +547,8 @@ const StaffRealtimeTracking: React.FC = () => {
                       </td>
                     </tr>
                   );
-                })
+                })}
+                </>
               ) : (
                 filteredRequests.map((request) => {
                   const stageIndex = ['Validated', 'Matched', 'In Transit', 'Completed'].indexOf(request.status);
@@ -453,12 +599,6 @@ const StaffRealtimeTracking: React.FC = () => {
                         </div>
                       </td>
                       <td className="tracking-cell">
-                        <div className="tracking-specs-col">
-                          <span className="tracking-spec-pill-recipient">{request.wigLength}</span>
-                          <span className="tracking-spec-pill-recipient">{request.wigColor}</span>
-                        </div>
-                      </td>
-                      <td className="tracking-cell">
                         <StatusPill status={request.status} />
                       </td>
                       <td className="tracking-cell">
@@ -484,7 +624,7 @@ const StaffRealtimeTracking: React.FC = () => {
                       </td>
                       <td className="tracking-action-cell">
                         {request.status === 'Validated' && (
-                          <Link to={`/staff/matching?reference=${request.reference} soft-btn`} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', textDecoration: 'none', borderRadius: '50px', display: 'inline-block', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Match Wig</Link>
+                          <Link to={`/staff/matching?reference=${request.reference}`} className="soft-btn" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', textDecoration: 'none', borderRadius: '50px', display: 'inline-block', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Match Wig</Link>
                         )}
                         {request.status === 'Matched' && (
                           <div className="tracking-action-col-wide">
@@ -521,7 +661,7 @@ const StaffRealtimeTracking: React.FC = () => {
               )}
               {((isDonation && data.donations.length === 0) || (!isDonation && data.requests.length === 0)) && (
                 <tr>
-                  <td colSpan={7} className="tracking-empty-col">
+                  <td colSpan={6} className="tracking-empty-col">
                     <i className="bx bx-search tracking-empty-icon"></i>
                     <p>No active {isDonation ? 'donation' : 'request'} trackers found.</p>
                   </td>
@@ -554,6 +694,16 @@ const StaffRealtimeTracking: React.FC = () => {
         title="Assign Batch to Wigmaker"
         message={`Assign ${selectedDonations.length} selected donations to the chosen wigmaker? This will notify the wigmaker and update all donation statuses.`}
         confirmText="Yes, Assign Batch"
+        isConfirming={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={showBatchActionConfirm}
+        onClose={() => { setShowBatchActionConfirm(false); setPendingBatchRefs([]); setPendingBatchStatus(null); }}
+        onConfirm={doBatchStatusUpdate}
+        title="Confirm Batch Receipt"
+        message={`Mark all ${pendingBatchRefs.length} donations in this batch as received? This will update all donor statuses.`}
+        confirmText="Yes, Confirm All"
         isConfirming={isSubmitting}
       />
     </section>

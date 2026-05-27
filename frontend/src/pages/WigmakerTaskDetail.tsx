@@ -21,6 +21,9 @@ const WigmakerTaskDetail: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showMaterialConfirm, setShowMaterialConfirm] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [donorOpen, setDonorOpen] = useState(false);
+  const [wigLength, setWigLength] = useState<'short' | 'long' | ''>('');
+  const [wigColor, setWigColor] = useState<'black' | 'brown' | 'light' | ''>('');
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -46,6 +49,10 @@ const WigmakerTaskDetail: React.FC = () => {
 
   const requestStatusUpdate = (status: string) => {
     if (!notes) { alert('Please add a progress note before updating.'); return; }
+    if (status === 'completed' && (!wigLength || !wigColor)) {
+      alert('Please select the wig length and color before marking production as finished.');
+      return;
+    }
     setPendingStatus(status);
     setTargetStatus(status);
     setShowConfirm(true);
@@ -63,6 +70,10 @@ const WigmakerTaskDetail: React.FC = () => {
     formData.append('updatedAt', new Date(customDate).toISOString());
     if (file) formData.append('previewPhoto', file);
     if (task.deliveryLink) formData.append('deliveryLink', task.deliveryLink);
+    if (finalStatus === 'completed') {
+      if (wigLength) formData.append('wigLength', wigLength);
+      if (wigColor) formData.append('wigColor', wigColor);
+    }
 
     try {
       await apiClient.post(`/internal-api/wigmaker/tasks/${taskCode}`, formData);
@@ -114,13 +125,45 @@ const WigmakerTaskDetail: React.FC = () => {
           </div>
           <div>
             <h1 className="task-detail-header-title">Task: {task.taskCode}</h1>
-            <p className="task-detail-header-sub">Production ID: <span className="task-detail-header-sub-ref">{task.donation?.reference || 'N/A'}</span></p>
+            <p className="task-detail-header-sub">Batch Production &middot; <span className="task-detail-header-sub-ref">{(task.donations || []).length} Donors</span></p>
           </div>
         </div>
         <Link to="/wigmaker/dashboard" className="task-detail-back-btn">
           <i className="bx bx-left-arrow-alt"></i> Back to Dashboard
         </Link>
       </div>
+
+      {/* Horizontal Roadmap */}
+      <article className="task-detail-roadmap-card horizontal">
+        <div className="task-detail-roadmap-steps horizontal">
+          {[
+            { stage: 'Assigned', desc: 'Material delivery confirmed', status: 'assigned' },
+            { stage: 'In Progress', desc: 'Wig construction & styling', status: 'processing' },
+            { stage: 'Production Finished', desc: 'Ready for shipping', status: 'completed' },
+            { stage: 'Shipping', desc: 'Returning to staff', status: 'shipped' },
+            { stage: 'Finalized', desc: 'Staff received wig', status: 'received' }
+          ].map((step, idx) => {
+            const statusOrder = ['assigned', 'processing', 'completed', 'shipped', 'received'];
+            const currentIdx = statusOrder.indexOf(task.status);
+            const stepIdx = statusOrder.indexOf(step.status);
+            const isActive = task.status === step.status;
+            const isPast = stepIdx < currentIdx;
+            const isDone = isActive || isPast;
+
+            return (
+              <div key={idx} className="task-detail-roadmap-step horizontal">
+                <div className={`task-detail-roadmap-step-dot ${isPast ? 'past' : isActive ? 'active' : 'upcoming'}`}>
+                  {isPast && <i className="bx bx-check task-detail-roadmap-step-dot-icon"></i>}
+                </div>
+                <div className="task-detail-roadmap-step-content">
+                  <div className={`task-detail-roadmap-step-title ${isDone ? 'done' : ''}`}>{step.stage}</div>
+                  <div className="task-detail-roadmap-step-desc">{step.desc}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </article>
 
       <div className="task-detail-grid">
         {/* Main Column */}
@@ -139,10 +182,6 @@ const WigmakerTaskDetail: React.FC = () => {
                   <strong className="task-detail-info-block-value highlight">{task.donation?.reference || 'N/A'}</strong>
                 </div>
                 <div className="task-detail-info-block">
-                  <span className="task-detail-info-block-label">Specification</span>
-                  <strong className="task-detail-info-block-value">{task.targetLength} / {task.targetColor}</strong>
-                </div>
-                <div className="task-detail-info-block">
                   <span className="task-detail-info-block-label">Started On</span>
                   <strong className="task-detail-info-block-value">{new Date(task.createdAt).toLocaleDateString()}</strong>
                 </div>
@@ -153,33 +192,55 @@ const WigmakerTaskDetail: React.FC = () => {
               </div>
             </div>
 
-            <div className="task-detail-materials-side">
-              <div className="task-detail-card-title-row sub-title">
-                <i className="bx bx-images task-detail-card-title-icon small"></i>
-                <h2 className="task-detail-card-title small">Materials</h2>
-              </div>
-              <div className="task-detail-materials-grid">
-                {[task.donation?.photoFront, task.donation?.photoSide].filter(Boolean).map((img, idx) => (
-                  <div key={idx} className="task-detail-material-photo-box">
-                    <img src={getPublicUrl('hairlink', img) || undefined} alt="Material" className="task-detail-material-photo" />
+            {/* Donor Dropdown Accordion */}
+            {(task.donations || []).length > 0 && (
+              <div className="task-detail-donor-accordion">
+                <button
+                  className="task-detail-donor-accordion-btn"
+                  onClick={() => setDonorOpen(o => !o)}
+                >
+                  <i className="bx bx-group"></i>
+                  <span>Compiled Donors &amp; References ({(task.donations || []).length})</span>
+                  <i className={`bx ${donorOpen ? 'bx-chevron-up' : 'bx-chevron-down'} task-detail-donor-accordion-chevron`}></i>
+                </button>
+                {donorOpen && (
+                  <div className="task-detail-donor-list">
+                    {(task.donations as any[]).map((d: any, idx: number) => (
+                      <div key={d.id || idx} className="task-detail-donor-item">
+                        <div className="task-detail-donor-avatar">
+                          {(d.user?.firstName?.[0] || '?')}{(d.user?.lastName?.[0] || '')}
+                        </div>
+                        <div className="task-detail-donor-info">
+                          <span className="task-detail-donor-name">
+                            {d.user?.firstName || 'Unknown'} {d.user?.lastName || ''}
+                          </span>
+                          <code className="task-detail-donor-ref">{d.reference}</code>
+                        </div>
+                        <div className="task-detail-donor-specs">
+                          {d.hairLength && <span className="task-detail-donor-spec-pill">{d.hairLength}</span>}
+                          {d.hairColor && <span className="task-detail-donor-spec-pill">{d.hairColor}</span>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                {![task.donation?.photoFront, task.donation?.photoSide].filter(Boolean).length && (
-                  <div className="task-detail-material-no-photo">No photos</div>
                 )}
               </div>
-            </div>
+            )}
           </article>
 
           {/* Material Tracking Card (Staff -> Wigmaker) */}
-          {task.materialDeliveryLink && task.status === 'assigned' && !task.isReceived && (
+          {task.status === 'assigned' && !task.isReceived && (
             <div className="task-detail-status-banner-blue">
               <div className="task-detail-status-banner-icon-box">
                 <i className="bx bx-package task-detail-status-banner-icon-blue"></i>
               </div>
               <div className="task-detail-status-banner-content">
                 <small className="task-detail-status-banner-label">Staff Sent Materials</small>
-                <a href={task.materialDeliveryLink} target="_blank" rel="noreferrer" className="task-detail-status-banner-link">Track Incoming Hair Package</a>
+                {task.materialDeliveryLink ? (
+                  <a href={task.materialDeliveryLink} target="_blank" rel="noreferrer" className="task-detail-status-banner-link">Track Incoming Hair Package</a>
+                ) : (
+                  <span className="task-detail-status-banner-link" style={{ textDecoration: 'none', cursor: 'default' }}>Materials ready for production</span>
+                )}
               </div>
               <button
                 onClick={handleConfirmMaterial}
@@ -199,6 +260,44 @@ const WigmakerTaskDetail: React.FC = () => {
                 <h2 className="task-detail-card-title">Production Status Update</h2>
               </div>
               <form onSubmit={handleSubmit} className="task-detail-update-form">
+                {/* Wig Specification selectors — only shown when status is processing (prior to completion) */}
+                {task.status === 'processing' && (
+                  <div className="task-detail-spec-selectors">
+                    <div className="task-detail-spec-group">
+                      <label className="task-detail-form-label">Wig Length <span className="task-detail-form-label-required">*</span></label>
+                      <div className="task-detail-spec-options">
+                        {[{ val: 'short', label: 'Short', sub: '10–14 inches' }, { val: 'long', label: 'Long', sub: '15+ inches' }].map(opt => (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            className={`task-detail-spec-option ${wigLength === opt.val ? 'selected' : ''}`}
+                            onClick={() => setWigLength(opt.val as 'short' | 'long')}
+                          >
+                            <strong>{opt.label}</strong>
+                            <small>{opt.sub}</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="task-detail-spec-group">
+                      <label className="task-detail-form-label">Wig Color <span className="task-detail-form-label-required">*</span></label>
+                      <div className="task-detail-spec-options">
+                        {[{ val: 'black', label: 'Black', color: '#1a1a1a' }, { val: 'brown', label: 'Brown', color: '#7B4F2A' }, { val: 'light', label: 'Light', color: '#C9A96E' }].map(opt => (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            className={`task-detail-spec-option ${wigColor === opt.val ? 'selected' : ''}`}
+                            onClick={() => setWigColor(opt.val as 'black' | 'brown' | 'light')}
+                          >
+                            <span className="task-detail-spec-color-dot" style={{ background: opt.color }}></span>
+                            <strong>{opt.label}</strong>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="task-detail-form-row-2col">
                   <div>
                     <label className="task-detail-form-label">Next Status</label>
@@ -254,7 +353,7 @@ const WigmakerTaskDetail: React.FC = () => {
                     <textarea rows={2} placeholder="Briefly describe your current progress..." value={notes} onChange={e => setNotes(e.target.value)} required className="task-detail-form-textarea"></textarea>
                   </div>
                 </div>
-                <div className="task-detail-form-actions-flex">
+                <div className="task-detail-form-submit-container">
                   {task.status === 'assigned' ? (
                     <button
                       type="button"
@@ -265,16 +364,14 @@ const WigmakerTaskDetail: React.FC = () => {
                       {isSubmitting && pendingStatus === 'processing' ? '...' : 'Start Production'}
                     </button>
                   ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => requestStatusUpdate('completed')}
-                        disabled={isSubmitting}
-                        className="task-detail-form-submit-btn"
-                      >
-                        {isSubmitting && pendingStatus === 'completed' ? '...' : 'Production Finished'}
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      onClick={() => requestStatusUpdate('completed')}
+                      disabled={isSubmitting}
+                      className="task-detail-form-submit-btn"
+                    >
+                      {isSubmitting && pendingStatus === 'completed' ? '...' : 'Production Finished'}
+                    </button>
                   )}
                 </div>
               </form>
@@ -355,55 +452,6 @@ const WigmakerTaskDetail: React.FC = () => {
             </article>
           )}
         </div>
-
-        {/* Sidebar Roadmap */}
-        <aside className="task-detail-sidebar">
-          <article className="task-detail-roadmap-card">
-            <div className="task-detail-card-title-row">
-              <i className="bx bx-map-pin task-detail-card-title-icon small"></i>
-              <h2 className="task-detail-card-title small">Task Roadmap</h2>
-            </div>
-            <div className="task-detail-roadmap-steps">
-              {[
-                { stage: 'Assigned', desc: 'Material delivery confirmed', status: 'assigned' },
-                { stage: 'In Progress', desc: 'Wig construction & styling', status: 'processing' },
-                { stage: 'Production Finished', desc: 'Ready for shipping', status: 'completed' },
-                { stage: 'Shipping', desc: 'Returning to staff', status: 'shipped' },
-                { stage: 'Finalized', desc: 'Staff received wig', status: 'received' }
-              ].map((step, idx) => {
-                const statusOrder = ['assigned', 'processing', 'completed', 'shipped', 'received'];
-                const currentIdx = statusOrder.indexOf(task.status);
-                const stepIdx = statusOrder.indexOf(step.status);
-                const isActive = task.status === step.status;
-                const isPast = stepIdx < currentIdx;
-                const isDone = isActive || isPast;
-
-                return (
-                  <div key={idx} className="task-detail-roadmap-step">
-                    <div className={`task-detail-roadmap-step-dot ${isPast ? 'past' : isActive ? 'active' : 'upcoming'}`}>
-                      {isPast && <i className="bx bx-check task-detail-roadmap-step-dot-icon"></i>}
-                    </div>
-                    <div className={`task-detail-roadmap-step-title ${isDone ? 'done' : ''}`}>{step.stage}</div>
-                    <div className="task-detail-roadmap-step-desc">{step.desc}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </article>
-
-          <article className="task-detail-progress-card">
-            <span className="task-detail-progress-label">Current Progress</span>
-            <div className="task-detail-progress-value">
-              {progressPercent}
-            </div>
-            <div className="task-detail-progress-bar-bg">
-              <div
-                className="task-detail-progress-bar-fill"
-                style={{ width: progressPercent }}
-              ></div>
-            </div>
-          </article>
-        </aside>
       </div>
 
       {/* History Table - Full Width */}

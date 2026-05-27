@@ -63,7 +63,7 @@ const AdminCMS: React.FC = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const DEFAULTS = {
-    hero:     { heading: 'STRAND UP FOR CANCER', subheading: 'Hope begins, one at the time', ctaLabel: 'Donate Now' },
+    hero:     { heading: 'Every Strand,<br />a Story of <em>Hope.</em>', subheading: 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.', ctaLabel: 'Donate Now' },
 
     services: [
       { title: 'Donate Hair', description: 'Give the gift of confidence to someone in need by donating your hair.', ctaLabel: 'Donate' },

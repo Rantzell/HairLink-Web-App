@@ -1694,7 +1694,13 @@ const LandingPage: React.FC = () => {
               Strand Up for Cancer
             </div>
             <h1 className="hl-hero-h1">
-              {get('hero', 'heading', <>Every Strand,<br />a Story of <em>Hope.</em></>)}
+              {(() => {
+                const val = get('hero', 'heading');
+                if (typeof val === 'string') {
+                  return <span dangerouslySetInnerHTML={{ __html: val }} />;
+                }
+                return val || <>Every Strand,<br />a Story of <em>Hope.</em></>;
+              })()}
             </h1>
             <p className="hl-hero-copy">
               {get('hero', 'subheading', 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.')}

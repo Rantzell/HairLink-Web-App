@@ -100,40 +100,44 @@ const WigmakerDashboard: React.FC = () => {
             </thead>
             <tbody>
               {filteredTasks.length > 0 ? (
-                filteredTasks.map(task => (
-                  <tr key={task.id} className="dashboard-tr-body">
-                    <td className="dashboard-td">
-                      <div className="dashboard-flex-gap">
-                        <div className="dashboard-icon-container">
-                          <i className="bx bx-package"></i>
+                filteredTasks.map(task => {
+                  const donors: any[] = task.donations || [];
+                  return (
+                    <tr key={task.id} className="dashboard-tr-body">
+                      <td className="dashboard-td">
+                        <div className="dashboard-flex-gap">
+                          <div className="dashboard-icon-container">
+                            <i className="bx bx-package"></i>
+                          </div>
+                          <div>
+                            <div className="dashboard-task-code">{task.taskCode}</div>
+                            <div className="dashboard-task-ref">Batch &middot; {donors.length} donors</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="dashboard-task-code">{task.taskCode}</div>
-                          <div className="dashboard-task-ref">Ref: {task.donation?.reference || 'N/A'}</div>
+                      </td>
+                      <td className="dashboard-td">
+                        <StatusPill status={task.status} />
+                      </td>
+                      <td className="dashboard-td">
+                        <div className="dashboard-timeline-col">
+                          <span className="dashboard-timeline-started">Started: <strong className="dashboard-timeline-started-date">{new Date(task.createdAt).toLocaleDateString()}</strong></span>
+                          <span className={`dashboard-timeline-target ${task.status === 'completed' ? 'completed' : ''}`}>
+                            {task.status === 'completed' ? 'Finished: ' : 'Target: '}
+                            <strong>{task.status === 'completed' ? (task.updatedAt ? new Date(task.updatedAt).toLocaleDateString() : 'N/A') : (task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A')}</strong>
+                          </span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="dashboard-td">
-                      <StatusPill status={task.status} />
-                    </td>
-                    <td className="dashboard-td">
-                      <div className="dashboard-timeline-col">
-                        <span className="dashboard-timeline-started">Started: <strong className="dashboard-timeline-started-date">{new Date(task.createdAt).toLocaleDateString()}</strong></span>
-                        <span className={`dashboard-timeline-target ${task.status === 'completed' ? 'completed' : ''}`}>
-                          {task.status === 'completed' ? 'Finished: ' : 'Target: '}
-                          <strong>{task.status === 'completed' ? (task.updatedAt ? new Date(task.updatedAt).toLocaleDateString() : 'N/A') : (task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A')}</strong>
-                        </span>
-                      </div>
-                    </td>
-                    <td className="dashboard-td">
-                      <Link 
-                        to={`/wigmaker/task/${task.taskCode} dashboard-open-task-btn`}
-                      >
-                        Open Task <i className="bx bx-chevron-right"></i>
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="dashboard-td">
+                        <Link
+                          to={`/wigmaker/task/${task.taskCode}`}
+                          className="dashboard-open-task-btn"
+                        >
+                          Open Task <i className="bx bx-chevron-right"></i>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan={4} className="dashboard-empty-row">

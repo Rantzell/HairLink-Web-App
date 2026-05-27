@@ -79,7 +79,7 @@ const VerifyOtp: React.FC = () => {
     setResendMsg('');
     setError('');
     try {
-      const { error: otpError } = await supabase.auth.signInWithOtp({ email });
+      const { error: otpError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
       if (otpError) throw otpError;
       setResendMsg('A new code has been sent to your email.');
       setCountdown(60);

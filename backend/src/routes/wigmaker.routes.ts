@@ -46,7 +46,10 @@ router.get('/tasks', ...wmOnly, async (req, res) => {
 // GET /internal-api/wigmaker/tasks/:taskCode
 router.get('/tasks/:taskCode', ...wmOnly, async (req, res) => {
   try {
-    const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode as string }, include: { donations: true, wigmaker: true } as any });
+    const task = await prisma.wigProduction.findFirst({
+      where: { taskCode: req.params.taskCode as string },
+      include: { donations: { include: { user: true } }, wigmaker: true } as any
+    });
     if (!task) { res.status(404).json({ message: 'Task not found' }); return; }
     const histories = await getStatusHistories(WIG_TYPE, task.id, true);
     res.json({ task: s(task), histories: s(histories) });
@@ -59,9 +62,14 @@ router.post('/tasks/:taskCode', ...wmOnly, upload.single('previewPhoto'), valida
     const task = await prisma.wigProduction.findFirst({ where: { taskCode: req.params.taskCode as string, wigmakerId: req.user!.id } });
     if (!task) { res.status(404).json({ message: 'Task not found' }); return; }
 
-    const { status, progressNotes, updatedAt, deliveryLink } = req.body;
+    const { status, progressNotes, updatedAt, deliveryLink, wigLength, wigColor } = req.body;
     const updateData: any = { status };
     if (deliveryLink) updateData.deliveryLink = deliveryLink;
+    // When the wigmaker marks production as completed, save the wig specifications
+    if (status === 'completed') {
+      if (wigLength) updateData.targetLength = wigLength;
+      if (wigColor) updateData.targetColor = wigColor;
+    }
     await prisma.wigProduction.update({ where: { id: task.id }, data: updateData });
 
     // Handle photo metadata

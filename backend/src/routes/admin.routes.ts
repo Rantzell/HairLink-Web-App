@@ -269,7 +269,7 @@ router.get('/reports/monetary', ...adminOnly, async (_req, res) => {
 // GET /internal-api/admin/inventory
 router.get('/inventory', ...adminOnly, async (_req, res) => {
   try {
-    const dons = await prisma.donation.findMany({ where: { status: 'Completed' } });
+    const dons = await prisma.donation.findMany({ where: { status: 'Received Hair' } });
     const stock: Record<string, Record<string, number>> = { Short: { Black: 0, Brown: 0, Light: 0, Gray: 0, Other: 0 }, Medium: { Black: 0, Brown: 0, Light: 0, Gray: 0, Other: 0 }, Long: { Black: 0, Brown: 0, Light: 0, Gray: 0, Other: 0 } };
     
     for (const d of dons) {
