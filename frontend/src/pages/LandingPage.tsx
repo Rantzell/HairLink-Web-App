@@ -11,7 +11,7 @@ const LandingPage: React.FC = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // CMS & Dynamic Content State
   const [cms, setCms] = useState<any>(null);
   const [aboutIndex, setAboutIndex] = useState(0);
@@ -108,10 +108,10 @@ const LandingPage: React.FC = () => {
     facebook: 'https://www.facebook.com/strandupforcancer',
     instagram: 'https://www.instagram.com/strandupforcancer/'
   };
-  const footer   = { ...footerDefault, ...(cms?.footer || {}) };
+  const footer = { ...footerDefault, ...(cms?.footer || {}) };
   const branding = cms?.branding || { primaryColor: '#ad246d', primaryTextColor: '#ffffff', btnRadius: '8px' };
-  const images   = cms?.images   || {};
-  const typo     = cms?.typography || { headingFont: 'Playfair Display', bodyFont: 'Inter' };
+  const images = cms?.images || {};
+  const typo = cms?.typography || { headingFont: 'Playfair Display', bodyFont: 'Inter' };
 
   const themeStyles = `
     :root {
@@ -127,7 +127,7 @@ const LandingPage: React.FC = () => {
     .btn-primary { background: var(--primary) !important; color: var(--on-primary) !important; }
     .btn-outline { border-color: var(--primary) !important; color: var(--primary) !important; }
     .hero h1, .section-heading h2, .footer-brand h3 { color: var(--primary); }
-    .stat-item h3 { color: var(--primary); }
+
     .pink-ribbon-text { color: var(--primary); }
     .footer-social-links { margin-top: 1rem; }
     .footer-social-links p { margin-bottom: 0.5rem; font-weight: 600; }
@@ -172,20 +172,7 @@ const LandingPage: React.FC = () => {
           <div className="hero-actions">
             <Link to="/donor/donate" className="btn btn-primary">{get('hero', 'ctaLabel', 'Donate Now')}</Link>
           </div>
-          <div className="hero-stats">
-            {(get('stats', undefined, []) as any[]).map((s, i) => (
-              <div key={i} className="stat-item">
-                <h3>{s.value}</h3>
-                <p>{s.label}</p>
-              </div>
-            )) || (
-              <>
-                <div className="stat-item"><h3>2,500+</h3><p>Hair Donations</p></div>
-                <div className="stat-item"><h3>2,500+</h3><p>Wigs Created</p></div>
-                <div className="stat-item"><h3>2,500+</h3><p>Lives Changed</p></div>
-              </>
-            )}
-          </div>
+
         </div>
       </section>
 
@@ -202,18 +189,18 @@ const LandingPage: React.FC = () => {
               <Link to={i === 0 ? "/donor/donate" : i === 1 ? "/recipient/request" : "/donate-monetary"} className="btn btn-outline">{svc.ctaLabel}</Link>
             </article>
           )) || (
-            <>
-              <article className="service-card reveal"><h3>Donate Hair</h3><p>Give the gift of confidence to someone in need by donating your hair.</p><Link to="/donor/donate" className="btn btn-outline">Donate</Link></article>
-              <article className="service-card reveal"><h3>Request Hair</h3><p>Apply for free wig with health certification.</p><Link to="/recipient/request" className="btn btn-outline">Request</Link></article>
-              <article className="service-card reveal"><h3>Monetary</h3><p>Support our mission financially and earn reward points.</p><Link to="/donate-monetary" className="btn btn-outline">Give</Link></article>
-            </>
-          )}
+              <>
+                <article className="service-card reveal"><h3>Donate Hair</h3><p>Give the gift of confidence to someone in need by donating your hair.</p><Link to="/donor/donate" className="btn btn-outline">Donate</Link></article>
+                <article className="service-card reveal"><h3>Request Hair</h3><p>Apply for free wig with health certification.</p><Link to="/recipient/request" className="btn btn-outline">Request</Link></article>
+                <article className="service-card reveal"><h3>Monetary</h3><p>Support our mission financially and earn reward points.</p><Link to="/donate-monetary" className="btn btn-outline">Give</Link></article>
+              </>
+            )}
         </div>
 
         <section className="event-panel-premium-compact reveal">
           <div className="premium-compact-inner">
             <div className="event-badge">
-              <i className='bx bx-calendar'></i> {nextEvent 
+              <i className='bx bx-calendar'></i> {nextEvent
                 ? `${new Date(nextEvent.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} | ${nextEvent.location}`
                 : 'No upcoming events scheduled'}
             </div>
@@ -244,7 +231,7 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="about-copy">
             <h2>{get('about', 'heading', 'About Us')} <img src="/assets/images/landing/pink-ribbon.png" alt="Pink ribbon" /></h2>
-            <p>{get('about', 'body', 'Strand Up for Cancer (SUFC) is a youth-led initiative dedicated to supporting cancer patients through hair donation and wig crafting.')}</p>
+            <p>{get('about', 'body', 'Stand Up for Cancer is an MDYMCA Youth Club-sponsored project dedicated to helping financially disadvantaged women suffering from long-term hair loss caused by chemotherapy. We aim to inspire hope, raise awareness, and encourage community support for cancer patients and survivors.')}</p>
           </div>
         </div>
         <section className="partners" id="partners">
@@ -258,6 +245,58 @@ const LandingPage: React.FC = () => {
         </section>
       </section>
 
+      <section className="past-events section" id="past-events">
+        <div className="section-heading reveal">
+          <h2>Past Events</h2>
+          <p>Highlighting our past hair donation drives, volunteer campaigns, and community impact.</p>
+        </div>
+        <div className="events-grid">
+          <div className="event-card reveal">
+            <div className="event-img-wrap">
+              <img src={images.eventImg1 || "/assets/images/landing/past-event-1.jpg"} alt="Hair Donation Drive" />
+              <div className="event-date">April 28, 2026</div>
+            </div>
+            <div className="event-info">
+              <h3>Hair Donation Drive</h3>
+              <p>Generous donor sharing hope by gifting her locks for wig crafting at Tau Lambda Alpha, Los Baños.</p>
+            </div>
+          </div>
+
+          <div className="event-card reveal">
+            <div className="event-img-wrap">
+              <img src={images.eventImg2 || "/assets/images/landing/past-event-2.jpg"} alt="Strand Up for Cancer Campaign" />
+              <div className="event-date">April 28, 2026</div>
+            </div>
+            <div className="event-info">
+              <h3>Strand Up for Cancer Campaign</h3>
+              <p>Community hair donation drive with our lovely volunteers and donors presenting their certificates.</p>
+            </div>
+          </div>
+
+          <div className="event-card reveal">
+            <div className="event-img-wrap">
+              <img src={images.eventImg3 || "/assets/images/landing/past-event-3.jpg"} alt="Wig Crafting & Haircut Session" />
+              <div className="event-date">Feb 25, 2026</div>
+            </div>
+            <div className="event-info">
+              <h3>Wig Crafting & Haircut Session</h3>
+              <p>Professional stylists volunteering to cut and measure hair for custom medical-grade wigs.</p>
+            </div>
+          </div>
+
+          <div className="event-card reveal">
+            <div className="event-img-wrap">
+              <img src={images.eventImg4 || "/assets/images/landing/past-event-4.jpg"} alt="Donation Celebration" />
+              <div className="event-date">Feb 2, 2026</div>
+            </div>
+            <div className="event-info">
+              <h3>Donation Celebration</h3>
+              <p>Donors showcasing their ponytails alongside certificates of appreciation for supporting cancer survivors.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="contact section" id="contact">
         <div className="contact-card reveal">
           <div className="section-heading section-heading-left">
@@ -266,43 +305,42 @@ const LandingPage: React.FC = () => {
           </div>
           <form className="contact-form" onSubmit={handlePartnershipSubmit}>
             <div className="form-row">
-              <input type="text" placeholder="Full Name" value={partnershipData.full_name} onChange={e => setPartnershipData({...partnershipData, full_name: e.target.value})} required />
-              <input type="email" placeholder="Email" value={partnershipData.email} onChange={e => setPartnershipData({...partnershipData, email: e.target.value})} required />
+              <input type="text" placeholder="Full Name" value={partnershipData.full_name} onChange={e => setPartnershipData({ ...partnershipData, full_name: e.target.value })} required />
+              <input type="email" placeholder="Email" value={partnershipData.email} onChange={e => setPartnershipData({ ...partnershipData, email: e.target.value })} required />
             </div>
-            <input type="text" placeholder="Company Name" value={partnershipData.organization} onChange={e => setPartnershipData({...partnershipData, organization: e.target.value})} />
-            <textarea placeholder="Message" rows={4} value={partnershipData.message} onChange={e => setPartnershipData({...partnershipData, message: e.target.value})} required></textarea>
+            <input type="text" placeholder="Company Name" value={partnershipData.organization} onChange={e => setPartnershipData({ ...partnershipData, organization: e.target.value })} />
+            <textarea placeholder="Message" rows={4} value={partnershipData.message} onChange={e => setPartnershipData({ ...partnershipData, message: e.target.value })} required></textarea>
             <button type="submit" className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? 'Sending...' : 'Submit'}</button>
           </form>
         </div>
       </section>
-
       <footer className="site-footer">
-        <div className="footer-main">
-          <div className="footer-brand">
-            <img src={images.heroLogo || "/assets/images/landing/logo.jpg"} alt="HairLink logo" />
-            <div>
-              <h3>{get('footer', 'orgName', 'STRAND UP FOR CANCER')}</h3>
-              <p style={{ whiteSpace: 'pre-line' }}>{get('footer', 'address', 'Manila Downtown YMCA at 945 Sabino Padilla St,\\nBinondo, Manila, 1006 Metro Manila')}</p>
-            </div>
+        <div className="footer-container">
+          {/* Social Icons at the top */}
+          <div className="footer-social-row">
+            <a href={footer.facebook} target="_blank" rel="noreferrer" className="footer-social-link footer-social-facebook" title="Facebook">
+              <i className='bx bxl-facebook'></i>
+            </a>
+            <a href={footer.instagram} target="_blank" rel="noreferrer" className="footer-social-link footer-social-instagram" title="Instagram">
+              <i className='bx bxl-instagram'></i>
+            </a>
           </div>
-          <div className="footer-subscribe">
-            <p>Subscribe for the latest event updates</p>
-            <div className="subscribe-row">
-              <img src="/assets/images/landing/pink-ribbon.png" alt="ribbon" />
-              <input type="email" placeholder="Your Email Address" />
-              <button type="button">Sign Up</button>
-            </div>
-            <div className="footer-social-links">
-              <p>Follow us</p>
-              <div className="footer-social-row">
-                <a href={footer.facebook} target="_blank" rel="noreferrer" className="footer-social-link footer-social-facebook">
-                  <i className='bx bxl-facebook'></i> Facebook
-                </a>
-                <a href={footer.instagram} target="_blank" rel="noreferrer" className="footer-social-link footer-social-instagram">
-                  <i className='bx bxl-instagram'></i> Instagram
-                </a>
-              </div>
-            </div>
+
+          {/* Address (vertical design) */}
+          <div className="footer-address">
+            <p style={{ whiteSpace: 'pre-line' }}>{footer.address.replace(/\\n/g, '\n')}</p>
+          </div>
+
+          {/* Logo & Brand Name */}
+          <div className="footer-logo-wrap">
+            <img src="/assets/images/landing/logo.jpg" alt="HairLink logo" className="footer-logo-img" />
+            <h3 className="footer-brand-title">{get('footer', 'orgName', 'STRAND UP FOR CANCER')}</h3>
+          </div>
+
+          {/* Copyright Bar at the absolute bottom */}
+          {/* Copyright Bar at the absolute bottom */}
+          <div className="footer-bottom-bar">
+            <p>&copy; 2013 {get('footer', 'orgName', 'STRAND UP FOR CANCER')}. All rights reserved.</p>
           </div>
         </div>
       </footer>

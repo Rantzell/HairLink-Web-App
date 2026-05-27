@@ -5,12 +5,11 @@ import ConfirmModal from '../components/ConfirmModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface HeroSettings   { heading: string; subheading: string; ctaLabel: string }
-interface StatItem       { value: string; label: string }
 interface ServiceItem    { title: string; description: string; ctaLabel: string }
 interface AboutSettings  { heading: string; body: string }
 interface FooterSettings { orgName: string; address: string; facebook: string; instagram: string }
 interface BrandingSettings { primaryColor: string; primaryTextColor: string; btnRadius: string }
-interface ImagesSettings   { heroLogo: string; aboutImg1: string; aboutImg2: string; partnerLogo1: string; partnerLogo2: string }
+interface ImagesSettings   { heroLogo: string; aboutImg1: string; aboutImg2: string; partnerLogo1: string; partnerLogo2: string; eventImg1: string; eventImg2: string; eventImg3: string; eventImg4: string }
 interface TypographySettings { headingFont: string; bodyFont: string }
 
 const GOOGLE_FONTS = ['Inter','Poppins','Manrope','Nunito','Lato','Roboto','Playfair Display','Merriweather','Raleway','Montserrat'];
@@ -32,10 +31,10 @@ const AdminCMS: React.FC = () => {
   type TabType = 'landing' | 'announcements' | 'partnerships';
   const [activeTab, setActiveTab] = useState<TabType>('landing');
 
-  type LandingSection = 'hero' | 'stats' | 'services' | 'about' | 'footer' | 'branding' | 'images' | 'typography';
+  type LandingSection = 'hero' | 'services' | 'about' | 'footer' | 'branding' | 'images' | 'typography';
   const [landingSection, setLandingSection] = useState<LandingSection>('hero');
   const [hero, setHero]         = useState<HeroSettings>({ heading: '', subheading: '', ctaLabel: '' });
-  const [stats, setStats]       = useState<StatItem[]>([{ value: '', label: '' }, { value: '', label: '' }, { value: '', label: '' }]);
+
   const [services, setServices] = useState<ServiceItem[]>([
     { title: '', description: '', ctaLabel: '' },
     { title: '', description: '', ctaLabel: '' },
@@ -44,7 +43,7 @@ const AdminCMS: React.FC = () => {
   const [about, setAbout]       = useState<AboutSettings>({ heading: '', body: '' });
   const [footer, setFooter]     = useState<FooterSettings>({ orgName: '', address: '', facebook: 'https://www.facebook.com/strandupforcancer', instagram: 'https://www.instagram.com/strandupforcancer/' });
   const [branding, setBranding] = useState<BrandingSettings>({ primaryColor: '#ad246d', primaryTextColor: '#ffffff', btnRadius: '8px' });
-  const [images, setImages]     = useState<ImagesSettings>({ heroLogo: '', aboutImg1: '', aboutImg2: '', partnerLogo1: '', partnerLogo2: '' });
+  const [images, setImages]     = useState<ImagesSettings>({ heroLogo: '', aboutImg1: '', aboutImg2: '', partnerLogo1: '', partnerLogo2: '', eventImg1: '', eventImg2: '', eventImg3: '', eventImg4: '' });
   const [typography, setTypography] = useState<TypographySettings>({ headingFont: 'Playfair Display', bodyFont: 'Inter' });
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
@@ -65,7 +64,7 @@ const AdminCMS: React.FC = () => {
 
   const DEFAULTS = {
     hero:     { heading: 'STRAND UP FOR CANCER', subheading: 'Hope begins, one at the time', ctaLabel: 'Donate Now' },
-    stats:    [{ value: '2,500+', label: 'Hair Donations' }, { value: '2,500+', label: 'Wigs Created' }, { value: '2,500+', label: 'Lives Changed' }],
+
     services: [
       { title: 'Donate Hair', description: 'Give the gift of confidence to someone in need by donating your hair.', ctaLabel: 'Donate' },
       { title: 'Request Hair', description: 'Apply for free wig with health certification.', ctaLabel: 'Request' },
@@ -81,6 +80,10 @@ const AdminCMS: React.FC = () => {
       aboutImg2: '/assets/images/landing/sufc-team2.jpg',
       partnerLogo1: '/assets/images/landing/pgh.png',
       partnerLogo2: '/assets/images/landing/wigmaker.png',
+      eventImg1: '/assets/images/landing/past-event-1.jpg',
+      eventImg2: '/assets/images/landing/past-event-2.jpg',
+      eventImg3: '/assets/images/landing/past-event-3.jpg',
+      eventImg4: '/assets/images/landing/past-event-4.jpg',
     }
   };
 
@@ -96,7 +99,6 @@ const AdminCMS: React.FC = () => {
       setPartnerships(partRes.data);
       const s = settingsRes.data;
       setHero(s.hero             ? { ...DEFAULTS.hero, ...s.hero } : DEFAULTS.hero);
-      setStats(s.stats           ?? DEFAULTS.stats);
       setServices(s.services     ?? DEFAULTS.services);
       setAbout(s.about           ? { ...DEFAULTS.about, ...s.about } : DEFAULTS.about);
       setFooter(s.footer         ? { ...DEFAULTS.footer, ...s.footer } : DEFAULTS.footer);
@@ -109,6 +111,10 @@ const AdminCMS: React.FC = () => {
         aboutImg2:    s.images?.aboutImg2    || DEFAULTS.images.aboutImg2,
         partnerLogo1: s.images?.partnerLogo1 || DEFAULTS.images.partnerLogo1,
         partnerLogo2: s.images?.partnerLogo2 || DEFAULTS.images.partnerLogo2,
+        eventImg1:    s.images?.eventImg1    || DEFAULTS.images.eventImg1,
+        eventImg2:    s.images?.eventImg2    || DEFAULTS.images.eventImg2,
+        eventImg3:    s.images?.eventImg3    || DEFAULTS.images.eventImg3,
+        eventImg4:    s.images?.eventImg4    || DEFAULTS.images.eventImg4,
       });
     } catch (err) {
       console.error('Failed to fetch CMS data', err);
@@ -130,7 +136,7 @@ const AdminCMS: React.FC = () => {
     try {
       await apiClient.put('/internal-api/admin/site-settings', [
         { key: 'hero',       value: hero },
-        { key: 'stats',      value: stats },
+
         { key: 'services',   value: services },
         { key: 'about',      value: about },
         { key: 'footer',     value: footer },
@@ -157,7 +163,7 @@ const AdminCMS: React.FC = () => {
     setSaving(true);
     try {
       setHero(DEFAULTS.hero);
-      setStats(DEFAULTS.stats);
+
       setServices(DEFAULTS.services);
       setAbout(DEFAULTS.about);
       setFooter(DEFAULTS.footer);
@@ -167,7 +173,7 @@ const AdminCMS: React.FC = () => {
 
       await apiClient.put('/internal-api/admin/site-settings', [
         { key: 'hero',       value: DEFAULTS.hero },
-        { key: 'stats',      value: DEFAULTS.stats },
+
         { key: 'services',   value: DEFAULTS.services },
         { key: 'about',      value: DEFAULTS.about },
         { key: 'footer',     value: DEFAULTS.footer },
@@ -263,11 +269,10 @@ const AdminCMS: React.FC = () => {
         <div className="admin-cms-sidebar-grid">
           <aside className="admin-card-rounded admin-cms-sidebar-aside">
             <p className="admin-page-kicker">Sections</p>
-            {(['hero', 'stats', 'services', 'about', 'footer', 'branding', 'images', 'typography'] as LandingSection[]).map(sec => (
+            {(['hero', 'services', 'about', 'footer', 'branding', 'images', 'typography'] as LandingSection[]).map(sec => (
               <button key={sec} onClick={() => setLandingSection(sec)} className={`admin-cms-section-pill${landingSection === sec ? ' active' : ''}`}>
                 {{ 
                   hero: '🎯 Hero', 
-                  stats: '📊 Stats', 
                   services: '⚙️ How It Works', 
                   about: 'ℹ️ About', 
                   footer: '🔻 Footer',
@@ -300,18 +305,7 @@ const AdminCMS: React.FC = () => {
               </>
             )}
 
-            {landingSection === 'stats' && (
-              <>
-                <h2 className="admin-cms-section-title">📊 Hero Stats</h2>
-                {stats.map((stat, i) => (
-                  <div key={i} className="admin-cms-item-card">
-                    <p className="admin-cms-item-label">Stat {i + 1}</p>
-                    <Field label="Value (e.g. 2,500+)" value={stat.value} onChange={v => { const s = [...stats]; s[i] = { ...s[i], value: v }; setStats(s); }} />
-                    <Field label="Label (e.g. Hair Donations)" value={stat.label} onChange={v => { const s = [...stats]; s[i] = { ...s[i], label: v }; setStats(s); }} />
-                  </div>
-                ))}
-              </>
-            )}
+
 
             {landingSection === 'services' && (
               <>
