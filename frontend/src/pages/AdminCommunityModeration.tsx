@@ -19,7 +19,7 @@ const AdminCommunityModeration: React.FC = () => {
         ? { posts: res.data, recentCount: res.data.length }
         : { posts: res.data?.posts || [], recentCount: res.data?.recentCount || 0 };
       setData(payload);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch community data', err);
       setErrorMsg(err?.response?.data?.message || err.message || 'Failed to load community data');
     } finally {

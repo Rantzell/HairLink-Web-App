@@ -1,0 +1,843 @@
+/* ================================================================
+   SUFC Global Theme — Scandinavian Warm Neutral Design System
+   Loaded LAST in index.html so its variables & overrides win.
+   ================================================================ */
+
+/* ── Google Fonts: DM Serif Display for editorial headings ── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
+
+/* ──────────────────────────────────────────────
+   1. DESIGN TOKENS
+   ────────────────────────────────────────────── */
+:root {
+  /* Warm neutral scale */
+  --w50:  #FAFAF9;
+  --w100: #F5F5F0;
+  --w200: #EEEDE8;
+  --w300: #D6D3CD;
+  --w400: #A8A29E;
+  --w500: #78716C;
+  --w600: #57534E;
+  --w700: #44403C;
+  --w800: #292524;
+  --w900: #1C1917;
+
+  /* Brand accent — terracotta */
+  --accent:        #D63B8A;
+  --accent-light:  #FFF0F8;
+  --accent-mid:    #E880BC;
+  --accent-hover:  #B52B72;
+  --accent-strong: #8B1A52;
+
+  /* Semantic */
+  --green:    #4A7C59;
+  --green-bg: #EDF4F0;
+  --red:      #B45454;
+  --red-bg:   #F9EDED;
+  --blue:     #4A6FA5;
+  --blue-bg:  #EBF0F7;
+  --gold:     #B08040;
+  --gold-bg:  #F8F1E4;
+
+  /* Layout */
+  --nav-h:      64px;
+  --max-w:      1320px;
+  --page-px:    clamp(20px, 4vw, 56px);
+  --section-py: clamp(56px, 7vw, 96px);
+
+  /* Radius */
+  --r-xs:   4px;
+  --r-sm:   8px;
+  --r-md:   12px;
+  --r-lg:   16px;
+  --r-xl:   24px;
+  --r-full: 999px;
+
+  /* Shadow */
+  --sh-xs: 0 1px 2px rgba(28,25,23,.04);
+  --sh-sm: 0 2px 6px rgba(28,25,23,.06);
+  --sh-md: 0 4px 14px rgba(28,25,23,.08);
+  --sh-lg: 0 8px 28px rgba(28,25,23,.10);
+  --sh-xl: 0 16px 48px rgba(28,25,23,.12);
+
+  /* Typography */
+  --font-serif:   'DM Serif Display', Georgia, serif;
+  --font-display: 'Outfit', sans-serif;
+  --font-body:    'Inter', sans-serif;
+
+  /* Dashboard variable overrides */
+  --dash-bg:           var(--w50);
+  --dash-card:         #ffffff;
+  --dash-ink:          var(--w900);
+  --dash-muted:        var(--w500);
+  --dash-line:         var(--w200);
+  --dash-primary:      var(--accent);
+  --dash-primary-strong: var(--accent-strong);
+  --dash-soft:         var(--accent-light);
+}
+
+/* ──────────────────────────────────────────────
+   2. GLOBAL RESET / BASE
+   ────────────────────────────────────────────── */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--w50) !important;
+  background-image: none !important;
+  color: var(--w900) !important;
+  font-family: var(--font-body) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ──────────────────────────────────────────────
+   3. SCROLLBAR
+   ────────────────────────────────────────────── */
+::-webkit-scrollbar         { width: 5px; height: 5px; }
+::-webkit-scrollbar-track   { background: var(--w100); }
+::-webkit-scrollbar-thumb   { background: var(--w300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ──────────────────────────────────────────────
+   4. DASHBOARD NAV OVERRIDES
+   ────────────────────────────────────────────── */
+.dash-header {
+  background: rgba(250,250,249,0.92) !important;
+  border-bottom: 1px solid var(--w200) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.dash-brand {
+  color: var(--w900) !important;
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.dash-links a {
+  color: var(--w600) !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+  border-radius: var(--r-full) !important;
+}
+
+.dash-links a:hover {
+  border-color: var(--w200) !important;
+  background: var(--w100) !important;
+  color: var(--w900) !important;
+}
+
+.dash-links a.active {
+  color: var(--accent) !important;
+  background: var(--accent-light) !important;
+  border-color: transparent !important;
+  font-weight: 600 !important;
+}
+
+.nav-dropdown-trigger {
+  color: var(--w600) !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+}
+
+.nav-dropdown-trigger:hover,
+.nav-dropdown:hover .nav-dropdown-trigger {
+  background: var(--w100) !important;
+  color: var(--w900) !important;
+  box-shadow: none !important;
+}
+
+.nav-dropdown-trigger.active {
+  color: var(--accent) !important;
+  background: var(--accent-light) !important;
+}
+
+.nav-dropdown-content {
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-lg) !important;
+  border-radius: var(--r-lg) !important;
+}
+
+.nav-dropdown-content a {
+  color: var(--w600) !important;
+  font-weight: 500 !important;
+}
+
+.nav-dropdown-content a:hover {
+  background: var(--w100) !important;
+  color: var(--accent) !important;
+}
+
+.dash-burger {
+  border-color: var(--w200) !important;
+  background: #fff !important;
+}
+
+.dash-burger span {
+  background: var(--w700) !important;
+}
+
+.logout-btn {
+  color: var(--red) !important;
+  font-weight: 600 !important;
+}
+
+/* ──────────────────────────────────────────────
+   5. DASHBOARD SECTIONS & CARDS
+   ────────────────────────────────────────────── */
+.section-wrap {
+  background: #ffffff !important;
+  border: 1px solid var(--w200) !important;
+  border-radius: var(--r-xl) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+.section-title-block h1,
+.section-title-block h2 {
+  font-family: var(--font-display) !important;
+  color: var(--w900) !important;
+  letter-spacing: -0.02em !important;
+}
+
+.section-title-block p {
+  color: var(--w500) !important;
+}
+
+/* ──────────────────────────────────────────────
+   6. DASHBOARD BUTTONS
+   ────────────────────────────────────────────── */
+.soft-btn {
+  background: var(--accent) !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 8px rgba(214,59,138,.28) !important;
+  border-radius: var(--r-md) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  transition: all 0.2s ease !important;
+}
+
+.soft-btn:hover {
+  background: var(--accent-hover) !important;
+  box-shadow: 0 4px 14px rgba(214,59,138,.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+.ghost-btn {
+  color: var(--accent) !important;
+  border: 1.5px solid var(--accent) !important;
+  background: transparent !important;
+  border-radius: var(--r-md) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.ghost-btn:hover {
+  background: var(--accent) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(214,59,138,.25) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ──────────────────────────────────────────────
+   7. STAT CARDS (donor-module, etc.)
+   ────────────────────────────────────────────── */
+.stat-card,
+.kpi-card,
+.summary-card {
+  background: #ffffff !important;
+  border: 1px solid var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+  border-radius: var(--r-lg) !important;
+}
+
+/* ──────────────────────────────────────────────
+   8. STATUS PILLS
+   ────────────────────────────────────────────── */
+.badge-pending,
+.status-pending { background: var(--gold-bg) !important; color: var(--gold) !important; }
+
+.badge-approved,
+.badge-completed,
+.status-approved,
+.status-completed { background: var(--green-bg) !important; color: var(--green) !important; }
+
+.badge-rejected,
+.badge-cancelled,
+.status-rejected { background: var(--red-bg) !important; color: var(--red) !important; }
+
+/* ──────────────────────────────────────────────
+   9. FORMS (global input overrides)
+   ────────────────────────────────────────────── */
+input:not([type="radio"]):not([type="checkbox"]):not([type="range"]),
+select,
+textarea {
+  border-color: var(--w300) !important;
+  border-radius: var(--r-md) !important;
+  color: var(--w900) !important;
+  font-family: var(--font-body) !important;
+  transition: border-color 0.18s, box-shadow 0.18s !important;
+}
+
+input:not([type="radio"]):not([type="checkbox"]):not([type="range"]):focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(214,59,138,.14) !important;
+}
+
+/* ──────────────────────────────────────────────
+   10. TABLES
+   ────────────────────────────────────────────── */
+table thead th {
+  background: var(--w100) !important;
+  color: var(--w600) !important;
+  border-bottom-color: var(--w300) !important;
+  font-weight: 600 !important;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+}
+
+table tbody tr:hover {
+  background: var(--w100) !important;
+}
+
+table tbody td {
+  border-bottom-color: var(--w200) !important;
+  color: var(--w700) !important;
+}
+
+/* ──────────────────────────────────────────────
+   11. PROGRESS BARS
+   ────────────────────────────────────────────── */
+.progress-bar { background: var(--w200) !important; }
+.progress-fill { background: var(--accent) !important; }
+
+/* ──────────────────────────────────────────────
+   12. DONOR POINTS CARD
+   ────────────────────────────────────────────── */
+.points-card {
+  background: #fff !important;
+  border: 1px solid var(--w200) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+.star-inline { color: var(--gold) !important; }
+
+/* ──────────────────────────────────────────────
+   13. REVEAL ANIMATION
+   ────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: themeReveal 0.55s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+
+@keyframes themeReveal {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ──────────────────────────────────────────────
+   14. COMMUNITY / HAIRCARE OVERRIDES
+   ────────────────────────────────────────────── */
+.post-card,
+.video-card,
+.article-card {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+  border-radius: var(--r-lg) !important;
+}
+
+/* ──────────────────────────────────────────────
+   15. ADMIN / STAFF MODULE
+   ────────────────────────────────────────────── */
+.admin-card,
+.staff-card {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+/* ──────────────────────────────────────────────
+   16. NOTIFICATION BELL
+   ────────────────────────────────────────────── */
+.notif-badge { background: var(--accent) !important; }
+
+/* ──────────────────────────────────────────────
+   17. LOADING SCREEN
+   ────────────────────────────────────────────── */
+.premium-loading-screen { background: var(--w50) !important; }
+.loading-bar-fill { background: linear-gradient(90deg, var(--accent), var(--accent-mid)) !important; }
+.loading-text { color: var(--accent) !important; }
+
+/* ──────────────────────────────────────────────
+   18. AUTH PAGE — input-box / input-wrapper inside hl-auth-page
+   ────────────────────────────────────────────── */
+.hl-auth-page .input-box {
+  position: relative;
+  margin: 0 !important;
+}
+
+.hl-auth-page .input-box input {
+  width: 100% !important;
+  padding: 0.62rem 3rem 0.62rem 0.9rem !important;
+  border: 1.5px solid #EEEDE8 !important;
+  border-radius: 10px !important;
+  background: #FAFAF9 !important;
+  font-size: 0.875rem !important;
+  color: #1C1917 !important;
+  font-family: 'Inter', sans-serif !important;
+  outline: none !important;
+  transition: border-color 0.18s, box-shadow 0.18s !important;
+  backdrop-filter: none !important;
+}
+
+.hl-auth-page .input-box input:focus {
+  border-color: #D63B8A !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(214,59,138,.12) !important;
+}
+
+.hl-auth-page .input-box input::placeholder {
+  color: #A8A29E !important;
+}
+
+.hl-auth-page .input-wrapper {
+  margin: 0 !important;
+}
+
+.hl-auth-page .ajax-error {
+  font-size: 0.72rem !important;
+  color: var(--red) !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin-top: 3px !important;
+}
+
+/* Phone input in auth page */
+.hl-auth-page .hl-phone-input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ──────────────────────────────────────────────
+   19. DONOR / RECIPIENT MODULE CARD OVERRIDES
+   ────────────────────────────────────────────── */
+.points-card,
+.referral-card,
+.tracking-card,
+.request-card {
+  background: #fff !important;
+  border: 1px solid var(--w200) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+/* Table overrides */
+.data-table {
+  background: #fff !important;
+  border-radius: var(--r-lg) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--w200) !important;
+}
+
+/* ──────────────────────────────────────────────
+   20. FOCUS RING (accessibility)
+   ────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* ──────────────────────────────────────────────
+   21. DONOR / RECIPIENT MODULE OVERRIDES
+   ────────────────────────────────────────────── */
+.module-head {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-xs) !important;
+}
+
+.module-head h1 { color: var(--w900) !important; }
+.module-head p  { color: var(--w500) !important; }
+
+.module-card {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-xs) !important;
+}
+
+.summary-item {
+  background: var(--w50) !important;
+  border-color: var(--w200) !important;
+}
+
+.summary-item small { color: var(--w500) !important; }
+
+/* Note box: terracotta left border */
+.note-box {
+  border-left-color: var(--accent) !important;
+  background: var(--accent-light) !important;
+  color: var(--w700) !important;
+}
+
+/* Tracking tools input focus */
+.tracking-tools input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(214,59,138,.12) !important;
+}
+
+/* Table alternating rows */
+.tracking-table tbody tr:nth-child(odd) { background: var(--w50) !important; }
+.tracking-table th { color: var(--w500) !important; }
+
+/* Status pills - warm semantics */
+.status-submitted  { background: var(--gold-bg) !important; color: var(--gold) !important; }
+.status-pending    { background: var(--gold-bg) !important; color: var(--gold) !important; }
+.status-received, .status-validated, .status-processing { background: var(--blue-bg) !important; color: var(--blue) !important; }
+.status-completed  { background: var(--green-bg) !important; color: var(--green) !important; }
+.status-rejected, .status-cancelled { background: var(--red-bg) !important; color: var(--red) !important; }
+
+/* ──────────────────────────────────────────────
+   22. STAFF / ADMIN MODULE OVERRIDES
+   ────────────────────────────────────────────── */
+.staff-table th, .admin-table th {
+  background: var(--w100) !important;
+  color: var(--w600) !important;
+}
+
+.staff-card, .admin-card, .report-card, .kpi-card {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+/* ──────────────────────────────────────────────
+   23. WIGMAKER MODULE
+   ────────────────────────────────────────────── */
+.task-card, .production-card {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+/* ──────────────────────────────────────────────
+   24. COMMUNITY MODULE
+   ────────────────────────────────────────────── */
+.community-post, .comment-box {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+}
+
+/* Like button */
+.like-btn:hover { color: var(--accent) !important; }
+
+/* ──────────────────────────────────────────────
+   25. DONATE / MONETARY PAGE
+   ────────────────────────────────────────────── */
+.donate-card, .monetary-card, .payment-card {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+.amount-chip.active, .amount-chip:checked,
+[data-active="true"].amount-chip {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  background: var(--accent-light) !important;
+}
+
+/* ──────────────────────────────────────────────
+   26. PROFILE PAGE
+   ────────────────────────────────────────────── */
+.profile-card, .profile-header-card {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+/* ──────────────────────────────────────────────
+   27. DEMO FILL BUTTONS (dashboard login helper)
+   ────────────────────────────────────────────── */
+.demo-fill-btn {
+  border-color: var(--w300) !important;
+  color: var(--w700) !important;
+  background: #fff !important;
+}
+
+.demo-fill-btn:hover {
+  background: var(--accent-light) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+/* ──────────────────────────────────────────────
+   28. DONOR DASHBOARD SPECIFIC
+   ────────────────────────────────────────────── */
+.points-info {
+  border-color: var(--w200) !important;
+  color: var(--w700) !important;
+  background: var(--w50) !important;
+}
+
+.points-info i { color: var(--accent) !important; }
+.points-info span { color: var(--accent) !important; }
+.points-info .star-inline { color: var(--gold) !important; }
+
+.progress-bar  { background: var(--w200) !important; }
+.progress-fill { background: linear-gradient(90deg, var(--accent-mid), var(--accent)) !important; }
+.progress-star { color: var(--gold) !important; text-shadow: 0 2px 8px rgba(176,128,64,.35) !important; }
+.star-row      { color: var(--w200) !important; }
+.reward-line   { color: var(--w600) !important; }
+
+.referral-box-wrap {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-xs) !important;
+}
+
+.referral-box label { color: var(--w700) !important; }
+.referral-box input { border-color: var(--w200) !important; background: var(--w50) !important; }
+
+.submit-code-btn {
+  background: var(--accent) !important;
+  box-shadow: 0 4px 12px rgba(214,59,138,.22) !important;
+}
+
+.submit-code-btn:hover { background: var(--accent-hover) !important; }
+
+.action-item-btn {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  color: var(--w700) !important;
+}
+
+.action-item-btn i { color: var(--w500) !important; }
+
+.action-item-btn:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  background: var(--accent-light) !important;
+}
+
+.action-item-btn:hover i { color: var(--accent) !important; }
+
+.rewards-shell {
+  background: #fff !important;
+  border: 1px solid var(--w200) !important;
+  box-shadow: var(--sh-xs) !important;
+}
+
+.rewards-head h2 { color: var(--w800) !important; font-family: var(--font-display) !important; }
+
+.reward-card {
+  background: var(--w50) !important;
+  border-color: var(--w200) !important;
+}
+
+.reward-card h3 { color: var(--w800) !important; }
+.reward-card p  { color: var(--w500) !important; }
+
+.action-filled-btn {
+  background: var(--accent) !important;
+  box-shadow: 0 4px 10px rgba(214,59,138,.22) !important;
+}
+
+.action-filled-btn:hover { background: var(--accent-hover) !important; }
+
+.donate-highlight {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+/* ──────────────────────────────────────────────
+   29. MONETARY / DONATE PAGE
+   ────────────────────────────────────────────── */
+.donate-panel, .method-card, .step-card {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+/* ──────────────────────────────────────────────
+   30. HAIRCARE HUB
+   ────────────────────────────────────────────── */
+.haircare-section { background: var(--w50) !important; }
+.video-tile, .article-tile {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+/* ──────────────────────────────────────────────
+   31. UNIVERSAL LINK ACCENT
+   ────────────────────────────────────────────── */
+.dash-main a[style*="#ad246d"],
+.dash-main a[style*="ad246d"] {
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+/* ──────────────────────────────────────────────
+   32. ADMIN MODULE OVERRIDES
+   ────────────────────────────────────────────── */
+.admin-hero {
+  background: linear-gradient(135deg, #fff 0%, var(--w50) 100%) !important;
+  border-color: var(--w200) !important;
+}
+
+.admin-hero-copy .admin-kicker { color: var(--accent) !important; }
+.admin-hero-copy h1 { color: var(--w900) !important; }
+.admin-hero-copy p  { color: var(--w500) !important; }
+
+.admin-hero-badge {
+  background: var(--accent-light) !important;
+  border-color: rgba(214,59,138,.25) !important;
+  color: var(--accent-hover) !important;
+}
+
+.admin-stat-accent {
+  background: linear-gradient(90deg, var(--accent), var(--accent-mid)) !important;
+}
+
+.admin-optional {
+  border-color: var(--w200) !important;
+  background: var(--w50) !important;
+}
+
+.admin-optional-head h2 { color: var(--w800) !important; }
+.admin-optional-head h2 i { color: var(--accent) !important; }
+.admin-optional-tag { background: var(--accent-light) !important; color: var(--accent) !important; }
+
+.admin-count-badge {
+  background: var(--accent) !important;
+  color: #fff !important;
+}
+
+.admin-stat { background: #fff !important; border-color: var(--w200) !important; }
+.admin-stat-icon { background: var(--accent-light) !important; }
+.admin-stat-icon i { color: var(--accent) !important; }
+.admin-stat h2 { color: var(--w900) !important; }
+
+.admin-quick-btn {
+  background: var(--accent) !important;
+  box-shadow: 0 4px 12px rgba(214,59,138,.22) !important;
+}
+.admin-quick-btn:hover { background: var(--accent-hover) !important; }
+
+.admin-card,
+.admin-block {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+.admin-card-head { border-bottom-color: var(--w200) !important; }
+.admin-card-head h2 i { color: var(--accent) !important; }
+.admin-card-head span { color: var(--accent) !important; background: var(--accent-light) !important; }
+
+.admin-action-link {
+  background: var(--w50) !important;
+  border-color: var(--w200) !important;
+}
+.admin-action-link:hover {
+  background: var(--accent-light) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+.admin-action-link h3 { color: var(--w800) !important; }
+.admin-action-link p  { color: var(--w500) !important; }
+
+.admin-tools input:focus {
+  outline-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+.admin-table th {
+  background: var(--w100) !important;
+  color: var(--w600) !important;
+  border-bottom-color: var(--w300) !important;
+}
+.admin-table tbody tr:hover td { background: var(--w50) !important; }
+
+.admin-chip { background: var(--w100) !important; color: var(--w600) !important; }
+.admin-chip.active { background: var(--accent) !important; color: #fff !important; }
+
+.role-badge { background: var(--w100) !important; color: var(--w600) !important; }
+.role-badge.admin { background: var(--accent-light) !important; color: var(--accent) !important; }
+
+.report-card {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+.report-card h3 i { color: var(--accent) !important; }
+
+/* ──────────────────────────────────────────────
+   33. STAFF MODULE OVERRIDES
+   ────────────────────────────────────────────── */
+.staff-hero,
+.staff-card,
+.staff-panel {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+.staff-stat-icon i { color: var(--accent) !important; }
+.staff-kicker { color: var(--accent) !important; }
+
+/* ──────────────────────────────────────────────
+   34. WIGMAKER MODULE OVERRIDES
+   ────────────────────────────────────────────── */
+.wigmaker-card,
+.task-panel {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+  box-shadow: var(--sh-sm) !important;
+}
+
+/* ──────────────────────────────────────────────
+   35. RECIPIENT MODULE OVERRIDES
+   ────────────────────────────────────────────── */
+.recipient-page .module-card,
+.recipient-page .module-head {
+  background: #fff !important;
+  border-color: var(--w200) !important;
+}
+
+/* ──────────────────────────────────────────────
+   36. GLOBAL PRIMARY COLOR SHORTCUTS
+       (for any inline style using hardcoded pink)
+   ────────────────────────────────────────────── */
+[style*="color: #ad246d"],
+[style*="color: rgb(173, 36, 109)"],
+[style*="color: #cf2f84"],
+[style*="color: #bc2f79"] {
+  color: var(--accent) !important;
+}
+
+[style*="background: #cf2f84"],
+[style*="background-color: #cf2f84"],
+[style*="background: #bc2f79"],
+[style*="background-color: #bc2f79"] {
+  background: var(--accent) !important;
+}
+
+[style*="border-color: #ad246d"],
+[style*="border: 1.5px solid #ad246d"] {
+  border-color: var(--accent) !important;
+}

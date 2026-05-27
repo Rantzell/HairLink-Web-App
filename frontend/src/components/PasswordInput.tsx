@@ -8,69 +8,77 @@ interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement>
 }
 
 /**
- * Reusable Password Input with Visibility Toggle and Glassmorphism aesthetics.
+ * Reusable Password Input with visibility toggle.
+ * Uses warm neutral design tokens via CSS variables.
  */
-const PasswordInput: React.FC<PasswordInputProps> = ({ 
-  id, 
-  placeholder = "Password", 
-  error, 
-  iconClass = "bxs-lock-alt", 
+const PasswordInput: React.FC<PasswordInputProps> = ({
+  id,
+  placeholder = 'Password',
+  error,
+  iconClass = 'bxs-lock-alt',
   className,
-  ...props 
+  style,
+  ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
-  const toggleVisibility = () => setShowPassword(!showPassword);
-
   return (
-    <div className={`input-wrapper ${className || ''}`}>
+    <div className={`input-wrapper ${className || ''}`} style={{ position: 'relative' }}>
       <div className="input-box" style={{ position: 'relative' }}>
         <input
           id={id}
           type={showPassword ? 'text' : 'password'}
           placeholder={placeholder}
           style={{
-            paddingRight: '3rem', // Make room for both icons
-            background: 'rgba(255, 255, 255, 0.7)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(232, 216, 232, 0.8)',
+            paddingRight: '3rem',
+            ...style,
           }}
           {...props}
         />
-        
-        {/* Toggle Icon */}
-        <i 
-          className={`bx ${showPassword ? 'bx-hide' : 'bx-show'} password-toggle`} 
-          onClick={toggleVisibility}
+
+        {/* Toggle visibility */}
+        <i
+          className={`bx ${showPassword ? 'bx-hide' : 'bx-show'}`}
+          onClick={() => setShowPassword(v => !v)}
+          title={showPassword ? 'Hide password' : 'Show password'}
           style={{
             position: 'absolute',
             right: '2.2rem',
             top: '50%',
             transform: 'translateY(-50%)',
             cursor: 'pointer',
-            color: '#9f8ba8',
+            color: '#A8A29E',
+            fontSize: '1rem',
             zIndex: 10,
-            fontSize: '1.1rem',
-            transition: 'color 0.2s ease'
+            transition: 'color 0.15s',
           }}
-          title={showPassword ? "Hide password" : "Show password"}
         />
 
-        {/* Lock Icon */}
-        <i 
+        {/* Lock icon */}
+        <i
           className={`bx ${iconClass}`}
           style={{
             position: 'absolute',
-            right: '0.8rem',
+            right: '0.75rem',
             top: '50%',
             transform: 'translateY(-50%)',
-            color: '#9f8ba8',
-            pointerEvents: 'none'
+            color: '#A8A29E',
+            fontSize: '0.95rem',
+            pointerEvents: 'none',
           }}
         />
       </div>
+
       {error && error.length > 0 && (
-        <div className="ajax-error" style={{ display: 'block', marginTop: '4px' }}>
+        <div
+          className="ajax-error"
+          style={{
+            display: 'block',
+            marginTop: '4px',
+            fontSize: '0.72rem',
+            color: '#B45454',
+          }}
+        >
           {error[0]}
         </div>
       )}

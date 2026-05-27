@@ -5,11 +5,11 @@ import apiClient from '../api/client';
 import '../styles/VerifyOtp.css';
 
 const dashboardPath: Record<string, string> = {
-  admin: '/admin/dashboard',
-  staff: '/staff/dashboard',
-  wigmaker: '/wigmaker/dashboard',
+  admin:     '/admin/dashboard',
+  staff:     '/staff/dashboard',
+  wigmaker:  '/wigmaker/dashboard',
   recipient: '/recipient/dashboard',
-  donor: '/donor/dashboard',
+  donor:     '/donor/dashboard',
 };
 
 const VerifyOtp: React.FC = () => {
@@ -25,10 +25,9 @@ const VerifyOtp: React.FC = () => {
   const [countdown, setCountdown] = useState(60);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Countdown timer for resend
   useEffect(() => {
     if (countdown <= 0) return;
-    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(t);
   }, [countdown]);
 
@@ -58,24 +57,13 @@ const VerifyOtp: React.FC = () => {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = otp.join('');
-    if (token.length !== 6) {
-      setError('Please enter the full 6-digit code.');
-      return;
-    }
+    if (token.length !== 6) { setError('Please enter the full 6-digit code.'); return; }
     setLoading(true);
     setError('');
     try {
-      const { data: _verifyData, error: verifyError } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email',
-      });
+      const { error: verifyError } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
       if (verifyError) throw verifyError;
-
-      // Mark as verified in public.users via backend
       await apiClient.post('/auth/mark-verified');
-
-      // Get profile to determine role
       const profile = await apiClient.get('/auth/me');
       const role = profile.data?.role || 'donor';
       navigate(dashboardPath[role] || '/donor/dashboard', { replace: true });
@@ -147,6 +135,7 @@ const VerifyOtp: React.FC = () => {
               {error}
             </p>
           )}
+
           {resendMsg && (
             <p className="verify-otp-success">
               {resendMsg}
@@ -155,9 +144,9 @@ const VerifyOtp: React.FC = () => {
 
           <button
             type="submit"
-            disabled={loading}
             id="verify-otp-btn"
             className="verify-otp-button"
+            disabled={loading}
           >
             {loading ? 'Verifying…' : 'Verify Code'}
           </button>
@@ -174,7 +163,7 @@ const VerifyOtp: React.FC = () => {
               disabled={resending}
               className="verify-otp-resend-btn"
             >
-              {resending ? 'Sending…' : 'Resend OTP'}
+              {resending ? 'Sending…' : 'Resend Code'}
             </button>
           )}
         </div>
