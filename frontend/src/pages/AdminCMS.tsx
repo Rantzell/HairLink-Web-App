@@ -8,7 +8,7 @@ interface HeroSettings   { heading: string; subheading: string; ctaLabel: string
 interface StatItem       { value: string; label: string }
 interface ServiceItem    { title: string; description: string; ctaLabel: string }
 interface AboutSettings  { heading: string; body: string }
-interface FooterSettings { orgName: string; address: string }
+interface FooterSettings { orgName: string; address: string; facebook: string; instagram: string }
 interface BrandingSettings { primaryColor: string; primaryTextColor: string; btnRadius: string }
 interface ImagesSettings   { heroLogo: string; aboutImg1: string; aboutImg2: string; partnerLogo1: string; partnerLogo2: string }
 interface TypographySettings { headingFont: string; bodyFont: string }
@@ -42,7 +42,7 @@ const AdminCMS: React.FC = () => {
     { title: '', description: '', ctaLabel: '' },
   ]);
   const [about, setAbout]       = useState<AboutSettings>({ heading: '', body: '' });
-  const [footer, setFooter]     = useState<FooterSettings>({ orgName: '', address: '' });
+  const [footer, setFooter]     = useState<FooterSettings>({ orgName: '', address: '', facebook: 'https://www.facebook.com/strandupforcancer', instagram: 'https://www.instagram.com/strandupforcancer/' });
   const [branding, setBranding] = useState<BrandingSettings>({ primaryColor: '#ad246d', primaryTextColor: '#ffffff', btnRadius: '8px' });
   const [images, setImages]     = useState<ImagesSettings>({ heroLogo: '', aboutImg1: '', aboutImg2: '', partnerLogo1: '', partnerLogo2: '' });
   const [typography, setTypography] = useState<TypographySettings>({ headingFont: 'Playfair Display', bodyFont: 'Inter' });
@@ -72,7 +72,7 @@ const AdminCMS: React.FC = () => {
       { title: 'Monetary', description: 'Support our mission financially and earn reward points.', ctaLabel: 'Give' },
     ],
     about:  { heading: 'About Us', body: 'Strand Up for Cancer (SUFC) is a youth-led initiative dedicated to supporting cancer patients through hair donation and wig crafting. Our mission is to provide high-quality wigs to those experiencing hair loss, restoring their confidence and dignity during their recovery journey.' },
-    footer: { orgName: 'STRAND UP FOR CANCER', address: 'Manila Downtown YMCA at 945 Sabino Padilla St,\nBinondo, Manila, 1006 Metro Manila' },
+    footer: { orgName: 'STRAND UP FOR CANCER', address: 'Manila Downtown YMCA at 945 Sabino Padilla St,\nBinondo, Manila, 1006 Metro Manila', facebook: 'https://www.facebook.com/strandupforcancer', instagram: 'https://www.instagram.com/strandupforcancer/' },
     branding: { primaryColor: '#ad246d', primaryTextColor: '#ffffff', btnRadius: '8px' },
     typography: { headingFont: 'Playfair Display', bodyFont: 'Inter' },
     images: {
@@ -95,13 +95,13 @@ const AdminCMS: React.FC = () => {
       setAnnouncements(annRes.data);
       setPartnerships(partRes.data);
       const s = settingsRes.data;
-      setHero(s.hero             ?? DEFAULTS.hero);
+      setHero(s.hero             ? { ...DEFAULTS.hero, ...s.hero } : DEFAULTS.hero);
       setStats(s.stats           ?? DEFAULTS.stats);
       setServices(s.services     ?? DEFAULTS.services);
-      setAbout(s.about           ?? DEFAULTS.about);
-      setFooter(s.footer         ?? DEFAULTS.footer);
-      setBranding(s.branding     ?? DEFAULTS.branding);
-      setTypography(s.typography ?? DEFAULTS.typography);
+      setAbout(s.about           ? { ...DEFAULTS.about, ...s.about } : DEFAULTS.about);
+      setFooter(s.footer         ? { ...DEFAULTS.footer, ...s.footer } : DEFAULTS.footer);
+      setBranding(s.branding     ? { ...DEFAULTS.branding, ...s.branding } : DEFAULTS.branding);
+      setTypography(s.typography ? { ...DEFAULTS.typography, ...s.typography } : DEFAULTS.typography);
       
       setImages({
         heroLogo:     s.images?.heroLogo     || DEFAULTS.images.heroLogo,
@@ -339,8 +339,8 @@ const AdminCMS: React.FC = () => {
               <>
                 <h2 className="admin-cms-section-title">🔻 Footer</h2>
                 <Field label="Organization Name" value={footer.orgName} onChange={v => setFooter({ ...footer, orgName: v })} />
-                <Field label="Address (use \\n for line break)" value={footer.address} onChange={v => setFooter({ ...footer, address: v })} multiline />
-              </>
+                <Field label="Address (use \\n for line break)" value={footer.address} onChange={v => setFooter({ ...footer, address: v })} multiline />                <Field label="Facebook URL" value={footer.facebook} onChange={v => setFooter({ ...footer, facebook: v })} />
+                <Field label="Instagram URL" value={footer.instagram} onChange={v => setFooter({ ...footer, instagram: v })} />              </>
             )}
 
             {landingSection === 'branding' && (

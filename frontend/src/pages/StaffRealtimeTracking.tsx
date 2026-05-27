@@ -212,18 +212,13 @@ const StaffRealtimeTracking: React.FC = () => {
       {/* Global Search Bar (Left Aligned) */}
       <div className="search-container tracking-search-container">
         <div className="tracking-search-wrapper">
-          <i className='bx bx-search' style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#ad246d', fontSize: '1.1rem' }}></i>
+          <i className='bx bx-search tracking-search-icon'></i>
           <input
             type="text"
             placeholder={`Search ${isDonation ? 'donors' : 'recipients'} or reference #...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%', padding: '0.75rem 1.2rem 0.75rem 2.8rem', borderRadius: '12px',
-              border: '1px solid #ead7e8', background: '#fff', fontSize: '0.9rem',
-              boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)', color: '#3b2e43',
-              outline: 'none', transition: 'all 0.2s ease'
-            }}
+            className="tracking-search-input"
           />
           {searchTerm && (
             <button

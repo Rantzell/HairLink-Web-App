@@ -227,8 +227,7 @@ const RecipientRequest: React.FC = () => {
               <select value={formData.wigLength} onChange={e => setFormData({...formData, wigLength: e.target.value})} required>
                 <option value="">Select Wig Length</option>
                 <option value="short">Short (10-14 inches)</option>
-                <option value="medium">Medium (15-20 inches)</option>
-                <option value="long">Long (More than 20 inches)</option>
+                <option value="long">Long (More than 15)</option>
               </select>
             </label>
             <label>

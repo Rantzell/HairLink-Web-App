@@ -134,9 +134,8 @@ const DonorDonate: React.FC = () => {
                 required
               >
                 <option value="" disabled>Select hair length</option>
-                <option>10 to 14 inches</option>
-                <option>15 to 20 inches</option>
-                <option>More than 20 inches</option>
+                <option value="short">Short (10-14 inches)</option>
+                <option value="long">Long (More than 15 inches)</option>
               </select>
             </label>
             <label>

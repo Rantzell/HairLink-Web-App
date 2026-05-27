@@ -333,13 +333,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const normalizeSize = (val) => {
         const s = normalize(val);
         if (s.includes('10 to 14') || s === 'short') return 'short';
-        if (s.includes('15 to 20') || s === 'medium') return 'medium';
-        if (s.includes('more than 20') || s === 'long') return 'long';
+        // Map 15+ to 'long' since medium category removed
+        if (s.includes('more than 15') || s === 'long' || s.includes('15') || s.includes('16') || s.includes('18') || s.includes('20')) return 'long';
         return s;
     };
 
     const sizeDistance = (a, b) => {
-        const order = ['short', 'medium', 'long'];
+        const order = ['short', 'long'];
         const ia = order.indexOf(a);
         const ib = order.indexOf(b);
         if (ia < 0 || ib < 0) {

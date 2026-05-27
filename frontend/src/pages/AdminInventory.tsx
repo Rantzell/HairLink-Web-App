@@ -8,6 +8,7 @@ const AdminInventory: React.FC = () => {
   const location = useLocation();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [view, setView] = useState('overview'); 
   const [wigFilter, setWigFilter] = useState('');
   const [donFilter, setDonFilter] = useState('');
@@ -18,22 +19,37 @@ const AdminInventory: React.FC = () => {
     if (v) setView(v);
   }, [location.search]);
 
-  useEffect(() => {
-    const fetchInventory = async () => {
-      try {
-        const res = await apiClient.get('/internal-api/admin/inventory');
-        setData(res.data);
-      } catch (err) {
-        console.error('Failed to fetch inventory', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchInventory();
-  }, []);
+  const fetchInventory = async () => {
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await apiClient.get('/internal-api/admin/inventory');
+      setData(res.data);
+    } catch (err: any) {
+      console.error('Failed to fetch inventory', err);
+      const serverMsg = err?.response?.data?.message || err?.message || 'Unknown error';
+      setErrorMsg(serverMsg);
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchInventory(); }, []);
 
   if (loading) return <div className="section-wrap">Loading inventory oversight...</div>;
-  if (!data) return <div className="section-wrap">Error: Could not load inventory data. Please try again.</div>;
+  if (!data) return (
+    <div className="section-wrap">
+      <div className="admin-error-box">Error: Could not load inventory data.</div>
+      {errorMsg && <div className="admin-error-detail">{errorMsg}</div>}
+      <div style={{ marginTop: '1rem' }}>
+        <button className="admin-btn" onClick={() => fetchInventory()}>Retry</button>
+        {errorMsg && errorMsg.toLowerCase().includes('auth') && (
+          <button className="admin-btn" style={{ marginLeft: '0.75rem' }} onClick={() => { window.location.href = '/login'; }}>Sign in</button>
+        )}
+      </div>
+    </div>
+  );
 
   const filteredWigs = (data.wigStock as any[]).filter(w => 
     w.taskCode.toLowerCase().includes(wigFilter.toLowerCase()) ||
@@ -78,7 +94,7 @@ const AdminInventory: React.FC = () => {
               <i className="bx bx-transfer-alt admin-icon-pink"></i> Hair Stock Categorization
             </h3>
             <div className="hair-stock-grid admin-hair-stock-grid">
-              {['Short', 'Medium', 'Long'].map(len => (
+              {['Short', 'Long'].map(len => (
                 <div key={len} className="hair-stock-col admin-hair-col">
                   <h4 className="admin-hair-col-title">{len}</h4>
                   {['Black', 'Brown', 'Light'].map(col => (
@@ -101,7 +117,7 @@ const AdminInventory: React.FC = () => {
             <p className="admin-queue-meta">View-only oversight of received hair donations by category.</p>
           </div>
           <div className="hair-stock-grid admin-hair-stock-grid-lg">
-            {['Short', 'Medium', 'Long'].map(len => (
+            {['Short', 'Long'].map(len => (
               <div key={len} className="hair-stock-col admin-hair-col">
                 <h4 className="admin-hair-col-title-lg">{len} CATEGORY</h4>
                 {['Black', 'Brown', 'Light', 'Gray', 'Other'].map(col => (
@@ -175,21 +191,44 @@ const AdminInventory: React.FC = () => {
                 <tr>
                   <th className="admin-compact-th">Ref</th>
                   <th className="admin-compact-th">Donor</th>
-                  <th className="admin-compact-th">Length</th>
-                  <th className="admin-compact-th">Color</th>
-                  <th className="admin-compact-th">Submission</th>
-                  <th className="admin-compact-th">Staff Action</th>
+                  {/* If the records are monetary donations, they will include `amount`/`paymentMethod`/`referenceNumber` fields. Detect and render appropriate columns. */}
+                  {filteredDons.length > 0 && (filteredDons[0].amount !== undefined || filteredDons[0].referenceNumber !== undefined) ? (
+                    <>
+                      <th className="admin-compact-th">Amount</th>
+                      <th className="admin-compact-th">Method</th>
+                      <th className="admin-compact-th">Submission</th>
+                      <th className="admin-compact-th">Status</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="admin-compact-th">Length</th>
+                      <th className="admin-compact-th">Color</th>
+                      <th className="admin-compact-th">Submission</th>
+                      <th className="admin-compact-th">Staff Action</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {filteredDons.map((don: any) => (
                   <tr key={don.id}>
-                    <td className="admin-compact-td"><strong>{don.reference}</strong></td>
+                    <td className="admin-compact-td"><strong>{don.reference || don.referenceNumber}</strong></td>
                     <td className="admin-compact-td">{don.user?.firstName} {don.user?.lastName}</td>
-                    <td className="admin-compact-td">{don.hairLength}</td>
-                    <td className="admin-compact-td">{don.hairColor}</td>
-                    <td className="admin-compact-td">{new Date(don.createdAt).toLocaleDateString()}</td>
-                    <td className="admin-compact-td"><StatusPill status={don.status} /></td>
+                    {don.amount !== undefined || don.referenceNumber !== undefined ? (
+                      <>
+                        <td className="admin-compact-td">₱{don.amount?.toLocaleString?.() || '—'}</td>
+                        <td className="admin-compact-td">{don.paymentMethod || don.method || '—'}</td>
+                        <td className="admin-compact-td">{new Date(don.createdAt || don.updatedAt).toLocaleDateString()}</td>
+                        <td className="admin-compact-td"><StatusPill status={don.status} /></td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="admin-compact-td">{don.hairLength}</td>
+                        <td className="admin-compact-td">{don.hairColor}</td>
+                        <td className="admin-compact-td">{new Date(don.createdAt).toLocaleDateString()}</td>
+                        <td className="admin-compact-td"><StatusPill status={don.status} /></td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>

@@ -25,19 +25,25 @@
 .search-input-wrapper {
     position: relative;
     flex: 1;
+    min-width: 220px;
 }
 
 .search-input-icon {
     position: absolute;
     left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #ad246d;
+    z-index: 1;
+    pointer-events: none;
 }
 
 .search-input-field {
     width: 100%;
-    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    padding: 0.72rem 1rem 0.72rem 3rem;
     border-radius: 10px;
     border: 1px solid #ead7e8;
     font-size: 0.9rem;

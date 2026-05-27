@@ -145,7 +145,10 @@ router.patch('/users/:id/toggle-active', ...adminOnly, async (req, res) => {
     if (!user) { res.status(404).json({ message: 'User not found' }); return; }
     await prisma.user.update({ where: { id: user.id }, data: { isActive: !user.isActive } });
     res.json({ message: user.isActive ? 'User deactivated.' : 'User activated.', success: true });
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) { 
+    console.error('[Admin API] /community error:', err);
+    res.status(500).json({ error: 'Failed', message: err?.message || String(err) });
+  }
 });
 
 // GET /internal-api/admin/events
@@ -154,7 +157,7 @@ router.get('/events', ...adminOnly, async (_req, res) => {
     const upcoming = await prisma.event.findMany({ where: { status: 'Upcoming' }, orderBy: { date: 'asc' } });
     const past = await prisma.event.findMany({ where: { status: 'Completed' }, orderBy: { date: 'desc' } });
     res.json(s({ upcomingEvents: upcoming, pastEvents: past }));
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) { console.error('[Admin API] GET /community error:', err); res.status(500).json({ error: 'Failed', message: err?.message || String(err) }); }
 });
 
 // POST /internal-api/admin/events
@@ -170,11 +173,29 @@ router.post('/events', ...adminOnly, validate(eventCreateSchema), async (req, re
 // GET /internal-api/admin/community
 router.get('/community', ...adminOnly, async (_req, res) => {
   try {
-    // Fetch all community posts with user details
-    const posts = await (prisma.communityPost as any).findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
+    // Fetch all community posts with user details (be defensive: if the query fails, continue with empty list)
+    let postsRaw: any[] = [];
+    try {
+      postsRaw = await (prisma.communityPost as any).findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
+    } catch (dbErr: any) {
+      console.error('[Admin API] community.findMany failed, returning empty posts:', dbErr);
+      postsRaw = [];
+    }
+    // Normalize nested user ids and dates to avoid serialization/runtime issues in the admin UI
+    const posts = (postsRaw || []).map((p: any) => ({
+      ...p,
+      user: p.user ? { ...p.user, id: p.user.id?.toString ? p.user.id.toString() : p.user.id } : undefined,
+      createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
+    }));
     const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-    const recentCount = await prisma.communityPost.count({ where: { createdAt: { gte: weekAgo } } });
-    res.json(s({ posts, recentCount }));
+    let recentCount = 0;
+    try {
+      recentCount = await prisma.communityPost.count({ where: { createdAt: { gte: weekAgo } } });
+    } catch (cntErr: any) {
+      console.error('[Admin API] community.count failed, defaulting recentCount to 0:', cntErr);
+      recentCount = 0;
+    }
+    res.json({ posts, recentCount });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
@@ -183,7 +204,10 @@ router.delete('/community/:id', ...adminOnly, async (req, res) => {
   try {
     await prisma.communityPost.delete({ where: { id: req.params.id as string } });
     res.json({ message: 'Post deleted', success: true });
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) {
+    console.error('[Admin API] DELETE /community/:id error:', err);
+    res.status(500).json({ error: 'Failed', message: err?.message || String(err) });
+  }
 });
 
 // GET /internal-api/admin/partnerships
@@ -272,7 +296,10 @@ router.get('/inventory', ...adminOnly, async (_req, res) => {
 
       if (stock[l]?.[c] !== undefined) stock[l][c]++;
     }
-    const wigStock = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { donations: true, wigmaker: true }, orderBy: { updatedAt: 'desc' } });
+    // Avoid including the `donations` relation directly here — some Prisma clients
+    // in certain environments may not expose it. We only need wigmaker and
+    // hairRequest metadata for the inventory view, which keeps the payload small.
+    const wigStock = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { wigmaker: true, hairRequest: true }, orderBy: { updatedAt: 'desc' } });
     const allDons = await prisma.donation.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
     res.json(s({ stock, totalHairRecords: dons.length, wigStock, wigCount: wigStock.length, allDonations: allDons, allDonationsCount: allDons.length }));
   } catch (err: any) { 
@@ -294,7 +321,9 @@ router.get('/matching', ...adminOnly, async (_req, res) => {
   try {
     const ad = await prisma.donation.findMany({ where: { status: 'Completed' }, include: { user: true } });
     const ar = await prisma.hairRequest.findMany({ where: { status: 'Validated' }, include: { user: true } });
-    const cw = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { donations: true } });
+    // For matching overview we don't require the full donations relation — omit
+    // it to avoid runtime include errors and reduce query cost.
+    const cw = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { wigmaker: true, hairRequest: true } });
     res.json(s({ availableDonations: ad, approvedRequests: ar, completedWigs: cw, readyToMatch: ar.length, allocatedWigs: cw.length }));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });

@@ -10,12 +10,12 @@ export function calculateCompatibility(
   wig: { targetLength: string; targetColor: string }
 ): number {
   let score = 0;
-  const normalizeSize = (val: string | null | undefined): number => {
+    const normalizeSize = (val: string | null | undefined): number => {
     if (!val) return 0;
     const s = val.toLowerCase().trim();
     if (s.includes('10 to 14') || s === 'short' || s.includes('10 inches') || s.includes('12 inches')) return 1;
-    if (s.includes('15 to 20') || s === 'medium' || s.includes('14 inches') || s.includes('16 inches')) return 2;
-    if (s.includes('more than 20') || s === 'long' || s.includes('18 inches') || s.includes('20 inches')) return 3;
+    // Medium category removed — map mid/15-inch+ sizes to Long
+    if (s.includes('more than 15') || s === 'long' || s.includes('15 inches') || s.includes('16 inches') || s.includes('18 inches') || s.includes('20 inches') || parseInt(s) >= 15) return 2;
     return 0;
   };
   const reqSize = normalizeSize(request.wigLength);

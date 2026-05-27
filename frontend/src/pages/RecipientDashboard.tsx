@@ -43,11 +43,17 @@ const RecipientDashboard: React.FC = () => {
           <i className="bx bxs-heart rewards-head-icon"></i>
         </div>
 
-        <div className="reward-grid reward-grid-single">
+        <div className="reward-grid">
           <article className="reward-card">
             <h3>Request Hair</h3>
             <p>Let's boost your confidence. Request hair to support your journey of comfort.</p>
             <Link className="action-filled-btn" to="/recipient/request">Request Hair</Link>
+          </article>
+
+          <article className="reward-card">
+            <h3>Monetary Donation</h3>
+            <p>Support the cause by making a financial contribution to HairLink.</p>
+            <Link className="action-filled-btn" to="/recipient/monetary">Support Now</Link>
           </article>
         </div>
       </section>

@@ -129,11 +129,17 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
       include: { user: true }, orderBy: { updatedAt: 'desc' },
     });
     const wigmakers = await prisma.user.findMany({ where: { role: 'wigmaker', isActive: true } });
-    const wpIds = donations.map(d => (d as any).wigProductionId).filter((id: any) => id !== null) as number[];
-    const wps = await prisma.wigProduction.findMany({
-      where: { id: { in: wpIds } }, 
-      include: { wigmaker: true },
-    });
+    const wpIds = donations
+      .map(d => (d as any).wigProductionId)
+      .filter((id: any) => id != null) as number[]; // filter out null/undefined
+
+    let wps: any[] = [];
+    if (wpIds.length > 0) {
+      wps = await prisma.wigProduction.findMany({
+        where: { id: { in: wpIds } },
+        include: { wigmaker: true },
+      });
+    }
     const wpMap: Record<string, any> = {};
     for (const d of donations) {
       if ((d as any).wigProductionId) {

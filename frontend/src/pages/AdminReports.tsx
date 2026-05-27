@@ -125,7 +125,7 @@ const AdminReports: React.FC = () => {
             <section className="admin-report-section">
               <h3 className="admin-report-section-title">1. Stock Categorization</h3>
               <div className="admin-three-col-no-mb">
-                {['Short', 'Medium', 'Long'].map(len => (
+                {['Short', 'Long'].map(len => (
                   <div key={len} className="admin-report-mini-card">
                     <h4 className="admin-report-mini-title">{len} Strands</h4>
                     {['Black', 'Brown', 'Light', 'Gray', 'Other'].map(col => (

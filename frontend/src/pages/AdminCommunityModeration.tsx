@@ -7,15 +7,21 @@ const AdminCommunityModeration: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
+      setErrorMsg(null);
       const res = await apiClient.get('/internal-api/admin/community');
-      setData(res.data);
+      const payload = Array.isArray(res.data)
+        ? { posts: res.data, recentCount: res.data.length }
+        : { posts: res.data?.posts || [], recentCount: res.data?.recentCount || 0 };
+      setData(payload);
     } catch (err) {
       console.error('Failed to fetch community data', err);
+      setErrorMsg(err?.response?.data?.message || err.message || 'Failed to load community data');
     } finally {
       setLoading(false);
     }
@@ -46,6 +52,15 @@ const AdminCommunityModeration: React.FC = () => {
   };
 
   if (loading) return <div className="section-wrap">Loading community moderation...</div>;
+  if (!data) return (
+    <div className="section-wrap">
+      <div className="admin-error-box">Error: Could not load community data.</div>
+      {errorMsg && <div className="admin-error-detail">{errorMsg}</div>}
+      <div style={{ marginTop: '1rem' }}>
+        <button className="admin-btn" onClick={() => { setLoading(true); fetchData(); }}>Retry</button>
+      </div>
+    </div>
+  );
 
   return (
     <section className="section-wrap reveal active admin-page">

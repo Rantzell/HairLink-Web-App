@@ -102,6 +102,13 @@ const LandingPage: React.FC = () => {
     return cms[key] ?? fallback;
   };
 
+  const footerDefault = {
+    orgName: 'STRAND UP FOR CANCER',
+    address: 'Manila Downtown YMCA at 945 Sabino Padilla St,\nBinondo, Manila, 1006 Metro Manila',
+    facebook: 'https://www.facebook.com/strandupforcancer',
+    instagram: 'https://www.instagram.com/strandupforcancer/'
+  };
+  const footer   = { ...footerDefault, ...(cms?.footer || {}) };
   const branding = cms?.branding || { primaryColor: '#ad246d', primaryTextColor: '#ffffff', btnRadius: '8px' };
   const images   = cms?.images   || {};
   const typo     = cms?.typography || { headingFont: 'Playfair Display', bodyFont: 'Inter' };
@@ -122,6 +129,14 @@ const LandingPage: React.FC = () => {
     .hero h1, .section-heading h2, .footer-brand h3 { color: var(--primary); }
     .stat-item h3 { color: var(--primary); }
     .pink-ribbon-text { color: var(--primary); }
+    .footer-social-links { margin-top: 1rem; }
+    .footer-social-links p { margin-bottom: 0.5rem; font-weight: 600; }
+    .footer-social-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .footer-social-link { display: inline-flex; align-items: center; gap: 0.65rem; padding: 0.8rem 1.1rem; border-radius: 999px; color: #fff; text-decoration: none; transition: transform 0.2s ease, filter 0.2s ease; box-shadow: 0 10px 25px rgba(0,0,0,0.12); }
+    .footer-social-link:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .footer-social-link i { font-size: 1.05rem; }
+    .footer-social-facebook { background: #1877f2; }
+    .footer-social-instagram { background: radial-gradient(circle at 30% 30%, #feda75 0%, #f58529 25%, #dd2a7b 50%, #8134af 75%, #515bd4 100%); }
   `;
 
   return (
@@ -276,6 +291,17 @@ const LandingPage: React.FC = () => {
               <img src="/assets/images/landing/pink-ribbon.png" alt="ribbon" />
               <input type="email" placeholder="Your Email Address" />
               <button type="button">Sign Up</button>
+            </div>
+            <div className="footer-social-links">
+              <p>Follow us</p>
+              <div className="footer-social-row">
+                <a href={footer.facebook} target="_blank" rel="noreferrer" className="footer-social-link footer-social-facebook">
+                  <i className='bx bxl-facebook'></i> Facebook
+                </a>
+                <a href={footer.instagram} target="_blank" rel="noreferrer" className="footer-social-link footer-social-instagram">
+                  <i className='bx bxl-instagram'></i> Instagram
+                </a>
+              </div>
             </div>
           </div>
         </div>

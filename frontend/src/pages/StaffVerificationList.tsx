@@ -42,12 +42,13 @@ const StaffVerificationList: React.FC = () => {
   });
 
   const title = type === 'donor' ? 'Hair Donations' : type === 'recipient' ? 'Recipient Requests' : 'Monetary Donations';
+  const hasActions = type !== 'monetary';
 
   return (
     <div className="section-wrap reveal active staff-page">
       <article className="staff-block">
         <div className="staff-bar staff-bar-flex">
-          <h2 className="staff-queue-title">{title} Verification Queue</h2>
+          <h2 className="staff-queue-title">{title}{hasActions ? ' Verification Queue' : ''}</h2>
           <div className="staff-tools staff-tools-flex">
             <div className="search-input-wrapper">
               <i className='bx bx-search search-input-icon'></i>
@@ -80,12 +81,12 @@ const StaffVerificationList: React.FC = () => {
                 <th className="tracking-table-th">Date</th>
                 <th className="tracking-table-th">User</th>
                 <th className="tracking-table-th">Status</th>
-                <th className="tracking-table-th-center">Action</th>
+                {hasActions && <th className="tracking-table-th-center">Action</th>}
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} className="tracking-table-loading">
+                <tr><td colSpan={hasActions ? 5 : 4} className="tracking-table-loading">
                   <i className='bx bx-loader-alt bx-spin tracking-table-loading-icon'></i>
                   Loading verification queue...
                 </td></tr>
@@ -96,18 +97,20 @@ const StaffVerificationList: React.FC = () => {
                     <td className="tracking-table-td-date">{new Date(item.createdAt).toLocaleDateString()}</td>
                     <td className="tracking-table-td-user">{item.user ? `${item.user.firstName} ${item.user.lastName}` : (item.name || 'Anonymous')}</td>
                     <td className="tracking-table-td"><StatusPill status={item.status} /></td>
-                    <td className="tracking-table-td-center">
-                      <Link 
-                        to={`/staff/verification/${type}/${item.reference || item.referenceNumber}`} 
-                        className="soft-btn review-btn-styled"
-                      >
-                        Review
-                      </Link>
-                    </td>
+                    {hasActions && (
+                      <td className="tracking-table-td-center">
+                        <Link 
+                          to={`/staff/verification/${type}/${item.reference || item.referenceNumber}`} 
+                          className="soft-btn review-btn-styled"
+                        >
+                          Review
+                        </Link>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan={5} className="tracking-table-empty">
+                <tr><td colSpan={hasActions ? 5 : 4} className="tracking-table-empty">
                   <i className='bx bx-file-find tracking-table-empty-icon'></i>
                   No items match your search or filter criteria.
                 </td></tr>

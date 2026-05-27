@@ -41,7 +41,7 @@ const StaffDashboard: React.FC = () => {
         <div className="staff-hero-copy">
           <p className="staff-kicker">Operations Center</p>
           <h1>Staff Operations Workspace</h1>
-          <p>Monitor verification, inventory, production tracking, matching, and distribution workflows.</p>
+          <p>Key staff tasks and status at a glance.</p>
         </div>
         <div className="staff-hero-badge">
           <i className='bx bxs-badge-check'></i>
@@ -53,90 +53,87 @@ const StaffDashboard: React.FC = () => {
         <article className="quick-stat">
           <small>Donations</small>
           <h2>{loading ? '...' : stats.pendingDonations}</h2>
-          <p>Pending Hair Donations</p>
+          <p>Pending</p>
         </article>
         <article className="quick-stat">
           <small>Monetary</small>
           <h2>0</h2>
-          <p>Pending Monetary</p>
+          <p>Pending</p>
         </article>
         <article className="quick-stat">
           <small>Inventory</small>
           <h2>{loading ? '...' : stats.totalStock}</h2>
-          <p>Hair Inventory Records</p>
+          <p>Total</p>
         </article>
         <article className="quick-stat">
           <small>Production</small>
           <h2>{loading ? '...' : stats.productionCount}</h2>
-          <p>Wig Builds In Progress</p>
+          <p>In progress</p>
         </article>
         <article className="quick-stat">
           <small>Stock</small>
           <h2>{loading ? '...' : stats.wigStockCount}</h2>
-          <p>Completed Wig Stock</p>
+          <p>Ready</p>
         </article>
         <article className="quick-stat">
           <small>Requests</small>
           <h2>{loading ? '...' : stats.pendingRequests}</h2>
-          <p>Pending Recipient Requests</p>
+          <p>Waiting</p>
         </article>
       </div>
 
       <article className="staff-card">
         <div className="staff-section-head">
           <h2>Verification Desk</h2>
-          <span>Review and decision workflow</span>
         </div>
         <div className="staff-actions three-col">
           <Link className="staff-action-link" to="/staff/verification/donor">
             <h3>Donation Verification</h3>
-            <p>Review hair donation submissions and approve or reject with remarks.</p>
+            <p>Review donations.</p>
           </Link>
           <Link className="staff-action-link" to="/staff/verification/recipient">
             <h3>Request Verification</h3>
-            <p>Validate recipient requests and supporting medical documentation.</p>
+            <p>Validate requests.</p>
           </Link>
           <Link className="staff-action-link" to="/staff/verification/monetary">
             <h3>Monetary Verification</h3>
-            <p>Verify bank transfers and payment proofs for monetary donations.</p>
+            <p>Check payment proofs.</p>
           </Link>
         </div>
       </article>
 
       <article className="staff-card">
         <div className="staff-section-head">
-          <h2>Production and Inventory</h2>
-          <span>Wigmaker tracking and stock control</span>
+          <h2>Production & Inventory</h2>
         </div>
         <div className="staff-actions four-col">
           <Link className="staff-action-link" to="/staff/tracking">
             <h3>Real-time Wigmaker Tracking</h3>
-            <p>Monitor partner wigmaker progress and update stage movement.</p>
+            <p>Monitor build status.</p>
           </Link>
           <Link className="staff-action-link" to="/staff/batches">
             <h3>Delivery Per Batch</h3>
-            <p>Track delivery batches and document processing status.</p>
+            <p>Track batch progress.</p>
           </Link>
           <Link className="staff-action-link" to="/staff/hair-stock">
             <h3>Hair Stock</h3>
-            <p>View available stock by size and hair color categories.</p>
+            <p>View inventory counts.</p>
           </Link>
           <Link className="staff-action-link" to="/staff/wig-stock">
             <h3>Wig Stock</h3>
-            <p>Maintain completed wig inventory records and statuses.</p>
+            <p>Review finished stock.</p>
           </Link>
         </div>
       </article>
 
       <article className="staff-card">
         <div className="staff-section-head">
-          <h2>Matching and Allocation</h2>
-          <span>Recipient pairing and release preparation</span>
+          <h2>Matching</h2>
         </div>
         <div className="staff-actions staff-actions-single-col">
           <Link className="staff-action-link" to="/staff/matching">
             <h3>Recipient Matching List</h3>
-            <p>Review matched wigs and release scheduling progress.</p>
+            <p>Review matches.</p>
           </Link>
         </div>
       </article>

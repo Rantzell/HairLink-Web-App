@@ -15,8 +15,19 @@ const apiClient = axios.create({
 let currentToken: string | null = null;
 
 // Keep token in sync without calling getSession() on every request
+// Initialize currentToken from any existing session (useful on page reload)
+(async () => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    currentToken = data?.session?.access_token || null;
+  } catch (e) {
+    // non-fatal — we'll still pick up changes via onAuthStateChange
+    console.warn('[API] Failed to read initial Supabase session', e);
+  }
+})();
+
 supabase.auth.onAuthStateChange((_event, session) => {
-  currentToken = session?.access_token || null;
+  currentToken = (session as any)?.access_token || null;
 });
 
 // Attach the token to every request

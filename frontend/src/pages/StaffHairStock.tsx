@@ -28,7 +28,7 @@ const StaffHairStock: React.FC = () => {
     fetchStock();
   }, []);
 
-  const lengths = ['Short', 'Medium', 'Long'];
+  const lengths = ['Short', 'Long'];
   const colors = ['Black', 'Brown', 'Light'];
 
   return (
