@@ -22,6 +22,8 @@ import referralRoutes from './routes/referral.routes';
 import partnershipRoutes from './routes/partnership.routes';
 import publicRoutes from './routes/public.routes';
 import notificationRoutes from './routes/notification.routes';
+import eventsRoutes from './routes/events.routes';
+import calendarRoutes from './routes/calendar.routes';
 
 const app = express();
 
@@ -85,6 +87,8 @@ app.use('/api/community', communityRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/monetary', monetaryRoutes);
+app.use('/api/events', eventsRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

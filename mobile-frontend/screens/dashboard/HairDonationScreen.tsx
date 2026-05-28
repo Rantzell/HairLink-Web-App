@@ -28,7 +28,9 @@ interface HairDonationScreenProps {
 }
 
 export default function HairDonationScreen({ onBack, onSuccess }: HairDonationScreenProps) {
-    const [hairLength, setHairLength] = useState<'10-14 inch' | '15-20 inch' | 'More than 20 inch' | null>(null);
+    // Values must match the website (frontend/src/pages/DonorDonate.tsx):
+    //   length → 'short' | 'long'    color → 'Black' | 'Brown' | 'Light'
+    const [hairLength, setHairLength] = useState<'short' | 'long' | null>(null);
     const [hairColor, setHairColor] = useState<'Black' | 'Brown' | 'Light' | null>(null);
     const [chemicallyTreated, setChemicallyTreated] = useState(false);
     const [address, setAddress] = useState('');
@@ -216,14 +218,17 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
 
                     <Text style={styles.fieldLabel}>Hair Length *</Text>
                     <View style={styles.chipRow}>
-                        {['10-14 inch', '15-20 inch', 'More than 20 inch'].map((val: any) => (
+                        {([
+                            { value: 'short', label: 'Short (10-14 inches)' },
+                            { value: 'long', label: 'Long (More than 15 inches)' },
+                        ] as const).map((opt) => (
                             <TouchableOpacity
-                                key={val}
-                                style={[styles.chip, hairLength === val && styles.chipActive]}
-                                onPress={() => setHairLength(val)}
+                                key={opt.value}
+                                style={[styles.chip, hairLength === opt.value && styles.chipActive]}
+                                onPress={() => setHairLength(opt.value)}
                             >
-                                <Text style={[styles.chipText, hairLength === val && styles.chipTextActive]}>
-                                    {val}
+                                <Text style={[styles.chipText, hairLength === opt.value && styles.chipTextActive]}>
+                                    {opt.label}
                                 </Text>
                             </TouchableOpacity>
                         ))}
@@ -287,6 +292,26 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                         onChangeText={setAddress}
                         textAlignVertical="top"
                     />
+                </Animated.View>
+
+                {/* ── Delivery Details (where to send the hair) ── */}
+                <Animated.View entering={FadeInDown.delay(450)} style={styles.deliveryCard}>
+                    <View style={styles.deliveryTitleRow}>
+                        <Ionicons name="location" size={ms(18)} color="#FF1493" />
+                        <Text style={styles.deliveryCardTitle}>Delivery Details</Text>
+                    </View>
+                    <Text style={styles.deliveryLine}>
+                        <Text style={styles.deliveryLabel}>Address: </Text>
+                        Manila Downtown YMCA, 945 Sabino Padilla St, Binondo, Manila
+                    </Text>
+                    <Text style={styles.deliveryLine}>
+                        <Text style={styles.deliveryLabel}>Receiving Time: </Text>
+                        Monday to Sunday, 9:00 AM to 7:00 PM
+                    </Text>
+                    <Text style={styles.deliveryLine}>
+                        <Text style={styles.deliveryLabel}>Contact: </Text>
+                        Venus May Alinsod | 0917-847-4270
+                    </Text>
                 </Animated.View>
 
                 {/* ── Submit Button ───────────────────────────── */}
@@ -425,6 +450,22 @@ const styles = StyleSheet.create({
     },
     previewImg: { width: '100%', height: vs(200), resizeMode: 'cover' },
     uploadBtnText: { fontSize: ms(15), fontWeight: '900', color: '#FF66B2', marginLeft: ms(8) },
+
+    // Delivery Details card — pink-tinted, mirrors the "Delivery Details"
+    // card shown post-approval in DonationHistoryScreen so donors recognise
+    // the same address before and after they submit.
+    deliveryCard: {
+        backgroundColor: '#FFF0F5',
+        borderRadius: ms(20),
+        padding: ms(18),
+        marginTop: vs(16),
+        borderWidth: 1,
+        borderColor: '#FFD6EF',
+    },
+    deliveryTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: vs(10) },
+    deliveryCardTitle: { fontSize: ms(15), fontWeight: '900', color: '#C2185B', marginLeft: ms(6) },
+    deliveryLabel: { fontWeight: '800', color: '#1a1a1a' },
+    deliveryLine: { fontSize: ms(13), color: '#333', lineHeight: ms(20), marginBottom: vs(4) },
 
     submitContainer: { marginTop: vs(10) },
     errorBanner: { padding: ms(12), backgroundColor: '#FFF0F0', borderRadius: ms(16), marginBottom: vs(16), borderWidth: 1, borderColor: '#FFD1D1' },

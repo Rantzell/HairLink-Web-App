@@ -167,16 +167,25 @@ router.post('/events', ...adminOnly, validate(eventCreateSchema), async (req, re
   try {
     const dateObj = new Date(req.body.event_date);
     const status = dateObj.getTime() < Date.now() ? 'Completed' : 'Upcoming';
-    await prisma.event.create({
-      data: { 
-        title: req.body.event_title, 
-        date: dateObj, 
-        description: req.body.event_description || '', 
-        location: req.body.event_location || '', 
-        status, 
-        participantsCount: 0 
+    const created = await prisma.event.create({
+      data: {
+        title: req.body.event_title,
+        date: dateObj,
+        description: req.body.event_description || '',
+        location: req.body.event_location || '',
+        status,
+        participantsCount: 0,
       },
     });
+    // Broadcast to every active donor + recipient so it shows up in their
+    // notification feed and on the mobile UPCOMING EVENT card.
+    try {
+      const { notifyNewEvent } = await import('../services/notification.service');
+      const count = await notifyNewEvent(created.title, created.date, created.location);
+      console.log(`[Admin] Broadcast new event to ${count} users`);
+    } catch (notifyErr) {
+      console.error('[Admin] Failed to broadcast event:', notifyErr);
+    }
     res.json({ message: 'Event created successfully', success: true });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });

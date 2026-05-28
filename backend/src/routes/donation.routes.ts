@@ -69,6 +69,8 @@ router.post('/', authenticate, upload.fields([
     });
 
     await createStatusHistory(DONATION_TYPE, donation.id, 'Submitted');
+    // Confirm to the donor that we got their submission.
+    await notifyDonationStatus(req.user!.id, 'Submitted', donation.reference!);
     res.status(201).json(serializeDonation(donation));
   } catch (err) {
     console.error('[Donation] Create error:', err);
@@ -80,45 +82,85 @@ router.post('/', authenticate, upload.fields([
 });
 
 // GET /internal-api/donations/stats
+//
+// Star-point rules — must match the website:
+//   • Hair donations are worth 10 pts each, but ONLY after staff confirms
+//     the hair was physically received. A submitted-but-unverified donation
+//     is worth zero. Statuses that count: 'Received Hair', 'In Queue',
+//     'In Production', 'In Progress', 'Completed', 'Wig Received'.
+//   • Referrals: 5 pts per referred user (any time).
+//   • Monetary: 1 pt per ₱100, only for completed/verified payments
+//     ('Approved', 'Verified', 'Completed').
+//
+// `pendingHairDonations` / `pendingMonetaryAmount` are returned alongside so
+// the dashboard can show "X donation(s) awaiting verification" without
+// inflating Star Points.
+const RECEIVED_HAIR_STATUSES = [
+  'Received Hair',
+  'In Queue',
+  'In Production',
+  'In Progress',
+  'Completed',
+  'Wig Received',
+];
+
+const VERIFIED_MONETARY_STATUSES = ['Approved', 'Verified', 'Completed'];
+
 router.get('/stats', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     console.log(`[Stats] Fetching for user: ${userId}`);
-    
-    // 1. Hair Donations: 10 points per donation record
-    const hairDonationsCount = await prisma.donation.count({
-      where: { userId }
-    });
-    
-    // 2. Referrals: 5 points per referred user
+
+    // 1. Hair donations — credited only once received.
+    const [receivedHairCount, submittedHairCount] = await Promise.all([
+      prisma.donation.count({
+        where: { userId, status: { in: RECEIVED_HAIR_STATUSES } },
+      }),
+      prisma.donation.count({ where: { userId } }),
+    ]);
+    const pendingHairDonations = Math.max(0, submittedHairCount - receivedHairCount);
+
+    // 2. Referrals — always credited.
     const referrals = await prisma.user.count({
-      where: { referredBy: userId }
+      where: { referredBy: userId },
     });
-    
-    // 3. Monetary: 1 point per 100 PHP (Any status)
-    const monetary = await prisma.monetaryDonation.aggregate({
-      where: { userId },
-      _sum: { amount: true },
-      _count: true
-    });
-    
-    const monetaryAmount = Number(monetary._sum.amount || 0);
-    const monetaryCount = monetary._count || 0;
-    const monetaryPoints = Math.floor(monetaryAmount / 100);
-    
-    const totalPoints = (hairDonationsCount * 10) + (referrals * 5) + monetaryPoints;
-    
-    console.log(`[Stats] User ${userId}: Hair=${hairDonationsCount}, Ref=${referrals}, MonAmt=${monetaryAmount}, MonCount=${monetaryCount}, Total=${totalPoints}`);
+
+    // 3. Monetary — only verified totals count.
+    const [verifiedMonetary, allMonetary] = await Promise.all([
+      prisma.monetaryDonation.aggregate({
+        where: { userId, status: { in: VERIFIED_MONETARY_STATUSES } },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      prisma.monetaryDonation.aggregate({
+        where: { userId },
+        _sum: { amount: true },
+        _count: true,
+      }),
+    ]);
+
+    const verifiedAmount = Number(verifiedMonetary._sum.amount || 0);
+    const verifiedCount = verifiedMonetary._count || 0;
+    const pendingMonetaryAmount = Math.max(0, Number(allMonetary._sum.amount || 0) - verifiedAmount);
+    const monetaryPoints = Math.floor(verifiedAmount / 100);
+
+    const totalPoints = (receivedHairCount * 10) + (referrals * 5) + monetaryPoints;
+
+    console.log(`[Stats] User ${userId}: ReceivedHair=${receivedHairCount}(pending ${pendingHairDonations}), Ref=${referrals}, MonAmt=${verifiedAmount}(pending ₱${pendingMonetaryAmount}), Total=${totalPoints}`);
 
     res.json({
       totalPoints,
       breakdown: {
-        hairDonations: hairDonationsCount,
+        // hairDonations now reflects RECEIVED donations only, since that's
+        // what the points are derived from.
+        hairDonations: receivedHairCount,
+        pendingHairDonations,
         referrals,
-        monetaryAmount,
-        monetaryCount,
-        monetaryPoints
-      }
+        monetaryAmount: verifiedAmount,
+        monetaryCount: verifiedCount,
+        monetaryPoints,
+        pendingMonetaryAmount,
+      },
     });
   } catch (err) {
     console.error('[Donation] Stats error:', err);

@@ -96,8 +96,12 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
   };
 
   const handleCreatePost = async () => {
-    if (!newPostContent.trim() && !newPostImage) {
-      Alert.alert('Empty Post', 'Please write something or attach an image to share.');
+    if (!newPostImage) {
+      Alert.alert('Image Required', 'Please attach a photo before publishing your post.');
+      return;
+    }
+    if (!newPostContent.trim()) {
+      Alert.alert('Caption Required', 'Add a short caption to go with your photo.');
       return;
     }
 
@@ -202,15 +206,19 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
   };
 
   const renderPost = ({ item, index }: { item: any, index: number }) => {
-    const authorName = item.user?.first_name 
-      ? `${item.user.first_name} ${item.user.last_name || ''}`.trim() 
-      : 'Anonymous';
-      
-    const avatarUrl = getAvatarUrl(item.user?.profile_photo_url || item.user?.profilePhotoUrl);
-    const role = item.user?.role || 'user';
-    
-    // Generate initials fallback
+    // Prisma returns camelCase; older responses used snake_case. Fall back so
+    // posts authored either way render the real name instead of "Anonymous".
+    const u = item.user || {};
+    const first = u.firstName || u.first_name || '';
+    const last = u.lastName || u.last_name || '';
+    const fallbackName = u.name || (u.email ? u.email.split('@')[0] : '');
+    const authorName = `${first} ${last}`.trim() || fallbackName || 'Member';
+
+    const avatarUrl = getAvatarUrl(u.profile_photo_url || u.profilePhotoUrl);
+    const role = u.role || 'user';
+
     const initials = authorName.substring(0, 2).toUpperCase();
+    const postedAt = item.createdAt || item.created_at;
 
     return (
       <Animated.View 
@@ -229,7 +237,7 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
           
           <View style={styles.authorInfo}>
             <Text style={styles.authorName}>{authorName}</Text>
-            <Text style={styles.postTime}>{formatTime(item.created_at)}</Text>
+            <Text style={styles.postTime}>{formatTime(postedAt)}</Text>
           </View>
           
           <View style={[styles.roleBadge, role.toLowerCase() === 'donor' ? styles.roleBadgeDonor : styles.roleBadgeRecipient]}>
@@ -345,13 +353,13 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                   <Text style={styles.attachBtnText}>Add Photo</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
-                    styles.postBtn, 
-                    (!newPostContent.trim() && !newPostImage) || submitting ? styles.postBtnDisabled : null
-                  ]} 
+                    styles.postBtn,
+                    (!newPostContent.trim() || !newPostImage || submitting) ? styles.postBtnDisabled : null
+                  ]}
                   onPress={handleCreatePost}
-                  disabled={(!newPostContent.trim() && !newPostImage) || submitting}
+                  disabled={!newPostContent.trim() || !newPostImage || submitting}
                 >
                   {submitting ? (
                     <ActivityIndicator size="small" color="#fff" />
@@ -391,12 +399,15 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.commentsList}
               renderItem={({ item }) => {
-                const cAuthor = item.user?.first_name 
-                  ? `${item.user.first_name} ${item.user.last_name || ''}`.trim() 
-                  : 'Anonymous';
-                const cAvatar = getAvatarUrl(item.user?.profile_photo_url || item.user?.profilePhotoUrl);
-                const cRole = item.user?.role || 'user';
+                const cu = item.user || {};
+                const cFirst = cu.firstName || cu.first_name || '';
+                const cLast = cu.lastName || cu.last_name || '';
+                const cFallback = cu.name || (cu.email ? cu.email.split('@')[0] : '');
+                const cAuthor = `${cFirst} ${cLast}`.trim() || cFallback || 'Member';
+                const cAvatar = getAvatarUrl(cu.profile_photo_url || cu.profilePhotoUrl);
+                const cRole = cu.role || 'user';
                 const cInitials = cAuthor.substring(0, 2).toUpperCase();
+                const cPostedAt = item.createdAt || item.created_at;
 
                 return (
                   <View style={styles.commentItem}>
@@ -415,7 +426,7 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                             {cRole.toUpperCase()}
                           </Text>
                         </View>
-                        <Text style={styles.commentTime}>{formatTime(item.created_at)}</Text>
+                        <Text style={styles.commentTime}>{formatTime(cPostedAt)}</Text>
                       </View>
                       <Text style={styles.commentText}>{item.content}</Text>
                     </View>

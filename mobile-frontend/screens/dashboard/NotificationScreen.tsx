@@ -155,7 +155,7 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
         case 'monetary_donation':
           return { icon: 'wallet', color: '#9B59B6', bg: '#FDF7FF' };
         case 'announcement':
-          return { icon: 'megaphone', color: '#8E44AD', bg: '#F5EEF8' };
+          return { icon: 'bullhorn', color: '#8E44AD', bg: '#F5EEF8' };
         default:
           return { icon: 'mail', color: '#9B59B6', bg: '#FDF7FF' };
       }
@@ -166,7 +166,7 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
       case 'hair_donation': return { icon: 'content-cut', color: '#D81B60', bg: '#FCE4EC' };
       case 'monetary_donation': return { icon: 'wallet', color: '#1E88E5', bg: '#E3F2FD' };
       case 'donation': return { icon: 'heart-pulse', color: '#FF1493', bg: '#FFF0F5' };
-      case 'announcement': return { icon: 'megaphone', color: '#FB8C00', bg: '#FFF3E0' };
+      case 'announcement': return { icon: 'bullhorn', color: '#FB8C00', bg: '#FFF3E0' };
       default: return { icon: 'mail', color: themeMedium, bg: themePale };
     }
   };

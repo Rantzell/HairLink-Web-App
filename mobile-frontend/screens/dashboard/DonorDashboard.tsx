@@ -67,22 +67,26 @@ const ScaleButton = ({ children, onPress, style }: any) => {
   );
 };
 
-// Extracted Countdown Component to prevent entire dashboard re-renders
-const CountdownTimer = () => {
-  const [timeLeft, setTimeLeft] = useState({ days: 2, hours: 14, mins: 30, secs: 45 });
+// Live countdown driven by a real ISO target date (the next admin event).
+// Falls back to all-zeros if no target is provided.
+const CountdownTimer = ({ targetDate }: { targetDate?: string | null }) => {
+  const compute = useCallback(() => {
+    if (!targetDate) return { days: 0, hours: 0, mins: 0, secs: 0 };
+    const diff = Math.max(0, new Date(targetDate).getTime() - Date.now());
+    const days = Math.floor(diff / 86_400_000);
+    const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+    const mins = Math.floor((diff % 3_600_000) / 60_000);
+    const secs = Math.floor((diff % 60_000) / 1000);
+    return { days, hours, mins, secs };
+  }, [targetDate]);
+
+  const [timeLeft, setTimeLeft] = useState(compute);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.secs > 0) return { ...prev, secs: prev.secs - 1 };
-        if (prev.mins > 0) return { ...prev, mins: prev.mins - 1, secs: 59 };
-        if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, mins: 59, secs: 59 };
-        if (prev.days > 0) return { ...prev, days: prev.days - 1, hours: 23, mins: 59, secs: 59 };
-        return prev;
-      });
-    }, 1000);
+    setTimeLeft(compute());
+    const timer = setInterval(() => setTimeLeft(compute()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [compute]);
 
   return (
     <View style={styles.countdownRow}>
@@ -116,6 +120,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
   const [starPoints, setStarPoints] = useState(0);
   const [referralCode, setReferralCode] = useState('---');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [upcomingEvent, setUpcomingEvent] = useState<{ title: string; location: string; date: string } | null>(null);
   const notificationsViewedRef = useRef(false); // Track if user has seen notifications
 
 
@@ -149,10 +154,29 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
     }
   }, []);
 
+  const fetchUpcomingEvent = useCallback(async () => {
+    try {
+      const response = await api.get('/events/next');
+      const ev = response.data;
+      if (ev && ev.date) {
+        setUpcomingEvent({
+          title: ev.title || 'Upcoming Event',
+          location: ev.location || 'TBA',
+          date: ev.date,
+        });
+      } else {
+        setUpcomingEvent(null);
+      }
+    } catch (err) {
+      console.log('Error fetching upcoming event:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchPoints();
     fetchUnreadCount();
-  }, [fetchPoints, fetchUnreadCount]);
+    fetchUpcomingEvent();
+  }, [fetchPoints, fetchUnreadCount, fetchUpcomingEvent]);
 
   useEffect(() => {
     // Only re-fetch unread count when returning from other screens, not notifications
@@ -502,10 +526,10 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
                 <Text style={styles.eventLabel}>UPCOMING EVENT</Text>
                 <Ionicons name="calendar" size={20} color="#fff" />
               </View>
-              <Text style={styles.eventTitle}>Annual Grand Hair Drive</Text>
-              <Text style={styles.eventSubtitle}>Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)</Text>
+              <Text style={styles.eventTitle}>{upcomingEvent?.title || 'No upcoming events'}</Text>
+              <Text style={styles.eventSubtitle}>{upcomingEvent?.location || 'Check back soon for the next drive.'}</Text>
 
-              <CountdownTimer />
+              <CountdownTimer targetDate={upcomingEvent?.date} />
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>

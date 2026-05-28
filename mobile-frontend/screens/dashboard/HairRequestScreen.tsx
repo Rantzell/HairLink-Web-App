@@ -29,8 +29,10 @@ interface HairRequestScreenProps {
 
 export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScreenProps) {
   const [story, setStory] = useState('');
-  const [hairLength, setHairLength] = useState<'Long' | 'Short' | null>(null);
-  const [wigColor, setWigColor] = useState<'Black' | 'Brown' | 'Light' | null>(null);
+  // Values must match the website (frontend/src/pages/RecipientRequest.tsx):
+  //   length → 'short' | 'long'    color → 'black' | 'brown' | 'light'
+  const [hairLength, setHairLength] = useState<'short' | 'long' | null>(null);
+  const [wigColor, setWigColor] = useState<'black' | 'brown' | 'light' | null>(null);
   const [surveySource, setSurveySource] = useState<string[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
   
@@ -233,26 +235,33 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
           
           <Text style={styles.fieldLabel}>Hair Length *</Text>
           <View style={styles.chipRow}>
-            {['Long', 'Short'].map((val: any) => (
+            {([
+              { value: 'short', label: 'Short (10-14 inches)' },
+              { value: 'long', label: 'Long (More than 15 inches)' },
+            ] as const).map((opt) => (
               <TouchableOpacity
-                key={val}
-                style={[styles.chip, hairLength === val && styles.chipActive]}
-                onPress={() => setHairLength(val)}
+                key={opt.value}
+                style={[styles.chip, hairLength === opt.value && styles.chipActive]}
+                onPress={() => setHairLength(opt.value)}
               >
-                <Text style={[styles.chipText, hairLength === val && styles.chipTextActive]}>{val}</Text>
+                <Text style={[styles.chipText, hairLength === opt.value && styles.chipTextActive]}>{opt.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <Text style={[styles.fieldLabel, { marginTop: 20 }]}>Wig Color *</Text>
           <View style={styles.chipRow}>
-            {['Black', 'Brown', 'Light'].map((val: any) => (
+            {([
+              { value: 'black', label: 'Black' },
+              { value: 'brown', label: 'Brown' },
+              { value: 'light', label: 'Light' },
+            ] as const).map((opt) => (
               <TouchableOpacity
-                key={val}
-                style={[styles.chip, wigColor === val && styles.chipActive]}
-                onPress={() => setWigColor(val)}
+                key={opt.value}
+                style={[styles.chip, wigColor === opt.value && styles.chipActive]}
+                onPress={() => setWigColor(opt.value)}
               >
-                <Text style={[styles.chipText, wigColor === val && styles.chipTextActive]}>{val}</Text>
+                <Text style={[styles.chipText, wigColor === opt.value && styles.chipTextActive]}>{opt.label}</Text>
               </TouchableOpacity>
             ))}
           </View>

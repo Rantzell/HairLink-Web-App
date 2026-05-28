@@ -75,12 +75,12 @@ export const notifyWigmakerMaterialDelivery = async (wigmakerId: string, taskCod
   );
 };
 
+export const notifyCommunityInteraction = async (ownerId: string, actorName: string, postId: string, action: 'comment' | 'like' | 'reply') => {
+  const message =
+    action === 'comment' ? `${actorName} commented on your post.` :
+    action === 'reply'   ? `${actorName} replied to your comment.` :
+                           `${actorName} liked your post.`;
 
-export const notifyCommunityInteraction = async (ownerId: string, actorName: string, postId: string, action: 'comment' | 'like') => {
-  const message = action === 'comment' 
-    ? `${actorName} commented on your post.`
-    : `${actorName} liked your post.`;
-  
   return createNotification(ownerId, 'Community Update 💬', message, 'community');
 };
 
@@ -91,12 +91,12 @@ export const notifyAllDonorsAndRecipients = async (title: string, message: strin
         role: { in: ['donor', 'recipient'] },
         isActive: true,
       },
-      select: { id: true }
+      select: { id: true },
     });
 
     if (targetUsers.length === 0) return;
 
-    const notificationData = targetUsers.map(user => ({
+    const notificationData = targetUsers.map((user) => ({
       user_id: user.id,
       title: `📢 Announcement: ${title}`,
       message,
@@ -112,3 +112,45 @@ export const notifyAllDonorsAndRecipients = async (title: string, message: strin
   }
 };
 
+export const notifyMonetaryReceived = async (userId: string, amount: number, reference: string) => {
+  return createNotification(
+    userId,
+    'Donation Received 💖',
+    `Thank you! Your monetary contribution of ₱${amount.toLocaleString()} (${reference}) was received and is awaiting verification.`,
+    'monetary',
+  );
+};
+
+export const notifyAllUsers = async (title: string, message: string, type: string = 'announcement') => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { isActive: true, role: { in: ['donor', 'recipient'] } },
+      select: { id: true },
+    });
+    if (users.length === 0) return 0;
+
+    await prisma.notifications.createMany({
+      data: users.map((u) => ({
+        user_id: u.id,
+        title,
+        message,
+        type,
+        is_read: false,
+      })),
+    });
+    return users.length;
+  } catch (err) {
+    console.error('[Notify] notifyAllUsers failed:', err);
+    return 0;
+  }
+};
+
+export const notifyNewEvent = async (eventTitle: string, eventDate: Date, eventLocation: string | null) => {
+  const when = eventDate.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
+  const where = eventLocation ? ` at ${eventLocation}` : '';
+  return notifyAllUsers(
+    `📣 New Event: ${eventTitle}`,
+    `Mark your calendar — ${eventTitle} is happening on ${when}${where}.`,
+    'event',
+  );
+};

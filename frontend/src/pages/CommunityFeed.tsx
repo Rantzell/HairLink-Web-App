@@ -28,15 +28,20 @@ const CommunityFeed: React.FC = () => {
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPostContent.trim() && !newPostFile) return;
+    if (!newPostFile) {
+      alert('Please attach a photo before publishing your post.');
+      return;
+    }
+    if (!newPostContent.trim()) {
+      alert('Add a short caption to go with your photo.');
+      return;
+    }
 
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append('content', newPostContent);
-    if (newPostFile) {
-      formData.append('image', newPostFile);
-      console.log('[Community] Sending file:', newPostFile.name, newPostFile.size);
-    }
+    formData.append('image', newPostFile);
+    console.log('[Community] Sending file:', newPostFile.name, newPostFile.size);
 
     try {
       await apiClient.post('/internal-api/community/posts', formData, {
@@ -112,7 +117,7 @@ const CommunityFeed: React.FC = () => {
                 )}
               </div>
               <div className="form-actions">
-                <button type="submit" className="soft-btn" disabled={isSubmitting || (!newPostContent.trim() && !newPostFile)}>
+                <button type="submit" className="soft-btn" disabled={isSubmitting || !newPostContent.trim() || !newPostFile}>
                   {isSubmitting ? 'Posting...' : 'Share Post'}
                 </button>
               </div>

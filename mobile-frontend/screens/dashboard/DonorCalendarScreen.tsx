@@ -93,32 +93,50 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
   const [loading, setLoading] = useState(true);
   const insets = useSafeAreaInsets();
 
-  // ── Fetch Donations ──────────────────────────
+  // ── Fetch Donations + Events for the visible month ───────────
   React.useEffect(() => {
-    fetchDonations();
+    fetchCalendar();
   }, [viewDate]);
 
-  const fetchDonations = async () => {
+  const fetchCalendar = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/donations');
-      const data = response.data;
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth() + 1;
+      const response = await api.get(`/calendar?year=${year}&month=${month}`);
+      const items: any[] = response.data?.items || [];
 
-      // Map donations to Events
-      const mapped: Event[] = (data || []).map((d: any) => ({
-        id: d.id,
-        title: d.type === 'hair' ? 'Hair Donation' : `Monetary Support (₱${d.amount})`,
-        location: d.type === 'hair' ? 'Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)' : 'Digital Contribution',
-        time: new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: d.created_at.split('T')[0],
-        type: d.type === 'hair' ? 'drive' : 'other',
-        accepted: ['approved', 'completed', 'received hair'].includes(d.status.toLowerCase()),
-        status: d.status
-      }));
+      const mapped: Event[] = items.map((it) => {
+        const dt = new Date(it.datetime);
+        const time = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (it.kind === 'event') {
+          return {
+            id: it.id,
+            title: it.title,
+            location: it.location || 'TBA',
+            time,
+            date: it.date,
+            type: 'drive',
+            accepted: true,
+            status: it.status,
+          };
+        }
+        // donation
+        return {
+          id: it.id,
+          title: it.title,
+          location: it.location || 'Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)',
+          time,
+          date: it.date,
+          type: 'other',
+          accepted: it.decision === 'Approved',
+          status: it.decision || it.status,
+        };
+      });
 
       setEvents(mapped);
     } catch (err) {
-      console.error("Error fetching donations:", err);
+      console.error('Error fetching calendar:', err);
     } finally {
       setLoading(false);
     }

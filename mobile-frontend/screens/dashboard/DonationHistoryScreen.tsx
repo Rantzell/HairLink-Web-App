@@ -21,7 +21,8 @@ interface DonationRecord {
   type: 'hair' | 'monetary';
   amount: number;
   status: string;
-  created_at: string;
+  createdAt: string;
+  reference?: string;
 }
 
 // Reusable animated button for consistency
@@ -55,8 +56,39 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
   const fetchHistory = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/donations');
-      setDonations(response.data || []);
+      // Hair donations live in the `donations` table; monetary donations in
+      // `monetary_donations`. Pull both, tag with type, then merge so the
+      // user sees a single timeline labeled correctly.
+      const [hairRes, moneyRes] = await Promise.all([
+        api.get('/donations').catch(() => ({ data: [] as any[] })),
+        api.get('/monetary').catch(() => ({ data: [] as any[] })),
+      ]);
+
+      const hair: DonationRecord[] = (hairRes.data || []).map((d: any) => ({
+        id: `hair-${d.id}`,
+        type: 'hair',
+        amount: 0,
+        status: d.status || 'Submitted',
+        createdAt: d.createdAt || d.created_at,
+        reference: d.reference,
+      }));
+
+      const monetary: DonationRecord[] = (moneyRes.data || []).map((m: any) => ({
+        id: m.id || `monetary-${m.reference || Date.now()}`,
+        type: 'monetary',
+        amount: Number(m.amount || 0),
+        status: m.status || 'Submitted',
+        createdAt: m.createdAt || m.created_at,
+        reference: m.reference,
+      }));
+
+      const merged = [...hair, ...monetary].sort((a, b) => {
+        const ta = new Date(a.createdAt || 0).getTime();
+        const tb = new Date(b.createdAt || 0).getTime();
+        return tb - ta;
+      });
+
+      setDonations(merged);
     } catch (err) {
       console.error('Error fetching history:', err);
     } finally {
@@ -179,7 +211,7 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
                         <Text style={styles.cardTitle}>
                           {item.type === 'hair' ? 'Hair Donation' : 'Monetary Support'}
                         </Text>
-                        <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
+                        <Text style={styles.cardDate}>{formatDate(item.createdAt)}</Text>
                      </View>
   
                      <View style={styles.rightCol}>
@@ -209,7 +241,7 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
                           </Text>
                         </View>
                         <Text style={styles.deliveryNote}>
-                          Please present your Reference ID: <Text style={{ fontWeight: '800' }}>{item.id}</Text> upon delivery.
+                          Please present your Reference ID: <Text style={{ fontWeight: '800' }}>{item.reference || item.id}</Text> upon delivery.
                         </Text>
                      </View>
                    )}

@@ -68,15 +68,14 @@ router.get('/posts', authenticate, async (req: Request, res: Response) => {
 // POST /internal-api/community/posts
 router.post('/posts', authenticate, upload.single('image'), async (req: Request, res: Response) => {
   try {
-    const content = req.body.content;
+    const content = (req.body.content || '').toString().trim();
     console.log('[Community] Creating post: content=', content, 'file=', req.file ? req.file.originalname : 'none');
-    if (!content) { res.status(400).json({ error: 'Content is required' }); return; }
+    if (!content) { res.status(400).json({ error: 'Caption is required' }); return; }
+    // Enforce mandatory image at the API layer so neither mobile nor web can bypass.
+    if (!req.file) { res.status(400).json({ error: 'A photo is required to create a post' }); return; }
 
-    let imageUrl: string | null = null;
-    if (req.file) {
-      const path = await uploadFile(req.file, 'hairlink', 'community/posts');
-      imageUrl = getPublicUrl('hairlink', path);
-    }
+    const path = await uploadFile(req.file, 'hairlink', 'community/posts');
+    const imageUrl = getPublicUrl('hairlink', path);
 
     const post = await prisma.communityPost.create({
       data: { 
@@ -128,11 +127,19 @@ router.post('/posts/:postId/comments', authenticate, upload.single('image'), asy
       include: { user: true },
     });
 
-    // Notify post owner
-    if (post.userId !== req.user!.id) {
-      const actorName = (comment.user as any).firstName 
-        ? `${(comment.user as any).firstName} ${(comment.user as any).lastName || ''}`.trim()
-        : 'Someone';
+    const actorName = (comment.user as any).firstName
+      ? `${(comment.user as any).firstName} ${(comment.user as any).lastName || ''}`.trim()
+      : 'Someone';
+
+    if (parentId) {
+      // It's a reply — notify the parent comment's author (not the post owner,
+      // unless the parent comment happens to be theirs).
+      const parent = await prisma.communityComment.findUnique({ where: { id: parentId } });
+      if (parent && parent.userId !== req.user!.id) {
+        await notifyCommunityInteraction(parent.userId, actorName, postId, 'reply');
+      }
+    } else if (post.userId !== req.user!.id) {
+      // Top-level comment on someone else's post → notify the post owner.
       await notifyCommunityInteraction(post.userId, actorName, postId, 'comment');
     }
 

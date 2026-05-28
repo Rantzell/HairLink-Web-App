@@ -5,6 +5,7 @@ import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { monetaryDonationSchema } from '../schemas';
 import { uploadFile } from '../services/storage.service';
+import { notifyMonetaryReceived } from '../services/notification.service';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
@@ -46,10 +47,42 @@ router.post('/donate', upload.single('proof'), authenticate, validate(monetaryDo
       },
     });
 
+    // Confirm receipt to the donor; verification will be a separate notification.
+    await notifyMonetaryReceived(userId, Number(validatedData.amount || 0), reference);
+
     res.json({ success: true, message: 'Monetary donation processed successfully!', reference });
   } catch (err) {
     console.error('[Monetary] Error:', err);
     res.status(500).json({ error: 'Failed to process donation' });
+  }
+});
+
+// GET /api/monetary
+// List the caller's monetary donations, newest first. Used by the mobile
+// donation history screen to merge alongside hair donations from /donations.
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const rows = await prisma.monetaryDonation.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(
+      rows.map((r) => ({
+        id: `monetary-${r.id}`,
+        reference: r.referenceNumber,
+        amount: Number(r.amount),
+        currency: r.currency,
+        paymentMethod: r.paymentMethod,
+        status: r.status,
+        anonymous: r.anonymous,
+        proofPath: r.proofPath,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    );
+  } catch (err) {
+    console.error('[Monetary] List error:', err);
+    res.status(500).json({ error: 'Failed to fetch monetary donations' });
   }
 });
 

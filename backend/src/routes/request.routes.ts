@@ -103,6 +103,8 @@ router.post('/', authenticate, upload.fields([
     console.log('[HairRequest] Record created. ID:', hairRequest.id);
 
     await createStatusHistory(REQUEST_TYPE, hairRequest.id, 'Submitted');
+    // Confirm to the recipient that we received their wig request.
+    await notifyRequestStatus(req.user!.id, 'Submitted', hairRequest.reference!);
     console.log('[HairRequest] Status history created. Responding to client.');
     res.status(201).json(serializeRequest(hairRequest));
   } catch (err) {
