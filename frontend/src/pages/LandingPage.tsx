@@ -1117,30 +1117,36 @@ const hlStyles = `
 .hl-partners-head { text-align: center; margin-bottom: 2.5rem; }
 
 .hl-partners-strip {
-  overflow: hidden;
-  border-radius: 16px;
-  max-width: 700px;
+  overflow: visible;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 .hl-partners-track {
   display: flex;
-  width: 200%;
-  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(2rem, 8vw, 5rem);
+  flex-wrap: wrap;
 }
 
 .hl-partners-track img {
-  width: 50%;
-  max-height: 200px;
+  max-height: 160px;
+  width: auto;
   object-fit: contain;
-  padding: 0 2rem;
+  padding: 0.5rem;
   flex-shrink: 0;
-  filter: grayscale(30%);
-  opacity: 0.85;
-  transition: opacity 0.2s;
+  filter: grayscale(10%);
+  opacity: 0.9;
+  transition: all 0.25s ease;
 }
 
-.hl-partners-track img:hover { opacity: 1; filter: none; }
+.hl-partners-track img:hover {
+  opacity: 1;
+  filter: none;
+  transform: scale(1.05);
+}
 
 /* ═══════════════════════════════════════════════════════
    CONTACT
@@ -1558,7 +1564,6 @@ const LandingPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cms, setCms] = useState<any>(null);
   const [aboutIndex, setAboutIndex] = useState(0);
-  const [partnerIndex, setPartnerIndex] = useState(0);
   const [nextEvent, setNextEvent] = useState<any>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1596,9 +1601,8 @@ const LandingPage: React.FC = () => {
   }, [nextEvent]);
 
   useEffect(() => {
-    const pInt = setInterval(() => setPartnerIndex(p => (p + 1) % 2), 4000);
     const aInt = setInterval(() => setAboutIndex(p => (p + 1) % 2), 5000);
-    return () => { clearInterval(pInt); clearInterval(aInt); };
+    return () => { clearInterval(aInt); };
   }, []);
 
   const handlePartnershipSubmit = async (e: React.FormEvent) => {
@@ -1881,10 +1885,7 @@ const LandingPage: React.FC = () => {
             <h2 className="hl-section-h2">Organizations that believe in our cause.</h2>
           </div>
           <div className="hl-partners-strip">
-            <div
-              className="hl-partners-track"
-              style={{ transform: `translateX(-${partnerIndex * 50}%)` }}
-            >
+            <div className="hl-partners-track">
               <img src={images.partnerLogo1 || '/assets/images/landing/pgh.png'} alt="Philippine General Hospital" />
               <img src={images.partnerLogo2 || '/assets/images/landing/wigmaker.png'} alt="Partner wigmaker" />
             </div>
