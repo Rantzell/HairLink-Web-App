@@ -99,12 +99,15 @@ export default function App() {
 
   const checkAuthStatus = async () => {
     try {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data?.session) {
+        // Stale or missing session — sign out silently so the next launch is clean
+        await supabase.auth.signOut().catch(() => {});
+      } else {
         await loadUserProfile();
       }
-    } catch (error) {
-      console.log("Auth check failed", error);
+    } catch {
+      await supabase.auth.signOut().catch(() => {});
     } finally {
       setLoading(false);
     }
