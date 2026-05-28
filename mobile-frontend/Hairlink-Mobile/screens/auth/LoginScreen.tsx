@@ -17,6 +17,7 @@ import { Ionicons, Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import api from "../../lib/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from "../../lib/supabase";
 import Animated, { FadeInDown, FadeInUp, Layout } from "react-native-reanimated";
 import AuthStatusModal from "../../components/AuthStatusModal";
 

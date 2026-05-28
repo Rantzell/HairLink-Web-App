@@ -55,7 +55,7 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
   const fetchHistory = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/hair-requests');
+      const response = await api.get('/requests');
       setRequests(response.data || []);
     } catch (err) {
       console.error('Error fetching history:', err);
@@ -94,8 +94,10 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
     }
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'Recently';
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Recently';
     return d.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric', 

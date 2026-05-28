@@ -74,7 +74,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     }
 
     // Look up profile in public.users
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -87,9 +87,58 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       },
     });
 
+    // Auto-provision the public.users row on first sign-in if missing.
+    // This is the fallback for accounts that exist in auth.users but never
+    // got an insert (e.g. Supabase trigger missing or new accounts).
     if (!user) {
-      res.status(401).json({ error: 'User not found in local database' });
-      return;
+      const meta = (payload.user_metadata || payload.raw_user_meta_data || {}) as any;
+      const email = (payload.email as string) || meta.email || `${userId}@unknown.local`;
+      const fullName: string = (meta.full_name || meta.name || email.split('@')[0] || 'New User').toString();
+      const parts = fullName.trim().split(/\s+/);
+      const firstName = parts[0] || fullName;
+      const lastName = parts.slice(1).join(' ') || firstName;
+      const rawRole = (meta.role || 'donor').toString().toLowerCase();
+      const role = ['donor', 'recipient', 'staff', 'admin', 'wigmaker'].includes(rawRole) ? rawRole : 'donor';
+
+      const crypto = require('crypto');
+      const referralCode = 'HL-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+
+      try {
+        user = await prisma.user.create({
+          data: {
+            id: userId,
+            email,
+            name: fullName,
+            firstName,
+            lastName,
+            role,
+            phone: meta.phone || null,
+            age: meta.age ? parseInt(String(meta.age), 10) || null : null,
+            gender: meta.gender ? String(meta.gender).toLowerCase() : null,
+            referralCode,
+            emailVerifiedAt: payload.email_confirmed_at ? new Date(payload.email_confirmed_at as string) : new Date(),
+          },
+          select: {
+            id: true, email: true, role: true, name: true,
+            firstName: true, lastName: true, isActive: true,
+          },
+        });
+        console.log(`[Auth] Auto-provisioned public.users row for ${email} (${userId})`);
+      } catch (createErr: any) {
+        // Race: another request created it first — re-fetch
+        user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true, email: true, role: true, name: true,
+            firstName: true, lastName: true, isActive: true,
+          },
+        });
+        if (!user) {
+          console.error('[Auth] Failed to provision user row', createErr);
+          res.status(500).json({ error: 'Failed to initialize user profile' });
+          return;
+        }
+      }
     }
 
     if (!user.isActive) {

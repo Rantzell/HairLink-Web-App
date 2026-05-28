@@ -84,7 +84,7 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
       // Fetch both donations and hair requests simultaneously using API
       const [donationsRes, requestsRes] = await Promise.all([
         api.get('/donations'),
-        api.get('/hair-requests')
+        api.get('/requests')
       ]);
 
       const donationsData = donationsRes.data || [];

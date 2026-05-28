@@ -126,11 +126,6 @@ const WigmakerTaskDetail: React.FC = () => {
 
   const { task, histories } = data;
   const nextStatus = task.status === 'processing' ? 'completed' : 'shipped';
-  const progressPercent = task.status === 'received' ? '100%' :
-                         task.status === 'shipped' ? '90%' :
-                         task.status === 'completed' ? '80%' :
-                         task.status === 'processing' ? '30%' :
-                         task.isReceived ? '10%' : '0%';
 
   return (
     <section className="wigmaker-page reveal active staff-page task-detail-section">

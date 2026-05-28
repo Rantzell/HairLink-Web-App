@@ -127,9 +127,9 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
 
   const fetchLatestRequest = React.useCallback(async () => {
     try {
-      const response = await api.get('/me');
-      if (response.data && response.data.latest_hair_request) {
-        setLatestRequest(response.data.latest_hair_request);
+      const response = await api.get('/auth/me');
+      if (response.data && (response.data.latest_hair_request || response.data.latestHairRequest)) {
+        setLatestRequest(response.data.latest_hair_request || response.data.latestHairRequest);
       }
     } catch (err) {
       console.log('Error fetching latest request:', err);

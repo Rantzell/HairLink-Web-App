@@ -122,13 +122,17 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
 
   const fetchPoints = useCallback(async () => {
     try {
-      const response = await api.get('/me');
-      if (response.data) {
-        // We might want a dedicated endpoint for points, but for now we can use /me 
-        // if the user model includes points or we can calculate them.
-        // Assuming star_points is a field on the user or we'll add it.
-        setStarPoints(response.data.star_points || 0);
-        setReferralCode(response.data.referral_code || '---');
+      const [meRes, statsRes] = await Promise.all([
+        api.get('/auth/me'),
+        api.get('/donations/stats').catch(() => null),
+      ]);
+      if (meRes.data) {
+        setReferralCode(meRes.data.referralCode || meRes.data.referral_code || '---');
+      }
+      if (statsRes?.data) {
+        setStarPoints(statsRes.data.totalPoints || 0);
+      } else if (meRes.data) {
+        setStarPoints(meRes.data.starPoints || meRes.data.star_points || 0);
       }
     } catch (err) {
       console.log('Error fetching user data:', err);

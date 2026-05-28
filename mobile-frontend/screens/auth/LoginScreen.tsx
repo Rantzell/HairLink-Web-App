@@ -16,7 +16,7 @@ import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import api from "../../lib/api";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from "../../lib/supabase";
 import Animated, { FadeInDown, FadeInUp, Layout } from "react-native-reanimated";
 import AuthStatusModal from "../../components/AuthStatusModal";
 
@@ -80,20 +80,16 @@ export default function LoginScreen({
 
         setLoggingIn(true);
         try {
-            const response = await api.post('/login', { 
-                email, 
-                password,
-                device_name: Platform.OS 
-            });
-            await AsyncStorage.setItem('auth_token', response.data.token);
-            
-            let rawRole = response.data.user.role || "donor";
-            let formattedRole = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
-            if (formattedRole !== "Donor" && formattedRole !== "Recipient") formattedRole = "Donor";
-            
-            onLogin(formattedRole as "Donor" | "Recipient");
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            if (!data.session) throw new Error("Login succeeded but no session was returned.");
+
+            const profileResp = await api.get('/auth/me');
+            const rawRole = profileResp.data?.role || "donor";
+            const formatted = rawRole.toLowerCase() === "recipient" ? "Recipient" : "Donor";
+            onLogin(formatted as "Donor" | "Recipient");
         } catch (error: any) {
-            const message = error.response?.data?.message || error.response?.data?.errors?.email?.[0] || error.message || "An error occurred";
+            const message = error?.message || error.response?.data?.error || "An error occurred";
             showError("Login Failed", message);
         } finally {
             setLoggingIn(false);
@@ -103,7 +99,14 @@ export default function LoginScreen({
     // ── Forgot password flow ─────────────────────────────────────
     const handleSendResetCode = async () => {
         if (!forgotEmail.trim()) { setForgotError("Please enter your email."); return; }
-        showError("Not Implemented", "Forgot password API is currently under construction.");
+        setForgotLoading(true);
+        setForgotError("");
+        const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail);
+        setForgotLoading(false);
+        if (error) { setForgotError(error.message); return; }
+        setViewMode("forgot_otp");
+        setTimer(60);
+        setCanResend(false);
     };
 
     const handleVerifyResetCode = async () => {
