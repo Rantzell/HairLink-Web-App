@@ -4,10 +4,10 @@ import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface HeroSettings   { heading: string; subheading: string; ctaLabel: string }
+interface ExtendedHeroSettings { heading: string; subheading: string; ctaLabel: string; ghostLabel: string; pillText: string; floatBadgeText: string }
 interface ServiceItem    { title: string; description: string; ctaLabel: string }
 interface AboutSettings  { heading: string; body: string }
-interface FooterSettings { orgName: string; address: string; facebook: string; instagram: string }
+interface ExtendedFooterSettings { orgName: string; address: string; facebook: string; instagram: string; tagline: string }
 interface BrandingSettings { primaryColor: string; primaryTextColor: string; btnRadius: string }
 interface ImagesSettings   { heroLogo: string; aboutImg1: string; aboutImg2: string; partnerLogo1: string; partnerLogo2: string; eventImg1: string; eventImg2: string; eventImg3: string; eventImg4: string }
 interface TypographySettings { headingFont: string; bodyFont: string }
@@ -31,17 +31,25 @@ const AdminCMS: React.FC = () => {
   type TabType = 'landing' | 'announcements' | 'partnerships';
   const [activeTab, setActiveTab] = useState<TabType>('landing');
 
-  type LandingSection = 'hero' | 'services' | 'about' | 'footer' | 'branding' | 'images' | 'typography';
+  type LandingSection = 'hero' | 'services' | 'about' | 'footer' | 'branding' | 'images' | 'typography' | 'pastEvents';
   const [landingSection, setLandingSection] = useState<LandingSection>('hero');
-  const [hero, setHero]         = useState<HeroSettings>({ heading: '', subheading: '', ctaLabel: '' });
+  const [hero, setHero]         = useState<ExtendedHeroSettings>({ heading: '', subheading: '', ctaLabel: '', ghostLabel: '', pillText: '', floatBadgeText: '' });
 
   const [services, setServices] = useState<ServiceItem[]>([
     { title: '', description: '', ctaLabel: '' },
     { title: '', description: '', ctaLabel: '' },
     { title: '', description: '', ctaLabel: '' },
   ]);
+  const [servicesHeader, setServicesHeader] = useState({ label: '', heading: '', subheading: '' });
+  const [pastEventsHeader, setPastEventsHeader] = useState({ label: '', heading: '', subheading: '' });
+  const [pastEvents, setPastEvents] = useState<any[]>([
+    { title: '', description: '', date: '', imageKey: 'eventImg1' },
+    { title: '', description: '', date: '', imageKey: 'eventImg2' },
+    { title: '', description: '', date: '', imageKey: 'eventImg3' },
+    { title: '', description: '', date: '', imageKey: 'eventImg4' }
+  ]);
   const [about, setAbout]       = useState<AboutSettings>({ heading: '', body: '' });
-  const [footer, setFooter]     = useState<FooterSettings>({ orgName: '', address: '', facebook: 'https://www.facebook.com/strandupforcancer', instagram: 'https://www.instagram.com/strandupforcancer/' });
+  const [footer, setFooter]     = useState<ExtendedFooterSettings>({ orgName: '', address: '', facebook: '', instagram: '', tagline: '' });
   const [branding, setBranding] = useState<BrandingSettings>({ primaryColor: '#ad246d', primaryTextColor: '#ffffff', btnRadius: '8px' });
   const [images, setImages]     = useState<ImagesSettings>({ heroLogo: '', aboutImg1: '', aboutImg2: '', partnerLogo1: '', partnerLogo2: '', eventImg1: '', eventImg2: '', eventImg3: '', eventImg4: '' });
   const [typography, setTypography] = useState<TypographySettings>({ headingFont: 'Playfair Display', bodyFont: 'Inter' });
@@ -63,15 +71,23 @@ const AdminCMS: React.FC = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const DEFAULTS = {
-    hero:     { heading: 'Every Strand,<br />a Story of <em>Hope.</em>', subheading: 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.', ctaLabel: 'Donate Now' },
+    hero:     { heading: 'Every Strand,<br />a Story of <em>Hope.</em>', subheading: 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.', ctaLabel: 'Donate Now', ghostLabel: 'Request a Wig', pillText: 'Strand Up for Cancer', floatBadgeText: '100% Free for Patients' },
 
     services: [
       { title: 'Donate Hair', description: 'Give the gift of confidence to someone in need by donating your hair.', ctaLabel: 'Donate' },
       { title: 'Request Hair', description: 'Apply for free wig with health certification.', ctaLabel: 'Request' },
       { title: 'Monetary', description: 'Support our mission financially and earn reward points.', ctaLabel: 'Give' },
     ],
+    servicesHeader: { label: 'How It Works', heading: 'Simple steps,<br />lasting impact.', subheading: 'Whether you want to donate or receive, we make the process simple and transparent.' },
+    pastEventsHeader: { label: 'Past Events', heading: 'Highlighting our community impact.', subheading: 'Take a look back at our past hair donation drives, volunteer campaigns, and charity events.' },
+    pastEvents: [
+      { title: 'Hair Donation Drive', description: 'Generous donor sharing hope by gifting her locks for wig crafting at Tau Lambda Alpha, Los Baños.', date: 'April 28, 2026', imageKey: 'eventImg1' },
+      { title: 'Strand Up for Cancer Campaign', description: 'Community hair donation drive with our lovely volunteers and donors presenting their certificates of appreciation.', date: 'April 28, 2026', imageKey: 'eventImg2' },
+      { title: 'Wig Crafting & Haircut Session', description: 'Professional stylists volunteering to cut and measure hair for custom medical-grade wigs.', date: 'Feb 25, 2026', imageKey: 'eventImg3' },
+      { title: 'Donation Celebration', description: 'Donors showcasing their ponytails alongside certificates of appreciation for supporting cancer survivors.', date: 'Feb 2, 2026', imageKey: 'eventImg4' }
+    ],
     about:  { heading: 'About Us', body: 'Strand Up for Cancer (SUFC) is a youth-led initiative dedicated to supporting cancer patients through hair donation and wig crafting. Our mission is to provide high-quality wigs to those experiencing hair loss, restoring their confidence and dignity during their recovery journey.' },
-    footer: { orgName: 'STRAND UP FOR CANCER', address: 'Manila Downtown YMCA at 945 Sabino Padilla St,\nBinondo, Manila, 1006 Metro Manila', facebook: 'https://www.facebook.com/strandupforcancer', instagram: 'https://www.instagram.com/strandupforcancer/' },
+    footer: { orgName: 'STRAND UP FOR CANCER', address: 'Manila Downtown YMCA at 945 Sabino Padilla St,\nBinondo, Manila, 1006 Metro Manila', facebook: 'https://www.facebook.com/strandupforcancer', instagram: 'https://www.instagram.com/strandupforcancer/', tagline: 'Empowering cancer patients through hair donation, wig crafting, and community compassion.' },
     branding: { primaryColor: '#ad246d', primaryTextColor: '#ffffff', btnRadius: '8px' },
     typography: { headingFont: 'Playfair Display', bodyFont: 'Inter' },
     images: {
@@ -98,8 +114,12 @@ const AdminCMS: React.FC = () => {
       setAnnouncements(annRes.data);
       setPartnerships(partRes.data);
       const s = settingsRes.data;
+      
       setHero(s.hero             ? { ...DEFAULTS.hero, ...s.hero } : DEFAULTS.hero);
       setServices(s.services     ?? DEFAULTS.services);
+      setServicesHeader(s.servicesHeader ? { ...DEFAULTS.servicesHeader, ...s.servicesHeader } : DEFAULTS.servicesHeader);
+      setPastEventsHeader(s.pastEventsHeader ? { ...DEFAULTS.pastEventsHeader, ...s.pastEventsHeader } : DEFAULTS.pastEventsHeader);
+      setPastEvents(s.pastEvents ?? DEFAULTS.pastEvents);
       setAbout(s.about           ? { ...DEFAULTS.about, ...s.about } : DEFAULTS.about);
       setFooter(s.footer         ? { ...DEFAULTS.footer, ...s.footer } : DEFAULTS.footer);
       setBranding(s.branding     ? { ...DEFAULTS.branding, ...s.branding } : DEFAULTS.branding);
@@ -135,14 +155,16 @@ const AdminCMS: React.FC = () => {
     setSaveSuccess(false);
     try {
       await apiClient.put('/internal-api/admin/site-settings', [
-        { key: 'hero',       value: hero },
-
-        { key: 'services',   value: services },
-        { key: 'about',      value: about },
-        { key: 'footer',     value: footer },
-        { key: 'branding',   value: branding },
-        { key: 'images',     value: images },
-        { key: 'typography', value: typography },
+        { key: 'hero',             value: hero },
+        { key: 'services',         value: services },
+        { key: 'servicesHeader',   value: servicesHeader },
+        { key: 'pastEventsHeader', value: pastEventsHeader },
+        { key: 'pastEvents',       value: pastEvents },
+        { key: 'about',            value: about },
+        { key: 'footer',           value: footer },
+        { key: 'branding',         value: branding },
+        { key: 'images',           value: images },
+        { key: 'typography',       value: typography },
       ]);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -163,8 +185,10 @@ const AdminCMS: React.FC = () => {
     setSaving(true);
     try {
       setHero(DEFAULTS.hero);
-
       setServices(DEFAULTS.services);
+      setServicesHeader(DEFAULTS.servicesHeader);
+      setPastEventsHeader(DEFAULTS.pastEventsHeader);
+      setPastEvents(DEFAULTS.pastEvents);
       setAbout(DEFAULTS.about);
       setFooter(DEFAULTS.footer);
       setBranding(DEFAULTS.branding);
@@ -172,14 +196,16 @@ const AdminCMS: React.FC = () => {
       setImages(DEFAULTS.images);
 
       await apiClient.put('/internal-api/admin/site-settings', [
-        { key: 'hero',       value: DEFAULTS.hero },
-
-        { key: 'services',   value: DEFAULTS.services },
-        { key: 'about',      value: DEFAULTS.about },
-        { key: 'footer',     value: DEFAULTS.footer },
-        { key: 'branding',   value: DEFAULTS.branding },
-        { key: 'images',     value: DEFAULTS.images },
-        { key: 'typography', value: DEFAULTS.typography },
+        { key: 'hero',             value: DEFAULTS.hero },
+        { key: 'services',         value: DEFAULTS.services },
+        { key: 'servicesHeader',   value: DEFAULTS.servicesHeader },
+        { key: 'pastEventsHeader', value: DEFAULTS.pastEventsHeader },
+        { key: 'pastEvents',       value: DEFAULTS.pastEvents },
+        { key: 'about',            value: DEFAULTS.about },
+        { key: 'footer',           value: DEFAULTS.footer },
+        { key: 'branding',         value: DEFAULTS.branding },
+        { key: 'images',           value: DEFAULTS.images },
+        { key: 'typography',       value: DEFAULTS.typography },
       ]);
       
       setSaveSuccess(true);
@@ -269,7 +295,7 @@ const AdminCMS: React.FC = () => {
         <div className="admin-cms-sidebar-grid">
           <aside className="admin-card-rounded admin-cms-sidebar-aside">
             <p className="admin-page-kicker">Sections</p>
-            {(['hero', 'services', 'about', 'footer', 'branding', 'images', 'typography'] as LandingSection[]).map(sec => (
+            {(['hero', 'services', 'about', 'footer', 'branding', 'images', 'typography', 'pastEvents'] as LandingSection[]).map(sec => (
               <button key={sec} onClick={() => setLandingSection(sec)} className={`admin-cms-section-pill${landingSection === sec ? ' active' : ''}`}>
                 {{ 
                   hero: '🎯 Hero', 
@@ -278,7 +304,8 @@ const AdminCMS: React.FC = () => {
                   footer: '🔻 Footer',
                   branding: '🎨 Branding',
                   images: '🖼️ Images',
-                  typography: '🔡 Fonts'
+                  typography: '🔡 Fonts',
+                  pastEvents: '🎬 Past Highlights'
                 }[sec]}
               </button>
             ))}
@@ -301,21 +328,48 @@ const AdminCMS: React.FC = () => {
                 <h2 className="admin-cms-section-title">🎯 Hero Section</h2>
                 <Field label="Main Heading (H1)" value={hero.heading} onChange={v => setHero({ ...hero, heading: v })} />
                 <Field label="Subheading / Tagline" value={hero.subheading} onChange={v => setHero({ ...hero, subheading: v })} />
-                <Field label="CTA Button Label" value={hero.ctaLabel} onChange={v => setHero({ ...hero, ctaLabel: v })} />
+                <Field label="Pill Text (Top Label)" value={hero.pillText} onChange={v => setHero({ ...hero, pillText: v })} />
+                <Field label="Floating Badge Text (Bottom Right)" value={hero.floatBadgeText} onChange={v => setHero({ ...hero, floatBadgeText: v })} />
+                <Field label="Primary CTA Label" value={hero.ctaLabel} onChange={v => setHero({ ...hero, ctaLabel: v })} />
+                <Field label="Ghost CTA Label" value={hero.ghostLabel} onChange={v => setHero({ ...hero, ghostLabel: v })} />
               </>
             )}
 
-
-
             {landingSection === 'services' && (
               <>
-                <h2 className="admin-cms-section-title">⚙️ How It Works — Service Cards</h2>
+                <h2 className="admin-cms-section-title">⚙️ How It Works — Header & Cards</h2>
+                <div className="admin-cms-item-card">
+                  <p className="admin-cms-item-label">Section Header Info</p>
+                  <Field label="Section Label" value={servicesHeader.label} onChange={v => setServicesHeader({ ...servicesHeader, label: v })} />
+                  <Field label="Section Heading" value={servicesHeader.heading} onChange={v => setServicesHeader({ ...servicesHeader, heading: v })} />
+                  <Field label="Section Subheading" value={servicesHeader.subheading} onChange={v => setServicesHeader({ ...servicesHeader, subheading: v })} multiline />
+                </div>
                 {services.map((svc, i) => (
                   <div key={i} className="admin-cms-item-card">
                     <p className="admin-cms-item-label">Card {i + 1}</p>
                     <Field label="Title" value={svc.title} onChange={v => { const s = [...services]; s[i] = { ...s[i], title: v }; setServices(s); }} />
                     <Field label="Description" value={svc.description} onChange={v => { const s = [...services]; s[i] = { ...s[i], description: v }; setServices(s); }} multiline />
                     <Field label="Button Label" value={svc.ctaLabel} onChange={v => { const s = [...services]; s[i] = { ...s[i], ctaLabel: v }; setServices(s); }} />
+                  </div>
+                ))}
+              </>
+            )}
+
+            {landingSection === 'pastEvents' && (
+              <>
+                <h2 className="admin-cms-section-title">🎬 Past Events Highlights</h2>
+                <div className="admin-cms-item-card">
+                  <p className="admin-cms-item-label">Section Header Info</p>
+                  <Field label="Section Label" value={pastEventsHeader.label} onChange={v => setPastEventsHeader({ ...pastEventsHeader, label: v })} />
+                  <Field label="Section Heading" value={pastEventsHeader.heading} onChange={v => setPastEventsHeader({ ...pastEventsHeader, heading: v })} />
+                  <Field label="Section Subheading" value={pastEventsHeader.subheading} onChange={v => setPastEventsHeader({ ...pastEventsHeader, subheading: v })} multiline />
+                </div>
+                {pastEvents.map((pe, i) => (
+                  <div key={i} className="admin-cms-item-card">
+                    <p className="admin-cms-item-label">Highlight Card {i + 1}</p>
+                    <Field label="Title" value={pe.title} onChange={v => { const p = [...pastEvents]; p[i] = { ...p[i], title: v }; setPastEvents(p); }} />
+                    <Field label="Date Text" value={pe.date} onChange={v => { const p = [...pastEvents]; p[i] = { ...p[i], date: v }; setPastEvents(p); }} />
+                    <Field label="Description" value={pe.description} onChange={v => { const p = [...pastEvents]; p[i] = { ...p[i], description: v }; setPastEvents(p); }} multiline />
                   </div>
                 ))}
               </>
@@ -333,8 +387,11 @@ const AdminCMS: React.FC = () => {
               <>
                 <h2 className="admin-cms-section-title">🔻 Footer</h2>
                 <Field label="Organization Name" value={footer.orgName} onChange={v => setFooter({ ...footer, orgName: v })} />
-                <Field label="Address (use \\n for line break)" value={footer.address} onChange={v => setFooter({ ...footer, address: v })} multiline />                <Field label="Facebook URL" value={footer.facebook} onChange={v => setFooter({ ...footer, facebook: v })} />
-                <Field label="Instagram URL" value={footer.instagram} onChange={v => setFooter({ ...footer, instagram: v })} />              </>
+                <Field label="Address (use \\n for line break)" value={footer.address} onChange={v => setFooter({ ...footer, address: v })} multiline />
+                <Field label="Tagline" value={footer.tagline} onChange={v => setFooter({ ...footer, tagline: v })} multiline />
+                <Field label="Facebook URL" value={footer.facebook} onChange={v => setFooter({ ...footer, facebook: v })} />
+                <Field label="Instagram URL" value={footer.instagram} onChange={v => setFooter({ ...footer, instagram: v })} />
+              </>
             )}
 
             {landingSection === 'branding' && (

@@ -34,6 +34,9 @@ const StaffRealtimeTracking: React.FC = () => {
   const [pendingBatchRefs, setPendingBatchRefs] = useState<string[]>([]);
   const [pendingBatchStatus, setPendingBatchStatus] = useState<{ status: string; link?: string } | null>(null);
   const [showBatchActionConfirm, setShowBatchActionConfirm] = useState(false);
+  const [showDeliveryLinkModal, setShowDeliveryLinkModal] = useState(false);
+  const [deliveryLinkTaskCode, setDeliveryLinkTaskCode] = useState('');
+  const [deliveryLinkValue, setDeliveryLinkValue] = useState('');
 
   const triggerAction = (ref: string, _type: 'donor' | 'recipient', status: string, label: string, link?: string) => {
     setPendingAction({ reference: ref, _type, status, label, link });
@@ -168,6 +171,40 @@ const StaffRealtimeTracking: React.FC = () => {
       setIsSubmitting(false);
       setPendingBatchRefs([]);
       setPendingBatchStatus(null);
+    }
+  };
+
+  const handleOpenDeliveryLinkModal = (taskCode: string, currentLink: string) => {
+    setDeliveryLinkTaskCode(taskCode);
+    setDeliveryLinkValue(currentLink || '');
+    setShowDeliveryLinkModal(true);
+  };
+
+  const handleSaveDeliveryLink = async () => {
+    if (!deliveryLinkValue) {
+      alert('Please enter a tracking URL.');
+      return;
+    }
+    try {
+      new URL(deliveryLinkValue);
+    } catch (_) {
+      alert('Please enter a valid absolute URL (e.g., https://...).');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await apiClient.post(`/internal-api/staff/batches/${deliveryLinkTaskCode}/delivery-link`, {
+        material_delivery_link: deliveryLinkValue
+      });
+      setShowDeliveryLinkModal(false);
+      setDeliveryLinkTaskCode('');
+      setDeliveryLinkValue('');
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to update material delivery link');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -357,7 +394,35 @@ const StaffRealtimeTracking: React.FC = () => {
                                 </button>
                               </div>
                             )}
-                            {wp.status === 'assigned' && <span className="tracking-awaiting-text">Waiting to be received...</span>}
+                            {wp.status === 'assigned' && (
+                              <div className="tracking-action-col-wide" style={{ gap: '0.4rem', minWidth: '180px', alignItems: 'center' }}>
+                                {wp.materialDeliveryLink ? (
+                                  <>
+                                    <a href={wp.materialDeliveryLink} target="_blank" rel="noreferrer" className="tracking-link-btn" style={{ justifyContent: 'center', width: '100%' }}>
+                                      <i className='bx bx-link-external'></i> Material Tracking
+                                    </a>
+                                    <button
+                                      className="soft-btn"
+                                      onClick={() => handleOpenDeliveryLinkModal(wp.taskCode, wp.materialDeliveryLink || '')}
+                                      style={{ padding: '0.25rem 0.6rem', fontSize: '0.65rem', background: '#fdf7fb', border: '1px solid #f1a8cf', color: '#ad246d', borderRadius: '50px', cursor: 'pointer', fontWeight: 700 }}
+                                    >
+                                      Update Link
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="tracking-awaiting-text" style={{ marginBottom: '0.2rem' }}>Ready for shipping</span>
+                                    <button
+                                      className="tracking-action-btn"
+                                      onClick={() => handleOpenDeliveryLinkModal(wp.taskCode, '')}
+                                      style={{ padding: '0.35rem 0.8rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                                    >
+                                      <i className='bx bxs-ship'></i> Ship Materials
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
                             {wp.status === 'processing' && <span className="tracking-awaiting-text">Production in Progress...</span>}
                             {wp.status === 'completed' && <span className="tracking-awaiting-text">Wig Quality Checking...</span>}
                           </td>
@@ -706,6 +771,109 @@ const StaffRealtimeTracking: React.FC = () => {
         confirmText="Yes, Confirm All"
         isConfirming={isSubmitting}
       />
+
+      {showDeliveryLinkModal && (
+        <div
+          id="delivery-link-modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowDeliveryLinkModal(false); } }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 999999,
+            background: 'rgba(30, 18, 36, 0.55)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem',
+            animation: 'cmFadeIn 0.18s ease',
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '24px',
+              boxShadow: '0 32px 80px rgba(173, 36, 109, 0.18), 0 8px 24px rgba(0,0,0,0.12)',
+              padding: '2rem',
+              maxWidth: '440px',
+              width: '100%',
+              border: '1px solid #ead7e8',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '50%',
+                background: '#fdf2f8',
+                display: 'grid', placeItems: 'center',
+                border: '2px solid #f9cde8',
+              }}>
+                <i className='bx bx-package' style={{ fontSize: '1.75rem', color: '#ad246d' }} />
+              </div>
+            </div>
+
+            <h2 style={{
+              textAlign: 'center', margin: '0 0 0.5rem 0',
+              fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43',
+            }}>
+              Provide Delivery Link
+            </h2>
+            <p style={{
+              textAlign: 'center', margin: '0 0 1.25rem 0',
+              fontSize: '0.875rem', color: '#8c7895', lineHeight: 1.5,
+            }}>
+              Enter the tracking URL for the hair materials package (Batch <strong>{deliveryLinkTaskCode}</strong>) being shipped to the wigmaker.
+            </p>
+
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ position: 'relative' }}>
+                <i className='bx bx-link' style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#ad246d', fontSize: '1.1rem' }} />
+                <input
+                  type="text"
+                  placeholder="https://tracking-url.com/shipment/123..."
+                  value={deliveryLinkValue}
+                  onChange={(e) => setDeliveryLinkValue(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem 0.75rem 2.5rem',
+                    borderRadius: '12px',
+                    border: '1.5px solid #ead7e8',
+                    fontSize: '0.875rem',
+                    color: '#3b2e43',
+                    outline: 'none',
+                    background: '#fdfbfe',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button
+                onClick={() => setShowDeliveryLinkModal(false)}
+                disabled={isSubmitting}
+                style={{
+                  height: '44px', borderRadius: '50px',
+                  border: '1.5px solid #ead7e8', background: '#fff',
+                  color: '#5d4d62', fontWeight: 700, fontSize: '0.875rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveDeliveryLink}
+                disabled={isSubmitting}
+                style={{
+                  height: '44px', borderRadius: '50px',
+                  border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)',
+                  color: '#fff', fontWeight: 700, fontSize: '0.875rem',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  opacity: isSubmitting ? 0.75 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                }}
+              >
+                {isSubmitting ? 'Saving...' : 'Save & Ship'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

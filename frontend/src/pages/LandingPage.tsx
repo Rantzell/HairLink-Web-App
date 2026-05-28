@@ -1634,9 +1634,17 @@ const LandingPage: React.FC = () => {
 
   const serviceLinks = ['/donor/donate', '/recipient/request', '/donate-monetary'];
 
+  const pastEvents: any[] = get('pastEvents', undefined, [
+    { title: 'Hair Donation Drive', description: 'Generous donor sharing hope by gifting her locks for wig crafting at Tau Lambda Alpha, Los Baños.', date: 'April 28, 2026', imageKey: 'eventImg1' },
+    { title: 'Strand Up for Cancer Campaign', description: 'Community hair donation drive with our lovely volunteers and donors presenting their certificates of appreciation.', date: 'April 28, 2026', imageKey: 'eventImg2' },
+    { title: 'Wig Crafting & Haircut Session', description: 'Professional stylists volunteering to cut and measure hair for custom medical-grade wigs.', date: 'Feb 25, 2026', imageKey: 'eventImg3' },
+    { title: 'Donation Celebration', description: 'Donors showcasing their ponytails alongside certificates of appreciation for supporting cancer survivors.', date: 'Feb 2, 2026', imageKey: 'eventImg4' }
+  ]);
+
   const eventDateStr = nextEvent
-    ? new Date(nextEvent.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    ? new Date(nextEvent.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : null;
+
 
   return (
     <div className="hl-root">
@@ -1691,7 +1699,7 @@ const LandingPage: React.FC = () => {
           <div className="hl-hero-text">
             <div className="hl-hero-pill">
               <span className="hl-hero-pill-dot" />
-              Strand Up for Cancer
+              {get('hero', 'pillText', 'Strand Up for Cancer')}
             </div>
             <h1 className="hl-hero-h1">
               {(() => {
@@ -1710,7 +1718,7 @@ const LandingPage: React.FC = () => {
                 {get('hero', 'ctaLabel', 'Donate Your Hair')} →
               </Link>
               <Link to="/recipient/request" className="hl-btn-hero-ghost">
-                Request a Wig
+                {get('hero', 'ghostLabel', 'Request a Wig')}
               </Link>
             </div>
           </div>
@@ -1728,7 +1736,7 @@ const LandingPage: React.FC = () => {
 
             <div className="hl-hero-float-badge">
               <span className="hl-hero-float-badge-dot" />
-              100% Free for Patients
+              {get('hero', 'floatBadgeText', '100% Free for Patients')}
             </div>
           </div>
         </div>
@@ -1740,9 +1748,9 @@ const LandingPage: React.FC = () => {
       <section className="hl-section hl-how" id="services">
         <div className="hl-section-inner">
           <div className="hl-how-head">
-            <p className="hl-section-label">How It Works</p>
-            <h2 className="hl-section-h2">Simple steps,<br />lasting impact.</h2>
-            <p className="hl-section-sub">Whether you want to donate or receive, we make the process simple and transparent.</p>
+            <p className="hl-section-label">{get('servicesHeader', 'label', 'How It Works')}</p>
+            <h2 className="hl-section-h2" dangerouslySetInnerHTML={{ __html: get('servicesHeader', 'heading', 'Simple steps,<br />lasting impact.') }} />
+            <p className="hl-section-sub">{get('servicesHeader', 'subheading', 'Whether you want to donate or receive, we make the process simple and transparent.')}</p>
           </div>
           <div className="hl-how-grid">
             {services.map((svc, i) => (
@@ -1795,55 +1803,24 @@ const LandingPage: React.FC = () => {
       <section className="hl-section hl-past-events" id="past-events" style={{ background: '#ffffff' }}>
         <div className="hl-section-inner">
           <div className="hl-how-head" style={{ marginBottom: '3rem' }}>
-            <p className="hl-section-label">Past Events</p>
-            <h2 className="hl-section-h2">Highlighting our community impact.</h2>
-            <p className="hl-section-sub">Take a look back at our past hair donation drives, volunteer campaigns, and charity events.</p>
+            <p className="hl-section-label">{get('pastEventsHeader', 'label', 'Past Events')}</p>
+            <h2 className="hl-section-h2">{get('pastEventsHeader', 'heading', 'Highlighting our community impact.')}</h2>
+            <p className="hl-section-sub">{get('pastEventsHeader', 'subheading', 'Take a look back at our past hair donation drives, volunteer campaigns, and charity events.')}</p>
           </div>
           
           <div className="hl-events-grid">
-            <div className="hl-event-card">
-              <div className="hl-event-img-wrap">
-                <img src={images.eventImg1 || "/assets/images/landing/past-event-1.jpg"} alt="Hair Donation Drive" />
-                <span className="hl-event-date">April 28, 2026</span>
+            {pastEvents.map((pe, idx) => (
+              <div key={idx} className="hl-event-card">
+                <div className="hl-event-img-wrap">
+                  <img src={images[pe.imageKey] || `/assets/images/landing/past-event-${idx+1}.jpg`} alt={pe.title} />
+                  <span className="hl-event-date">{pe.date}</span>
+                </div>
+                <div className="hl-event-info">
+                  <h3>{pe.title}</h3>
+                  <p>{pe.description}</p>
+                </div>
               </div>
-              <div className="hl-event-info">
-                <h3>Hair Donation Drive</h3>
-                <p>Generous donor sharing hope by gifting her locks for wig crafting at Tau Lambda Alpha, Los Baños.</p>
-              </div>
-            </div>
-
-            <div className="hl-event-card">
-              <div className="hl-event-img-wrap">
-                <img src={images.eventImg2 || "/assets/images/landing/past-event-2.jpg"} alt="Strand Up for Cancer Campaign" />
-                <span className="hl-event-date">April 28, 2026</span>
-              </div>
-              <div className="hl-event-info">
-                <h3>Strand Up for Cancer Campaign</h3>
-                <p>Community hair donation drive with our lovely volunteers and donors presenting their certificates of appreciation.</p>
-              </div>
-            </div>
-
-            <div className="hl-event-card">
-              <div className="hl-event-img-wrap">
-                <img src={images.eventImg3 || "/assets/images/landing/past-event-3.jpg"} alt="Wig Crafting & Haircut Session" />
-                <span className="hl-event-date">Feb 25, 2026</span>
-              </div>
-              <div className="hl-event-info">
-                <h3>Wig Crafting & Haircut Session</h3>
-                <p>Professional stylists volunteering to cut and measure hair for custom medical-grade wigs.</p>
-              </div>
-            </div>
-
-            <div className="hl-event-card">
-              <div className="hl-event-img-wrap">
-                <img src={images.eventImg4 || "/assets/images/landing/past-event-4.jpg"} alt="Donation Celebration" />
-                <span className="hl-event-date">Feb 2, 2026</span>
-              </div>
-              <div className="hl-event-info">
-                <h3>Donation Celebration</h3>
-                <p>Donors showcasing their ponytails alongside certificates of appreciation for supporting cancer survivors.</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -1877,8 +1854,8 @@ const LandingPage: React.FC = () => {
       <section className="hl-section hl-partners" id="partners">
         <div className="hl-section-inner">
           <div className="hl-partners-head">
-            <p className="hl-section-label">Partners</p>
-            <h2 className="hl-section-h2">Organizations that believe in our cause.</h2>
+            <p className="hl-section-label">{get('partnersHeader', 'label', 'Partners')}</p>
+            <h2 className="hl-section-h2">{get('partnersHeader', 'heading', 'Organizations that believe in our cause.')}</h2>
           </div>
           <div className="hl-partners-strip">
             <div
@@ -1896,9 +1873,9 @@ const LandingPage: React.FC = () => {
       <section className="hl-section hl-contact" id="contact">
         <div className="hl-contact-inner">
           <div className="hl-contact-info">
-            <p className="hl-section-label">Partnership</p>
-            <h2>Want to partner with us?</h2>
-            <p>Let's connect and grow together. We're open to collaborations with hospitals, organizations, and businesses that share our mission.</p>
+            <p className="hl-section-label">{get('contactHeader', 'label', 'Partnership')}</p>
+            <h2>{get('contactHeader', 'heading', 'Want to partner with us?')}</h2>
+            <p>{get('contactHeader', 'subheading', "Let's connect and grow together. We're open to collaborations with hospitals, organizations, and businesses that share our mission.")}</p>
           </div>
           <div className="hl-contact-card">
             <form onSubmit={handlePartnershipSubmit}>
@@ -1958,7 +1935,7 @@ const LandingPage: React.FC = () => {
         <div className="hl-footer-inner">
           <div className="hl-footer-brand">
             <div className="hl-footer-logo">
-              <img src={images.heroLogo || '/assets/images/landing/pink-ribbon.png'} alt="HairLink" />
+              <img src="/assets/images/landing/pink-ribbon.png" alt="HairLink" />
               <span>HairLink</span>
             </div>
             <p className="hl-footer-tagline">

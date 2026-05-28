@@ -1560,6 +1560,39 @@
   border-color: #ad246d;
   background: #fdf7fb;
 }
+.admin-user-toggle-btn {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+.admin-user-toggle-btn.deactivate {
+  background: #fff;
+  color: #c53030;
+  border: 1.5px solid #feb2b2;
+}
+.admin-user-toggle-btn.deactivate:hover {
+  border-color: #c53030;
+  background: #fff5f5;
+}
+.admin-user-toggle-btn.activate {
+  background: #fff;
+  color: #2f855a;
+  border: 1.5px solid #c6f6d5;
+}
+.admin-user-toggle-btn.activate:hover {
+  border-color: #2f855a;
+  background: #f0fff4;
+}
+.admin-user-toggle-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 /* ── Dashboard specific ── */
 .admin-page-pad { padding: 1rem; }

@@ -112,10 +112,15 @@ export const matchWigSchema = z.object({
   wig_id: z.coerce.number().int(),
 });
 
+export const provideMaterialDeliveryLinkSchema = z.object({
+  material_delivery_link: z.string().url('Must be a valid URL').max(2048),
+});
+
+
 // ── Wigmaker ──
 export const taskUpdateSchema = z.object({
   status: z.enum(['assigned', 'processing', 'completed', 'shipped', 'received']),
-  progressNotes: z.string().min(1),
+  progressNotes: z.string().or(z.literal('')).optional().nullable(),
   updatedAt: z.string().optional(),
   deliveryLink: z.string().url().max(2048).or(z.literal('')).transform(val => val === '' ? undefined : val).optional().nullable(),
   wigLength: z.enum(['short', 'long']).optional(),

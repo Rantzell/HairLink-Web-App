@@ -16,6 +16,8 @@ const VerifyOtp: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email') || '';
+  // 'signup' for new-account confirmation; 'magiclink' for login OTP (signInWithOtp)
+  const otpType = (searchParams.get('type') as 'signup' | 'magiclink') || 'magiclink';
 
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
   const [loading, setLoading] = useState(false);
@@ -61,7 +63,7 @@ const VerifyOtp: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+      const { error: verifyError } = await supabase.auth.verifyOtp({ email, token, type: otpType });
       if (verifyError) throw verifyError;
       await apiClient.post('/auth/mark-verified');
       const profile = await apiClient.get('/auth/me');

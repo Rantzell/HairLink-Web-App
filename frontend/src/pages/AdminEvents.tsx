@@ -8,6 +8,7 @@ const AdminEvents: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({ title: '', date: '', description: '', location: '' });
+  const [editingEvent, setEditingEvent] = useState<any>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const fetchEvents = async () => {
@@ -35,19 +36,52 @@ const AdminEvents: React.FC = () => {
     setShowConfirm(false);
     setIsSubmitting(true);
     try {
-      await apiClient.post('/internal-api/admin/events', {
+      const payload = {
         event_title: form.title,
         event_date: form.date,
         event_description: form.description,
         event_location: form.location
-      });
+      };
+
+      if (editingEvent) {
+        await apiClient.put(`/internal-api/admin/events/${editingEvent.id}`, payload);
+      } else {
+        await apiClient.post('/internal-api/admin/events', payload);
+      }
+
       setForm({ title: '', date: '', description: '', location: '' });
+      setEditingEvent(null);
       fetchEvents();
     } catch (err) {
       console.error('Failed to save event', err);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const formatForDateTimeLocal = (dateString: string) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(d.getTime() - tzOffset).toISOString();
+    return localISOTime.substring(0, 16);
+  };
+
+  const handleEdit = (ev: any) => {
+    setEditingEvent(ev);
+    setForm({
+      title: ev.title,
+      date: formatForDateTimeLocal(ev.date),
+      description: ev.description || '',
+      location: ev.location || ''
+    });
+    // Scroll to form smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleClear = () => {
+    setForm({ title: '', date: '', description: '', location: '' });
+    setEditingEvent(null);
   };
 
   if (loading) return <div className="section-wrap">Loading events...</div>;
@@ -61,7 +95,9 @@ const AdminEvents: React.FC = () => {
       </header>
 
       <article className="admin-card admin-card-rounded-mb">
-        <h2 className="admin-card-title-sm"><i className="bx bx-calendar-plus admin-icon-pink"></i> Add New Event</h2>
+        <h2 className="admin-card-title-sm">
+          <i className="bx bx-calendar-plus admin-icon-pink"></i> {editingEvent ? 'Edit Event' : 'Add New Event'}
+        </h2>
         <form onSubmit={handleSubmit} className="admin-form-grid">
           <div className="admin-two-col-grid">
             <div className="form-group">
@@ -69,8 +105,8 @@ const AdminEvents: React.FC = () => {
               <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Donation Drive" required />
             </div>
             <div className="form-group">
-              <label className="admin-form-label">Date *</label>
-              <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} required />
+              <label className="admin-form-label">Date & Time *</label>
+              <input type="datetime-local" value={form.date} onChange={e => setForm({...form, date: e.target.value})} required />
             </div>
           </div>
           <div className="form-group">
@@ -87,14 +123,14 @@ const AdminEvents: React.FC = () => {
               disabled={isSubmitting}
               className="admin-btn-primary"
             >
-              {isSubmitting ? 'Saving...' : 'Save Event'}
+              {isSubmitting ? 'Saving...' : editingEvent ? 'Update Event' : 'Save Event'}
             </button>
             <button 
-              type="reset" 
-              onClick={() => setForm({title: '', date: '', description: '', location: ''})}
+              type="button" 
+              onClick={handleClear}
               className="admin-btn-ghost"
             >
-              Clear
+              {editingEvent ? 'Cancel Edit' : 'Clear'}
             </button>
           </div>
         </form>
@@ -105,14 +141,19 @@ const AdminEvents: React.FC = () => {
           <h2 className="admin-card-title-xs"><i className="bx bx-calendar-event admin-icon-pink"></i> Upcoming</h2>
           <div className="event-list admin-form-grid">
             {data.upcomingEvents.map((ev: any) => (
-              <div key={ev.id} className="event-item admin-event-item">
+              <div key={ev.id} className="event-item admin-event-item" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 <div className="admin-event-date-badge">
                   <div className="admin-event-date-day">{new Date(ev.date).getDate()}</div>
                   <div className="admin-event-date-month">{new Date(ev.date).toLocaleString('default', { month: 'short' })}</div>
                 </div>
-                <div>
-                  <h4 className="admin-event-title">{ev.title}</h4>
-                  <p className="admin-event-meta">{ev.location}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                  <div>
+                    <h4 className="admin-event-title">{ev.title}</h4>
+                    <p className="admin-event-meta">{ev.location} · {new Date(ev.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                  <button className="admin-btn-ghost" style={{ padding: '6px', minWidth: 'auto', border: 'none', background: 'transparent' }} onClick={() => handleEdit(ev)} title="Edit Event">
+                    <i className="bx bx-edit admin-icon-pink" style={{ fontSize: '1.2rem', cursor: 'pointer' }}></i>
+                  </button>
                 </div>
               </div>
             ))}
@@ -127,18 +168,33 @@ const AdminEvents: React.FC = () => {
               <thead>
                 <tr>
                   <th>Event</th>
-                  <th>Date</th>
+                  <th>Date & Time</th>
                   <th>Location</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {data.pastEvents.map((ev: any) => (
                   <tr key={ev.id}>
                     <td><strong>{ev.title}</strong></td>
-                    <td>{new Date(ev.date).toLocaleDateString()}</td>
+                    <td>{new Date(ev.date).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                     <td>{ev.location}</td>
+                    <td>
+                      <button 
+                        className="admin-btn-ghost" 
+                        style={{ padding: '4px 8px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
+                        onClick={() => handleEdit(ev)}
+                      >
+                        <i className="bx bx-edit admin-icon-pink"></i> Edit
+                      </button>
+                    </td>
                   </tr>
                 ))}
+                {data.pastEvents.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="text-center" style={{ color: '#8c7895', padding: '20px' }}>No past events.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -149,9 +205,11 @@ const AdminEvents: React.FC = () => {
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={doSubmit}
-        title="Publish Event"
-        message={`Publish "${form.title}" scheduled on ${form.date ? new Date(form.date).toLocaleDateString() : ''}? This will appear on the public HairLink events page.`}
-        confirmText="Yes, Publish Event"
+        title={editingEvent ? "Update Event" : "Publish Event"}
+        message={editingEvent 
+          ? `Save modifications for event "${form.title}"? Changes will be immediately reflected on the public landing page.` 
+          : `Publish "${form.title}" scheduled on ${form.date ? new Date(form.date).toLocaleString() : ''}? This will appear on the public HairLink events page.`}
+        confirmText={editingEvent ? "Yes, Save Changes" : "Yes, Publish Event"}
         isConfirming={isSubmitting}
       />
     </section>

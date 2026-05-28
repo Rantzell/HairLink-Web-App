@@ -43,7 +43,23 @@ const WigmakerTaskDetail: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!data || !notes) return;
+    if (!data) return;
+    if (task.status !== 'completed' && !notes.trim()) {
+      alert('Please add a progress note.');
+      return;
+    }
+    if (task.status === 'completed') {
+      if (!task.deliveryLink || !task.deliveryLink.trim()) {
+        alert('Please enter a return tracking link.');
+        return;
+      }
+      try {
+        new URL(task.deliveryLink);
+      } catch (_) {
+        alert('Please enter a valid absolute tracking URL (e.g. https://...).');
+        return;
+      }
+    }
     setShowConfirm(true);
   };
 
@@ -66,7 +82,7 @@ const WigmakerTaskDetail: React.FC = () => {
     const finalStatus = pendingStatus || targetStatus || nextStatus;
 
     formData.append('status', finalStatus);
-    formData.append('progressNotes', notes);
+    formData.append('progressNotes', notes.trim() || 'Wig return shipment initiated.');
     formData.append('updatedAt', new Date(customDate).toISOString());
     if (file) formData.append('previewPhoto', file);
     if (task.deliveryLink) formData.append('deliveryLink', task.deliveryLink);
@@ -80,6 +96,7 @@ const WigmakerTaskDetail: React.FC = () => {
       window.location.reload();
     } catch (err: any) {
       console.error('Update failed:', err);
+      alert(err.response?.data?.message || err.message || 'Update failed');
     } finally {
       setIsSubmitting(false);
       setPendingStatus(null);
@@ -445,7 +462,25 @@ const WigmakerTaskDetail: React.FC = () => {
                   <label className="task-detail-form-label">Final Message (Optional)</label>
                   <textarea rows={2} placeholder="Any final notes for the staff..." value={notes} onChange={e => setNotes(e.target.value)} className="task-detail-form-textarea"></textarea>
                 </div>
-                <button type="submit" disabled={isSubmitting} className="task-detail-form-submit-btn" onClick={(e) => { e.preventDefault(); setShowConfirm(true); }}>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="task-detail-form-submit-btn"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!task.deliveryLink || !task.deliveryLink.trim()) {
+                      alert('Please provide a return tracking link.');
+                      return;
+                    }
+                    try {
+                      new URL(task.deliveryLink);
+                    } catch (_) {
+                      alert('Please enter a valid absolute tracking URL (e.g. https://...).');
+                      return;
+                    }
+                    setShowConfirm(true);
+                  }}
+                >
                   {isSubmitting ? 'Processing...' : 'Submit Tracking & Mark as Shipped'}
                 </button>
               </form>

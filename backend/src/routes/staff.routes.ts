@@ -4,7 +4,7 @@ import prisma from '../config/database';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/requireRole';
 import { validate } from '../middleware/validate';
-import { verificationStatusSchema, assignWigmakerSchema, trackingStatusSchema, matchWigSchema } from '../schemas';
+import { verificationStatusSchema, assignWigmakerSchema, trackingStatusSchema, matchWigSchema, provideMaterialDeliveryLinkSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { calculateCompatibility } from '../services/matching.service';
 import { notifyDonationStatus, notifyRequestStatus, createNotification } from '../services/notification.service';
@@ -192,7 +192,7 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
       }
     });
 
-    const { notifyDonationStatus } = await import('../services/notification.service');
+    const { notifyDonationStatus, notifyWigmakerAssignment, notifyWigmakerMaterialDelivery } = await import('../services/notification.service');
 
     for (const don of donations) {
       await prisma.donation.update({
@@ -209,11 +209,58 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
       }
     }
 
+    // Notify wigmaker
+    await notifyWigmakerAssignment(wm.id, tc);
+    if (material_delivery_link) {
+      await notifyWigmakerMaterialDelivery(wm.id, tc, material_delivery_link);
+    }
+
     res.json({ message: `Batch assigned to ${wm.firstName || 'Wigmaker'}.`, success: true, task_code: tc });
   } catch (err: any) { 
     res.status(500).json({ error: 'Failed', message: err.message }); 
   }
 });
+
+// POST /internal-api/staff/batches/:taskCode/delivery-link
+router.post('/batches/:taskCode/delivery-link', ...staffOnly, validate(provideMaterialDeliveryLinkSchema), async (req, res) => {
+  try {
+    const { taskCode } = req.params;
+    const { material_delivery_link } = req.body;
+
+    const task = await prisma.wigProduction.findFirst({
+      where: { taskCode: taskCode as string },
+      include: { wigmaker: true }
+    });
+
+    if (!task) {
+      res.status(404).json({ message: 'Batch task not found' });
+      return;
+    }
+
+    const updatedTask = await prisma.wigProduction.update({
+      where: { id: task.id },
+      data: { materialDeliveryLink: material_delivery_link }
+    });
+
+    // Create status history for the wig task
+    await createStatusHistory(
+      WIG_TYPE,
+      task.id,
+      task.status,
+      `Material delivery link provided by staff: ${material_delivery_link}`
+    );
+
+    // Notify the wigmaker
+    const { notifyWigmakerMaterialDelivery } = await import('../services/notification.service');
+    await notifyWigmakerMaterialDelivery(task.wigmakerId, task.taskCode, material_delivery_link);
+
+    res.json({ message: 'Material delivery link updated successfully', success: true, task: s(updatedTask) });
+  } catch (err: any) {
+    console.error('[Staff] Provide delivery link error:', err);
+    res.status(500).json({ error: 'Failed to update material delivery link', message: err.message });
+  }
+});
+
 
 // POST /internal-api/staff/tracking/:reference/status
 router.post('/tracking/:reference/status', ...staffOnly, validate(trackingStatusSchema), async (req, res) => {

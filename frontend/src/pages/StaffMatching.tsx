@@ -110,7 +110,6 @@ const StaffMatching: React.FC = () => {
         request_reference: selectedRecipient.reference,
         wig_id: pendingWigId
       });
-      alert('Matching successful!');
       navigate('/staff/tracking');
     } catch (err: any) {
       alert(err.response?.data?.message || 'Matching failed');

@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.auth.signOut();
       await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
       setUser(null);
-      return { user: profile, redirect: `/verify-otp?email=${encodeURIComponent(email)}` };
+      return { user: profile, redirect: `/verify-otp?email=${encodeURIComponent(email)}&type=magiclink` };
     }
 
     setUser(profile);
@@ -219,7 +219,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       return {
         user: dummyProfile,
-        redirect: `/verify-otp?email=${encodeURIComponent(data.email)}`,
+        redirect: `/verify-otp?email=${encodeURIComponent(data.email)}&type=signup`,
       };
     }
 

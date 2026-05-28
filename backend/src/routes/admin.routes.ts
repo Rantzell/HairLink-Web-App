@@ -6,6 +6,8 @@ import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/requireRole';
 import { validate } from '../middleware/validate';
 import { eventCreateSchema } from '../schemas';
+import { notifyAllDonorsAndRecipients } from '../services/notification.service';
+
 
 const router = Router();
 const adminOnly = [authenticate, requireRole('admin')];
@@ -163,12 +165,49 @@ router.get('/events', ...adminOnly, async (_req, res) => {
 // POST /internal-api/admin/events
 router.post('/events', ...adminOnly, validate(eventCreateSchema), async (req, res) => {
   try {
+    const dateObj = new Date(req.body.event_date);
+    const status = dateObj.getTime() < Date.now() ? 'Completed' : 'Upcoming';
     await prisma.event.create({
-      data: { title: req.body.event_title, date: new Date(req.body.event_date), description: req.body.event_description || '', location: req.body.event_location || '', status: 'Upcoming', participantsCount: 0 },
+      data: { 
+        title: req.body.event_title, 
+        date: dateObj, 
+        description: req.body.event_description || '', 
+        location: req.body.event_location || '', 
+        status, 
+        participantsCount: 0 
+      },
     });
     res.json({ message: 'Event created successfully', success: true });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
+
+// PUT /internal-api/admin/events/:id
+router.put('/events/:id', ...adminOnly, validate(eventCreateSchema), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID' });
+    const { event_title, event_date, event_description, event_location } = req.body;
+    
+    const dateObj = new Date(event_date);
+    const status = dateObj.getTime() < Date.now() ? 'Completed' : 'Upcoming';
+
+    const ev = await prisma.event.update({
+      where: { id },
+      data: {
+        title: event_title,
+        date: dateObj,
+        description: event_description || '',
+        location: event_location || '',
+        status
+      }
+    });
+    res.json({ message: 'Event updated successfully', success: true, event: s(ev) });
+  } catch (err: any) {
+    console.error('Error updating event:', err);
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
+});
+
 
 // GET /internal-api/admin/community
 router.get('/community', ...adminOnly, async (_req, res) => {
@@ -240,6 +279,10 @@ router.post('/announcements', ...adminOnly, async (req, res) => {
   try {
     const { title, content, category, author } = req.body;
     const a = await prisma.haircareArticle.create({ data: { title, content, category, author } });
+    
+    // Broadcast notification to all active donors and recipients
+    await notifyAllDonorsAndRecipients(title, content);
+    
     res.status(201).json(s(a));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });

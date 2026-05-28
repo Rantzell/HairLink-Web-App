@@ -11,6 +11,8 @@ const StaffVerificationDetail: React.FC = () => {
   const [record, setRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [remarks, setRemarks] = useState('');
+  const [remarksError, setRemarksError] = useState('');
+  const [decisionError, setDecisionError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingDecision, setPendingDecision] = useState<'approve' | 'reject' | null>(null);
@@ -35,17 +37,17 @@ const StaffVerificationDetail: React.FC = () => {
 
   const handleDecision = async (status: string) => {
     if (!remarks) {
-      alert('Please provide validation remarks.');
+      setRemarksError('Please provide validation remarks.');
       return;
     }
+    setRemarksError('');
+    setDecisionError('');
     setIsSubmitting(true);
     try {
       const endpoint = type === 'monetary'
         ? `/internal-api/staff/verification/monetary/${reference}/status`
         : `/internal-api/staff/verification/${type}/${reference}`;
       
-      // The API expects 'Approved' or 'Rejected' (or 'Validated' for recipient)
-      // I'll map them based on the type
       let finalStatus = status;
       if (type === 'donor') finalStatus = status === 'approve' ? 'Verified' : 'Rejected';
       if (type === 'recipient') finalStatus = status === 'approve' ? 'Validated' : 'Rejected';
@@ -56,11 +58,10 @@ const StaffVerificationDetail: React.FC = () => {
         remarks: remarks
       });
 
-      alert(`Submission ${finalStatus} successfully!`);
       navigate(`/staff/verification/${type}`);
     } catch (err: any) {
       console.error('Decision failed', err);
-      alert(err.response?.data?.message || 'Failed to update status.');
+      setDecisionError(err.response?.data?.message || 'Failed to update status.');
     } finally {
       setIsSubmitting(false);
     }
@@ -247,9 +248,20 @@ const StaffVerificationDetail: React.FC = () => {
                 rows={3} 
                 placeholder="Explain the rationale for this decision..." 
                 value={remarks}
-                onChange={e => setRemarks(e.target.value)}
+                onChange={e => { setRemarks(e.target.value); if (e.target.value) setRemarksError(''); }}
                 className="detail-form-textarea"
+                style={remarksError ? { borderColor: '#e03c3c' } : {}}
               ></textarea>
+              {remarksError && (
+                <p style={{ color: '#e03c3c', fontSize: '0.8rem', marginTop: '4px' }}>
+                  <i className='bx bx-error-circle' style={{ marginRight: 4 }}></i>{remarksError}
+                </p>
+              )}
+              {decisionError && (
+                <p style={{ color: '#e03c3c', fontSize: '0.8rem', marginTop: '4px' }}>
+                  <i className='bx bx-error-circle' style={{ marginRight: 4 }}></i>{decisionError}
+                </p>
+              )}
             </div>
 
             <div className="form-actions detail-form-actions">

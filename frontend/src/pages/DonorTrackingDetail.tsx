@@ -13,6 +13,8 @@ const DonorTrackingDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [deliveryLink, setDeliveryLink] = useState('');
   const [isSubmittingLink, setIsSubmittingLink] = useState(false);
+  const [linkSuccess, setLinkSuccess] = useState(false);
+  const [linkError, setLinkError] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
 
   const fetchDetail = async () => {
@@ -40,14 +42,17 @@ const DonorTrackingDetail: React.FC = () => {
   const doSubmitLink = async () => {
     setShowConfirm(false);
     setIsSubmittingLink(true);
+    setLinkError('');
+    setLinkSuccess(false);
     try {
       await apiClient.post(`/internal-api/donations/${reference}/delivery-link`, { 
         donor_delivery_link: deliveryLink 
       });
-      alert('Delivery link submitted successfully!');
+      setLinkSuccess(true);
+      setTimeout(() => setLinkSuccess(false), 3000);
       fetchDetail();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to submit link');
+      setLinkError(err.response?.data?.message || 'Failed to submit link');
     } finally {
       setIsSubmittingLink(false);
     }
@@ -159,6 +164,16 @@ const DonorTrackingDetail: React.FC = () => {
                   {isSubmittingLink ? '...' : donation.donorDeliveryLink ? 'Update Link' : 'Submit Link'}
                 </button>
               </form>
+              {linkSuccess && (
+                <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <i className='bx bx-check-circle'></i> Delivery link submitted successfully!
+                </p>
+              )}
+              {linkError && (
+                <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: '#e03c3c', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <i className='bx bx-error-circle'></i> {linkError}
+                </p>
+              )}
             </div>
           )}
 

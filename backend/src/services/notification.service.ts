@@ -66,6 +66,16 @@ export const notifyWigmakerAssignment = async (wigmakerId: string, taskCode: str
   );
 };
 
+export const notifyWigmakerMaterialDelivery = async (wigmakerId: string, taskCode: string, trackingLink: string) => {
+  return createNotification(
+    wigmakerId,
+    'Hair Materials Shipped 📦',
+    `The staff has sent the materials for task ${taskCode}. Tracking link: ${trackingLink}`,
+    'wigmaker'
+  );
+};
+
+
 export const notifyCommunityInteraction = async (ownerId: string, actorName: string, postId: string, action: 'comment' | 'like') => {
   const message = action === 'comment' 
     ? `${actorName} commented on your post.`
@@ -73,3 +83,32 @@ export const notifyCommunityInteraction = async (ownerId: string, actorName: str
   
   return createNotification(ownerId, 'Community Update 💬', message, 'community');
 };
+
+export const notifyAllDonorsAndRecipients = async (title: string, message: string) => {
+  try {
+    const targetUsers = await prisma.user.findMany({
+      where: {
+        role: { in: ['donor', 'recipient'] },
+        isActive: true,
+      },
+      select: { id: true }
+    });
+
+    if (targetUsers.length === 0) return;
+
+    const notificationData = targetUsers.map(user => ({
+      user_id: user.id,
+      title: `📢 Announcement: ${title}`,
+      message,
+      type: 'announcement',
+      is_read: false,
+    }));
+
+    await prisma.notifications.createMany({
+      data: notificationData,
+    });
+  } catch (err: any) {
+    console.error('Error broadcasting announcement notification:', err);
+  }
+};
+

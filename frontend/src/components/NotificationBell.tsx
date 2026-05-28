@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import apiClient from '../api/client';
 
 interface Notification {
@@ -7,12 +8,14 @@ interface Notification {
   message: string;
   is_read: boolean;
   created_at: string;
+  type?: string;
 }
 
 const NotificationBell: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Notification | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
@@ -49,6 +52,24 @@ const NotificationBell: React.FC = () => {
       fetchNotifications();
     } catch (err) {
       console.error('Failed to mark as read', err);
+    }
+  };
+
+  const handleNotifClick = async (n: Notification) => {
+    if (!n.is_read) {
+      try {
+        await apiClient.put(`/internal-api/notifications/${n.id}/read`);
+        // Optimistically update read status locally for instant feedback
+        setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, is_read: true } : item));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+        fetchNotifications();
+      } catch (err) {
+        console.error('Failed to mark as read', err);
+      }
+    }
+    if (n.type === 'announcement' || n.title.includes('Announcement:')) {
+      setSelectedAnnouncement(n);
+      setIsOpen(false); // Close dropdown when opening announcement modal
     }
   };
 
@@ -107,7 +128,7 @@ const NotificationBell: React.FC = () => {
                 <div 
                   key={n.id} 
                   className={`notif-item ${!n.is_read ? 'unread' : ''}`}
-                  onClick={() => !n.is_read && markAsRead(n.id)}
+                  onClick={() => handleNotifClick(n)}
                 >
                   <div className="notif-content">
                     <p className="notif-title">{n.title}</p>
@@ -122,6 +143,38 @@ const NotificationBell: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {selectedAnnouncement && createPortal(
+        <div className="announcement-modal-overlay" onClick={() => setSelectedAnnouncement(null)}>
+          <div className="announcement-modal-card" onClick={e => e.stopPropagation()}>
+            <header className="announcement-modal-header">
+              <div className="announcement-modal-badge">
+                <i className='bx bx-bell'></i> Announcement
+              </div>
+              <button className="announcement-modal-close" onClick={() => setSelectedAnnouncement(null)}>
+                <i className='bx bx-x'></i>
+              </button>
+            </header>
+            <main className="announcement-modal-body">
+              <h2 className="announcement-modal-title">
+                {selectedAnnouncement.title.replace('📢 Announcement: ', '').replace('📢 ', '')}
+              </h2>
+              <p className="announcement-modal-date">
+                <i className='bx bx-calendar'></i> {new Date(selectedAnnouncement.created_at).toLocaleString()}
+              </p>
+              <div className="announcement-modal-content">
+                {selectedAnnouncement.message}
+              </div>
+            </main>
+            <footer className="announcement-modal-footer">
+              <button className="announcement-modal-btn-close" onClick={() => setSelectedAnnouncement(null)}>
+                Close
+              </button>
+            </footer>
+          </div>
+        </div>,
+        document.body
       )}
 
       <style>{`
@@ -286,6 +339,130 @@ const NotificationBell: React.FC = () => {
         }
         .notif-delete:hover {
           color: #ff4d4d;
+        }
+
+        /* ── Announcement Modal Styling ── */
+        .announcement-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(38, 29, 43, 0.4);
+          backdrop-filter: blur(8px);
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: fadeIn 0.25s ease;
+        }
+        .announcement-modal-card {
+          width: 90%;
+          max-width: 500px;
+          background: #ffffff;
+          border-radius: 20px;
+          box-shadow: 0 20px 40px rgba(173, 36, 109, 0.12);
+          border: 1px solid #ead7e8;
+          overflow: hidden;
+          animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes popIn {
+          from { transform: scale(0.9) translateY(20px); opacity: 0; }
+          to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .announcement-modal-header {
+          padding: 16px 24px;
+          background: #fdf7fb;
+          border-bottom: 1px solid #ead7e8;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .announcement-modal-badge {
+          background: #ad246d;
+          color: white;
+          font-size: 0.7rem;
+          font-weight: 800;
+          padding: 4px 10px;
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .announcement-modal-close {
+          background: transparent;
+          border: none;
+          color: #8c7895;
+          font-size: 1.5rem;
+          cursor: pointer;
+          transition: color 0.2s;
+          display: flex;
+          align-items: center;
+        }
+        .announcement-modal-close:hover {
+          color: #ad246d;
+        }
+        .announcement-modal-body {
+          padding: 24px;
+        }
+        .announcement-modal-title {
+          margin: 0 0 8px;
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: #261d2b;
+          line-height: 1.3;
+        }
+        .announcement-modal-date {
+          margin: 0 0 20px;
+          font-size: 0.75rem;
+          color: #8c7895;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-weight: 500;
+        }
+        .announcement-modal-content {
+          font-size: 0.9rem;
+          line-height: 1.6;
+          color: #4c3f54;
+          white-space: pre-wrap;
+          max-height: 250px;
+          overflow-y: auto;
+          padding-right: 8px;
+        }
+        .announcement-modal-content::-webkit-scrollbar {
+          width: 6px;
+        }
+        .announcement-modal-content::-webkit-scrollbar-thumb {
+          background: #ead7e8;
+          border-radius: 3px;
+        }
+        .announcement-modal-footer {
+          padding: 16px 24px;
+          border-top: 1px solid #f2ebf4;
+          display: flex;
+          justify-content: flex-end;
+          background: #fdf7fb;
+        }
+        .announcement-modal-btn-close {
+          background: #ad246d;
+          color: white;
+          border: none;
+          padding: 8px 20px;
+          border-radius: 8px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .announcement-modal-btn-close:hover {
+          background: #8b1854;
         }
       `}</style>
     </div>
