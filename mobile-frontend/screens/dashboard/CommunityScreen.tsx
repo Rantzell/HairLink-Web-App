@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
 import api from '../../lib/api';
+import { supabase } from '../../lib/supabase';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -25,6 +26,13 @@ interface CommunityScreenProps {
 }
 
 const ScaleButton = Animated.createAnimatedComponent(TouchableOpacity);
+
+const getAvatarUrl = (photoUrl: string | null | undefined): string | null => {
+  if (!photoUrl) return null;
+  if (photoUrl.startsWith('http')) return photoUrl;
+  const { data } = supabase.storage.from('hairlink').getPublicUrl(`profile-photos/${photoUrl}`);
+  return data.publicUrl;
+};
 
 export default function CommunityScreen({ onBack }: CommunityScreenProps) {
   const insets = useSafeAreaInsets();
@@ -175,8 +183,10 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
     }
   };
 
-  const formatTime = (dateString: string) => {
+  const formatTime = (dateString: string | null | undefined) => {
+    if (!dateString) return 'Recently';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Recently';
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     
@@ -196,7 +206,7 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
       ? `${item.user.first_name} ${item.user.last_name || ''}`.trim() 
       : 'Anonymous';
       
-    const avatarUrl = item.user?.profile_photo_url;
+    const avatarUrl = getAvatarUrl(item.user?.profile_photo_url || item.user?.profilePhotoUrl);
     const role = item.user?.role || 'user';
     
     // Generate initials fallback
@@ -384,7 +394,7 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                 const cAuthor = item.user?.first_name 
                   ? `${item.user.first_name} ${item.user.last_name || ''}`.trim() 
                   : 'Anonymous';
-                const cAvatar = item.user?.profile_photo_url;
+                const cAvatar = getAvatarUrl(item.user?.profile_photo_url || item.user?.profilePhotoUrl);
                 const cRole = item.user?.role || 'user';
                 const cInitials = cAuthor.substring(0, 2).toUpperCase();
 
@@ -400,7 +410,7 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                     <View style={styles.commentBubble}>
                       <View style={styles.commentHeader}>
                         <Text style={styles.commentAuthor}>{cAuthor}</Text>
-                        <View style={[styles.roleBadge, cRole.toLowerCase() === 'donor' ? styles.roleBadgeDonor : styles.roleBadgeRecipient, { paddingVertical: 2, scale: 0.8 }]}>
+                        <View style={[styles.roleBadge, cRole.toLowerCase() === 'donor' ? styles.roleBadgeDonor : styles.roleBadgeRecipient, { paddingVertical: 2, transform: [{ scale: 0.8 }] }]}>
                            <Text style={[styles.roleBadgeText, cRole.toLowerCase() === 'donor' ? styles.roleBadgeTextDonor : styles.roleBadgeTextRecipient]}>
                             {cRole.toUpperCase()}
                           </Text>

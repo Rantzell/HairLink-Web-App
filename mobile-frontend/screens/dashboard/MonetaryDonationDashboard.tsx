@@ -76,25 +76,24 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('reference', `MON-${Date.now()}`);
-      formData.append('type', 'monetary');
-      formData.append('full_name', fullName);
       formData.append('amount', numAmount);
-      formData.append('words_amount', wordsAmount);
-      formData.append('anonymous', anonymous ? '1' : '0');
+      formData.append('name', fullName);
+      formData.append('payment_method', paymentMethod);
+      formData.append('currency', 'PHP');
+      formData.append('is_anonymous', anonymous ? '1' : '0');
 
       const filename = proofImage.split('/').pop() || 'proof.jpg';
       const match = /\.(\w+)$/.exec(filename);
       let type = match ? `image/${match[1].toLowerCase()}` : `image/jpeg`;
       if (type === 'image/jpg') type = 'image/jpeg';
 
-      formData.append('proof_photo', {
+      formData.append('proof', {
         uri: Platform.OS === 'ios' ? proofImage.replace('file://', '') : proofImage,
         name: filename,
         type: type,
       } as any);
 
-      const response = await api.post('/donations', formData);
+      const response = await api.post('/monetary/donate', formData);
 
       if (response.status === 201 || response.status === 200) {
         const donationAmount = parseFloat(numAmount);
@@ -106,7 +105,7 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
       }
     } catch (err: any) {
       console.error('Donation error:', err.response?.data || err.message);
-      const errorMsg = err.response?.data?.message || err.message || 'Failed to submit donation.';
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to submit donation.';
       setSubmitError(errorMsg);
       Alert.alert('Donation Error', errorMsg);
     } finally {

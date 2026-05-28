@@ -122,10 +122,17 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
 
   const fetchPoints = useCallback(async () => {
     try {
-      const response = await api.get('/auth/me');
-      if (response.data) {
-        setStarPoints(response.data.starPoints || response.data.star_points || 0);
-        setReferralCode(response.data.referralCode || response.data.referral_code || '---');
+      const [meRes, statsRes] = await Promise.all([
+        api.get('/auth/me'),
+        api.get('/donations/stats').catch(() => null),
+      ]);
+      if (meRes.data) {
+        setReferralCode(meRes.data.referralCode || meRes.data.referral_code || '---');
+      }
+      if (statsRes?.data) {
+        setStarPoints(statsRes.data.totalPoints || 0);
+      } else if (meRes.data) {
+        setStarPoints(meRes.data.starPoints || meRes.data.star_points || 0);
       }
     } catch (err) {
       console.log('Error fetching user data:', err);

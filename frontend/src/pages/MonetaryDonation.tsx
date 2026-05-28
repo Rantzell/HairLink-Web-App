@@ -319,7 +319,7 @@ const MonetaryDonation: React.FC = () => {
           </button>
           <button 
             type="button" 
-            className="ghost-btn" 
+            className="monetary-cancel-btn" 
             onClick={() => navigate(user?.role === 'recipient' ? '/recipient/dashboard' : '/donor/dashboard')}
           >
             Cancel

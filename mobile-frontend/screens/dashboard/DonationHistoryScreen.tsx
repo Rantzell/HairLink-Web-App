@@ -98,8 +98,10 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
     }
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'Recently';
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Recently';
     return d.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric', 

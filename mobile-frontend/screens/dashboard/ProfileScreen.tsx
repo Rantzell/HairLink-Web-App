@@ -30,6 +30,7 @@ import Animated, {
     interpolateColor
 } from 'react-native-reanimated';
 import api from '../../lib/api';
+import { supabase } from '../../lib/supabase';
 
 const { width } = Dimensions.get('window');
 
@@ -63,6 +64,13 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const roleToggleValue = useSharedValue(role === 'Donor' ? 0 : 1);
     const insets = useSafeAreaInsets();
 
+    const getAvatarUrl = (photoUrl: string | null | undefined): string | null => {
+        if (!photoUrl) return null;
+        if (photoUrl.startsWith('http')) return photoUrl;
+        const { data } = supabase.storage.from('hairlink').getPublicUrl(`profile-photos/${photoUrl}`);
+        return data.publicUrl;
+    };
+
     useEffect(() => {
         fetchProfile();
     }, []);
@@ -70,8 +78,11 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const fetchProfile = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/auth/me');
-            const data = response.data;
+            const [meRes, statsRes] = await Promise.all([
+                api.get('/auth/me'),
+                api.get('/donations/stats').catch(() => null),
+            ]);
+            const data = meRes.data;
 
             if (data) {
                 setProfile(data);
@@ -82,9 +93,10 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 setPhone(data.phone || '');
                 const fetchedRole = data.role ? (data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase()) : 'Donor';
                 setRole(fetchedRole as 'Donor' | 'Recipient');
-                setPoints(data.starPoints || data.star_points || 0);
+                const computedPoints = statsRes?.data?.totalPoints ?? data.starPoints ?? data.star_points ?? 0;
+                setPoints(computedPoints);
                 setReferralCode(data.referralCode || data.referral_code || '---');
-                setAvatarUrl(data.profile_photo_url || data.profilePhotoUrl);
+                setAvatarUrl(getAvatarUrl(data.profile_photo_url || data.profilePhotoUrl));
                 setHasRedeemed(data.has_redeemed_code || data.hasRedeemedCode || false);
                 roleToggleValue.value = withSpring(fetchedRole === 'Donor' ? 0 : 1);
             }
@@ -166,7 +178,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
             });
 
             const updatedUser = response.data?.user;
-            setAvatarUrl(updatedUser?.profile_photo_url || updatedUser?.profilePhotoUrl);
+            setAvatarUrl(getAvatarUrl(updatedUser?.profile_photo_url || updatedUser?.profilePhotoUrl));
             Alert.alert('Success', 'Profile picture updated! ✨');
         } catch (error: any) {
             console.error('Upload error:', error);
@@ -266,7 +278,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                             </View>
                             <Text style={styles.userName}>{fullName || 'User Name'}</Text>
                             <View style={styles.idChip}>
-                                <Text style={styles.idChipText}>#{String(profile?.id || '0').padStart(4, '0')}</Text>
+                                <Text style={styles.idChipText}>#{profile?.id ? profile.id.substring(0, 8) : '0000'}</Text>
                             </View>
                         </Animated.View>
                 </LinearGradient>

@@ -84,6 +84,7 @@ app.use('/api/requests', requestRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/monetary', monetaryRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {
