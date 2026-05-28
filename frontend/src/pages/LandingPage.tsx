@@ -1139,8 +1139,6 @@ const hlStyles = `
   overflow: hidden;
   height: 420px;
   position: relative;
-  display: flex;
-  align-items: center;
 }
 
 .hl-partners-track {
@@ -1996,7 +1994,7 @@ const LandingPage: React.FC = () => {
             <div className="hl-partners-card">
               <div 
                 className="hl-partners-track"
-                style={{ transform: `translateX(-${partnerIndex * 100}%)` }}
+                style={{ transform: `translateX(-${partnerIndex * 50}%)` }}
               >
                 <div className="hl-partners-slide">
                   <img src={images.partnerLogo1 || '/assets/images/landing/pgh.png'} alt="Philippine General Hospital" />

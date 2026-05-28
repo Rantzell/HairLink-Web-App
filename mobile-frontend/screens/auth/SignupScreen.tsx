@@ -164,19 +164,33 @@ export default function SignupScreen({
         const numericAge = parseInt(ageText) || 18;
 
         setSubmitting(true);
+
+        const cleanName = (name.trim() || 'New Member').replace(/\s+/g, ' ');
+        const nameParts = cleanName.split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ') || firstName;
+
+        const genderMap: Record<string, string> = {
+            'Male': 'male',
+            'Female': 'female',
+            'Other': 'nonbinary',
+            'Prefer not to say': 'prefer_not_say',
+        };
+
         const { data: signUpData, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
                 data: {
-                    full_name: name.trim() || 'New Member',
-                    role: role || 'Donor',
+                    first_name: firstName,
+                    last_name: lastName,
+                    role: (role || 'Donor').toLowerCase(),
                     phone: phone,
                     city: city,
                     barangay: barangay,
                     address: address,
                     age: numericAge,
-                    gender: gender
+                    gender: genderMap[gender] || null,
                 },
             },
         });
