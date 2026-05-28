@@ -77,7 +77,7 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
 
   const markAllAsRead = async () => {
     try {
-      await api.post('/notifications/read-all');
+      await api.put('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch (err) {
       console.error('Error marking all as read:', err);
@@ -98,7 +98,7 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
 
   const markAsRead = async (id: string) => {
     try {
-      await api.post(`/notifications/${id}/read`);
+      await api.put(`/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch (err) {
       console.error('Error marking as read:', err);

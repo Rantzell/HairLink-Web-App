@@ -2,8 +2,8 @@ import "./global.css";
 import React, { useState, useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from "./lib/api";
+import { supabase } from "./lib/supabase";
 
 import DonorDashboard from "./screens/dashboard/DonorDashboard";
 import RecipientDashboard from "./screens/dashboard/RecipientDashboard";
@@ -43,6 +43,11 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
+const normalizeRole = (raw: string | undefined | null): "Donor" | "Recipient" => {
+  const r = (raw || "donor").toLowerCase();
+  return r === "recipient" ? "Recipient" : "Donor";
+};
+
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<"Donor" | "Recipient" | null>(null);
@@ -55,44 +60,70 @@ export default function App() {
 
   useEffect(() => {
     checkAuthStatus();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsRecoveringPassword(true);
+        return;
+      }
+      if (event === "SIGNED_IN" && session) {
+        await loadUserProfile();
+      }
+      if (event === "SIGNED_OUT") {
+        setIsAuthenticated(false);
+        setUserRole(null);
+        setUserName("");
+      }
+    });
+
+    return () => {
+      subscription.subscription.unsubscribe();
+    };
   }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const response = await api.get('/auth/me');
+      const user = response.data;
+      const role = normalizeRole(user.role);
+      setUserName(user.name || user.firstName || user.first_name || role);
+      setUserRole(role);
+      setIsAuthenticated(true);
+    } catch (err) {
+      console.warn("Failed to load user profile", err);
+      await supabase.auth.signOut();
+      setIsAuthenticated(false);
+      setUserRole(null);
+    }
+  };
 
   const checkAuthStatus = async () => {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
-      if (token) {
-        // Fetch user from Laravel API
-        const response = await api.get('/me');
-        const user = response.data;
-        
-        let rawRole = user.role || "donor";
-        let formattedRole = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
-        
-        setUserName(user.name || user.first_name || formattedRole);
-        setUserRole(formattedRole as "Donor" | "Recipient");
-        setIsAuthenticated(true);
+      const { data } = await supabase.auth.getSession();
+      if (data?.session) {
+        await loadUserProfile();
       }
     } catch (error) {
-      console.log("Not authenticated or token expired", error);
-      await AsyncStorage.removeItem('auth_token');
+      console.log("Auth check failed", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLoginSuccess = async (role: "Donor" | "Recipient") => {
+  const handleLoginSuccess = async (_role: "Donor" | "Recipient") => {
     setLoading(true);
-    await checkAuthStatus(); 
+    await loadUserProfile();
+    setLoading(false);
   };
 
   const handleLogout = async () => {
     setLoading(true);
     try {
-      await api.post('/logout');
+      await api.post('/auth/logout');
     } catch (e) {
-      // Ignore network errors on logout
+      // ignore
     }
-    await AsyncStorage.removeItem('auth_token');
+    await supabase.auth.signOut();
     setIsAuthenticated(false);
     setUserRole(null);
     setLoading(false);
@@ -111,18 +142,18 @@ export default function App() {
   } else if (isAuthenticated && userRole) {
     if (userRole === "Recipient") {
       content = (
-        <RecipientDashboard 
-          onLogout={handleLogout} 
-          userName={userName} 
-          onRoleChange={setUserRole} 
+        <RecipientDashboard
+          onLogout={handleLogout}
+          userName={userName}
+          onRoleChange={setUserRole}
         />
       );
     } else {
       content = (
-        <DonorDashboard 
-          onLogout={handleLogout} 
-          userName={userName} 
-          onRoleChange={setUserRole} 
+        <DonorDashboard
+          onLogout={handleLogout}
+          userName={userName}
+          onRoleChange={setUserRole}
         />
       );
     }
@@ -138,9 +169,9 @@ export default function App() {
     content = (
       <SignupScreen
         onSignupComplete={() => {}}
-        onNeedsVerification={(email: string, role: "Donor" | "Recipient") => { 
-          setShowSignup(false); 
-          setPendingEmail(email); 
+        onNeedsVerification={(email: string, role: "Donor" | "Recipient") => {
+          setShowSignup(false);
+          setPendingEmail(email);
           setPendingRole(role);
         }}
         onSwitchToLogin={() => setShowSignup(false)}

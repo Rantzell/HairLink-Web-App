@@ -70,20 +70,22 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const fetchProfile = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/me');
+            const response = await api.get('/auth/me');
             const data = response.data;
 
             if (data) {
                 setProfile(data);
                 setEmail(data.email || '');
-                setFullName(`${data.first_name || ''} ${data.last_name || ''}`.trim() || '');
+                const first = data.firstName || data.first_name || '';
+                const last = data.lastName || data.last_name || '';
+                setFullName(`${first} ${last}`.trim());
                 setPhone(data.phone || '');
                 const fetchedRole = data.role ? (data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase()) : 'Donor';
                 setRole(fetchedRole as 'Donor' | 'Recipient');
-                setPoints(data.star_points || 0);
-                setReferralCode(data.referral_code || '---');
-                setAvatarUrl(data.profile_photo_url); // This uses the accessor we checked earlier
-                setHasRedeemed(data.has_redeemed_code || false);
+                setPoints(data.starPoints || data.star_points || 0);
+                setReferralCode(data.referralCode || data.referral_code || '---');
+                setAvatarUrl(data.profile_photo_url || data.profilePhotoUrl);
+                setHasRedeemed(data.has_redeemed_code || data.hasRedeemedCode || false);
                 roleToggleValue.value = withSpring(fetchedRole === 'Donor' ? 0 : 1);
             }
         } catch (error: any) {
@@ -101,25 +103,23 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const handleUpdateProfile = async () => {
         try {
             setUpdating(true);
-            
-            // Split full name back into first and last for Laravel
-            const names = fullName.split(' ');
-            const firstName = names[0];
-            const lastName = names.slice(1).join(' ');
 
-            const response = await api.post('/profile/update', {
+            const names = fullName.trim().split(/\s+/);
+            const firstName = names[0] || '';
+            const lastName = names.slice(1).join(' ') || firstName;
+
+            await api.post('/profile/', {
                 first_name: firstName,
                 last_name: lastName,
                 phone: phone,
-                role: role,
-                email: email
             });
 
             Alert.alert('Success', 'Profile updated successfully! ✨');
             setEditMode(false);
-            fetchProfile(); // Sync state
+            fetchProfile();
         } catch (error: any) {
-            Alert.alert('Update Failed', error.response?.data?.message || 'Failed to update profile.');
+            const msg = error.response?.data?.error || error.response?.data?.message || 'Failed to update profile.';
+            Alert.alert('Update Failed', msg);
         } finally {
             setUpdating(false);
         }
@@ -150,17 +150,23 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
             const fileExt = uri.split('.').pop()?.toLowerCase();
             const fileName = `avatar.${fileExt}`;
 
-            formData.append('avatar', {
+            formData.append('profile_photo', {
                 uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
                 name: fileName,
                 type: `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
             } as any);
 
-            const response = await api.post('/profile/avatar', formData, {
+            const names = fullName.trim().split(/\s+/);
+            formData.append('first_name', names[0] || '');
+            formData.append('last_name', names.slice(1).join(' ') || (names[0] || ''));
+            if (phone) formData.append('phone', phone);
+
+            const response = await api.post('/profile/', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            setAvatarUrl(response.data.avatar_url);
+            const updatedUser = response.data?.user;
+            setAvatarUrl(updatedUser?.profile_photo_url || updatedUser?.profilePhotoUrl);
             Alert.alert('Success', 'Profile picture updated! ✨');
         } catch (error: any) {
             console.error('Upload error:', error);
@@ -185,21 +191,11 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Switch Now',
-                    onPress: async () => {
-                        try {
-                            setUpdating(true);
-                            await api.post('/profile/update', { role: newRole });
-                            
-                            setRole(newRole);
-                            roleToggleValue.value = withSpring(newRole === 'Donor' ? 0 : 1);
-
-                            if (onRoleChange) {
-                                setTimeout(() => onRoleChange(newRole), 500);
-                            }
-                        } catch (err: any) {
-                            Alert.alert('Switch Failed', 'Failed to update role on server.');
-                        } finally {
-                            setUpdating(false);
+                    onPress: () => {
+                        setRole(newRole);
+                        roleToggleValue.value = withSpring(newRole === 'Donor' ? 0 : 1);
+                        if (onRoleChange) {
+                            setTimeout(() => onRoleChange(newRole), 500);
                         }
                     }
                 }

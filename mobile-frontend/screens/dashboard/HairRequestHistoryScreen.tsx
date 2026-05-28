@@ -55,7 +55,7 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
   const fetchHistory = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/hair-requests');
+      const response = await api.get('/requests');
       setRequests(response.data || []);
     } catch (err) {
       console.error('Error fetching history:', err);

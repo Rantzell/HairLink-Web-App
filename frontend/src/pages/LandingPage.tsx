@@ -1112,40 +1112,136 @@ const hlStyles = `
 ═══════════════════════════════════════════════════════ */
 .hl-partners {
   background: #F5F5F0;
+  padding: 5rem 0;
 }
 
-.hl-partners-head { text-align: center; margin-bottom: 2.5rem; }
+.hl-partners-head {
+  text-align: center;
+  margin-bottom: 3rem;
+}
 
-.hl-partners-strip {
-  overflow: visible;
-  max-width: 1000px;
+.hl-partners-carousel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  max-width: 900px;
   margin: 0 auto;
+  position: relative;
+}
+
+.hl-partners-card {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #EEEDE8;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(28, 25, 23, 0.03);
+  overflow: hidden;
+  height: 320px;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .hl-partners-track {
   display: flex;
-  width: 100%;
-  justify-content: center;
+  width: 200%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hl-partners-slide {
+  width: 50%;
+  height: 100%;
+  display: flex;
   align-items: center;
-  gap: clamp(2rem, 8vw, 5rem);
-  flex-wrap: wrap;
-}
-
-.hl-partners-track img {
-  max-height: 160px;
-  width: auto;
-  object-fit: contain;
-  padding: 0.5rem;
+  justify-content: center;
+  padding: 2rem 3rem;
   flex-shrink: 0;
-  filter: grayscale(10%);
-  opacity: 0.9;
-  transition: all 0.25s ease;
 }
 
-.hl-partners-track img:hover {
-  opacity: 1;
-  filter: none;
-  transform: scale(1.05);
+.hl-partners-slide img {
+  max-height: 240px;
+  max-width: 90%;
+  object-fit: contain;
+  filter: grayscale(5%);
+  transition: all 0.3s ease;
+}
+
+.hl-partners-slide img:hover {
+  transform: scale(1.02);
+}
+
+.hl-partners-arrow {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #EEEDE8;
+  color: #D63B8A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.hl-partners-arrow:hover {
+  background: #FFF0F8;
+  border-color: #FFDDF0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(214, 59, 138, 0.1);
+}
+
+.hl-partners-arrow:active {
+  transform: translateY(0);
+}
+
+.hl-partners-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 1.5rem;
+}
+
+.hl-partners-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #E5E5E0;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.hl-partners-dot.active {
+  background: #D63B8A;
+  width: 20px;
+  border-radius: 4px;
+}
+
+@media (max-width: 650px) {
+  .hl-partners-carousel {
+    gap: 0.5rem;
+  }
+  .hl-partners-card {
+    height: 240px;
+  }
+  .hl-partners-slide {
+    padding: 1.5rem 1.5rem;
+  }
+  .hl-partners-slide img {
+    max-height: 180px;
+  }
+  .hl-partners-arrow {
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1564,6 +1660,7 @@ const LandingPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cms, setCms] = useState<any>(null);
   const [aboutIndex, setAboutIndex] = useState(0);
+  const [partnerIndex, setPartnerIndex] = useState(0);
   const [nextEvent, setNextEvent] = useState<any>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1601,8 +1698,9 @@ const LandingPage: React.FC = () => {
   }, [nextEvent]);
 
   useEffect(() => {
+    const pInt = setInterval(() => setPartnerIndex(p => (p + 1) % 2), 4000);
     const aInt = setInterval(() => setAboutIndex(p => (p + 1) % 2), 5000);
-    return () => { clearInterval(aInt); };
+    return () => { clearInterval(pInt); clearInterval(aInt); };
   }, []);
 
   const handlePartnershipSubmit = async (e: React.FormEvent) => {
@@ -1884,11 +1982,50 @@ const LandingPage: React.FC = () => {
             <p className="hl-section-label">Partners</p>
             <h2 className="hl-section-h2">Organizations that believe in our cause.</h2>
           </div>
-          <div className="hl-partners-strip">
-            <div className="hl-partners-track">
-              <img src={images.partnerLogo1 || '/assets/images/landing/pgh.png'} alt="Philippine General Hospital" />
-              <img src={images.partnerLogo2 || '/assets/images/landing/wigmaker.png'} alt="Partner wigmaker" />
+          <div className="hl-partners-carousel">
+            <button 
+              className="hl-partners-arrow prev" 
+              type="button"
+              onClick={() => setPartnerIndex(p => (p - 1 + 2) % 2)}
+              aria-label="Previous partner"
+            >
+              <i className="bx bx-chevron-left"></i>
+            </button>
+            
+            <div className="hl-partners-card">
+              <div 
+                className="hl-partners-track"
+                style={{ transform: `translateX(-${partnerIndex * 100}%)` }}
+              >
+                <div className="hl-partners-slide">
+                  <img src={images.partnerLogo1 || '/assets/images/landing/pgh.png'} alt="Philippine General Hospital" />
+                </div>
+                <div className="hl-partners-slide">
+                  <img src={images.partnerLogo2 || '/assets/images/landing/wigmaker.png'} alt="Partner wigmaker" />
+                </div>
+              </div>
             </div>
+
+            <button 
+              className="hl-partners-arrow next" 
+              type="button"
+              onClick={() => setPartnerIndex(p => (p + 1) % 2)}
+              aria-label="Next partner"
+            >
+              <i className="bx bx-chevron-right"></i>
+            </button>
+          </div>
+
+          <div className="hl-partners-dots">
+            {[0, 1].map(idx => (
+              <button
+                key={idx}
+                type="button"
+                className={`hl-partners-dot ${partnerIndex === idx ? 'active' : ''}`}
+                onClick={() => setPartnerIndex(idx)}
+                aria-label={`Go to slide ${idx + 1}`}
+              ></button>
+            ))}
           </div>
         </div>
       </section>

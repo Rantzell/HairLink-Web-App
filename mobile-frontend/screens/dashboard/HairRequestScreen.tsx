@@ -104,7 +104,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
 
       setLoadingLabel('Submitting to server...');
       
-      const response = await api.post('/hair-requests', formData, {
+      const response = await api.post('/requests', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
