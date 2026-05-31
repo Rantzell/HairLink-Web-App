@@ -67,6 +67,7 @@ export interface HairRequest {
   notes: string | null;
   wigLength: string | null;
   wigColor: string | null;
+  deliveryMethod?: string | null;
   createdAt: string;
   updatedAt: string;
   user?: User;

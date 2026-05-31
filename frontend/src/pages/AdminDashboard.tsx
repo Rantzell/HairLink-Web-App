@@ -149,6 +149,7 @@ const AdminDashboard: React.FC = () => {
             { to: '/admin/reports', icon: 'bx-bar-chart', title: 'Full Reports', desc: 'Generate system-wide analytics.' },
             { to: '/admin/events', icon: 'bx-calendar-event', title: 'CMS Monitor', desc: 'Track announcements and events.' },
             { to: '/admin/community', icon: 'bxs-megaphone', title: 'Forum Oversight', desc: 'Monitor community engagement.' },
+            { to: '/admin/profile', icon: 'bx-user', title: 'My Profile', desc: 'Manage your administrative profile and settings.' },
           ].map((item, i) => (
             <Link key={i} to={item.to} className="admin-action-link admin-action-link-card">
               <div className="admin-action-link-icon"><i className={`bx ${item.icon}`}></i></div>

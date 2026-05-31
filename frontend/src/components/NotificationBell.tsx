@@ -46,14 +46,7 @@ const NotificationBell: React.FC = () => {
 
   const handleToggle = () => setIsOpen(!isOpen);
 
-  const markAsRead = async (id: number) => {
-    try {
-      await apiClient.put(`/internal-api/notifications/${id}/read`);
-      fetchNotifications();
-    } catch (err) {
-      console.error('Failed to mark as read', err);
-    }
-  };
+
 
   const handleNotifClick = async (n: Notification) => {
     if (!n.is_read) {

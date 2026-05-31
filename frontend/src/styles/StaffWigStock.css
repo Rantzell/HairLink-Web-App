@@ -187,7 +187,7 @@
   background: #fff;
   border-radius: 15px;
   border: 1px solid #f2ebf4;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .staff-wig-table {

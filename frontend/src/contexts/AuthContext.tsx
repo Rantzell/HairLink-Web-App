@@ -56,10 +56,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // We can't call useNavigate here (outside Router), so we use window.location for redirects
   // that happen before Router context is available. Components use navigate() directly.
 
-  /** Fetch profile from public.users via our backend /auth/me */
-  const fetchProfile = async (): Promise<User | null> => {
+  /** Fetch profile from public.users via our backend /auth/me
+   * @param token - Optional explicit token to use (bypasses cached token for race-condition safety)
+   */
+  const fetchProfile = async (token?: string): Promise<User | null> => {
     try {
-      const response = await apiClient.get<User>('/auth/me');
+      const config = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : {};
+      const response = await apiClient.get<User>('/auth/me', config);
       const userData = response.data;
       if (userData && userData.profile_photo_url) {
         userData.profile_photo_url = getProfilePhotoUrl(userData.profile_photo_url) || userData.profile_photo_url;
@@ -76,8 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        // Fetch profile if not already set or on sign in
-        const profile = await fetchProfile();
+        // Pass the token explicitly to avoid any race with the apiClient interceptor
+        const profile = await fetchProfile(session.access_token);
         setUser(profile);
       } else {
         setUser(null);
@@ -108,10 +113,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * then returns a redirect to /verify-otp.
    */
   const login = async (email: string, password: string): Promise<AuthResponse> => {
-    const { data: _loginData, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: loginData, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw { response: { data: { error: error.message } } };
 
-    const profile = await fetchProfile();
+    // Pass the token explicitly to avoid the race condition where the apiClient
+    // interceptor hasn't been updated by onAuthStateChange yet
+    const token = loginData.session?.access_token;
+    const profile = await fetchProfile(token);
     if (!profile) throw { response: { data: { error: 'Profile not found. Please contact support.' } } };
 
     // First-login OTP check — skip for demo accounts
@@ -137,27 +145,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
+      // If running in development we can call the backend dev-only endpoint
+      // which uses the service_role key server-side to generate a session.
+      if (import.meta.env.DEV) {
+        try {
+          const resp = await apiClient.post('/auth/demo', { role });
+          const session = resp.data;
+          if (session?.access_token && session?.refresh_token) {
+            // Set session first, then wait a tick for onAuthStateChange to propagate the token.
+            // We also pass the token explicitly to fetchProfile to avoid the race condition
+            // where the apiClient interceptor hasn't been updated yet.
+            await supabase.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token });
+            // Small delay to let onAuthStateChange fire and update currentToken in apiClient
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const profile = await fetchProfile(session.access_token);
+            if (!profile) {
+              alert('Demo login succeeded but profile could not be loaded. Ensure the database migrations and triggers have run.');
+              return;
+            }
+            setUser(profile);
+            window.location.href = dashboardPath[profile.role] || '/donor/dashboard';
+            return;
+          }
+        } catch (e: any) {
+          console.error('[Auth] Backend demo auth failed:', e?.response?.data || e.message || e);
+          // Give a clear message when the backend server is simply not running
+          const isNetworkError = !e?.response && (e?.code === 'ERR_NETWORK' || e?.message?.includes('Network Error'));
+          const friendlyMsg = isNetworkError
+            ? 'Backend server is not running. Please start it with: cd backend && npm run dev'
+            : (e?.response?.data?.error || e?.message || 'Backend demo auth failed');
+          alert(`Demo login failed: ${friendlyMsg}`);
+          return;
+        }
+      }
+
+      // Fallback: try client-side sign-in using anon key
       const { data: _authData, error } = await supabase.auth.signInWithPassword(creds);
-      if (error) {
-        console.error('[Auth] Supabase signIn failed:', error.message);
-        alert(`Demo login failed: ${error.message}`);
-        return;
-      }
-      
-      console.log('[Auth] Supabase login success, fetching profile...');
+      if (error) throw error;
       const profile = await fetchProfile();
-      if (!profile) {
-        console.error('[Auth] Profile fetch returned null');
-        alert('Login succeeded but profile could not be loaded. The SQL migration may not have been run yet.');
-        return;
-      }
-      
-      console.log(`[Auth] Profile loaded: ${profile.email}. Redirecting...`);
+      if (!profile) throw new Error('Profile not found');
       setUser(profile);
       window.location.href = dashboardPath[profile.role] || '/donor/dashboard';
     } catch (err: any) {
-      console.error('[Auth] Unexpected error during loginAs:', err);
-      alert('An unexpected error occurred during demo login.');
+      console.error('[Auth] Demo login failed:', err);
+      alert(`Demo login failed: ${err?.message || err?.response?.data?.error || JSON.stringify(err)}`);
     }
   };
 

@@ -8,18 +8,27 @@ const router = Router();
 router.get('/events/next', async (_req, res) => {
   try {
     const nextEvent = await prisma.event.findFirst({
-      where: {
-        date: {
-          gte: new Date()
-        }
-      },
-      orderBy: {
-        date: 'asc'
-      }
+      where: { date: { gte: new Date() } },
+      orderBy: { date: 'asc' }
     });
     res.json(nextEvent);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch next event' });
+  }
+});
+
+// GET /api/public/events/upcoming
+// Returns the nearest event + the next 3 after it (sorted by date, future only)
+router.get('/events/upcoming', async (_req, res) => {
+  try {
+    const events = await prisma.event.findMany({
+      where: { date: { gte: new Date() } },
+      orderBy: { date: 'asc' },
+      take: 4,
+    });
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch upcoming events' });
   }
 });
 

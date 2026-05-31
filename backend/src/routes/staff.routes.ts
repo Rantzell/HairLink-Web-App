@@ -7,7 +7,7 @@ import { validate } from '../middleware/validate';
 import { verificationStatusSchema, assignWigmakerSchema, trackingStatusSchema, matchWigSchema, provideMaterialDeliveryLinkSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { calculateCompatibility } from '../services/matching.service';
-import { notifyDonationStatus, notifyRequestStatus, createNotification } from '../services/notification.service';
+import { notifyDonationStatus, notifyRequestStatus, createNotification, notifyPickupReady } from '../services/notification.service';
 import crypto from 'crypto';
 
 const router = Router();
@@ -148,7 +148,7 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
       }
     }
     const requests = await prisma.hairRequest.findMany({
-      where: { status: { in: ['Validated', 'In Production', 'Matched', 'In Transit', 'Arrived', 'Completed'] } },
+      where: { status: { in: ['Validated', 'In Production', 'Matched', 'In Transit', 'Arrived', 'Completed', 'Ready for Pickup', 'Pickup Confirmed'] } },
       include: { user: true }, orderBy: { updatedAt: 'desc' },
     });
     res.json({ donations: s(donations), requests: s(requests), wigmakers: s(wigmakers), wigProductions: wpMap });
@@ -357,7 +357,7 @@ router.get('/wig-stock', ...staffOnly, async (_req, res) => {
 // GET /internal-api/staff/matching-list
 router.get('/matching-list', ...staffOnly, async (_req, res) => {
   try {
-    const reqs = await prisma.hairRequest.findMany({ where: { status: { in: ['Validated', 'Matched', 'In Transit', 'Arrived'] } }, include: { user: true }, orderBy: { updatedAt: 'desc' } });
+    const reqs = await prisma.hairRequest.findMany({ where: { status: { in: ['Validated', 'Matched', 'In Transit', 'Arrived', 'Ready for Pickup', 'Pickup Confirmed'] } }, include: { user: true }, orderBy: { updatedAt: 'desc' } });
     const avail = await prisma.wigProduction.findMany({ 
       where: { status: { in: ['completed', 'received'] }, hairRequestId: null } 
     });
@@ -368,6 +368,65 @@ router.get('/matching-list', ...staffOnly, async (_req, res) => {
       return { ...s(r), best_match: ms > 0 ? s(bw) : null, match_score: ms };
     });
     res.json(result);
+  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
+// POST /internal-api/staff/requests/:reference/complete-pickup
+router.post('/requests/:reference/complete-pickup', ...staffOnly, async (req, res) => {
+  try {
+    const { reference } = req.params;
+    const hr = await prisma.hairRequest.findFirst({ where: { reference: reference as string } });
+    if (!hr) { res.status(404).json({ message: 'Not found' }); return; }
+
+    if ((hr as any).deliveryMethod !== 'pickup') {
+      res.status(422).json({ message: 'This action is only available for pick-up requests.' });
+      return;
+    }
+    if (hr.status !== 'Pickup Confirmed') {
+      res.status(422).json({ message: 'Request must be in Pickup Confirmed status before marking as Completed.' });
+      return;
+    }
+
+    await prisma.hairRequest.update({ where: { id: hr.id }, data: { status: 'Completed' } });
+    await createStatusHistory(REQUEST_TYPE, hr.id, 'Completed', 'Hair request successfully fulfilled and closed by staff.');
+
+    const { notifyRequestStatus } = await import('../services/notification.service');
+    if (hr.userId) await notifyRequestStatus(hr.userId, 'Completed', hr.reference!);
+
+    // Notify linked donors
+    const wp = await prisma.wigProduction.findFirst({ where: { hairRequestId: hr.id }, include: { donations: true } });
+    if (wp?.donations) {
+      const { notifyDonationStatus } = await import('../services/notification.service');
+      for (const don of wp.donations) {
+        if (don.userId) await notifyDonationStatus(don.userId, 'Wig Received', don.reference!);
+      }
+    }
+
+    res.json({ message: 'Transaction marked as Completed.', success: true });
+  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
+// POST /internal-api/staff/requests/:reference/ready-for-pickup
+router.post('/requests/:reference/ready-for-pickup', ...staffOnly, async (req, res) => {
+  try {
+    const { reference } = req.params;
+    const hr = await prisma.hairRequest.findFirst({ where: { reference: reference as string } });
+    if (!hr) { res.status(404).json({ message: 'Not found' }); return; }
+
+    if ((hr as any).deliveryMethod !== 'pickup') {
+      res.status(422).json({ message: 'This action is only available for pick-up requests.' });
+      return;
+    }
+    if (hr.status !== 'Matched') {
+      res.status(422).json({ message: 'Request must be in Matched status before marking as Ready for Pickup.' });
+      return;
+    }
+
+    await prisma.hairRequest.update({ where: { id: hr.id }, data: { status: 'Ready for Pickup' } });
+    await createStatusHistory(REQUEST_TYPE, hr.id, 'Ready for Pickup', 'Wig is ready for collection at our Binondo office.');
+    if (hr.userId) await notifyPickupReady(hr.userId, hr.reference!);
+
+    res.json({ message: 'Request marked as Ready for Pickup. Recipient has been notified.', success: true });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 

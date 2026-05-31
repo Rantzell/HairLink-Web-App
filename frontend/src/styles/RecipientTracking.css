@@ -1,136 +1,191 @@
-/* RecipientTracking.css */
+/* ═══════════════════════════════════════════════
+   RECIPIENT TRACKING — Modern Page Styles
+   ═══════════════════════════════════════════════ */
 
-/* Header */
+/* Header & Workspace layout */
 .tracking-module-head {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .tracking-module-title {
-  font-size: 1.2rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.55rem;
   font-weight: 800;
-  color: #261d2b;
-  margin: 0;
+  color: #1a1625;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.3rem;
 }
 
 .tracking-module-subtitle {
-  color: #665772;
-  font-size: 0.75rem;
-  margin-top: 0.2rem;
+  font-size: 0.88rem;
+  color: #8c859d;
+  margin: 0 0 1.5rem;
 }
 
-/* Toolbar */
 .tracking-tools-row {
   display: flex;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
+/* Search bar design */
 .tracking-search-input {
-  padding: 0.4rem 0.8rem;
-  border-radius: 8px;
-  border: 1px solid #ead7e8;
-  font-size: 0.8rem;
-  width: 250px;
-  font: inherit;
+  padding: 0.6rem 1.1rem;
+  border-radius: 12px;
+  border: 1.5px solid #EEECF0;
+  background: #ffffff;
+  font-size: 0.85rem;
+  width: 280px;
+  color: #1a1625;
   outline: none;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 
 .tracking-search-input:focus {
-  border-color: #ad246d;
+  border-color: #D63B8A;
+  box-shadow: 0 0 0 3px rgba(214, 59, 138, 0.08);
 }
 
+.tracking-search-input::placeholder {
+  color: #C0BCC8;
+}
+
+/* New request action button */
 .tracking-new-request-btn {
   text-decoration: none;
-  font-size: 0.75rem;
-  background: #ad246d;
-  color: #fff;
-  padding: 0.4rem 1.2rem;
-  border-radius: 50px;
-  font-weight: 800;
-  display: inline-block;
-  transition: opacity 0.2s ease;
+  font-size: 0.82rem;
+  background: #D63B8A;
+  color: #ffffff;
+  padding: 0.6rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(214, 59, 138, 0.22);
 }
 
 .tracking-new-request-btn:hover {
-  opacity: 0.9;
+  background: #bc2f79;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(214, 59, 138, 0.3);
 }
 
-/* Table head */
-.tracking-table-th {
-  font-size: 0.75rem;
-  color: #ad246d;
+/* Modern Card Layout */
+.module-card {
+  background: #ffffff;
+  border: 1px solid #F0EEF3;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.02);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+/* Modern responsive table */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tracking-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tracking-table th {
+  background: #FAF8FB;
+  padding: 1rem 1.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #8c859d;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid #F3F1F5;
 }
 
-.tracking-table-th-center {
-  font-size: 0.75rem;
-  color: #ad246d;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-/* Table cells */
-.tracking-td-text {
+.tracking-table td {
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid #F5F4F7;
+  color: #4c445c;
   font-size: 0.85rem;
+  vertical-align: middle;
 }
 
-.tracking-td-center {
-  text-align: center;
+.tracking-table tr:last-child td {
+  border-bottom: none;
 }
 
-.tracking-td-loading {
-  text-align: center;
-  padding: 2rem;
+.tracking-table tr:hover td {
+  background: #FCFBFD;
 }
 
+.tracking-td-text strong {
+  color: #1a1625;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.tracking-td-loading,
 .tracking-td-empty {
   text-align: center;
-  padding: 2rem;
-  color: #7a687f;
+  padding: 3rem !important;
+  color: #8c859d;
+  font-size: 0.9rem;
 }
 
-/* Action cell */
+/* Detail & Received Action Buttons */
 .tracking-actions-cell {
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  justify-content: center;
 }
 
 .tracking-details-btn {
-  padding: 0.35rem 0.8rem;
-  font-size: 0.7rem;
-  background: #fff;
-  color: #ad246d;
-  border: 1.5px solid #ead7e8;
+  padding: 0.45rem 1rem;
+  font-size: 0.8rem;
+  background: #ffffff;
+  color: #D63B8A;
+  border: 1.5px solid rgba(214, 59, 138, 0.2);
   border-radius: 8px;
   text-decoration: none;
   font-weight: 700;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   transition: all 0.2s ease;
 }
 
 .tracking-details-btn:hover {
-  border-color: #ad246d;
-  background: #fdf7fb;
+  border-color: #D63B8A;
+  background: #FFF2F8;
+  color: #bc2f79;
 }
 
 .tracking-received-btn {
-  padding: 0.35rem 0.8rem;
-  font-size: 0.7rem;
-  background: #ad246d;
-  color: #fff;
+  padding: 0.45rem 1rem;
+  font-size: 0.8rem;
+  background: #D63B8A;
+  color: #ffffff;
   border: none;
-  border-radius: 50px;
-  font-weight: 800;
+  border-radius: 8px;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(214, 59, 138, 0.15);
+}
+
+.tracking-received-btn:hover {
+  background: #bc2f79;
+  box-shadow: 0 4px 12px rgba(214, 59, 138, 0.25);
 }
 
 .tracking-received-btn:disabled {
-  opacity: 0.6;
+  background: #F0EEF3;
+  color: #B2AEC2;
+  box-shadow: none;
   cursor: not-allowed;
 }

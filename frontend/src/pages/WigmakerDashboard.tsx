@@ -70,6 +70,45 @@ const WigmakerDashboard: React.FC = () => {
         </div>
       )}
 
+      {!isProductionTasksPage && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem', marginBottom: '2rem' }}>
+          <Link to="/wigmaker/profile" style={{
+            background: '#ffffff',
+            border: '1px solid #EEEDE8',
+            borderRadius: '16px',
+            padding: '16px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            textDecoration: 'none',
+            transition: 'all 0.2s ease',
+            boxShadow: '0 2px 10px rgba(28, 25, 23, 0.01)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                background: '#FFF0F8',
+                color: '#D63B8A',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.25rem',
+              }}>
+                <i className="bx bx-user"></i>
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '0.9rem', color: '#44403C' }}>My Profile</h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#78716C' }}>Manage your personal details and upload new photo</p>
+              </div>
+            </div>
+            <i className="bx bx-chevron-right" style={{ color: '#A8A29E', fontSize: '1.2rem' }}></i>
+          </Link>
+        </div>
+      )}
+
       <article className="task-board dashboard-task-board">
         <div className="task-board-head dashboard-task-board-head">
           <h2 className="dashboard-task-board-title">Production Task Board</h2>

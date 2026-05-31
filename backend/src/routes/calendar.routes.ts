@@ -70,17 +70,18 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     ]);
 
     const donationItems = donations.map((d) => {
-      const when = d.appointmentAt || d.createdAt;
+      const when = d.appointmentAt ?? d.createdAt ?? new Date();
+      const whenDate = when as Date;
       return {
         id: `donation-${d.id}`,
         kind: 'donation' as const,
         title: 'Hair Donation',
         subtitle: [d.hairLength, d.hairColor].filter(Boolean).join(' · ') || 'Submitted donation',
         location: d.dropoffLocation || null,
-        date: when.toISOString().slice(0, 10),     // YYYY-MM-DD for calendar grid
-        datetime: when.toISOString(),
+        date: whenDate.toISOString().slice(0, 10),     // YYYY-MM-DD for calendar grid
+        datetime: whenDate.toISOString(),
         status: d.status,
-        decision: toDecision(d.status),
+        decision: toDecision(d.status || ''),
         reference: d.reference,
       };
     });
@@ -136,8 +137,9 @@ router.patch('/donations/:reference/decision', authenticate, async (req: Request
   }
 
   try {
+    const ref = Array.isArray(req.params.reference) ? req.params.reference[0] : req.params.reference;
     const donation = await prisma.donation.findFirst({
-      where: { reference: req.params.reference },
+      where: { reference: String(ref) },
     });
     if (!donation) {
       res.status(404).json({ error: 'Donation not found' });
@@ -158,7 +160,7 @@ router.patch('/donations/:reference/decision', authenticate, async (req: Request
     res.json({
       reference: updated.reference,
       status: updated.status,
-      decision: toDecision(updated.status),
+      decision: toDecision(updated.status || ''),
     });
   } catch (err) {
     console.error('[Calendar] Decision error:', err);

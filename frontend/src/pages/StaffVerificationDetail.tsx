@@ -132,6 +132,27 @@ const StaffVerificationDetail: React.FC = () => {
                       <i className="bx bx-paint detail-list-icon"></i>
                       <span><strong>Preferred Color:</strong> <strong>{record.wigColor || 'N/A'}</strong></span>
                     </li>
+                    <li className="detail-list-item">
+                      <i className="bx bx-package detail-list-icon"></i>
+                      <span>
+                        <strong>Delivery Method:</strong>{' '}
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: record.deliveryMethod === 'pickup' ? '#fdf2f8' : '#f0fdf4',
+                          color: record.deliveryMethod === 'pickup' ? '#ad246d' : '#16a34a',
+                          border: `1px solid ${record.deliveryMethod === 'pickup' ? '#f9cde8' : '#bbf7d0'}`,
+                          borderRadius: '20px',
+                          padding: '2px 10px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                        }}>
+                          <i className={`bx ${record.deliveryMethod === 'pickup' ? 'bx-store' : 'bx-car'}`}></i>
+                          {record.deliveryMethod === 'pickup' ? 'Pick-up at Binondo Office' : 'Delivery'}
+                        </span>
+                      </span>
+                    </li>
                     <li className="detail-list-item-start">
                       <i className="bx bx-book-content detail-list-icon-start"></i>
                       <span><strong>Applicant's Story:</strong> <span className="detail-italic-text">"{record.story || 'No story provided'}"</span></span>
@@ -224,7 +245,7 @@ const StaffVerificationDetail: React.FC = () => {
                           <div className="detail-doc-icon-wrapper"><i className="bx bxs-file-blank detail-section-icon"></i></div>
                         )}
                       </a>
-                      <span className="detail-file-label-small">Doc #{i+1}</span>
+                      <span className="detail-file-label-small">Document {i+1}</span>
                     </div>
                   ))}
                 </>

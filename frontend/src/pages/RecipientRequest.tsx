@@ -13,6 +13,7 @@ const RecipientRequest: React.FC = () => {
     story: '',
     wigLength: '',
     wigColor: '',
+    deliveryMethod: 'delivery' as 'delivery' | 'pickup',
   });
   
   const [documents, setDocuments] = useState<File[]>([]);
@@ -49,7 +50,7 @@ const RecipientRequest: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.story || !formData.wigLength || !formData.wigColor || documents.length === 0 || !additionalPhoto) {
+    if (!formData.story || !formData.wigLength || !formData.wigColor || !formData.deliveryMethod || documents.length === 0 || !additionalPhoto) {
       alert('Please fill all required fields and upload the necessary documents.');
       return;
     }
@@ -69,6 +70,7 @@ const RecipientRequest: React.FC = () => {
       data.append('story', formData.story);
       data.append('wig_length', formData.wigLength);
       data.append('wig_color', formData.wigColor);
+      data.append('delivery_method', formData.deliveryMethod);
       data.append('appointment_at', new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString());
 
       documents.forEach(doc => {
@@ -115,15 +117,15 @@ const RecipientRequest: React.FC = () => {
 
           <div className="form-grid two-col">
             <label>
-              Full Name <span>*</span>
+              <span>Full Name <span>*</span></span>
               <input type="text" value={user?.firstName ? `${user.firstName} ${user.lastName}` : (user?.name || '')} readOnly className="field-readonly" />
             </label>
             <label>
-              Contact Number <span>*</span>
+              <span>Contact Number <span>*</span></span>
               <input type="tel" value={user?.phone || ''} readOnly className="field-readonly" />
             </label>
             <label>
-              Gender <span>*</span>
+              <span>Gender <span>*</span></span>
               <select value={user?.gender || ''} disabled className="field-readonly">
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
@@ -133,7 +135,7 @@ const RecipientRequest: React.FC = () => {
               </select>
             </label>
             <label>
-              Email Address <span>*</span>
+              <span>Email Address <span>*</span></span>
               <input type="email" value={user?.email || ''} readOnly className="field-readonly" />
             </label>
           </div>
@@ -145,7 +147,7 @@ const RecipientRequest: React.FC = () => {
 
           <div className="form-grid">
             <label>
-              Please share with us your story/journey <span>*</span>
+              <span>Please share with us your story/journey <span>*</span></span>
               <textarea 
                 placeholder="Tell us your story..." 
                 rows={5}
@@ -217,7 +219,7 @@ const RecipientRequest: React.FC = () => {
 
           <div className="form-grid two-col">
             <label>
-              Preferred Wig Length <span>*</span>
+              <span>Preferred Wig Length <span>*</span></span>
               <select value={formData.wigLength} onChange={e => setFormData({...formData, wigLength: e.target.value})} required>
                 <option value="">Select Wig Length</option>
                 <option value="short">Short (10-14 inches)</option>
@@ -225,15 +227,55 @@ const RecipientRequest: React.FC = () => {
               </select>
             </label>
             <label>
-              Preferred Hair Color <span>*</span>
+              <span>Preferred Hair Color <span>*</span></span>
               <select value={formData.wigColor} onChange={e => setFormData({...formData, wigColor: e.target.value})} required>
                 <option value="">Select Hair Color</option>
                 <option value="black">Black</option>
                 <option value="brown">Brown</option>
                 <option value="light">Light</option>
-                <option value="other">Other</option>
               </select>
             </label>
+          </div>
+
+          <div className="form-head">
+            <h2>Delivery Method</h2>
+            <i className='bx bx-package'></i>
+          </div>
+
+          <div className="form-grid">
+            <div className="delivery-method-group">
+              <p className="delivery-method-hint">How would you like to receive your wig? <span>*</span></p>
+              <div className="delivery-method-options">
+                <label className={`delivery-method-option ${formData.deliveryMethod === 'delivery' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="delivery"
+                    checked={formData.deliveryMethod === 'delivery'}
+                    onChange={() => setFormData({...formData, deliveryMethod: 'delivery'})}
+                  />
+                  <div className="delivery-method-card">
+                    <i className='bx bx-car'></i>
+                    <strong>Delivery</strong>
+                    <span>We will deliver the wig to your address.</span>
+                  </div>
+                </label>
+                <label className={`delivery-method-option ${formData.deliveryMethod === 'pickup' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="pickup"
+                    checked={formData.deliveryMethod === 'pickup'}
+                    onChange={() => setFormData({...formData, deliveryMethod: 'pickup'})}
+                  />
+                  <div className="delivery-method-card">
+                    <i className='bx bx-store'></i>
+                    <strong>Pick-up at Binondo Office</strong>
+                    <span>Collect your wig in person at our Binondo office.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
 
           <div className="submit-wrap">

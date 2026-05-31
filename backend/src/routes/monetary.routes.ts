@@ -77,7 +77,7 @@ router.get('/', authenticate, async (req, res) => {
         status: r.status,
         anonymous: r.anonymous,
         proofPath: r.proofPath,
-        createdAt: r.createdAt.toISOString(),
+        createdAt: r.createdAt ? r.createdAt.toISOString() : null,
       })),
     );
   } catch (err) {

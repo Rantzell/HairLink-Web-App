@@ -2,10 +2,14 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
+import Pagination from '../components/Pagination';
+
+const PAGE_SIZE = 10;
 
 const AdminOperations: React.FC = () => {
   const location = useLocation();
   const [view, setView] = useState<'production' | 'distribution'>('production');
+  const [opsPage, setOpsPage] = useState(1);
   const [data, setData] = useState<{
     donations: any[];
     requests: any[];
@@ -24,7 +28,10 @@ const AdminOperations: React.FC = () => {
     const params = new URLSearchParams(location.search);
     const v = params.get('view');
     if (v === 'production' || v === 'distribution') setView(v);
+    setOpsPage(1);
   }, [location.search]);
+
+  useEffect(() => { setOpsPage(1); }, [view]);
 
   useEffect(() => {
     const fetchOps = async () => {
@@ -53,6 +60,10 @@ const AdminOperations: React.FC = () => {
   if (loading) return <div className="section-wrap">Loading operational oversight...</div>;
   if (error) return <div className="section-wrap">Error: {error}</div>;
   if (!data || !data.stats) return <div className="section-wrap">Error: Could not load operational tracking. Please check your connection.</div>;
+
+  const opsRows = view === 'production' ? data.donations : data.requests;
+  const opsTotalPages = Math.ceil(opsRows.length / PAGE_SIZE);
+  const opsPagedRows = opsRows.slice((opsPage - 1) * PAGE_SIZE, opsPage * PAGE_SIZE);
 
   return (
     <section className="section-wrap reveal active admin-page admin-page-pad">
@@ -105,41 +116,30 @@ const AdminOperations: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {view === 'production' ? (
-              data.donations.map((d: any) => (
-                <tr key={d.id} className="admin-compact-tr">
-                  <td className="admin-compact-td"><strong>{d.reference}</strong><br/><small className="admin-match-meta">Hair Batch</small></td>
-                  <td className="admin-compact-td">{d.user?.firstName} {d.user?.lastName}</td>
-                  <td className="admin-compact-td">
-                    <span className="admin-status-pill">
-                      {d.status}
-                    </span>
-                  </td>
-                  <td className="admin-compact-td">{d.status === 'In Progress' ? 'Wigmaker Partner' : 'System Inventory'}</td>
-                  <td className="admin-compact-td admin-td-muted">{new Date(d.updatedAt).toLocaleDateString()}</td>
-                </tr>
-              ))
+            {opsPagedRows.map((row: any) => view === 'production' ? (
+              <tr key={row.id} className="admin-compact-tr">
+                <td className="admin-compact-td"><strong>{row.reference}</strong><br/><small className="admin-match-meta">Hair Batch</small></td>
+                <td className="admin-compact-td">{row.user?.firstName} {row.user?.lastName}</td>
+                <td className="admin-compact-td"><span className="admin-status-pill">{row.status}</span></td>
+                <td className="admin-compact-td">{row.status === 'In Progress' ? 'Wigmaker Partner' : 'System Inventory'}</td>
+                <td className="admin-compact-td admin-td-muted">{new Date(row.updatedAt).toLocaleDateString()}</td>
+              </tr>
             ) : (
-              data.requests.map((r: any) => (
-                <tr key={r.id} className="admin-compact-tr">
-                  <td className="admin-compact-td"><strong>{r.reference}</strong><br/><small className="admin-match-meta">Wig Request</small></td>
-                  <td className="admin-compact-td">{r.user?.firstName} {r.user?.lastName}</td>
-                  <td className="admin-compact-td">
-                    <span className="admin-status-pill">
-                      {r.status}
-                    </span>
-                  </td>
-                  <td className="admin-compact-td">{r.status === 'In Transit' ? 'Out for Delivery' : 'In Fulfillment'}</td>
-                  <td className="admin-compact-td admin-td-muted">{new Date(r.updatedAt).toLocaleDateString()}</td>
-                </tr>
-              ))
-            )}
+              <tr key={row.id} className="admin-compact-tr">
+                <td className="admin-compact-td"><strong>{row.reference}</strong><br/><small className="admin-match-meta">Wig Request</small></td>
+                <td className="admin-compact-td">{row.user?.firstName} {row.user?.lastName}</td>
+                <td className="admin-compact-td"><span className="admin-status-pill">{row.status}</span></td>
+                <td className="admin-compact-td">{row.status === 'In Transit' ? 'Out for Delivery' : 'In Fulfillment'}</td>
+                <td className="admin-compact-td admin-td-muted">{new Date(row.updatedAt).toLocaleDateString()}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
-        
-        {((view === 'production' && data.donations.length === 0) || (view === 'distribution' && data.requests.length === 0)) && (
+        <Pagination currentPage={opsPage} totalPages={opsTotalPages} onPageChange={setOpsPage} />
+
+        {opsRows.length === 0 && (
           <div className="admin-empty-state">
-            <i className={`admin-icon-faded ${`bx ${view === 'production' ? 'bx-layer' : 'bx-package'}`}`}></i>
+            <i className={`admin-icon-faded bx ${view === 'production' ? 'bx-layer' : 'bx-package'}`}></i>
             <p className="admin-empty-title">
               {view === 'production' ? 'No Active Hair Batches in Production' : 'No Active Wig Deliveries in Progress'}
             </p>

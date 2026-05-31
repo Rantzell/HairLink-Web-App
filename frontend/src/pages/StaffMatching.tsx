@@ -146,6 +146,25 @@ const StaffMatching: React.FC = () => {
               <span>Wig Size: <strong className="recipient-spec-value">{selectedRecipient?.wigLength || 'N/A'}</strong></span>
               <span>Preferred Color: <strong className="recipient-spec-value">{selectedRecipient?.wigColor || 'N/A'}</strong></span>
             </div>
+            {selectedRecipient && (
+              <div style={{ marginTop: '0.5rem' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: selectedRecipient.deliveryMethod === 'pickup' ? '#fdf2f8' : '#f0fdf4',
+                  color: selectedRecipient.deliveryMethod === 'pickup' ? '#ad246d' : '#16a34a',
+                  border: `1px solid ${selectedRecipient.deliveryMethod === 'pickup' ? '#f9cde8' : '#bbf7d0'}`,
+                  borderRadius: '20px',
+                  padding: '3px 12px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                }}>
+                  <i className={`bx ${selectedRecipient.deliveryMethod === 'pickup' ? 'bx-store' : 'bx-car'}`}></i>
+                  {selectedRecipient.deliveryMethod === 'pickup' ? 'Pick-up at Binondo Office' : 'Delivery'}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="recipient-list">

@@ -3,6 +3,7 @@ import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
+import Pagination from '../components/Pagination';
 
 const AdminUserManagement: React.FC = () => {
   const location = useLocation();
@@ -25,12 +26,13 @@ const AdminUserManagement: React.FC = () => {
   const [showToggleConfirm, setShowToggleConfirm] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [pendingToggleUser, setPendingToggleUser] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchUsers = async (searchStr = filter, roleStr = roleFilter) => {
+  const fetchUsers = async (searchStr = filter, roleStr = roleFilter, page = currentPage) => {
     try {
       setLoading(true);
       const res = await apiClient.get('/internal-api/admin/users', {
-        params: { search: searchStr, role: roleStr }
+        params: { search: searchStr, role: roleStr, page }
       });
       setData(res.data);
     } catch (err) {
@@ -49,15 +51,21 @@ const AdminUserManagement: React.FC = () => {
   }, [location.search, roleFilter]);
 
   useEffect(() => {
+    setCurrentPage(1);
     const timer = setTimeout(() => {
-      fetchUsers();
+      fetchUsers(filter, roleFilter, 1);
     }, 500);
     return () => clearTimeout(timer);
   }, [filter]);
 
   useEffect(() => {
-    fetchUsers();
+    setCurrentPage(1);
+    fetchUsers(filter, roleFilter, 1);
   }, [roleFilter]);
+
+  useEffect(() => {
+    fetchUsers(filter, roleFilter, currentPage);
+  }, [currentPage]);
 
   const handleToggleActive = async (id: string) => {
     setIsSubmitting(true);
@@ -127,10 +135,11 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="section-wrap">Loading user management...</div>;
+  if (loading && !data) return <div className="section-wrap">Loading user management...</div>;
   if (!data) return <div className="section-wrap">Error: Could not load user registry. Please verify your connection.</div>;
 
   const filteredUsers = data.users || [];
+  const totalPages: number = data.totalPages || 1;
 
   return (
     <section className="section-wrap reveal active admin-page admin-page-pad">
@@ -197,6 +206,11 @@ const AdminUserManagement: React.FC = () => {
         </div>
 
         <div className="table-wrap">
+          {loading && (
+            <div style={{ textAlign: 'center', padding: '1rem', color: '#8c7895', fontSize: '0.85rem' }}>
+              <i className="bx bx-loader-alt bx-spin" style={{ marginRight: '6px' }}></i>Loading...
+            </div>
+          )}
           <table className="admin-table">
             <thead>
               <tr>
@@ -209,40 +223,53 @@ const AdminUserManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user: any) => (
-                <tr key={user.id}>
-                  <td className="admin-compact-td"><strong>{user.displayName}</strong></td>
-                  <td className="admin-compact-td">{user.email}</td>
-                  <td className="admin-compact-td"><span className={`role-badge ${user.role} admin-chip-sm`}>{user.role.toUpperCase()}</span></td>
-                  <td className="admin-compact-td">{new Date(user.createdAt).toLocaleDateString()}</td>
-                  <td className="admin-compact-td">
-                    <span className={`admin-chip ${user.isActive ? 'active' : 'inactive'} admin-chip-sm`}>
-                      {user.isActive ? 'Active' : 'Disabled'}
-                    </span>
-                  </td>
-                  <td className="admin-compact-td">
-                    <div className="admin-user-actions">
-                      <button 
-                        onClick={() => handleOpenModal(user)}
-                        className="admin-user-edit-btn"
-                      >
-                        <i className="bx bx-edit-alt admin-td-text"></i> Edit
-                      </button>
-                      <button 
-                        onClick={() => requestToggle(user)}
-                        disabled={isSubmitting}
-                        className={`admin-user-toggle-btn ${user.isActive ? "deactivate" : "activate"}`}
-                      >
-                        <i className={`bx ${user.isActive ? 'bx-user-x' : 'bx-user-check'} admin-td-text`}></i>
-                        {user.isActive ? 'Deactivate' : 'Activate'}
-                      </button>
-                    </div>
+              {filteredUsers.length === 0 && !loading ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#8c7895', fontSize: '0.85rem' }}>
+                    No users found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredUsers.map((user: any) => (
+                  <tr key={user.id}>
+                    <td className="admin-compact-td"><strong>{user.displayName}</strong></td>
+                    <td className="admin-compact-td">{user.email}</td>
+                    <td className="admin-compact-td"><span className={`role-badge ${user.role} admin-chip-sm`}>{user.role.toUpperCase()}</span></td>
+                    <td className="admin-compact-td">{new Date(user.createdAt).toLocaleDateString()}</td>
+                    <td className="admin-compact-td">
+                      <span className={`admin-chip ${user.isActive ? 'active' : 'inactive'} admin-chip-sm`}>
+                        {user.isActive ? 'Active' : 'Disabled'}
+                      </span>
+                    </td>
+                    <td className="admin-compact-td">
+                      <div className="admin-user-actions">
+                        <button
+                          onClick={() => handleOpenModal(user)}
+                          className="admin-user-edit-btn"
+                        >
+                          <i className="bx bx-edit-alt admin-td-text"></i> Edit
+                        </button>
+                        <button
+                          onClick={() => requestToggle(user)}
+                          disabled={isSubmitting}
+                          className={`admin-user-toggle-btn ${user.isActive ? "deactivate" : "activate"}`}
+                        >
+                          <i className={`bx ${user.isActive ? 'bx-user-x' : 'bx-user-check'} admin-td-text`}></i>
+                          {user.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </article>
 
       {/* Create/Edit User Modal */}

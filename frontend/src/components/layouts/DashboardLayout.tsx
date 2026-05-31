@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import NotificationBell from '../NotificationBell';
+import apiClient from '../../api/client';
+import '../../styles/StaffDashboard.css';
+import '../../styles/RecipientDashboard.css';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,6 +15,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [_staffStats, setStaffStats] = useState({ pendingDonations: 0, pendingRequests: 0 });
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -26,6 +31,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   const role = user?.role;
 
+  useEffect(() => {
+    if (role !== 'staff') return;
+    const fetchStaffStats = async () => {
+      try {
+        const res = await apiClient.get('/internal-api/staff/dashboard');
+        setStaffStats({
+          pendingDonations: res.data.pendingDonations || 0,
+          pendingRequests: res.data.pendingRequests || 0
+        });
+      } catch (err) {
+        console.error('Failed to fetch staff stats for topbar', err);
+      }
+    };
+    fetchStaffStats();
+  }, [role]);
+
   const getDashboardPath = () => {
     switch (role) {
       case 'admin': return '/admin/dashboard';
@@ -36,6 +57,480 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       default: return '/';
     }
   };
+
+  if (role === 'staff') {
+    const initials = user
+      ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'ST'
+      : 'ST';
+
+    const displayName = user
+      ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+      : 'Staff';
+
+    const NAV_SECTIONS = [
+      {
+        label: 'Overview',
+        items: [
+          { icon: 'bx bxs-dashboard',   label: 'Dashboard',           to: '/staff/dashboard' },
+        ],
+      },
+      {
+        label: 'Verification',
+        items: [
+          { icon: 'bx bx-donate-heart', label: 'Donation Verification',  to: '/staff/verification/donor' },
+          { icon: 'bx bx-user-check',   label: 'Request Verification',   to: '/staff/verification/recipient' },
+          { icon: 'bx bx-money',        label: 'Monetary Verification',  to: '/staff/verification/monetary' },
+        ],
+      },
+      {
+        label: 'Production & Stock',
+        items: [
+          { icon: 'bx bx-radar',        label: 'Wigmaker Tracking',      to: '/staff/tracking/donation' },
+          { icon: 'bx bx-package',      label: 'Donation Trackers',      to: '/staff/tracking/donation' },
+          { icon: 'bx bx-transfer-alt', label: 'Request Trackers',       to: '/staff/tracking/recipient' },
+          { icon: 'bx bx-cut',          label: 'Hair Stock',             to: '/staff/hair-stock' },
+          { icon: 'bx bxs-crown',       label: 'Wig Stock',              to: '/staff/wig-stock' },
+        ],
+      },
+      {
+        label: 'Matching',
+        items: [
+          { icon: 'bx bx-link',         label: 'Recipient Matching',     to: '/staff/matching' },
+        ],
+      },
+    ];
+
+    const getTopbarTitle = () => {
+      if (location.pathname.startsWith('/staff/dashboard')) return 'Staff Operations Workspace';
+      if (location.pathname.startsWith('/staff/verification/donor')) return 'Donation Verification Desk';
+      if (location.pathname.startsWith('/staff/verification/recipient')) return 'Request Verification Desk';
+      if (location.pathname.startsWith('/staff/verification/monetary')) return 'Monetary Verification Desk';
+      if (location.pathname.startsWith('/staff/tracking/donation')) return 'Production & Inventory Trackers';
+      if (location.pathname.startsWith('/staff/tracking/recipient')) return 'Request Trackers';
+      if (location.pathname.startsWith('/staff/hair-stock')) return 'Hair Stock Inventory';
+      if (location.pathname.startsWith('/staff/wig-stock')) return 'Wig Stock Inventory';
+      if (location.pathname.startsWith('/staff/matching')) return 'Recipient Matching Desk';
+      if (location.pathname.startsWith('/staff/profile')) return 'My Staff Profile';
+      return 'Staff Workspace';
+    };
+
+    const isActiveItem = (path: string) => {
+      if (path === '/staff/dashboard') return location.pathname === '/staff/dashboard';
+      return location.pathname.startsWith(path);
+    };
+
+    return (
+      <div className="sd-shell">
+        {/* ══════════════ SIDEBAR ══════════════ */}
+        <aside className={`sd-sidebar${sidebarOpen ? ' open' : ''}`}>
+          {/* Brand */}
+          <Link to="/staff/dashboard" className="sd-sidebar-brand" onClick={() => setSidebarOpen(false)}>
+            <img src="/assets/images/landing/pink-ribbon.png" alt="HairLink" />
+            <span>Hair<em>Link</em></span>
+          </Link>
+
+          {/* Navigation */}
+          <nav className="sd-nav" aria-label="Staff navigation">
+            {NAV_SECTIONS.map((section) => (
+              <div key={section.label} className="sd-nav-section">
+                <p className="sd-nav-label">{section.label}</p>
+                {section.items.map((item) => (
+                  <Link
+                    key={item.to + item.label}
+                    to={item.to}
+                    className={`sd-nav-item${isActiveItem(item.to) ? ' active' : ''}`}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <i className={item.icon} />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
+
+          {/* Sidebar footer — profile + logout */}
+          <div className="sd-sidebar-footer">
+            <div className="sd-sidebar-user">
+              <Link to="/staff/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', textDecoration: 'none', color: 'inherit', flex: 1, overflow: 'hidden' }}>
+                <div className="sd-sidebar-avatar">{initials}</div>
+                <div className="sd-sidebar-userinfo">
+                  <div className="sd-sidebar-username">{displayName}</div>
+                  <div className="sd-sidebar-role">Staff</div>
+                </div>
+              </Link>
+              <a href="#" onClick={handleLogout} title="Logout" style={{ color: '#B0ABC0', fontSize: '1.1rem', marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                <i className="bx bx-log-out" />
+              </a>
+            </div>
+          </div>
+        </aside>
+
+        {/* Overlay for mobile */}
+        <div
+          className={`sd-sidebar-overlay${sidebarOpen ? ' open' : ''}`}
+          onClick={() => setSidebarOpen(false)}
+        />
+
+        {/* ══════════════ MAIN ══════════════ */}
+        <div className="sd-main">
+          {/* Top header */}
+          <header className="sd-topbar">
+            <div className="sd-topbar-left">
+              {/* Hamburger (mobile) */}
+              <button
+                className="sd-burger"
+                type="button"
+                aria-label="Open menu"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <i className="bx bx-menu" />
+              </button>
+
+              <span className="sd-topbar-title">{getTopbarTitle()}</span>
+
+              {/* Search bar */}
+              <div className="sd-search">
+                <i className="bx bx-search" />
+                <input
+                  type="text"
+                  placeholder="Search…"
+                  aria-label="Search"
+                />
+              </div>
+            </div>
+
+            <div className="sd-topbar-right">
+              {/* Notifications */}
+              <NotificationBell />
+
+              {/* Profile */}
+              <Link to="/staff/profile" className="sd-topbar-avatar" title="My Profile">
+                {initials}
+              </Link>
+            </div>
+          </header>
+
+          {/* ── Page content ── */}
+          <main className="sd-content">
+            {children}
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (role === 'admin') {
+    const initials = user
+      ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'AD'
+      : 'AD';
+
+    const displayName = user
+      ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+      : 'Admin';
+
+    const NAV_SECTIONS = [
+      {
+        label: 'Overview',
+        items: [
+          { icon: 'bx bxs-dashboard',   label: 'Dashboard',           to: '/admin/dashboard' },
+        ],
+      },
+      {
+        label: 'Verification & Matching',
+        items: [
+          { icon: 'bx bx-donate-heart', label: 'Verify Donations',    to: '/admin/verification?view=donor' },
+          { icon: 'bx bx-user-check',   label: 'Verify Requests',     to: '/admin/verification?view=recipient' },
+          { icon: 'bx bx-link',         label: 'Recipient Matching',  to: '/admin/matching' },
+        ],
+      },
+      {
+        label: 'Oversight & Inventory',
+        items: [
+          { icon: 'bx bx-cog',          label: 'Production Oversight', to: '/admin/operations?view=production' },
+          { icon: 'bx bx-map-pin',      label: 'Distribution Oversight', to: '/admin/operations?view=distribution' },
+          { icon: 'bx bx-package',      label: 'Global Overview',     to: '/admin/inventory?view=overview' },
+          { icon: 'bx bx-cut',          label: 'Hair Stock',          to: '/admin/inventory?view=hair' },
+          { icon: 'bx bxs-crown',       label: 'Wig Stock',           to: '/admin/inventory?view=wigs' },
+          { icon: 'bx bx-history',      label: 'Donation Records',    to: '/admin/inventory?view=donations' },
+        ],
+      },
+      {
+        label: 'Users',
+        items: [
+          { icon: 'bx bx-group',        label: 'All Users',           to: '/admin/users?role=all' },
+          { icon: 'bx bx-heart',        label: 'Donors',              to: '/admin/users?role=donor' },
+          { icon: 'bx bx-smile',        label: 'Recipients',          to: '/admin/users?role=recipient' },
+          { icon: 'bx bx-shield',       label: 'Staff Accounts',      to: '/admin/users?role=staff' },
+          { icon: 'bx bx-wrench',       label: 'Wigmakers',           to: '/admin/users?role=wigmaker' },
+        ],
+      },
+      {
+        label: 'System',
+        items: [
+          { icon: 'bx bx-file',         label: 'Content (CMS)',       to: '/admin/cms' },
+          { icon: 'bx bx-calendar',     label: 'Events Schedule',     to: '/admin/events' },
+          { icon: 'bx bx-bar-chart-alt-2', label: 'System Reports',   to: '/admin/reports?type=full' },
+        ],
+      },
+    ];
+
+    const getTopbarTitle = () => {
+      const search = location.search;
+      if (location.pathname.startsWith('/admin/dashboard')) return 'Admin Dashboard';
+      if (location.pathname.startsWith('/admin/verification')) {
+        if (search.includes('view=donor')) return 'Verify Hair Donations';
+        if (search.includes('view=recipient')) return 'Verify Recipient Requests';
+        return 'Verification Center';
+      }
+      if (location.pathname.startsWith('/admin/matching')) return 'Recipient Matching Oversight';
+      if (location.pathname.startsWith('/admin/operations')) {
+        if (search.includes('view=production')) return 'Production Oversight';
+        if (search.includes('view=distribution')) return 'Distribution Oversight';
+        return 'Operations Center';
+      }
+      if (location.pathname.startsWith('/admin/inventory')) {
+        if (search.includes('view=overview')) return 'Global Inventory Overview';
+        if (search.includes('view=hair')) return 'Hair Stock';
+        if (search.includes('view=wigs')) return 'Wig Stock';
+        if (search.includes('view=donations')) return 'Donation Records';
+        return 'Inventory Management';
+      }
+      if (location.pathname.startsWith('/admin/users')) return 'User Account Management';
+      if (location.pathname.startsWith('/admin/cms')) return 'Content Management System';
+      if (location.pathname.startsWith('/admin/events')) return 'Events Scheduling Panel';
+      if (location.pathname.startsWith('/admin/reports')) return 'System Reports & Analytics';
+      if (location.pathname.startsWith('/admin/profile')) return 'My Admin Profile';
+      return 'System Administrator Workspace';
+    };
+
+    const isActiveItem = (toPath: string) => {
+      const toUrl = new URL(toPath, window.location.origin);
+      if (location.pathname !== toUrl.pathname) return false;
+      if (toUrl.search) {
+        return location.search.includes(toUrl.search.substring(1));
+      }
+      return !location.search || toUrl.pathname === '/admin/dashboard';
+    };
+
+    return (
+      <div className="sd-shell">
+        {/* ══════════════ SIDEBAR ══════════════ */}
+        <aside className={`sd-sidebar${sidebarOpen ? ' open' : ''}`}>
+          {/* Brand */}
+          <Link to="/admin/dashboard" className="sd-sidebar-brand" onClick={() => setSidebarOpen(false)}>
+            <img src="/assets/images/landing/pink-ribbon.png" alt="HairLink" />
+            <span>Hair<em>Link</em></span>
+          </Link>
+
+          {/* Navigation */}
+          <nav className="sd-nav" aria-label="Admin navigation">
+            {NAV_SECTIONS.map((section) => (
+              <div key={section.label} className="sd-nav-section">
+                <p className="sd-nav-label">{section.label}</p>
+                {section.items.map((item) => (
+                  <Link
+                    key={item.to + item.label}
+                    to={item.to}
+                    className={`sd-nav-item${isActiveItem(item.to) ? ' active' : ''}`}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <i className={item.icon} />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
+
+          {/* Sidebar footer — profile + logout */}
+          <div className="sd-sidebar-footer">
+            <div className="sd-sidebar-user">
+              <Link to="/admin/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', textDecoration: 'none', color: 'inherit', flex: 1, overflow: 'hidden' }}>
+                <div className="sd-sidebar-avatar">{initials}</div>
+                <div className="sd-sidebar-userinfo">
+                  <div className="sd-sidebar-username">{displayName}</div>
+                  <div className="sd-sidebar-role">Admin</div>
+                </div>
+              </Link>
+              <a href="#" onClick={handleLogout} title="Logout" style={{ color: '#B0ABC0', fontSize: '1.1rem', marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                <i className="bx bx-log-out" />
+              </a>
+            </div>
+          </div>
+        </aside>
+
+        {/* Overlay for mobile */}
+        <div
+          className={`sd-sidebar-overlay${sidebarOpen ? ' open' : ''}`}
+          onClick={() => setSidebarOpen(false)}
+        />
+
+        {/* ══════════════ MAIN ══════════════ */}
+        <div className="sd-main">
+          {/* Top header */}
+          <header className="sd-topbar">
+            <div className="sd-topbar-left">
+              {/* Hamburger (mobile) */}
+              <button
+                className="sd-burger"
+                type="button"
+                aria-label="Open menu"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <i className="bx bx-menu" />
+              </button>
+
+              <span className="sd-topbar-title">{getTopbarTitle()}</span>
+            </div>
+
+            <div className="sd-topbar-right">
+              {/* Notifications */}
+              <NotificationBell />
+
+              {/* Profile */}
+              <Link to="/admin/profile" className="sd-topbar-avatar" title="My Profile">
+                {initials}
+              </Link>
+            </div>
+          </header>
+
+          {/* ── Page content ── */}
+          <main className="sd-content">
+            {children}
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (role === 'wigmaker') {
+    const initials = user
+      ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'WM'
+      : 'WM';
+
+    const displayName = user
+      ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+      : 'Wigmaker';
+
+    const NAV_SECTIONS = [
+      {
+        label: 'Overview',
+        items: [
+          { icon: 'bx bxs-dashboard',   label: 'Dashboard',           to: '/wigmaker/dashboard' },
+        ],
+      },
+      {
+        label: 'Production & Tasks',
+        items: [
+          { icon: 'bx bx-wrench',       label: 'Production Tasks',    to: '/wigmaker/production-tasks' },
+        ],
+      },
+    ];
+
+    const getTopbarTitle = () => {
+      if (location.pathname.startsWith('/wigmaker/dashboard')) return 'Wigmaker Workspace';
+      if (location.pathname.startsWith('/wigmaker/production-tasks')) return 'Production Task Inventory';
+      if (location.pathname.startsWith('/wigmaker/task/')) return 'Task Details & Progress';
+      if (location.pathname.startsWith('/wigmaker/profile')) return 'My Profile';
+      return 'Wigmaker Panel';
+    };
+
+    const isActiveItem = (path: string) => {
+      if (path === '/wigmaker/dashboard') return location.pathname === '/wigmaker/dashboard';
+      return location.pathname.startsWith(path);
+    };
+
+    return (
+      <div className="sd-shell">
+        {/* ══════════════ SIDEBAR ══════════════ */}
+        <aside className={`sd-sidebar${sidebarOpen ? ' open' : ''}`}>
+          {/* Brand */}
+          <Link to="/wigmaker/dashboard" className="sd-sidebar-brand" onClick={() => setSidebarOpen(false)}>
+            <img src="/assets/images/landing/pink-ribbon.png" alt="HairLink" />
+            <span>Hair<em>Link</em></span>
+          </Link>
+
+          {/* Navigation */}
+          <nav className="sd-nav" aria-label="Wigmaker navigation">
+            {NAV_SECTIONS.map((section) => (
+              <div key={section.label} className="sd-nav-section">
+                <p className="sd-nav-label">{section.label}</p>
+                {section.items.map((item) => (
+                  <Link
+                    key={item.to + item.label}
+                    to={item.to}
+                    className={`sd-nav-item${isActiveItem(item.to) ? ' active' : ''}`}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <i className={item.icon} />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
+
+          {/* Sidebar footer — profile + logout */}
+          <div className="sd-sidebar-footer">
+            <div className="sd-sidebar-user">
+              <Link to="/wigmaker/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', textDecoration: 'none', color: 'inherit', flex: 1, overflow: 'hidden' }}>
+                <div className="sd-sidebar-avatar">{initials}</div>
+                <div className="sd-sidebar-userinfo">
+                  <div className="sd-sidebar-username">{displayName}</div>
+                  <div className="sd-sidebar-role">Wigmaker</div>
+                </div>
+              </Link>
+              <a href="#" onClick={handleLogout} title="Logout" style={{ color: '#B0ABC0', fontSize: '1.1rem', marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                <i className="bx bx-log-out" />
+              </a>
+            </div>
+          </div>
+        </aside>
+
+        {/* Overlay for mobile */}
+        <div
+          className={`sd-sidebar-overlay${sidebarOpen ? ' open' : ''}`}
+          onClick={() => setSidebarOpen(false)}
+        />
+
+        {/* ══════════════ MAIN ══════════════ */}
+        <div className="sd-main">
+          {/* Top header */}
+          <header className="sd-topbar">
+            <div className="sd-topbar-left">
+              {/* Hamburger (mobile) */}
+              <button
+                className="sd-burger"
+                type="button"
+                aria-label="Open menu"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <i className="bx bx-menu" />
+              </button>
+
+              <span className="sd-topbar-title">{getTopbarTitle()}</span>
+            </div>
+
+            <div className="sd-topbar-right">
+              {/* Notifications */}
+              <NotificationBell />
+
+              {/* Profile */}
+              <Link to="/wigmaker/profile" className="sd-topbar-avatar" title="My Profile">
+                {initials}
+              </Link>
+            </div>
+          </header>
+
+          {/* ── Page content ── */}
+          <main className="sd-content">
+            {children}
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dash-container">
@@ -130,14 +625,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 </>
               )}
 
-              {role === 'wigmaker' && (
+              {(role as string) === 'wigmaker' && (
                 <>
                   <Link to="/wigmaker/dashboard" className={isActive('/wigmaker/dashboard') ? 'active' : ''}>Overview</Link>
                   <Link to="/wigmaker/production-tasks" className={isActive('/wigmaker/production-tasks') ? 'active' : ''}>Production Tasks</Link>
                 </>
               )}
 
-              {role === 'staff' && (
+              {(role as string) === 'staff' && (
                 <>
                   <Link to="/staff/dashboard" className={isActive('/staff/dashboard') ? 'active' : ''}>Overview</Link>
                   <Link to="/staff/verification/donor" className={location.pathname === '/staff/verification/donor' ? 'active' : ''}>Donation</Link>
@@ -156,7 +651,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 </>
               )}
 
-              {role === 'admin' && (
+              {(role as string) === 'admin' && (
                 <>
                   <Link to="/admin/dashboard" className={isActive('/admin/dashboard') ? 'active' : ''}>Overview</Link>
                   <div className="nav-dropdown">
