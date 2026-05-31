@@ -6,15 +6,35 @@ import { notifyDonationStatus } from '../services/notification.service';
 const router = Router();
 
 /**
- * Map the granular `Donation.status` strings the platform uses internally
- * to the coarse Pending / Approved / Rejected tri-state the calendar UI
- * cares about. Keeps the frontend simple and stable even if status names
- * grow over time.
+ * Map the granular `Donation` / `HairRequest` status strings the platform
+ * uses internally to the coarse Pending / Approved / Rejected tri-state the
+ * calendar UI cares about. Keeps the frontend simple and stable even if
+ * status names grow over time.
+ *
+ * IMPORTANT: every status that staff/wigmakers set AFTER acceptance should
+ * map to "Approved" so the donor/recipient calendar reflects the moment the
+ * submission was approved — not just when it finishes the whole pipeline.
+ *
+ * Donation statuses (staff-set):  Submitted → Verified → Received Hair →
+ *   In Queue → In Progress → Completed → Wig Received
+ * HairRequest statuses (staff-set): Submitted → Matched → In Queue →
+ *   In Progress → Ready for Pickup → Pickup Confirmed → Completed
+ *
+ * "Submitted" stays Pending — the user is still waiting for the first
+ * staff decision. Everything past that is "Approved" from the user POV.
  */
 function toDecision(status: string): 'Pending' | 'Approved' | 'Rejected' {
   const s = (status || '').toLowerCase();
   if (['rejected', 'cancelled', 'declined'].includes(s)) return 'Rejected';
-  if (['approved', 'received hair', 'wig received', 'completed', 'matched', 'in production', 'ready', 'validated'].includes(s)) return 'Approved';
+  if ([
+    // Donation pipeline
+    'approved', 'verified', 'received hair', 'wig received',
+    // Request pipeline
+    'matched', 'ready for pickup', 'pickup confirmed', 'received',
+    // Shared production steps
+    'in queue', 'in progress', 'in production', 'shipped',
+    'ready', 'validated', 'completed',
+  ].includes(s)) return 'Approved';
   return 'Pending';
 }
 

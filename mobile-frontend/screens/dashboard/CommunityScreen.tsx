@@ -274,9 +274,15 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
         {/* Post Content */}
         <Text style={styles.postContent}>{item.content}</Text>
         
-        {/* Post Image */}
-        {item.full_image_url && (
-          <Image source={{ uri: item.full_image_url }} style={styles.postImage} resizeMode="cover" />
+        {/* Post Image — backend returns `imageUrl` (camelCase from Prisma);
+            older mobile snapshots referenced `full_image_url` and silently
+            dropped photos. Fall back to either so old + new payloads render. */}
+        {(item.imageUrl || item.full_image_url) && (
+          <Image
+            source={{ uri: item.imageUrl || item.full_image_url }}
+            style={styles.postImage}
+            resizeMode="cover"
+          />
         )}
 
         {/* Post Stats */}
@@ -291,8 +297,8 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
             activeOpacity={0.7}
             onPress={() => handleToggleLike(item.id)}
           >
-            <Ionicons name={item.is_liked ? "heart" : "heart-outline"} size={ms(20)} color={item.is_liked ? "#FF1493" : "#6b5b6d"} />
-            <Text style={[styles.actionBtnText, item.is_liked && { color: '#FF1493' }]}>Like</Text>
+            <Ionicons name={item.is_liked ? "heart" : "heart-outline"} size={ms(20)} color={item.is_liked ? "#D63B8A" : "#6b5b6d"} />
+            <Text style={[styles.actionBtnText, item.is_liked && { color: '#D63B8A' }]}>Like</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -341,7 +347,7 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                 <Text style={styles.emptyStateText}>No posts yet. Be the first to share!</Text>
               </View>
             ) : (
-              <ActivityIndicator size="large" color="#FF1493" style={{ marginTop: vs(40) }} />
+              <ActivityIndicator size="large" color="#D63B8A" style={{ marginTop: vs(40) }} />
             )
           }
           ListHeaderComponent={
@@ -373,7 +379,7 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
 
               <View style={styles.createPostActions}>
                 <TouchableOpacity style={styles.attachBtn} onPress={pickImage}>
-                  <Ionicons name="camera" size={ms(22)} color="#FF1493" />
+                  <Ionicons name="camera" size={ms(22)} color="#D63B8A" />
                   <Text style={styles.attachBtnText}>Add Photo</Text>
                 </TouchableOpacity>
                 
@@ -460,7 +466,7 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                     {/* Comment Actions: Reply button */}
                     <View style={{ flexDirection: 'row', marginLeft: ms(44), marginTop: vs(-8), marginBottom: vs(8) }}>
                       <TouchableOpacity onPress={() => setReplyingToComment(item)}>
-                        <Text style={{ fontSize: ms(12), fontWeight: '800', color: '#FF1493' }}>Reply</Text>
+                        <Text style={{ fontSize: ms(12), fontWeight: '800', color: '#D63B8A' }}>Reply</Text>
                       </TouchableOpacity>
                     </View>
 
@@ -513,14 +519,14 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
             {/* Replying banner */}
             {replyingToComment && (
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF0F5', paddingHorizontal: ms(20), paddingVertical: vs(8), borderTopWidth: 1, borderTopColor: '#FFD6EF' }}>
-                <Text style={{ fontSize: ms(12), color: '#FF1493', fontWeight: '700' }}>
+                <Text style={{ fontSize: ms(12), color: '#D63B8A', fontWeight: '700' }}>
                   Replying to @{
                     (((replyingToComment.user?.firstName || replyingToComment.user?.first_name || '') + ' ' + (replyingToComment.user?.lastName || replyingToComment.user?.last_name || '')).trim()) || 
                     replyingToComment.user?.name || 'Member'
                   }
                 </Text>
                 <TouchableOpacity onPress={() => setReplyingToComment(null)}>
-                  <Ionicons name="close-circle" size={18} color="#FF1493" />
+                  <Ionicons name="close-circle" size={18} color="#D63B8A" />
                 </TouchableOpacity>
               </View>
             )}
@@ -541,9 +547,9 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                 disabled={!commentContent.trim() || postingComment}
               >
                 {postingComment ? (
-                  <ActivityIndicator size="small" color="#FF1493" />
+                  <ActivityIndicator size="small" color="#D63B8A" />
                 ) : (
-                  <Ionicons name="send" size={20} color="#FF1493" />
+                  <Ionicons name="send" size={20} color="#D63B8A" />
                 )}
               </TouchableOpacity>
             </View>
@@ -690,7 +696,7 @@ const styles = StyleSheet.create({
     borderRadius: ms(16),
     padding: ms(16),
     marginBottom: vs(16),
-    shadowColor: '#FF1493',
+    shadowColor: '#D63B8A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -753,12 +759,12 @@ const styles = StyleSheet.create({
   },
   attachBtnText: {
     marginLeft: ms(6),
-    color: '#FF1493',
+    color: '#D63B8A',
     fontWeight: '700',
     fontSize: ms(13),
   },
   postBtn: {
-    backgroundColor: '#FF66B2',
+    backgroundColor: '#D63B8A',
     paddingHorizontal: ms(24),
     paddingVertical: vs(10),
     borderRadius: ms(20),

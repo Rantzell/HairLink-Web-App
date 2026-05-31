@@ -125,7 +125,7 @@ export default function LoginScreen({
     // ── Render Forgot Email View ────────────────────────────────
     if (viewMode === "forgot_email") {
         return (
-            <LinearGradient colors={["#FF1493", "#FF69B4", "#FFF0F5"]} style={styles.root}>
+            <LinearGradient colors={["#D63B8A", "#E863A1", "#FFF0F5"]} style={styles.root}>
                 <KeyboardAvoidingView 
                     behavior={Platform.OS === "ios" ? "padding" : "height"} 
                     style={{ flex: 1 }}
@@ -182,7 +182,7 @@ export default function LoginScreen({
     // ── Render Forgot OTP View ────────────────────────────────
     if (viewMode === "forgot_otp") {
         return (
-            <LinearGradient colors={["#FF1493", "#FF69B4", "#FFF0F5"]} style={styles.root}>
+            <LinearGradient colors={["#D63B8A", "#E863A1", "#FFF0F5"]} style={styles.root}>
                 <KeyboardAvoidingView 
                     behavior={Platform.OS === "ios" ? "padding" : "height"} 
                     style={{ flex: 1 }}
@@ -346,7 +346,7 @@ export default function LoginScreen({
 }
 
 const styles = StyleSheet.create({
-    root: { flex: 1, backgroundColor: '#FFF4F8' },
+    root: { flex: 1, backgroundColor: '#FAFAF9' },
     scrollContent: { flexGrow: 1, justifyContent: 'center' },
     mainBox: { paddingHorizontal: ms(32), paddingVertical: vs(40), alignItems: 'center', width: '100%' },
     innerContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: ms(32) },
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     logo: { width: '100%', height: '100%' },
 
     // Typography
-    title: { fontSize: 32, fontWeight: '800', color: '#FF1493', letterSpacing: 0.5, marginBottom: 6, textAlign: 'center' },
+    title: { fontSize: 32, fontWeight: '800', color: '#D63B8A', letterSpacing: 0.5, marginBottom: 6, textAlign: 'center' },
     subtitle: { fontSize: 14, fontWeight: '600', color: '#555', marginBottom: 32, textAlign: 'center' },
 
     // Forms
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
 
     // Buttons
     primaryBtn: { 
-        width: '100%', height: 54, borderRadius: 27, backgroundColor: '#FF66B2', 
+        width: '100%', height: 54, borderRadius: 27, backgroundColor: '#E863A1', 
         justifyContent: 'center', alignItems: 'center', marginBottom: 16,
     },
     primaryBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
@@ -379,11 +379,11 @@ const styles = StyleSheet.create({
     cancelBtnText: { color: '#888', fontSize: 15, fontWeight: '600' },
 
     forgotBtn: { alignSelf: 'flex-end', marginTop: 12, paddingVertical: 4 },
-    forgotText: { fontSize: 13, fontWeight: '700', color: '#FF1493' },
+    forgotText: { fontSize: 13, fontWeight: '700', color: '#D63B8A' },
 
     signupLink: { alignSelf: 'center', marginTop: 16, padding: 8 },
     signupLinkText: { fontSize: 14, fontWeight: '500', color: '#555' },
-    signupLinkBold: { fontWeight: '800', color: '#FF1493' },
+    signupLinkBold: { fontWeight: '800', color: '#D63B8A' },
 
     // Premium UI Additions
     premiumIconCircle: {
@@ -425,9 +425,9 @@ const styles = StyleSheet.create({
         borderColor: "#E9ECEF",
         justifyContent: "center", alignItems: "center",
     },
-    otpBoxActive: { borderColor: "#FF1493", borderWidth: 2.5 },
-    otpBoxFilled: { backgroundColor: "#FFF0F5", borderColor: "#FF69B4" },
+    otpBoxActive: { borderColor: "#D63B8A", borderWidth: 2.5 },
+    otpBoxFilled: { backgroundColor: "#FFF0F5", borderColor: "#E863A1" },
     otpBoxText: { fontSize: 20, fontWeight: "900", color: "#333" },
-    otpCursor: { width: 2, height: 18, backgroundColor: "#FF1493" },
+    otpCursor: { width: 2, height: 18, backgroundColor: "#D63B8A" },
     hiddenInput: { position: "absolute", opacity: 0, height: 0, width: 0 },
 });

@@ -145,7 +145,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
       
       {/* ── Elite Header ──────────────────────────────── */}
       <LinearGradient
-        colors={['#8E44AD', '#9B59B6']}
+        colors={['#9B6BBF', '#B084CC']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}
@@ -182,7 +182,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
               'What gives you hope and keeps you going?',
             ].map((item, i) => (
               <View key={i} style={styles.bulletItem}>
-                <Ionicons name="heart-half" size={14} color="#9B59B6" />
+                <Ionicons name="heart-half" size={14} color="#B084CC" />
                 <Text style={styles.bulletText}>{item}</Text>
               </View>
             ))}
@@ -209,7 +209,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
               <Image source={{ uri: docImage }} style={styles.previewImg} />
             ) : (
               <>
-                <Ionicons name="cloud-upload-outline" size={24} color="#9B59B6" />
+                <Ionicons name="cloud-upload-outline" size={24} color="#B084CC" />
                 <Text style={styles.uploadBtnText}>Add File</Text>
               </>
             )}
@@ -222,7 +222,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
               <Image source={{ uri: refImage }} style={styles.previewImg} />
             ) : (
               <>
-                <Ionicons name="image-outline" size={24} color="#9B59B6" />
+                <Ionicons name="image-outline" size={24} color="#B084CC" />
                 <Text style={styles.uploadBtnText}>Add Photo</Text>
               </>
             )}
@@ -311,7 +311,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
         <Animated.View entering={FadeInUp.delay(500)} style={styles.submitContainer}>
           <TouchableOpacity onPress={handleSubmit} activeOpacity={0.8} disabled={loading}>
             <LinearGradient
-              colors={['#8E44AD', '#9B59B6']}
+              colors={['#9B6BBF', '#B084CC']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.submitBtn, loading && { opacity: 0.7 }]}
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     paddingVertical: vs(15),
     borderBottomLeftRadius: ms(30),
     borderBottomRightRadius: ms(30),
-    shadowColor: '#8E44AD',
+    shadowColor: '#9B6BBF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
   },
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     borderRadius: ms(24),
     padding: ms(20),
     marginBottom: vs(20),
-    shadowColor: '#8E44AD',
+    shadowColor: '#9B6BBF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08, shadowRadius: 10, elevation: 3,
   },
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: '#9B59B6',
+    borderColor: '#B084CC',
     borderRadius: ms(18),
     paddingVertical: vs(14),
     backgroundColor: 'rgba(155,89,182,0.03)',
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     minHeight: vs(60),
   },
   previewImg: { width: '100%', height: vs(160), resizeMode: 'cover' },
-  uploadBtnText: { fontSize: ms(14), fontWeight: '800', color: '#9B59B6', marginLeft: ms(8) },
+  uploadBtnText: { fontSize: ms(14), fontWeight: '800', color: '#B084CC', marginLeft: ms(8) },
 
   fieldLabel: { fontSize: ms(14), fontWeight: '900', color: '#444', marginBottom: vs(12) },
   chipRow: { flexDirection: 'row', gap: ms(10) },
@@ -423,9 +423,9 @@ const styles = StyleSheet.create({
     borderColor: '#E8DAEF',
     backgroundColor: '#fff',
   },
-  chipActive: { borderColor: '#9B59B6', backgroundColor: '#F9F4FC' },
+  chipActive: { borderColor: '#B084CC', backgroundColor: '#F9F4FC' },
   chipText: { fontSize: ms(14), fontWeight: '700', color: '#666' },
-  chipTextActive: { color: '#9B59B6' },
+  chipTextActive: { color: '#B084CC' },
 
   checkRow: { flexDirection: 'row', alignItems: 'center', marginBottom: vs(14) },
   checkBox: {
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginRight: ms(12),
   },
-  checkBoxActive: { backgroundColor: '#9B59B6', borderColor: '#9B59B6' },
+  checkBoxActive: { backgroundColor: '#B084CC', borderColor: '#B084CC' },
   checkLabel: { fontSize: ms(14), color: '#555', fontWeight: '600' },
   
   consentFootnote: { fontSize: ms(11), color: '#aaa', marginTop: vs(10), fontStyle: 'italic' },
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     borderRadius: ms(30),
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#8E44AD',
+    shadowColor: '#9B6BBF',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35, shadowRadius: 12, elevation: 8,
   },

@@ -298,7 +298,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
       {/* ── Header ─────────────────────────────────── */}
       <View>
         <LinearGradient
-          colors={['#8E44AD', '#9B59B6']}
+          colors={['#9B6BBF', '#B084CC']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.header}
@@ -361,11 +361,11 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
         {/* ── Status Tracker ────────────────────────── */}
         <Animated.View entering={FadeInRight.springify().delay(200)} style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="time" size={20} color="#9B59B6" />
-            <Text style={[styles.cardTitle, { color: '#9B59B6' }]}>  My Request Status</Text>
+            <Ionicons name="time" size={20} color="#B084CC" />
+            <Text style={[styles.cardTitle, { color: '#B084CC' }]}>  My Request Status</Text>
             <TouchableOpacity onPress={() => setShowHistory(true)}>
               <View style={styles.historyBtnSmall}>
-                <MaterialCommunityIcons name="history" size={16} color="#9B59B6" />
+                <MaterialCommunityIcons name="history" size={16} color="#B084CC" />
                 <Text style={styles.historyBtnTextSmall}>View History</Text>
               </View>
             </TouchableOpacity>
@@ -382,7 +382,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
               
               {/* Visual Roadmap Preview */}
               <View style={{ borderTopWidth: 1, borderTopColor: '#F4ECF7', paddingTop: vs(14) }}>
-                <Text style={{ fontSize: ms(12), fontWeight: '800', color: '#9B59B6', marginBottom: vs(14), letterSpacing: 0.5 }}>
+                <Text style={{ fontSize: ms(12), fontWeight: '800', color: '#B084CC', marginBottom: vs(14), letterSpacing: 0.5 }}>
                   WIG REQUEST JOURNEY MAP
                 </Text>
                 {[
@@ -393,7 +393,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
                 ].map((step, i) => (
                   <View key={i} style={styles.stepRow}>
                     <View style={[styles.stepDot, { backgroundColor: '#F4ECF7' }]}>
-                      <Ionicons name="ellipse" size={8} color="#9B59B6" />
+                      <Ionicons name="ellipse" size={8} color="#B084CC" />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.stepLabel, { color: '#555', fontWeight: '700' }]}>
@@ -434,7 +434,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
                     </Text>
                     {step.label === 'Wig Ready for Pickup' && step.done && (
                       <Animated.View entering={FadeIn.delay(300)} style={styles.locationInfo}>
-                        <Ionicons name="location" size={12} color="#9B59B6" />
+                        <Ionicons name="location" size={12} color="#B084CC" />
                         <Text style={styles.locationText}>Pick up: Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)</Text>
                       </Animated.View>
                     )}
@@ -465,7 +465,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
             {/* Request Hair */}
             <View style={styles.actionBox}>
               <View style={styles.actionIconCircle}>
-                <Ionicons name="ribbon-outline" size={28} color="#9B59B6" />
+                <Ionicons name="ribbon-outline" size={28} color="#B084CC" />
               </View>
               <Text style={styles.actionTitle}>Request Hair</Text>
               <Text style={styles.actionDesc}>
@@ -482,7 +482,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
             {/* Monetary Donation */}
             <View style={styles.actionBox}>
               <View style={styles.actionIconCircle}>
-                <Ionicons name="cash-outline" size={28} color="#9B59B6" />
+                <Ionicons name="cash-outline" size={28} color="#B084CC" />
               </View>
               <Text style={styles.actionTitle}>Monetary</Text>
               <Text style={styles.actionDesc}>
@@ -501,8 +501,8 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
         {/* ── Hair Care Hub ────────────────────────── */}
         <Animated.View entering={FadeInDown.springify().delay(350)} style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="sparkles" size={20} color="#9B59B6" />
-            <Text style={[styles.cardTitle, { color: '#9B59B6' }]}>  Hair Care Hub</Text>
+            <Ionicons name="sparkles" size={20} color="#B084CC" />
+            <Text style={[styles.cardTitle, { color: '#B084CC' }]}>  Hair Care Hub</Text>
           </View>
           <Text style={{ fontSize: ms(13), color: '#666', lineHeight: vs(18), marginBottom: vs(14), fontWeight: '500' }}>
             Keep your wig fresh and vibrant. Access expert guides on styling, washing, and long-term storage.
@@ -531,7 +531,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
             <MaterialCommunityIcons
               name="ribbon"
               size={32}
-              color="#9B59B6"
+              color="#B084CC"
               style={styles.ribbonIcon}
             />
           </View>
@@ -567,7 +567,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
         <Animated.View entering={FadeInUp.springify().delay(600)} style={styles.eventsSection}>
           <TouchableOpacity activeOpacity={0.9} onPress={() => setShowCalendar(true)}>
             <LinearGradient
-              colors={['#C39BD3', '#9B59B6']}
+              colors={['#C39BD3', '#B084CC']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.eventCard}
@@ -585,30 +585,30 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
         </Animated.View>
       </ScrollView>
 
-      {/* ── Bottom Nav ────────────────────────────── */}
+      {/* ── Bottom Nav (light purple = recipient theme) ────────── */}
       <View style={[styles.bottomNav, { paddingBottom: insets.bottom + ms(8), height: vs(78) + insets.bottom }]}>
         <TouchableOpacity style={styles.navItem}>
-          <Feather name="home" size={ms(26)} color="#9B59B6" />
-          <Text style={[styles.navLabel, { color: '#9B59B6' }]}>Home</Text>
+          <Feather name="home" size={ms(24)} color="#B084CC" />
+          <Text style={[styles.navLabel, { color: '#B084CC' }]} numberOfLines={1}>Home</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navItem} onPress={() => setShowCalendar(true)}>
-          <Ionicons name="calendar-outline" size={ms(26)} color="#888" />
-          <Text style={styles.navLabel}>Schedule</Text>
+          <Ionicons name="calendar-outline" size={ms(24)} color="#888" />
+          <Text style={styles.navLabel} numberOfLines={1}>Schedule</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.arButton, { width: ms(64), height: ms(64), borderRadius: ms(32) }]} onPress={() => setShowAR(true)}>
-          <MaterialCommunityIcons name="augmented-reality" size={ms(30)} color="#fff" />
+        <TouchableOpacity style={[styles.arButton, { width: ms(60), height: ms(60), borderRadius: ms(30) }]} onPress={() => setShowAR(true)}>
+          <MaterialCommunityIcons name="augmented-reality" size={ms(28)} color="#fff" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navItem} onPress={() => setShowCommunity(true)}>
-          <Ionicons name="people-outline" size={ms(26)} color={showCommunity ? '#9B59B6' : '#888'} />
-          <Text style={[styles.navLabel, showCommunity && { color: '#9B59B6' }]}>Community</Text>
+          <Ionicons name="people-outline" size={ms(24)} color={showCommunity ? '#B084CC' : '#888'} />
+          <Text style={[styles.navLabel, showCommunity && { color: '#B084CC' }]} numberOfLines={1}>Community</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navItem} onPress={() => setShowProfile(true)}>
-          <Ionicons name="person-outline" size={ms(26)} color={showProfile ? '#9B59B6' : '#888'} />
-          <Text style={[styles.navLabel, showProfile && { color: '#9B59B6' }]}>Profile</Text>
+          <Ionicons name="person-outline" size={ms(24)} color={showProfile ? '#B084CC' : '#888'} />
+          <Text style={[styles.navLabel, showProfile && { color: '#B084CC' }]} numberOfLines={1}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
     paddingVertical: vs(14),
     borderBottomLeftRadius: ms(24),
     borderBottomRightRadius: ms(24),
-    shadowColor: '#9B59B6',
+    shadowColor: '#B084CC',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -ms(4),
     right: -ms(6),
-    backgroundColor: '#9B59B6',
+    backgroundColor: '#B084CC',
     borderRadius: ms(10),
     minWidth: ms(18),
     height: ms(18),
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: ms(4),
     borderWidth: ms(2),
-    borderColor: '#9B59B6',
+    borderColor: '#B084CC',
   },
   notificationBadgeText: { color: '#fff', fontSize: ms(10), fontWeight: '900' },
 
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     margin: ms(14),
     borderRadius: ms(22),
     padding: ms(22),
-    shadowColor: '#9B59B6',
+    shadowColor: '#B084CC',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -683,14 +683,14 @@ const styles = StyleSheet.create({
     lineHeight: vs(32),
     marginBottom: vs(6),
   },
-  heroSubtitle: { fontSize: ms(13), color: '#9B59B6', fontWeight: '700', marginBottom: vs(18) },
+  heroSubtitle: { fontSize: ms(13), color: '#B084CC', fontWeight: '700', marginBottom: vs(18) },
   heroCTA: {
     alignSelf: 'flex-start',
-    backgroundColor: '#9B59B6',
+    backgroundColor: '#B084CC',
     paddingHorizontal: ms(22),
     paddingVertical: vs(10),
     borderRadius: ms(22),
-    shadowColor: '#9B59B6',
+    shadowColor: '#B084CC',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
     marginBottom: vs(14),
     borderRadius: ms(20),
     padding: ms(18),
-    shadowColor: '#9B59B6',
+    shadowColor: '#B084CC',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: vs(14) },
   cardTitle: { fontSize: ms(16), fontWeight: '800', flex: 1 },
   pointsBadge: {
-    fontSize: ms(14), fontWeight: '800', color: '#9B59B6',
+    fontSize: ms(14), fontWeight: '800', color: '#B084CC',
     backgroundColor: '#F4ECF7', paddingHorizontal: ms(10),
     paddingVertical: vs(4), borderRadius: ms(12),
   },
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginRight: ms(12),
   },
-  stepDotDone: { backgroundColor: '#9B59B6' },
+  stepDotDone: { backgroundColor: '#B084CC' },
   stepLabel: { fontSize: ms(14), color: '#aaa', fontWeight: '600' },
   stepLabelDone: { color: '#1a1a1a', fontWeight: '700' },
 
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
   actionTitle: { fontSize: ms(15), fontWeight: '900', color: '#1a1a1a', marginBottom: vs(6), textAlign: 'center' },
   actionDesc: { fontSize: ms(11), color: '#888', textAlign: 'center', lineHeight: vs(16), marginBottom: vs(14), flex: 1 },
   actionBtn: {
-    backgroundColor: '#9B59B6', borderRadius: ms(16),
+    backgroundColor: '#B084CC', borderRadius: ms(16),
     paddingHorizontal: ms(20), paddingVertical: vs(8),
     alignSelf: 'stretch', alignItems: 'center',
   },
@@ -801,11 +801,11 @@ const styles = StyleSheet.create({
   historyBtnTextSmall: {
     fontSize: ms(11),
     fontWeight: '800',
-    color: '#9B59B6',
+    color: '#B084CC',
     marginLeft: ms(4),
   },
   progressBg: { backgroundColor: '#F0F0F0', height: vs(8), borderRadius: ms(8), marginBottom: vs(6) },
-  progressFill: { backgroundColor: '#9B59B6', height: vs(8), borderRadius: ms(8) },
+  progressFill: { backgroundColor: '#B084CC', height: vs(8), borderRadius: ms(8) },
   progressLabel: { fontSize: ms(11), color: '#999', fontWeight: '600', marginBottom: vs(12) },
   statusContent: { marginTop: vs(4) },
   locationInfo: {
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: ms(11),
     fontWeight: '700',
-    color: '#9B59B6',
+    color: '#B084CC',
     marginLeft: ms(4),
   },
 
@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
     marginBottom: vs(8),
     overflow: 'hidden',
     alignSelf: 'center',
-    shadowColor: '#9B59B6',
+    shadowColor: '#B084CC',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -870,7 +870,7 @@ const styles = StyleSheet.create({
   eventsSection: { marginHorizontal: ms(14), marginBottom: vs(30) },
   eventCard: {
     borderRadius: ms(22), padding: ms(20),
-    shadowColor: '#9B59B6', shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
+    shadowColor: '#B084CC', shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
   },
   eventHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: vs(10) },
   eventLabel: { fontSize: ms(11), fontWeight: '900', color: 'rgba(255,255,255,0.8)', letterSpacing: 1.5 },
@@ -891,13 +891,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around',
     borderTopWidth: 1, borderTopColor: '#E8DAEF',
   },
-  navItem: { alignItems: 'center', justifyContent: 'center', width: ms(56) },
-  navLabel: { fontSize: ms(10), color: '#888', fontWeight: '600', marginTop: vs(2) },
+  // Wider nav cell so longer labels (e.g. "Community") never wrap mid-word.
+  navItem: { alignItems: 'center', justifyContent: 'center', flex: 1, paddingHorizontal: ms(2) },
+  navLabel: { fontSize: ms(10), color: '#888', fontWeight: '600', marginTop: vs(2), textAlign: 'center' },
   arButton: {
-    backgroundColor: '#9B59B6',
+    backgroundColor: '#B084CC',
     alignItems: 'center', justifyContent: 'center',
     marginTop: vs(-28),
-    shadowColor: '#9B59B6',
+    shadowColor: '#B084CC',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4, shadowRadius: 10, elevation: 8,
     borderWidth: 3,

@@ -20,7 +20,7 @@ import Animated, {
   FadeInUp, 
   FadeIn, 
   FadeOut, 
-  SlideInUp, 
+  ZoomIn,
   Layout, 
   useSharedValue, 
   useAnimatedStyle, 
@@ -183,81 +183,103 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* ── Premium Purple Gradient Header ────────────────── */}
-      <LinearGradient
-        colors={['#8E44AD', '#9B59B6']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={[styles.purpleHeader, { paddingTop: insets.top }]}
-      >
-        <View style={styles.topRow}>
-          <TouchableOpacity onPress={onBack} style={styles.backBtnWrapper}>
-            <Ionicons name="chevron-back" size={ms(28)} color="#fff" />
-          </TouchableOpacity>
-            
-            <View style={styles.titleNavGroup}>
-              <Text style={styles.monthTitle}>{monthName}</Text>
-              
-              <View style={styles.navArrows}>
-                <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.arrowBtn}>
-                  <Ionicons name="chevron-back-circle-outline" size={ms(26)} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => changeMonth(1)} style={styles.arrowBtn}>
-                  <Ionicons name="chevron-forward-circle-outline" size={ms(26)} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
+      {/* ── Compact top bar (replaces full-bleed purple gradient) ── */}
+      <View style={[styles.slimTopBar, { paddingTop: insets.top + vs(4) }]}>
+        <TouchableOpacity onPress={onBack} style={styles.slimBackBtn}>
+          <Ionicons name="chevron-back" size={ms(24)} color="#1C1917" />
+        </TouchableOpacity>
 
-            <View style={styles.headerIcons}>
-              <ScaleButton style={styles.iconCircle} onPress={() => setShowMonthView(!showMonthView)}>
-                <Ionicons 
-                  name={showMonthView ? "list-sharp" : "calendar-sharp"} 
-                  size={ms(22)} 
-                  color={"#9B59B6"} 
-                />
-              </ScaleButton>
-            </View>
+        <View style={styles.slimTitleGroup}>
+          <Text style={styles.slimMonthTitle}>{monthName}</Text>
+          <View style={styles.slimNavArrows}>
+            <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.slimArrowBtn}>
+              <Ionicons name="chevron-back" size={ms(18)} color="#B084CC" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => changeMonth(1)} style={styles.slimArrowBtn}>
+              <Ionicons name="chevron-forward" size={ms(18)} color="#B084CC" />
+            </TouchableOpacity>
           </View>
+        </View>
 
-          <Animated.View layout={Layout.springify()}>
-            {showMonthView ? (
-              <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(200)} style={styles.monthGrid}>
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                  <Text key={i} style={styles.monthDayName}>{d}</Text>
-                ))}
-                {monthDays.map((m, idx) => (
-                  <ScaleButton 
-                    key={`${m.full}-${idx}`} 
+        <TouchableOpacity
+          style={styles.slimViewToggle}
+          onPress={() => setShowMonthView(!showMonthView)}
+        >
+          <Ionicons
+            name={showMonthView ? 'list' : 'calendar'}
+            size={ms(18)}
+            color="#B084CC"
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Compact calendar card on white ── */}
+      <View style={styles.calCard}>
+        <Animated.View layout={Layout.springify()}>
+          {showMonthView ? (
+            <Animated.View
+              entering={FadeIn.duration(300)}
+              exiting={FadeOut.duration(150)}
+              style={styles.calMonthGrid}
+            >
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                <Text key={i} style={styles.calDayName}>{d}</Text>
+              ))}
+              {monthDays.map((m, idx) => {
+                const isSelected = selectedDate === m.full;
+                const hasEvent = !m.isPadding && events.some((e) => e.date === m.full);
+                return (
+                  <ScaleButton
+                    key={`${m.full}-${idx}`}
                     style={[
-                        styles.monthDayItem, 
-                        selectedDate === m.full && styles.selectedMonthDay,
-                        m.isPadding && { opacity: 0 }
+                      styles.calMonthCell,
+                      isSelected && styles.calCellSelected,
+                      m.isPadding && { opacity: 0 },
                     ]}
                     onPress={() => !m.isPadding && setSelectedDate(m.full)}
                   >
-                    <Text style={[styles.monthDayText, selectedDate === m.full && styles.selectedMonthDayText]}>
+                    <Text
+                      style={[
+                        styles.calCellText,
+                        isSelected && styles.calCellTextSelected,
+                      ]}
+                    >
                       {m.date}
                     </Text>
-                    {!m.isPadding && events.some(e => e.date === m.full) && <View style={styles.eventDot} />}
+                    {hasEvent && <View style={[styles.calEventDot, isSelected && { backgroundColor: '#fff' }]} />}
                   </ScaleButton>
-                ))}
-              </Animated.View>
-            ) : (
-              <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(200)} style={styles.weekRow}>
-                {weekDays.map((w) => (
-                  <ScaleButton 
-                    key={w.full} 
-                    style={[styles.dayItem, selectedDate === w.full && styles.selectedDay]}
+                );
+              })}
+            </Animated.View>
+          ) : (
+            <Animated.View
+              entering={FadeIn.duration(300)}
+              exiting={FadeOut.duration(150)}
+              style={styles.calWeekRow}
+            >
+              {weekDays.map((w) => {
+                const isSelected = selectedDate === w.full;
+                const hasEvent = events.some((e) => e.date === w.full);
+                return (
+                  <ScaleButton
+                    key={w.full}
+                    style={[styles.calWeekCell, isSelected && styles.calCellSelected]}
                     onPress={() => setSelectedDate(w.full)}
                   >
-                    <Text style={[styles.dayName, selectedDate === w.full && styles.selectedDayText]}>{w.day}</Text>
-                    <Text style={[styles.dayDate, selectedDate === w.full && styles.selectedDayText]}>{w.date}</Text>
+                    <Text style={[styles.calWeekDayName, isSelected && styles.calCellTextSelected]}>
+                      {w.day}
+                    </Text>
+                    <Text style={[styles.calWeekDate, isSelected && styles.calCellTextSelected]}>
+                      {w.date}
+                    </Text>
+                    {hasEvent && <View style={[styles.calEventDot, isSelected && { backgroundColor: '#fff' }]} />}
                   </ScaleButton>
-                ))}
-              </Animated.View>
-            )}
-          </Animated.View>
-      </LinearGradient>
+                );
+              })}
+            </Animated.View>
+          )}
+        </Animated.View>
+      </View>
 
       <View style={styles.content}>
         <View style={styles.whiteCard}>
@@ -274,59 +296,91 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
               data={dailyEvents}
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => (
-                    <Animated.View entering={FadeInDown.springify()} style={styles.eventItem}>
-                      <View style={styles.timeCol}>
-                        <Text style={styles.timeText}>{item.time.split(' ')[0]}</Text>
-                        <Text style={styles.ampmText}>{item.time.split(' ')[1]}</Text>
+              renderItem={({ item }) => {
+                // Classify by title/type so each row picks the right icon + accent.
+                // Recipients usually see admin-scheduled events and hair-request
+                // milestones — but stay generous and map monetary too.
+                const title = (item.title || '').toLowerCase();
+                const isHair = title.includes('hair') && !title.includes('monetary');
+                const isMonetary = title.includes('monetary') || title.includes('cash') || title.includes('₱');
+                const isRequest = title.includes('request') || title.includes('wig');
+                const isDrive = item.type === 'drive';
+
+                const kind = isHair
+                  ? { icon: 'content-cut' as const, tint: '#D63B8A', soft: '#FFE0EE', label: 'HAIR DONATION' }
+                  : isMonetary
+                  ? { icon: 'heart-multiple' as const, tint: '#16A34A', soft: '#DCFCE7', label: 'MONETARY' }
+                  : isRequest
+                  ? { icon: 'hand-heart' as const, tint: '#B084CC', soft: '#F3EBFB', label: 'WIG REQUEST' }
+                  : isDrive
+                  ? { icon: 'calendar-star' as const, tint: '#7C3AED', soft: '#EDE9FE', label: 'EVENT' }
+                  : { icon: 'ribbon' as const, tint: '#0EA5E9', soft: '#E0F2FE', label: 'ACTIVITY' };
+
+                const statusLc = (item.status || '').toLowerCase();
+                // Treat every post-acceptance status as "done" (green badge).
+                // The backend's toDecision maps these up to "Approved" but
+                // raw-status strings can still flow through for non-request
+                // event types, so we list them here too.
+                const isDone = [
+                  'approved', 'verified', 'received hair', 'wig received',
+                  'matched', 'ready for pickup', 'pickup confirmed',
+                  'in queue', 'in progress', 'in production', 'shipped',
+                  'ready', 'validated', 'completed', 'received',
+                ].includes(statusLc);
+
+                return (
+                  <Animated.View entering={FadeInDown.springify()} style={styles.eventItem}>
+                    <View style={styles.timeCol}>
+                      <Text style={styles.timeText}>{item.time.split(' ')[0]}</Text>
+                      <Text style={styles.ampmText}>{item.time.split(' ')[1]}</Text>
+                    </View>
+
+                    <View style={[styles.eventCard, { borderLeftColor: kind.tint }]}>
+                      <View style={[styles.eventIconBg, { backgroundColor: kind.soft }]}>
+                        <MaterialCommunityIcons name={kind.icon} size={ms(22)} color={kind.tint} />
                       </View>
-                      
-                      <LinearGradient
-                        colors={item.title.includes('Hair') ? ['#9B59B6', '#8E44AD'] : ['#4FACFE', '#009EFD']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.eventCard}
-                      >
-                    <View style={[
-                      styles.eventIconBg,
-                      !item.title.includes('Hair') && { backgroundColor: '#E3F2FD' }
-                    ]}>
-                      {item.title.includes('Hair') ? (
-                        <MaterialCommunityIcons name="heart-pulse" size={ms(24)} color="#9B59B6" />
-                      ) : (
-                        <MaterialCommunityIcons name="calendar-star" size={ms(24)} color="#1976D2" />
-                      )}
+                      <View style={styles.eventDetails}>
+                        <Text style={[styles.eventKindLabel, { color: kind.tint }]}>{kind.label}</Text>
+                        <Text style={styles.eventTitle}>{item.title}</Text>
+                        <Text style={styles.eventLoc} numberOfLines={2}>{item.location}</Text>
+
+                        {item.status ? (
+                          <View
+                            style={[
+                              styles.statusBadge,
+                              { backgroundColor: isDone ? '#DCFCE7' : '#FFF7ED' },
+                            ]}
+                          >
+                            <View
+                              style={[
+                                styles.statusDot,
+                                { backgroundColor: isDone ? '#16A34A' : '#F97316' },
+                              ]}
+                            />
+                            <Text
+                              style={[
+                                styles.statusBadgeText,
+                                { color: isDone ? '#15803D' : '#C2410C' },
+                              ]}
+                            >
+                              {item.status}
+                            </Text>
+                          </View>
+                        ) : !item.accepted ? (
+                          <ScaleButton style={styles.acceptBtn} onPress={() => handleAccept(item.id)}>
+                            <Text style={styles.acceptBtnText}>Accept Invitation</Text>
+                          </ScaleButton>
+                        ) : (
+                          <View style={styles.acceptedTag}>
+                            <Ionicons name="checkmark-circle" size={ms(14)} color="#16A34A" />
+                            <Text style={styles.acceptedText}> Accepted</Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
-                    <View style={styles.eventDetails}>
-                      <Text style={styles.eventTitle}>{item.title}</Text>
-                      <Text style={styles.eventLoc}>{item.location}</Text>
-                      
-                      {item.status ? (
-                        <View style={[
-                          styles.statusBadge, 
-                          { backgroundColor: ['verified', 'approved', 'completed', 'matched'].includes(item.status.toLowerCase()) ? '#27AE60' : '#F39C12' }
-                        ]}>
-                          <Text style={styles.statusBadgeText}>
-                            {item.status}
-                          </Text>
-                        </View>
-                      ) : !item.accepted ? (
-                        <ScaleButton
-                          style={styles.acceptBtn}
-                          onPress={() => handleAccept(item.id)}
-                        >
-                          <Text style={styles.acceptBtnText}>Accept Invitation</Text>
-                        </ScaleButton>
-                      ) : (
-                        <View style={styles.acceptedTag}>
-                          <Ionicons name="checkmark-circle" size={ms(16)} color="#4CAF50" />
-                          <Text style={styles.acceptedText}> Invitation Accepted</Text>
-                        </View>
-                      )}
-                    </View>
-                      </LinearGradient>
-                    </Animated.View>
-              )}
+                  </Animated.View>
+                );
+              }}
             />
           ) : (
             <View style={styles.emptyContainer}>
@@ -339,7 +393,9 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
 
       <Modal visible={showAcceptedModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <Animated.View entering={SlideInUp} style={styles.modalContent}>
+          {/* Snappy OUT-only entry — matches the app's shared modal animation
+              language (≤ 220ms scale pop, no ease-in-out, no long slide). */}
+          <Animated.View entering={ZoomIn.duration(220)} style={styles.modalContent}>
             <View style={styles.modalIconBg}>
               <Ionicons name="checkmark-done" size={ms(40)} color="#fff" />
             </View>
@@ -356,108 +412,147 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9F4FC' },
-  purpleHeader: { 
-    paddingHorizontal: ms(16), 
-    paddingBottom: vs(24),
-    borderBottomLeftRadius: ms(30),
-    borderBottomRightRadius: ms(30),
-    shadowColor: '#9B59B6',
-    shadowOpacity: 0.25,
-    shadowRadius: 15,
-    elevation: 10,
+  container: { flex: 1, backgroundColor: '#FAFAF9' },
+
+  // ── New compact top bar (replaces the full-bleed purple gradient) ──
+  slimTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: ms(16),
+    paddingBottom: vs(10),
+    backgroundColor: '#FAFAF9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0EDE9',
   },
-  topRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingTop: vs(10), 
-    marginBottom: vs(20),
-    width: '100%',
-  },
-  backBtnWrapper: { 
-    width: ms(44), 
-    height: ms(44), 
-    alignItems: 'center', 
+  slimBackBtn: {
+    width: ms(36),
+    height: ms(36),
+    alignItems: 'center',
     justifyContent: 'center',
+    marginRight: ms(4),
   },
-  titleNavGroup: { 
-    flex: 1, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  slimTitleGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: ms(8),
+  },
+  slimMonthTitle: {
+    fontSize: ms(15),
+    fontWeight: '800',
+    color: '#1C1917',
+    letterSpacing: -0.3,
+  },
+  slimNavArrows: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 'auto',
+    backgroundColor: '#F3EBFB',
+    borderRadius: 999,
+    paddingHorizontal: ms(2),
+  },
+  slimArrowBtn: {
+    padding: ms(5),
+  },
+  slimViewToggle: {
+    width: ms(36),
+    height: ms(36),
+    borderRadius: ms(10),
+    backgroundColor: '#F3EBFB',
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: ms(4),
+    marginLeft: ms(8),
   },
-  monthTitle: { 
-    fontSize: ms(20), 
-    fontWeight: '900', 
-    color: '#fff', 
-    marginRight: ms(10),
+
+  // ── New compact calendar card ──
+  calCard: {
+    marginHorizontal: ms(14),
+    marginTop: vs(12),
+    backgroundColor: '#fff',
+    borderRadius: ms(18),
+    paddingVertical: vs(12),
+    paddingHorizontal: ms(8),
+    borderWidth: 1,
+    borderColor: '#F0EDE9',
+    shadowColor: '#1C1917',
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  calMonthGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  calWeekRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  calDayName: {
+    width: '14.28%',
+    textAlign: 'center',
+    color: '#A8A29E',
+    fontWeight: '700',
+    fontSize: ms(10),
+    letterSpacing: 1,
+    marginBottom: vs(6),
+  },
+  calMonthCell: {
+    width: '14.28%',
+    height: vs(34),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: vs(2),
+    borderRadius: ms(10),
+  },
+  calWeekCell: {
+    width: '13%',
+    height: vs(50),
+    paddingVertical: vs(4),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: ms(12),
+  },
+  calCellSelected: {
+    backgroundColor: '#B084CC',
+    shadowColor: '#B084CC',
+    shadowOpacity: 0.32,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  calCellText: {
+    color: '#1C1917',
+    fontWeight: '700',
+    fontSize: ms(13),
+  },
+  calCellTextSelected: {
+    color: '#fff',
+  },
+  calWeekDayName: {
+    fontSize: ms(10),
+    fontWeight: '700',
+    color: '#A8A29E',
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    marginBottom: vs(3),
   },
-  navArrows: { 
-    flexDirection: 'row', 
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: ms(20),
-    paddingHorizontal: ms(4),
+  calWeekDate: {
+    fontSize: ms(15),
+    fontWeight: '800',
+    color: '#1C1917',
   },
-  arrowBtn: { 
-    padding: ms(6),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerIcons: { 
-    width: ms(44), 
-    flexDirection: 'row', 
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  iconCircle: { 
-    width: ms(42), 
-    height: ms(42), 
-    borderRadius: ms(14), 
-    backgroundColor: '#fff', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+  calEventDot: {
+    width: ms(4),
+    height: ms(4),
+    borderRadius: ms(2),
+    backgroundColor: '#B084CC',
+    position: 'absolute',
+    bottom: vs(4),
   },
 
-  weekRow: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: ms(4), marginTop: vs(10) },
-  dayItem: { alignItems: 'center', paddingVertical: vs(14), borderRadius: ms(24), width: '13%', height: vs(72) },
-  selectedDay: { 
-    backgroundColor: '#fff', 
-    elevation: 8,
-    shadowColor: '#9B59B6',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  dayName: { fontSize: ms(13), fontWeight: '800', color: 'rgba(255,255,255,0.8)', marginBottom: vs(6), letterSpacing: 0.5 },
-  dayDate: { fontSize: ms(20), fontWeight: '900', color: '#fff' },
-  selectedDayText: { color: '#9B59B6' },
-
-  monthGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', paddingHorizontal: 0, marginTop: vs(10) },
-  monthDayName: { width: '14.28%', textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontWeight: '900', fontSize: ms(13), marginBottom: vs(15), letterSpacing: 1 },
-  monthDayItem: { width: '14.28%', height: vs(48), alignItems: 'center', justifyContent: 'center', marginBottom: vs(6), borderRadius: ms(14) },
-  selectedMonthDay: { 
-    backgroundColor: '#fff', 
-    elevation: 8,
-    shadowColor: '#9B59B6',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  monthDayText: { color: '#fff', fontWeight: '900', fontSize: ms(16) },
-  selectedMonthDayText: { color: '#9B59B6' },
-  eventDot: { width: ms(5), height: ms(5), borderRadius: ms(2.5), backgroundColor: '#AF7AC5', position: 'absolute', bottom: vs(6) },
-
-  content: { flex: 1, backgroundColor: '#F9F4FC', marginTop: vs(-25) },
+  content: { flex: 1, backgroundColor: '#FAFAF9', marginTop: vs(8) },
   whiteCard: { 
     flex: 1, 
     backgroundColor: '#fff', 
@@ -476,81 +571,105 @@ const styles = StyleSheet.create({
   dayTitle: { fontSize: ms(26), fontWeight: '900', color: '#1a1a1a', letterSpacing: -0.5 },
   line: { flex: 1, height: 1.5, backgroundColor: '#f0f0f0', marginLeft: ms(15) },
   todayBtn: { marginLeft: ms(15), backgroundColor: '#F4ECF7', paddingHorizontal: ms(14), paddingVertical: vs(8), borderRadius: ms(12) },
-  todayBtnText: { fontSize: ms(14), fontWeight: '900', color: '#9B59B6', textTransform: 'uppercase', letterSpacing: 0.5 },
+  todayBtnText: { fontSize: ms(14), fontWeight: '900', color: '#B084CC', textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  eventItem: { flexDirection: 'row', marginBottom: vs(30) },
-  timeCol: { width: ms(70), alignItems: 'flex-start', paddingTop: vs(8) },
-  timeText: { fontSize: ms(15), fontWeight: '900', color: '#1a1a1a', letterSpacing: -0.5 },
-  ampmText: { fontSize: ms(10), fontWeight: '800', color: '#bbb', textTransform: 'uppercase', marginTop: vs(-2) },
+  eventItem: { flexDirection: 'row', marginBottom: vs(14) },
+  timeCol: { width: ms(60), alignItems: 'flex-start', paddingTop: vs(12) },
+  timeText: { fontSize: ms(13), fontWeight: '800', color: '#1C1917', letterSpacing: -0.3 },
+  ampmText: { fontSize: ms(9), fontWeight: '700', color: '#A8A29E', textTransform: 'uppercase', marginTop: vs(-1) },
 
-  eventCard: { 
-    flex: 1, 
-    borderRadius: ms(26), 
-    padding: ms(20), 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    shadowColor: '#9B59B6', 
-    shadowOpacity: 0.25, 
-    shadowRadius: 12, 
-    elevation: 6,
-    shadowOffset: { width: 0, height: 6 },
-  },
-  eventIconBg: { 
-    width: ms(54), 
-    height: ms(54), 
-    borderRadius: ms(18), 
-    backgroundColor: '#fff', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginRight: ms(18),
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  eventDetails: { flex: 1 },
-  eventTitle: { fontSize: ms(18), fontWeight: '900', color: '#fff', marginBottom: vs(4), letterSpacing: 0.2 },
-  eventLoc: { fontSize: ms(13), color: 'rgba(255,255,255,0.9)', marginBottom: vs(14), fontWeight: '700' },
-  statusBadge: { 
-    alignSelf: 'flex-start', 
-    paddingHorizontal: ms(14), 
-    paddingVertical: vs(6), 
-    borderRadius: ms(12), 
-    marginTop: vs(10),
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  statusBadgeText: { 
-    color: '#fff', 
-    fontSize: ms(12), 
-    fontWeight: '900', 
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  acceptBtn: {
+  // ── Clean event card: white surface, coloured icon chip, left accent stripe ──
+  eventCard: {
+    flex: 1,
     backgroundColor: '#fff',
-    borderRadius: ms(16),
-    height: vs(42),
-    width: '100%',
+    borderRadius: ms(14),
+    padding: ms(14),
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderLeftWidth: 4,
+    borderLeftColor: '#D63B8A',
+    borderWidth: 1,
+    borderColor: '#F0EDE9',
+    shadowColor: '#1C1917',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  eventIconBg: {
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(12),
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    marginRight: ms(12),
   },
-  acceptBtnText: { color: '#9B59B6', fontWeight: '900', fontSize: ms(14), textTransform: 'uppercase' },
-  acceptedTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: ms(12), paddingVertical: vs(6), borderRadius: ms(12), alignSelf: 'flex-start' },
-  acceptedText: { fontSize: ms(13), color: '#fff', fontWeight: '900', marginLeft: ms(6) },
+  eventDetails: { flex: 1 },
+  eventKindLabel: {
+    fontSize: ms(10),
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginBottom: vs(2),
+  },
+  eventTitle: {
+    fontSize: ms(14),
+    fontWeight: '800',
+    color: '#1C1917',
+    marginBottom: vs(2),
+    letterSpacing: -0.2,
+  },
+  eventLoc: {
+    fontSize: ms(11),
+    color: '#78716C',
+    marginBottom: vs(10),
+    fontWeight: '500',
+    lineHeight: vs(15),
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(5),
+    alignSelf: 'flex-start',
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(4),
+    borderRadius: ms(10),
+  },
+  statusDot: {
+    width: ms(6),
+    height: ms(6),
+    borderRadius: ms(3),
+  },
+  statusBadgeText: {
+    fontSize: ms(10),
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  acceptBtn: {
+    backgroundColor: '#B084CC',
+    borderRadius: ms(10),
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(8),
+    alignSelf: 'flex-start',
+  },
+  acceptBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(11), letterSpacing: 0.4, textTransform: 'uppercase' },
+  acceptedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(4),
+    borderRadius: ms(10),
+    alignSelf: 'flex-start',
+  },
+  acceptedText: { fontSize: ms(11), color: '#15803D', fontWeight: '800', marginLeft: ms(4) },
 
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: vs(60) },
   emptyText: { fontSize: ms(18), color: '#bbb', fontWeight: '800', marginTop: vs(20), textAlign: 'center' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#1a1a1a', borderRadius: ms(35), padding: ms(35), width: '85%', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.6, shadowRadius: 25, elevation: 20 },
-  modalIconBg: { width: ms(90), height: ms(90), borderRadius: ms(45), backgroundColor: '#9B59B6', justifyContent: 'center', alignItems: 'center', marginBottom: vs(25) },
+  modalIconBg: { width: ms(90), height: ms(90), borderRadius: ms(45), backgroundColor: '#B084CC', justifyContent: 'center', alignItems: 'center', marginBottom: vs(25) },
   modalTitle: { fontSize: ms(24), fontWeight: '900', color: '#fff', marginBottom: vs(12), letterSpacing: 0.2 },
   modalDesc: { fontSize: ms(16), color: '#999', textAlign: 'center', marginBottom: vs(35), lineHeight: vs(24), fontWeight: '600' },
   modalBtn: { borderTopWidth: 1, borderTopColor: '#333', width: '100%', paddingTop: vs(25), alignItems: 'center' },

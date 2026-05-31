@@ -1,6 +1,6 @@
 import "./global.css";
 import React, { useState, useEffect } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import api from "./lib/api";
 import { supabase } from "./lib/supabase";
@@ -11,6 +11,7 @@ import LoginScreen from "./screens/auth/LoginScreen";
 import SignupScreen from "./screens/auth/SignupScreen";
 import VerificationScreen from "./screens/auth/VerificationScreen";
 import ResetPasswordScreen from "./screens/auth/ResetPasswordScreen";
+import SplashScreen from "./screens/SplashScreen";
 
 import { NavigationContainer } from "@react-navigation/native";
 
@@ -57,6 +58,14 @@ export default function App() {
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [pendingRole, setPendingRole] = useState<"Donor" | "Recipient" | null>(null);
   const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
+  // Branded splash gating. We hold the splash until BOTH (a) its minimum
+  // animation duration has elapsed (`splashMinElapsed`) AND (b) the initial
+  // auth check has finished (`!loading`). This avoids the splash flashing
+  // off in 200ms on a fast cold start, and avoids ever showing it for the
+  // wrong (loading) state mid-session. After the splash, the user goes
+  // straight into the Login screen (no separate landing page).
+  const [splashMinElapsed, setSplashMinElapsed] = useState(false);
+  const showSplash = !splashMinElapsed || loading;
 
   useEffect(() => {
     checkAuthStatus();
@@ -129,17 +138,19 @@ export default function App() {
     await supabase.auth.signOut();
     setIsAuthenticated(false);
     setUserRole(null);
+    setShowSignup(false);
     setLoading(false);
   };
 
   let content;
 
-  if (loading) {
-      content = (
-         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF4F8' }}>
-             <ActivityIndicator size="large" color="#FF1493" />
-         </View>
-      );
+  if (showSplash) {
+    // Branded splash — shown until the auth check resolves AND the
+    // minimum animation duration has elapsed. `onDone` flips the local
+    // gate; auth resolution flips `loading` separately. Both must pass.
+    content = (
+      <SplashScreen onDone={() => setSplashMinElapsed(true)} />
+    );
   } else if (isRecoveringPassword) {
       content = <ResetPasswordScreen onPasswordUpdated={() => setIsRecoveringPassword(false)} />;
   } else if (isAuthenticated && userRole) {

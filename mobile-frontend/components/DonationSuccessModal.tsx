@@ -1,12 +1,36 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, { FadeIn, ZoomIn, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withSpring } from 'react-native-reanimated';
+import React, { useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Animated,
+  Easing,
+  Pressable,
+} from 'react-native';
+import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { s, vs, ms } from '../lib/scaling';
+import { useModalEntrance } from '../lib/modalAnimation';
 
-const { width } = Dimensions.get('window');
-
+/**
+ * Donation success modal — confirms a hair / monetary donation submission
+ * and surfaces the estimated reward stars before staff verification.
+ *
+ * Animation language
+ * ──────────────────
+ * - Backdrop fades in fast (180ms, `Easing.out(Easing.cubic)`).
+ * - Card pops with a tiny overshoot using `Easing.out(Easing.back(1.6))`
+ *   for a snappy, deliberate motion. Total: 240ms.
+ * - Icon does a single quick "stamp" on mount — scale 0 → 1.08 → 1 using
+ *   `Easing.out(Easing.back(2))`, 280ms one-shot. No infinite loops.
+ * - Star wedge slides in from the right with a 180ms `Easing.out.cubic`
+ *   delayed by 120ms so it lands *after* the card settles.
+ *
+ * All easings are *out* curves on purpose — the request was explicitly no
+ * ease-in-out and short durations.
+ */
 interface DonationSuccessModalProps {
   visible: boolean;
   amount: number;
@@ -16,218 +40,336 @@ interface DonationSuccessModalProps {
   onClose: () => void;
 }
 
-export default function DonationSuccessModal({ 
-  visible, 
-  amount, 
-  stars, 
-  type = 'monetary', 
+const BRAND = {
+  donorPink: '#D63B8A',
+  donorPinkSoft: '#FFE0EE',
+  donorPinkSofter: '#FFF0F8',
+  recipientPurple: '#B084CC',
+  recipientPurpleSoft: '#F3EBFB',
+  recipientPurpleSofter: '#FAF5FE',
+  ink: '#1C1917',
+  inkSoft: '#44403C',
+  mute: '#78716C',
+  line: '#F0EDE9',
+  star: '#F59E0B',
+};
+
+export default function DonationSuccessModal({
+  visible,
+  amount,
+  stars,
+  type = 'monetary',
   role = 'Donor',
-  onClose 
+  onClose,
 }: DonationSuccessModalProps) {
   const isRecipient = role === 'Recipient';
-  const themeColor = isRecipient ? '#9B59B6' : '#FF1493';
-  const themeLightColor = isRecipient ? '#F5EEF8' : '#FFF0F5';
-  const themeAccentColor = isRecipient ? '#C39BD3' : '#FFD6EF';
+  const tint = isRecipient ? BRAND.recipientPurple : BRAND.donorPink;
+  const tintSoft = isRecipient ? BRAND.recipientPurpleSoft : BRAND.donorPinkSoft;
+  const tintSofter = isRecipient ? BRAND.recipientPurpleSofter : BRAND.donorPinkSofter;
 
-  const heartScale = useSharedValue(1);
+  // Shared modal entrance — backdrop fade + card pop + icon stamp,
+  // all OUT curves, total ≤ 320ms. See lib/modalAnimation.ts.
+  const { backdrop, cardOpacity, cardScale, iconScale } = useModalEntrance(visible);
 
-  // Pulse animation for the heart
-  React.useEffect(() => {
-    if (visible) {
-      heartScale.value = withRepeat(
-        withSequence(
-          withSpring(1.2, { damping: 2 }),
-          withSpring(1, { damping: 2 })
-        ),
-        -1,
-        true
-      );
-    } else {
-      heartScale.value = 1;
-    }
-  }, [visible]);
+  // Local: stars strip slides in from the right after the card lands.
+  // Stays inline because it's specific to this modal.
+  const starsX = useRef(new Animated.Value(20)).current;
+  const starsOp = useRef(new Animated.Value(0)).current;
 
-  const heartStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: heartScale.value }],
-  }));
+  useEffect(() => {
+    if (!visible) return;
+    starsX.setValue(20);
+    starsOp.setValue(0);
+    Animated.sequence([
+      Animated.delay(120),
+      Animated.parallel([
+        Animated.timing(starsX, {
+          toValue: 0,
+          duration: 200,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(starsOp, {
+          toValue: 1,
+          duration: 180,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, [visible, starsX, starsOp]);
 
   if (!visible) return null;
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="none"
-    >
-      <View style={styles.overlay}>
-        <BlurView intensity={30} style={StyleSheet.absoluteFill} tint="dark" />
-        
-        <Animated.View 
-          entering={ZoomIn.springify().damping(12)} 
-          style={styles.modalContainer}
+    <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
+      {/* Backdrop — Pressable lets the user dismiss by tapping outside */}
+      <Animated.View style={[styles.backdrop, { opacity: backdrop }]}>
+        <BlurView intensity={28} style={StyleSheet.absoluteFill} tint="dark" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+
+        <Animated.View
+          pointerEvents="box-none"
+          style={[
+            styles.cardWrap,
+            {
+              opacity: cardOpacity,
+              transform: [{ scale: cardScale }],
+            },
+          ]}
         >
           <View style={styles.card}>
-            {/* Celebratory Icon */}
-            <View style={[styles.iconContainer, { backgroundColor: themeLightColor }]}>
-              <Animated.View style={heartStyle}>
-                <Ionicons name="heart" size={ms(80)} color={themeColor} />
+            {/* ── Accent top bar (replaces the bulky overlapping heart) ── */}
+            <View style={[styles.accentBar, { backgroundColor: tint }]} />
+
+            <View style={styles.cardBody}>
+              {/* Icon chip — tinted soft bg, brand-coloured icon, with a
+                  small star bubble at the corner. One-shot scale pop. */}
+              <Animated.View
+                style={[
+                  styles.iconChip,
+                  { backgroundColor: tintSofter, borderColor: tintSoft, transform: [{ scale: iconScale }] },
+                ]}
+              >
+                <Ionicons name="heart" size={ms(32)} color={tint} />
+                <View style={styles.iconStarBubble}>
+                  <MaterialCommunityIcons name="star" size={ms(11)} color={BRAND.star} />
+                </View>
               </Animated.View>
-              <View style={styles.starBadge}>
-                <MaterialCommunityIcons name="star" size={ms(24)} color="#FFD700" />
+
+              {/* Title + status chip */}
+              <Text style={styles.title}>Thank you!</Text>
+
+              <View style={[styles.statusChip, { backgroundColor: tintSofter }]}>
+                <Feather name="clock" size={ms(11)} color={tint} />
+                <Text style={[styles.statusText, { color: tint }]}>Pending Review</Text>
               </View>
+
+              {/* Body — trimmed copy */}
+              <Text style={styles.bodyLine}>
+                {type === 'hair' ? (
+                  <>Your hair donation has been received.</>
+                ) : (
+                  <>
+                    Your <Text style={[styles.bodyHi, { color: tint }]}>₱{amount.toLocaleString()}</Text>{' '}
+                    donation has been received.
+                  </>
+                )}
+              </Text>
+              <Text style={styles.bodySub}>
+                We&apos;ll credit your stars once a reviewer approves it.
+              </Text>
+
+              {/* Rewards strip — slides in from the right */}
+              <Animated.View
+                style={[
+                  styles.rewardStrip,
+                  {
+                    backgroundColor: tintSofter,
+                    borderColor: tintSoft,
+                    opacity: starsOp,
+                    transform: [{ translateX: starsX }],
+                  },
+                ]}
+              >
+                <View style={styles.rewardStripLeft}>
+                  <MaterialCommunityIcons name="star-four-points" size={ms(18)} color={tint} />
+                  <Text style={[styles.rewardLabel, { color: tint }]}>Estimated Stars</Text>
+                </View>
+                <View style={styles.rewardStripRight}>
+                  <Text style={styles.rewardPlus}>+{stars}</Text>
+                  <MaterialCommunityIcons name="star" size={ms(16)} color={BRAND.star} />
+                </View>
+              </Animated.View>
+
+              {/* Actions */}
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={onClose}
+                style={[styles.primaryBtn, { backgroundColor: tint }]}
+              >
+                <Text style={styles.primaryBtnText}>See My Rewards</Text>
+                <Feather name="arrow-right" size={ms(15)} color="#fff" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={onClose}
+                style={styles.secondaryBtn}
+              >
+                <Text style={styles.secondaryBtnText}>Done</Text>
+              </TouchableOpacity>
             </View>
-
-            <Text style={styles.titleText}>Thank You!</Text>
-            
-            <View style={[styles.pendingBanner, { backgroundColor: themeLightColor }]}>
-              <MaterialCommunityIcons name="clock-outline" size={ms(16)} color={themeColor} />
-              <Text style={[styles.pendingText, { color: themeColor }]}>PENDING REVIEW</Text>
-            </View>
-
-            <Text style={styles.messageText}>
-              Your {type === 'hair' ? 'hair donation' : <><Text style={[styles.highlight, { color: themeColor }]}>₱{amount.toLocaleString()}</Text> donation</>} has been received!
-              {"\n\n"}
-              <Text style={{fontWeight: '700'}}>Please wait while we verify your contribution.</Text> Your Star Points will be automatically added to your profile once approved!
-            </Text>
-
-            {/* Rewards Card */}
-            <View style={[styles.rewardCard, { backgroundColor: themeLightColor, borderColor: themeAccentColor }]}>
-              <Text style={[styles.rewardLabel, { color: themeColor }]}>ESTIMATED STARS</Text>
-              <View style={styles.rewardValueRow}>
-                <MaterialCommunityIcons name="star-face" size={ms(32)} color="#FFD700" />
-                <Text style={styles.rewardValue}>+{stars}</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity 
-              style={[styles.actionBtn, { backgroundColor: themeColor, shadowColor: themeColor }]} 
-              onPress={onClose}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionBtnText}>See My Rewards</Text>
-            </TouchableOpacity>
           </View>
         </Animated.View>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(28,25,23,0.55)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: ms(24),
   },
-  modalContainer: {
+
+  // ── Card ──
+  cardWrap: {
     width: '100%',
-    maxWidth: ms(340),
+    maxWidth: ms(360),
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: ms(35),
-    paddingHorizontal: ms(24),
-    paddingBottom: vs(24),
-    paddingTop: vs(50),
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.1,
-    shadowRadius: 25,
-    elevation: 10,
+    borderRadius: ms(22),
+    overflow: 'hidden',
+    shadowColor: '#1C1917',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.18,
+    shadowRadius: 28,
+    elevation: 14,
   },
-  iconContainer: {
-    position: 'absolute',
-    top: vs(-50),
-    width: ms(120),
-    height: ms(120),
-    borderRadius: ms(60),
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 6,
-    borderColor: '#fff',
-  },
-  starBadge: {
-    position: 'absolute',
-    bottom: vs(15),
-    right: ms(15),
-    backgroundColor: '#fff',
-    borderRadius: ms(15),
-    padding: ms(2),
-    elevation: 3,
-  },
-  titleText: {
-    fontSize: ms(28),
-    fontWeight: '900',
-    color: '#1a1a1a',
-    marginBottom: vs(12),
-  },
-  messageText: {
-    fontSize: ms(15),
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: vs(22),
-    marginBottom: vs(24),
-  },
-  highlight: {
-    fontWeight: '900',
-  },
-  pendingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: ms(12),
-    paddingVertical: vs(6),
-    borderRadius: ms(20),
-    marginBottom: vs(16),
-    gap: ms(6),
-  },
-  pendingText: {
-    fontSize: ms(12),
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  rewardCard: {
+  accentBar: {
+    height: vs(4),
     width: '100%',
-    borderRadius: ms(20),
-    padding: ms(16),
-    alignItems: 'center',
-    marginBottom: vs(24),
-    borderWidth: 1.5,
   },
-  rewardLabel: {
-    fontSize: ms(12),
-    fontWeight: '900',
-    letterSpacing: 1.5,
+  cardBody: {
+    paddingHorizontal: ms(22),
+    paddingTop: vs(22),
+    paddingBottom: vs(18),
+    alignItems: 'center',
+  },
+
+  // ── Icon chip ──
+  iconChip: {
+    width: ms(56),
+    height: ms(56),
+    borderRadius: ms(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginBottom: vs(14),
+  },
+  iconStarBubble: {
+    position: 'absolute',
+    bottom: -ms(4),
+    right: -ms(4),
+    width: ms(20),
+    height: ms(20),
+    borderRadius: ms(10),
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: BRAND.star,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Title + chip ──
+  title: {
+    fontSize: ms(22),
+    fontWeight: '800',
+    color: BRAND.ink,
+    letterSpacing: -0.4,
     marginBottom: vs(8),
   },
-  rewardValueRow: {
+  statusChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ms(10),
+    gap: ms(5),
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(4),
+    borderRadius: 999,
+    marginBottom: vs(14),
   },
-  rewardValue: {
-    fontSize: ms(32),
-    fontWeight: '900',
-    color: '#1a1a1a',
-  },
-  actionBtn: {
-    width: '100%',
-    height: vs(58),
-    borderRadius: ms(20),
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  actionBtnText: {
-    color: '#fff',
-    fontSize: ms(16),
+  statusText: {
+    fontSize: ms(10.5),
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+
+  // ── Body ──
+  bodyLine: {
+    fontSize: ms(13.5),
+    color: BRAND.inkSoft,
+    textAlign: 'center',
+    lineHeight: ms(19),
+    marginBottom: vs(2),
+    fontWeight: '500',
+  },
+  bodyHi: {
+    fontWeight: '800',
+  },
+  bodySub: {
+    fontSize: ms(12),
+    color: BRAND.mute,
+    textAlign: 'center',
+    lineHeight: ms(17),
+    marginBottom: vs(16),
+    fontWeight: '500',
+  },
+
+  // ── Reward strip ──
+  rewardStrip: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(10),
+    borderRadius: ms(12),
+    borderWidth: 1,
+    marginBottom: vs(16),
+  },
+  rewardStripLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(8),
+  },
+  rewardStripRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(6),
+  },
+  rewardLabel: {
+    fontSize: ms(11),
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  rewardPlus: {
+    fontSize: ms(20),
+    fontWeight: '800',
+    color: BRAND.ink,
+    letterSpacing: -0.5,
+  },
+
+  // ── Buttons ──
+  primaryBtn: {
+    width: '100%',
+    height: vs(46),
+    borderRadius: ms(13),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: ms(8),
+    marginBottom: vs(8),
+  },
+  primaryBtnText: {
+    color: '#fff',
+    fontSize: ms(14),
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  secondaryBtn: {
+    paddingVertical: vs(8),
+    paddingHorizontal: ms(12),
+  },
+  secondaryBtnText: {
+    color: BRAND.mute,
+    fontSize: ms(13),
+    fontWeight: '700',
   },
 });
-

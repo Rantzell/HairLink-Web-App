@@ -1,9 +1,22 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Animated,
+  Pressable,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+import { useModalEntrance } from '../lib/modalAnimation';
 
+/**
+ * Compact status modal used by Login / Signup for success + error toasts.
+ * Shares the same OUT-curve, ≤320ms entrance language as every other
+ * popup in the app (see lib/modalAnimation.ts). No infinite pulses.
+ */
 interface AuthStatusModalProps {
   visible: boolean;
   type: 'error' | 'success';
@@ -12,123 +25,146 @@ interface AuthStatusModalProps {
   onClose: () => void;
 }
 
+const TONES = {
+  error: {
+    tint: '#DC2626',
+    tintSoft: '#FEF2F2',
+    tintBorder: '#FCA5A5',
+    cta: 'Got it',
+  },
+  success: {
+    tint: '#16A34A',
+    tintSoft: '#F0FDF4',
+    tintBorder: '#86EFAC',
+    cta: 'Continue',
+  },
+} as const;
+
 export default function AuthStatusModal({ visible, type, title, message, onClose }: AuthStatusModalProps) {
+  const tone = TONES[type];
+  const { backdrop, cardOpacity, cardScale, iconScale } = useModalEntrance(visible);
+
   if (!visible) return null;
 
-  const isError = type === 'error';
-
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="none"
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark" />
-        
-        <Animated.View 
-          entering={ZoomIn.springify().damping(15)} 
-          style={styles.modalContainer}
+    <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
+      <Animated.View style={[styles.backdrop, { opacity: backdrop }]}>
+        <BlurView intensity={24} style={StyleSheet.absoluteFill} tint="dark" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+
+        <Animated.View
+          pointerEvents="box-none"
+          style={[
+            styles.cardWrap,
+            { opacity: cardOpacity, transform: [{ scale: cardScale }] },
+          ]}
         >
-          {/* Main Card */}
           <View style={styles.card}>
-            {/* Status Icon Header */}
-            <View style={[styles.iconCircle, { backgroundColor: isError ? '#FEF2F2' : '#F0FDF4' }]}>
-              <Ionicons 
-                name={isError ? "alert-circle" : "checkmark-circle"} 
-                size={48} 
-                color={isError ? "#EF4444" : "#10B981"} 
-              />
+            {/* Accent strip */}
+            <View style={[styles.accentBar, { backgroundColor: tone.tint }]} />
+
+            <View style={styles.cardBody}>
+              {/* Icon chip — single-shot stamp animation */}
+              <Animated.View
+                style={[
+                  styles.iconChip,
+                  {
+                    backgroundColor: tone.tintSoft,
+                    borderColor: tone.tintBorder,
+                    transform: [{ scale: iconScale }],
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={type === 'error' ? 'alert-circle' : 'checkmark-circle'}
+                  size={26}
+                  color={tone.tint}
+                />
+              </Animated.View>
+
+              <Text style={styles.title} numberOfLines={2}>{title}</Text>
+              <Text style={styles.message}>{message}</Text>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={onClose}
+                style={[styles.actionBtn, { backgroundColor: tone.tint }]}
+              >
+                <Text style={styles.actionBtnText}>{tone.cta}</Text>
+              </TouchableOpacity>
             </View>
-
-            <Text style={styles.titleText}>{title}</Text>
-            <Text style={styles.messageText}>{message}</Text>
-
-            <TouchableOpacity 
-              style={[styles.actionBtn, { backgroundColor: isError ? '#EF4444' : '#10B981' }]} 
-              onPress={onClose}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionBtnText}>
-                {isError ? "Got it" : "Continue"}
-              </Text>
-            </TouchableOpacity>
           </View>
         </Animated.View>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(28,25,23,0.55)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
-  modalContainer: {
+  cardWrap: {
     width: '100%',
     maxWidth: 340,
-    alignItems: 'center',
   },
   card: {
-    width: '100%',
     backgroundColor: '#fff',
-    borderRadius: 30,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    paddingTop: 40,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#1C1917',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  accentBar: { height: 4, width: '100%' },
+  cardBody: {
+    paddingHorizontal: 22,
+    paddingTop: 20,
+    paddingBottom: 18,
+    alignItems: 'center',
+  },
+  iconChip: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    top: -40,
-    borderWidth: 4,
-    borderColor: '#fff',
+    borderWidth: 1,
+    marginBottom: 12,
   },
-  titleText: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#1a1a1a',
-    marginBottom: 8,
+  title: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1C1917',
+    letterSpacing: -0.3,
+    marginBottom: 6,
     textAlign: 'center',
   },
-  messageText: {
-    fontSize: 15,
-    color: '#666',
-    lineHeight: 22,
+  message: {
+    fontSize: 13.5,
+    color: '#57534E',
+    lineHeight: 19,
     textAlign: 'center',
-    marginBottom: 24,
+    fontWeight: '500',
+    marginBottom: 16,
   },
   actionBtn: {
     width: '100%',
-    height: 52,
-    borderRadius: 26,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
   },
   actionBtnText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 });

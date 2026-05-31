@@ -64,18 +64,37 @@ export default function SignupScreen({
 }: SignupScreenProps) {
     const insets = useSafeAreaInsets();
     // ── Form state ──────────────────────────────────────────────
+    // Field set mirrors the website's RegisterData / backend signupSchema:
+    //   first_name, last_name, email, password, phone, age, gender,
+    //   country (defaults to PH), region, postal_code.
+    // The old mobile-only `city / barangay / address` fields were dropped
+    // because the API never accepted them — they were silently discarded.
     const [role, setRole] = useState<"Donor" | "Recipient" | null>(null);
-    const [ageText, setAgeText] = useState("18"); // fallback for text input instead of slider
+    const [ageText, setAgeText] = useState("18");
     const [gender, setGender] = useState("Female");
     const [pickingGender, setPickingGender] = useState(false);
-    const [name, setName] = useState("");
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    // Track focus on the password input so we can show the requirement
+    // checklist *only* while the user is typing — keeps the form quiet
+    // for everyone else.
+    const [passwordFocused, setPasswordFocused] = useState(false);
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
-    const [city, setCity] = useState("");
-    const [barangay, setBarangay] = useState("");
-    const [address, setAddress] = useState("");
+    const [region, setRegion] = useState("");        // e.g. "NCR", "Region IV-A"
+    const [postalCode, setPostalCode] = useState(""); // e.g. "1000"
     const [submitting, setSubmitting] = useState(false);
+
+    // Per-rule booleans — mirror the backend's signupSchema regex rules
+    // (≥8 chars · contains a number · contains a symbol). Same source of
+    // truth as the website's `pwReqs` list in AuthPage.tsx.
+    const pwHasMin   = password.length >= 8;
+    const pwHasNum   = /[0-9]/.test(password);
+    const pwHasSym   = /[!@#$%^&*(),.?":{}|<>_]/.test(password);
+    const pwAllOk    = pwHasMin && pwHasNum && pwHasSym;
+    const pwMatches  = confirmPassword.length > 0 && confirmPassword === password;
 
     // ── View mode ────────────────────────────────────────────────
     const [viewMode, setViewMode] = useState<"form" | "otp">("form");
@@ -152,7 +171,15 @@ export default function SignupScreen({
     // ── Sign Up submit ───────────────────────────────────────────
     const handleSignUp = async () => {
         setEmailTouched(true);
-        if (!name.trim() || !password.trim() || !city.trim() || !barangay.trim() || !address.trim() || !phone.trim() || !email.trim()) {
+        if (
+            !firstName.trim() ||
+            !lastName.trim() ||
+            !password.trim() ||
+            !region.trim() ||
+            !postalCode.trim() ||
+            !phone.trim() ||
+            !email.trim()
+        ) {
             showError("Missing Info", "Please fill in all fields completely.");
             return;
         }
@@ -160,15 +187,10 @@ export default function SignupScreen({
         if (pwStrength.level < 2) { showError("Weak Password", "Add uppercase letters, numbers or symbols."); return; }
         if (phone.length < 8 || phone.length > 11) { showError("Invalid Phone", "Phone number must be 8 to 11 digits."); return; }
         if (!role) { showError("Selection Required", "Please select a role (Donor or Recipient)."); return; }
-        
+
         const numericAge = parseInt(ageText) || 18;
 
         setSubmitting(true);
-
-        const cleanName = (name.trim() || 'New Member').replace(/\s+/g, ' ');
-        const nameParts = cleanName.split(' ');
-        const firstName = nameParts[0];
-        const lastName = nameParts.slice(1).join(' ') || firstName;
 
         const genderMap: Record<string, string> = {
             'Male': 'male',
@@ -177,18 +199,21 @@ export default function SignupScreen({
             'Prefer not to say': 'prefer_not_say',
         };
 
+        // Same payload shape the website's AuthContext.register sends to
+        // Supabase: first/last name, role, contact, age, gender, and the
+        // country/region/postal_code triplet used by the backend schema.
         const { data: signUpData, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
                 data: {
-                    first_name: firstName,
-                    last_name: lastName,
+                    first_name: firstName.trim(),
+                    last_name: lastName.trim(),
                     role: (role || 'Donor').toLowerCase(),
                     phone: phone,
-                    city: city,
-                    barangay: barangay,
-                    address: address,
+                    country: 'ph',
+                    region: region.trim(),
+                    postal_code: postalCode.trim(),
                     age: numericAge,
                     gender: genderMap[gender] || null,
                 },
@@ -222,12 +247,16 @@ export default function SignupScreen({
 
     const handleNext = () => {
         if (currentStep === 1) {
-            if (!name || !email || !password || !role) {
+            if (!firstName || !lastName || !email || !password || !confirmPassword || !role) {
                 showError("Incomplete", "Please complete all fields in this step.");
                 return;
             }
-            if (pwStrength.level < 2) {
-                showError("Weak Password", "Password is too weak. Try adding numbers or symbols.");
+            if (!pwAllOk) {
+                showError("Weak Password", "Password must be 8+ characters, contain a number and a symbol.");
+                return;
+            }
+            if (!pwMatches) {
+                showError("Passwords Don't Match", "Re-enter the same password in both fields.");
                 return;
             }
             setCurrentStep(2);
@@ -237,7 +266,7 @@ export default function SignupScreen({
     // ── GENDER PICKER VIEW ──
     if (pickingGender) {
         return (
-            <LinearGradient colors={['#FFF4F8', '#FFE6F0']} style={styles.root}>
+            <LinearGradient colors={['#FAFAF9', '#FFE6F0']} style={styles.root}>
                 <View style={styles.innerContainer}>
                     <Text style={[styles.title, { marginBottom: 24 }]}>Select Gender</Text>
                     {GENDERS.map((item) => (
@@ -259,7 +288,7 @@ export default function SignupScreen({
 
 
     return (
-        <LinearGradient colors={['#FFF4F8', '#FFEBEB']} style={styles.root}>
+        <LinearGradient colors={['#FAFAF9', '#FFF0F8']} style={styles.root}>
             <KeyboardAvoidingView 
                 behavior={Platform.OS === "ios" ? "padding" : "height"} 
                 style={{ flex: 1 }}
@@ -282,16 +311,29 @@ export default function SignupScreen({
                         <View style={styles.glassCard}>
                             <Text style={styles.sectionLabel}>ACCOUNT INFO</Text>
 
-                            {/* Full Name */}
-                            <View style={styles.fieldWrap}>
-                                <View style={styles.inputBox}>
-                                    <Ionicons name="person-outline" size={20} color="#FF1493" style={{ marginRight: 10 }} />
-                                    <TextInput 
-                                        style={styles.input} 
-                                        value={name} 
-                                        onChangeText={setName} 
-                                        autoCapitalize="words" 
-                                        placeholder="Full Name"
+                            {/* First + Last name — matches the web's register form
+                                so the API gets clean first_name / last_name values
+                                instead of guessing from a single "Full Name" split. */}
+                            <View style={[styles.row, { gap: 12 }]}>
+                                <View style={[styles.inputBox, { flex: 1 }]}>
+                                    <Ionicons name="person-outline" size={18} color="#D63B8A" style={{ marginRight: 8 }} />
+                                    <TextInput
+                                        style={styles.input}
+                                        value={firstName}
+                                        onChangeText={setFirstName}
+                                        autoCapitalize="words"
+                                        placeholder="First Name"
+                                        placeholderTextColor="#A8A29E"
+                                    />
+                                </View>
+                                <View style={[styles.inputBox, { flex: 1 }]}>
+                                    <TextInput
+                                        style={styles.input}
+                                        value={lastName}
+                                        onChangeText={setLastName}
+                                        autoCapitalize="words"
+                                        placeholder="Last Name"
+                                        placeholderTextColor="#A8A29E"
                                     />
                                 </View>
                             </View>
@@ -299,9 +341,9 @@ export default function SignupScreen({
                             {/* Email */}
                             <View style={[styles.fieldWrap, { marginTop: 16 }]}>
                                 <View style={[styles.inputBox, {
-                                    borderColor: emailError ? '#e53e3e' : emailTouched && isEmailValid ? '#38a169' : '#FFD6EF',
+                                    borderColor: emailError ? '#e53e3e' : emailTouched && isEmailValid ? '#38a169' : '#FFD9EC',
                                 }]}>
-                                    <Ionicons name="mail-outline" size={20} color="#FF1493" style={{ marginRight: 10 }} />
+                                    <Ionicons name="mail-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
                                     <TextInput
                                         style={[styles.input, { flex: 1 }]}
                                         keyboardType="email-address"
@@ -318,26 +360,88 @@ export default function SignupScreen({
                             {/* Password */}
                             <View style={[styles.fieldWrap, { marginTop: 16 }]}>
                                 <View style={[styles.inputBox, {
-                                    borderColor: pwStrength.level === 3 ? '#38a169' : pwStrength.level === 2 ? '#dd6b20' : pwStrength.level === 1 ? '#e53e3e' : '#FFD6EF',
+                                    borderColor: password.length === 0
+                                        ? '#FFD9EC'
+                                        : pwAllOk ? '#38a169' : '#dd6b20',
                                 }]}>
-                                    <Ionicons name="lock-closed-outline" size={20} color="#FF1493" style={{ marginRight: 10 }} />
-                                    <TextInput 
-                                        style={styles.input} 
-                                        secureTextEntry 
-                                        value={password} 
-                                        onChangeText={setPassword} 
+                                    <Ionicons name="lock-closed-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
+                                    <TextInput
+                                        style={styles.input}
+                                        secureTextEntry
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        onFocus={() => setPasswordFocused(true)}
+                                        onBlur={() => setPasswordFocused(false)}
                                         placeholder="Password"
+                                        placeholderTextColor="#A8A29E"
                                     />
                                 </View>
-                                {/* Strength Bar */}
+
+                                {/* Strength bar — kept; tiny, only when something's typed. */}
                                 {password.length > 0 && (
                                     <View style={{ marginTop: 8 }}>
                                         <View style={{ flexDirection: 'row', gap: 4 }}>
                                             {[1, 2, 3].map((seg) => (
-                                                <View key={seg} style={{ flex: 1, height: 4, borderRadius: 4, backgroundColor: pwStrength.level >= seg ? pwStrength.color : '#EEE' }} />
+                                                <View
+                                                    key={seg}
+                                                    style={{
+                                                        flex: 1,
+                                                        height: 4,
+                                                        borderRadius: 4,
+                                                        backgroundColor: pwStrength.level >= seg ? pwStrength.color : '#EEE',
+                                                    }}
+                                                />
                                             ))}
                                         </View>
                                     </View>
+                                )}
+
+                                {/* Requirement checklist — appears only while the
+                                    password field is focused OR after the user has
+                                    typed something but not yet satisfied every rule.
+                                    Disappears once all three rules are green AND the
+                                    user has tabbed away, so it doesn't clutter. */}
+                                {(passwordFocused || (password.length > 0 && !pwAllOk)) && (
+                                    <View style={styles.pwReqsBox}>
+                                        {[
+                                            { ok: pwHasMin, label: 'At least 8 characters' },
+                                            { ok: pwHasNum, label: 'Contains a number' },
+                                            { ok: pwHasSym, label: 'Contains a symbol' },
+                                        ].map((req) => (
+                                            <View key={req.label} style={styles.pwReqRow}>
+                                                <Ionicons
+                                                    name={req.ok ? 'checkmark-circle' : 'ellipse-outline'}
+                                                    size={14}
+                                                    color={req.ok ? '#16A34A' : '#A8A29E'}
+                                                />
+                                                <Text style={[styles.pwReqText, req.ok && { color: '#15803D', fontWeight: '700' }]}>
+                                                    {req.label}
+                                                </Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
+
+                            {/* Confirm Password */}
+                            <View style={[styles.fieldWrap, { marginTop: 16 }]}>
+                                <View style={[styles.inputBox, {
+                                    borderColor: confirmPassword.length === 0
+                                        ? '#FFD9EC'
+                                        : pwMatches ? '#38a169' : '#e53e3e',
+                                }]}>
+                                    <Ionicons name="shield-checkmark-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
+                                    <TextInput
+                                        style={styles.input}
+                                        secureTextEntry
+                                        value={confirmPassword}
+                                        onChangeText={setConfirmPassword}
+                                        placeholder="Confirm Password"
+                                        placeholderTextColor="#A8A29E"
+                                    />
+                                </View>
+                                {confirmPassword.length > 0 && !pwMatches && (
+                                    <Text style={styles.errorText}>Passwords don't match</Text>
                                 )}
                             </View>
 
@@ -354,7 +458,7 @@ export default function SignupScreen({
                                             <MaterialCommunityIcons 
                                                 name={r === 'Donor' ? 'heart-plus' : 'account-heart'} 
                                                 size={32} 
-                                                color={role === r ? '#fff' : '#FF66B2'} 
+                                                color={role === r ? '#fff' : '#E863A1'} 
                                             />
                                         </View>
                                         <Text style={[styles.roleText, role === r && styles.roleTextActive]}>{r}</Text>
@@ -375,7 +479,7 @@ export default function SignupScreen({
                             {/* Phone */}
                             <View style={styles.fieldWrap}>
                                 <View style={styles.inputBox}>
-                                    <Ionicons name="call-outline" size={20} color="#FF1493" style={{ marginRight: 10 }} />
+                                    <Ionicons name="call-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
                                     <TextInput
                                         style={styles.input}
                                         keyboardType="phone-pad"
@@ -387,26 +491,33 @@ export default function SignupScreen({
                                 </View>
                             </View>
 
-                            {/* Exact Address */}
+                            {/* Region (mirrors web's `region` field; e.g. NCR) */}
                             <View style={[styles.fieldWrap, { marginTop: 16 }]}>
                                 <View style={styles.inputBox}>
-                                    <Ionicons name="map-outline" size={20} color="#FF1493" style={{ marginRight: 10 }} />
+                                    <Ionicons name="location-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
                                     <TextInput
                                         style={styles.input}
-                                        value={address}
-                                        onChangeText={setAddress}
-                                        placeholder="Address (House No., Street)"
+                                        value={region}
+                                        onChangeText={setRegion}
+                                        placeholder="Region (e.g. NCR)"
+                                        placeholderTextColor="#A8A29E"
                                     />
                                 </View>
                             </View>
 
-                            {/* City & Barangay */}
-                            <View style={[styles.row, { marginTop: 16, gap: 12 }]}>
-                                <View style={[styles.inputBox, { flex: 1 }]}>
-                                    <TextInput style={styles.input} value={city} onChangeText={setCity} placeholder="City" />
-                                </View>
-                                <View style={[styles.inputBox, { flex: 1 }]}>
-                                    <TextInput style={styles.input} value={barangay} onChangeText={setBarangay} placeholder="Barangay" />
+                            {/* Postal Code (mirrors web's `postal_code` field) */}
+                            <View style={[styles.fieldWrap, { marginTop: 16 }]}>
+                                <View style={styles.inputBox}>
+                                    <Ionicons name="mail-unread-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
+                                    <TextInput
+                                        style={styles.input}
+                                        value={postalCode}
+                                        onChangeText={(t) => setPostalCode(t.replace(/[^0-9]/g, ''))}
+                                        keyboardType="number-pad"
+                                        maxLength={6}
+                                        placeholder="Postal Code"
+                                        placeholderTextColor="#A8A29E"
+                                    />
                                 </View>
                             </View>
 
@@ -425,7 +536,7 @@ export default function SignupScreen({
                                     onPress={() => setPickingGender(true)}
                                 >
                                     <Text style={{ color: gender ? '#000' : '#888', fontSize: 15 }}>{gender || 'Gender'}</Text>
-                                    <Ionicons name="chevron-down" size={16} color="#FF1493" />
+                                    <Ionicons name="chevron-down" size={16} color="#D63B8A" />
                                 </TouchableOpacity>
                             </View>
 
@@ -448,7 +559,7 @@ export default function SignupScreen({
                 )}
 
                     <TouchableOpacity onPress={onSwitchToLogin} activeOpacity={0.8} style={styles.switchLink}>
-                        <Text style={styles.switchLinkText}>Already have an account? <Text style={{ color: '#FF1493' }}>Log In</Text></Text>
+                        <Text style={styles.switchLinkText}>Already have an account? <Text style={{ color: '#D63B8A' }}>Log In</Text></Text>
                     </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -477,14 +588,14 @@ const styles = StyleSheet.create({
     header: { alignItems: 'center', marginBottom: 32 },
     logo: { width: 80, height: 80, marginBottom: 12 },
     title: { fontSize: 32, fontWeight: '900', color: '#1a1a1a', textAlign: 'center', letterSpacing: -0.5 },
-    subtitle: { fontSize: 15, color: '#FF1493', fontWeight: '800', textAlign: 'center', marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 },
+    subtitle: { fontSize: 15, color: '#D63B8A', fontWeight: '800', textAlign: 'center', marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 },
 
     // Premium Card
     glassCard: { 
         backgroundColor: '#fff', 
         borderRadius: 30, 
         padding: 24, 
-        shadowColor: '#FF66B2', 
+        shadowColor: '#E863A1', 
         shadowOffset: { width: 0, height: 10 }, 
         shadowOpacity: 0.1, 
         shadowRadius: 20, 
@@ -500,7 +611,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1.5, 
-        borderColor: '#FFD6EF', 
+        borderColor: '#FFD9EC', 
         borderRadius: 15, 
         height: 56, 
         paddingHorizontal: 16, 
@@ -508,6 +619,20 @@ const styles = StyleSheet.create({
     },
     input: { color: '#000', fontSize: 15, height: 56, flex: 1, fontWeight: '600' },
     errorText: { color: '#e53e3e', fontSize: 11, fontWeight: '700', marginTop: 4, marginLeft: 4 },
+
+    // ── Password requirement checklist (shown on focus) ──
+    pwReqsBox: {
+        marginTop: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        backgroundColor: '#FFF5FA',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#FFE0EE',
+        gap: 6,
+    },
+    pwReqRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    pwReqText: { fontSize: 12, color: '#78716C', fontWeight: '500' },
 
     // Role Selection
     roleGrid: { flexDirection: 'row', gap: 16 },
@@ -518,18 +643,18 @@ const styles = StyleSheet.create({
         paddingVertical: 20, 
         alignItems: 'center',
         borderWidth: 1.5,
-        borderColor: '#FFD6EF'
+        borderColor: '#FFD9EC'
     },
     roleCardActive: { 
         backgroundColor: '#fff', 
-        borderColor: '#FF1493',
-        shadowColor: '#FF1493',
+        borderColor: '#D63B8A',
+        shadowColor: '#D63B8A',
         shadowOpacity: 0.1,
         shadowRadius: 10,
         elevation: 3
     },
     roleIconBg: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-    roleIconBgActive: { backgroundColor: '#FF1493' },
+    roleIconBgActive: { backgroundColor: '#D63B8A' },
     roleText: { fontSize: 14, fontWeight: '800', color: '#999' },
     roleTextActive: { color: '#1a1a1a' },
 
@@ -537,7 +662,7 @@ const styles = StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center' },
 
     // Sign Up button
-    signUpBtn: { backgroundColor: '#FF1493', height: 56, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+    signUpBtn: { backgroundColor: '#D63B8A', height: 56, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
     signUpBtnText: { color: '#fff', fontWeight: '900', fontSize: 16 },
     switchLink: { alignSelf: 'center', marginTop: 24, padding: 8 },
     switchLinkText: { color: '#888', fontWeight: '700', fontSize: 14 },
@@ -546,7 +671,7 @@ const styles = StyleSheet.create({
     iconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFF0F5', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 20 },
 
     // Gender picker items
-    genderItem: { padding: 16, width: '100%', borderBottomWidth: 1, borderBottomColor: '#FFD6EF', alignItems: 'center' },
+    genderItem: { padding: 16, width: '100%', borderBottomWidth: 1, borderBottomColor: '#FFD9EC', alignItems: 'center' },
     genderItemText: { color: '#000', fontSize: 18, fontWeight: '700' },
 });
 

@@ -24,10 +24,6 @@ import Animated, {
     FadeInDown,
     FadeInUp,
     Layout,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    interpolateColor
 } from 'react-native-reanimated';
 import api from '../../lib/api';
 import { supabase } from '../../lib/supabase';
@@ -60,8 +56,6 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const [otherReferralCode, setOtherReferralCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
 
-    // Animation values
-    const roleToggleValue = useSharedValue(role === 'Donor' ? 0 : 1);
     const insets = useSafeAreaInsets();
 
     const getAvatarUrl = (photoUrl: string | null | undefined): string | null => {
@@ -98,7 +92,6 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 setReferralCode(data.referralCode || data.referral_code || '---');
                 setAvatarUrl(getAvatarUrl(data.profile_photo_url || data.profilePhotoUrl));
                 setHasRedeemed(!!(data.referredBy || data.referred_by || data.has_redeemed_code || data.hasRedeemedCode));
-                roleToggleValue.value = withSpring(fetchedRole === 'Donor' ? 0 : 1);
             }
         } catch (error: any) {
             Alert.alert('Error', 'Failed to fetch profile. Please try again.');
@@ -204,37 +197,8 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
         Alert.alert('Copied', 'Referral code copied to clipboard!');
     };
 
-    const toggleRole = () => {
-        const newRole = role === 'Donor' ? 'Recipient' : 'Donor';
-
-        Alert.alert(
-            'Switch Role?',
-            `Are you sure you want to switch to the ${newRole} dashboard?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Switch Now',
-                    onPress: () => {
-                        setRole(newRole);
-                        roleToggleValue.value = withSpring(newRole === 'Donor' ? 0 : 1);
-                        if (onRoleChange) {
-                            setTimeout(() => onRoleChange(newRole), 500);
-                        }
-                    }
-                }
-            ]
-        );
-    };
-
-    const animatedToggleStyle = useAnimatedStyle(() => {
-        return {
-            backgroundColor: interpolateColor(
-                roleToggleValue.value,
-                [0, 1],
-                ['#FF1493', '#9B59B6']
-            ),
-        };
-    });
+    // Role switcher removed — keep `role` state because it still drives the
+    // hero gradient + a few labels, but it is no longer user-mutable.
 
     if (loading) {
         return (
@@ -295,41 +259,34 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 </LinearGradient>
 
                 <View style={styles.bodyContent}>
-                    {/* Role Switcher Premium */}
-                    <Animated.View entering={FadeInUp.delay(200)} style={styles.roleCard}>
-                        <Text style={styles.sectionHeading}>COMMUNITY STATUS</Text>
-                        <View style={styles.toggleContainer}>
-                            <TouchableOpacity
-                                activeOpacity={1}
-                                onPress={toggleRole}
-                                style={[styles.toggleBase, { backgroundColor: '#f0f0f0' }]}
-                            >
-                                <Animated.View style={[styles.toggleThumb, animatedToggleStyle, { left: role === 'Donor' ? 4 : '50%' }]}>
-                                    <Text style={styles.toggleText}>{role}</Text>
-                                </Animated.View>
-                                <View style={styles.toggleLabels}>
-                                    <Text style={[styles.toggleLabelText, role === 'Donor' && { opacity: 0 }]}>Donor</Text>
-                                    <Text style={[styles.toggleLabelText, role === 'Recipient' && { opacity: 0 }]}>Recipient</Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                    </Animated.View>
+                    {/* Role switcher removed — users now have a single permanent role.
+                        The Donor/Recipient routing happens automatically based on the
+                        role recorded at signup; switching dashboards mid-session was
+                        confusing and error-prone. (Was: COMMUNITY STATUS toggle.) */}
 
-                    {/* Edit Section */}
+                    {/* Personal details — header + fields live in ONE card so the
+                        EDIT pill doesn't float over the pink hero anymore. */}
                     <View style={styles.infoSection}>
-                        <View style={styles.sectionRow}>
-                            <Text style={styles.sectionHeading}>PERSONAL DETAILS</Text>
-                            <TouchableOpacity
-                                style={[styles.miniEditBtn, editMode && styles.activeSaveBtn]}
-                                onPress={() => editMode ? handleUpdateProfile() : setEditMode(true)}
-                                disabled={updating}
-                            >
-                                <Feather name={editMode ? "check" : "edit-3"} size={ms(14)} color="#fff" />
-                                <Text style={styles.miniEditBtnText}>{editMode ? 'Save' : 'Edit'}</Text>
-                            </TouchableOpacity>
-                        </View>
+                        <View style={styles.detailsCard}>
+                            <View style={styles.detailsCardHeader}>
+                                <View>
+                                    <Text style={styles.detailsCardTitle}>Personal Details</Text>
+                                    <Text style={styles.detailsCardSub}>
+                                        Keep your contact info up to date.
+                                    </Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={[styles.detailsEditBtn, editMode && styles.detailsEditBtnSaving]}
+                                    onPress={() => editMode ? handleUpdateProfile() : setEditMode(true)}
+                                    disabled={updating}
+                                    activeOpacity={0.85}
+                                >
+                                    <Feather name={editMode ? "check" : "edit-3"} size={ms(13)} color="#fff" />
+                                    <Text style={styles.detailsEditBtnText}>{editMode ? 'Save' : 'Edit'}</Text>
+                                </TouchableOpacity>
+                            </View>
 
-                        <View style={styles.glassCard}>
+                            {/* Fields live inside the same card now */}
                             <InfoRow
                                 icon="mail"
                                 label="Email Address"
@@ -345,6 +302,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                                 value={fullName}
                                 isEdit={editMode}
                                 onChange={setFullName}
+                                readOnly
                             />
                             <View style={styles.divider} />
                             <InfoRow
@@ -456,15 +414,23 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     );
 }
 
-function InfoRow({ icon, label, value, isEdit, onChange, keyboardType }: any) {
+function InfoRow({ icon, label, value, isEdit, onChange, keyboardType, readOnly }: any) {
+    // `readOnly` forces the row to render as a static value even in edit mode —
+    // used for the full name so users can’t rename their identity post-signup.
+    const editable = isEdit && !readOnly;
     return (
         <View style={styles.rowItem}>
             <View style={styles.iconContainer}>
-                <Feather name={icon} size={ms(18)} color="#FF1493" />
+                <Feather name={icon} size={ms(18)} color="#D63B8A" />
             </View>
             <View style={{ flex: 1 }}>
-                <Text style={styles.rowLabel}>{label}</Text>
-                {isEdit ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.rowLabel}>{label}</Text>
+                    {readOnly && (
+                        <Feather name="lock" size={ms(10)} color="#A8A29E" />
+                    )}
+                </View>
+                {editable ? (
                     <TextInput
                         style={styles.rowInput}
                         value={value}
@@ -474,7 +440,9 @@ function InfoRow({ icon, label, value, isEdit, onChange, keyboardType }: any) {
                         autoCapitalize={label === 'Email Address' ? 'none' : 'words'}
                     />
                 ) : (
-                    <Text style={styles.rowValue}>{value || `Add ${label}`}</Text>
+                    <Text style={[styles.rowValue, readOnly && { color: '#1C1917' }]}>
+                        {value || `Add ${label}`}
+                    </Text>
                 )}
             </View>
         </View>
@@ -487,7 +455,7 @@ const styles = StyleSheet.create({
     scrollContent: { flexGrow: 1 },
 
     // Hero Header
-    heroHeader: { paddingBottom: vs(50), borderBottomLeftRadius: ms(45), borderBottomRightRadius: ms(45) },
+    heroHeader: { paddingBottom: vs(32), borderBottomLeftRadius: ms(28), borderBottomRightRadius: ms(28) },
     topNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: ms(20), paddingTop: vs(10) },
     glassButton: { width: ms(44), height: ms(44), borderRadius: ms(22), backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
     headerTitle: { fontSize: ms(20), fontWeight: '900', color: '#fff', letterSpacing: 0.5, textTransform: 'uppercase' },
@@ -525,7 +493,10 @@ const styles = StyleSheet.create({
     idChip: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: ms(16), paddingVertical: vs(6), borderRadius: ms(15), marginTop: vs(10) },
     idChipText: { color: '#fff', fontSize: ms(13), fontWeight: '800', letterSpacing: 1.5 },
 
-    bodyContent: { marginTop: vs(-40), paddingHorizontal: ms(20) },
+    // -22 lets the card "tuck" under the rounded hero edge without the
+    // section header floating awkwardly on top of the pink (the old -40
+    // pulled the label up into the gradient).
+    bodyContent: { marginTop: vs(-22), paddingHorizontal: ms(16) },
 
     // Role Switcher
     roleCard: {
@@ -553,7 +524,70 @@ const styles = StyleSheet.create({
     toggleLabelText: { color: '#aaa', fontSize: ms(14), fontWeight: '800', textTransform: 'uppercase' },
 
     // Info Section
-    infoSection: { marginBottom: vs(30) },
+    infoSection: { marginBottom: vs(20) },
+
+    // ── New unified "Personal Details" card (replaces sectionRow + glassCard) ──
+    detailsCard: {
+        backgroundColor: '#fff',
+        borderRadius: ms(22),
+        paddingTop: vs(16),
+        paddingBottom: vs(6),
+        shadowColor: '#1C1917',
+        shadowOpacity: 0.06,
+        shadowRadius: 16,
+        elevation: 3,
+        shadowOffset: { width: 0, height: 6 },
+        borderWidth: 1,
+        borderColor: '#F4F1ED',
+    },
+    detailsCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        paddingHorizontal: ms(20),
+        paddingBottom: vs(12),
+        borderBottomWidth: 1,
+        borderBottomColor: '#F4F1ED',
+        marginBottom: vs(4),
+    },
+    detailsCardTitle: {
+        fontSize: ms(15),
+        fontWeight: '800',
+        color: '#1C1917',
+        letterSpacing: -0.2,
+        marginBottom: vs(2),
+    },
+    detailsCardSub: {
+        fontSize: ms(11),
+        color: '#78716C',
+        fontWeight: '500',
+    },
+    detailsEditBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#D63B8A',
+        paddingHorizontal: ms(14),
+        paddingVertical: vs(7),
+        borderRadius: 999,
+        shadowColor: '#D63B8A',
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 3,
+    },
+    detailsEditBtnSaving: {
+        backgroundColor: '#16A34A',
+        shadowColor: '#16A34A',
+    },
+    detailsEditBtnText: {
+        color: '#fff',
+        fontWeight: '800',
+        fontSize: ms(12),
+        marginLeft: ms(6),
+        letterSpacing: 0.3,
+    },
+
+    // Old aliases kept so any stragglers still resolve; safe to leave unused.
     sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: vs(18) },
     miniEditBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#bbb', paddingHorizontal: ms(18), paddingVertical: vs(10), borderRadius: ms(15), elevation: 2 },
     activeSaveBtn: { backgroundColor: '#27AE60' },

@@ -198,7 +198,7 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
       <StatusBar style="light" />
       
       <LinearGradient
-        colors={['#8E44AD', '#9B59B6']}
+        colors={['#9B6BBF', '#B084CC']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={[styles.header, { paddingTop: insets.top }]}
@@ -216,12 +216,12 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + vs(20) }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#9B59B6']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#B084CC']} />
         }
       >
         {loading && !refreshing ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color="#9B59B6" />
+            <ActivityIndicator size="large" color="#B084CC" />
           </View>
         ) : requests.length === 0 ? (
           <View style={styles.centerContainer}>
@@ -240,7 +240,7 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
               >
                 <View style={styles.cardHeader}>
                   <View style={styles.typeIconBg}>
-                    <MaterialCommunityIcons name="ribbon" size={ms(24)} color="#9B59B6" />
+                    <MaterialCommunityIcons name="ribbon" size={ms(24)} color="#B084CC" />
                   </View>
                   <View style={styles.headerText}>
                     <Text style={styles.referenceText}>{item.reference}</Text>
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   header: {
     borderBottomLeftRadius: ms(30),
     borderBottomRightRadius: ms(30),
-    shadowColor: '#8E44AD', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
+    shadowColor: '#9B6BBF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
   },
   headerContent: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: '#fff', borderRadius: ms(22), padding: ms(16), marginBottom: vs(16),
-    shadowColor: '#8E44AD', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
+    shadowColor: '#9B6BBF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: vs(16) },
   typeIconBg: { 
@@ -336,13 +336,13 @@ const styles = StyleSheet.create({
 
   cardFooter: { marginTop: vs(12), borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: vs(12), gap: vs(8) },
   trackBtn: {
-    backgroundColor: '#9B59B6',
+    backgroundColor: '#B084CC',
     borderRadius: ms(12),
     height: vs(40),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#9B59B6',
+    shadowColor: '#B084CC',
     shadowOpacity: 0.15,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -364,5 +364,5 @@ const styles = StyleSheet.create({
   },
   confirmReceivedBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(13), textTransform: 'uppercase', letterSpacing: 0.5 },
   detailsBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: vs(4) },
-  detailsBtnText: { fontSize: ms(13), fontWeight: '900', color: '#9B59B6', marginRight: ms(4) },
+  detailsBtnText: { fontSize: ms(13), fontWeight: '900', color: '#B084CC', marginRight: ms(4) },
 });

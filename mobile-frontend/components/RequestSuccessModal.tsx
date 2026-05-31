@@ -1,199 +1,242 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, { FadeIn, ZoomIn, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withSpring } from 'react-native-reanimated';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Animated,
+  Pressable,
+} from 'react-native';
+import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { s, vs, ms } from '../lib/scaling';
+import { useModalEntrance } from '../lib/modalAnimation';
 
-const { width } = Dimensions.get('window');
-
+/**
+ * Hair-request submitted confirmation. Recipient-themed (light purple).
+ * Same UI language + animation timing as DonationSuccessModal: top accent
+ * bar, small icon chip, status chip, two-line copy, two info chips, primary
+ * + quiet secondary action. All animations OUT-only, ≤320ms total, no
+ * infinite pulses.
+ */
 interface RequestSuccessModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
-export default function RequestSuccessModal({ 
-  visible, 
-  onClose 
-}: RequestSuccessModalProps) {
-  const themeColor = '#9B59B6';
-  const themeLightColor = '#F5EEF8';
-  const themeAccentColor = '#C39BD3';
+const TINT = '#B084CC';        // light purple — recipient theme
+const TINT_SOFT = '#F3EBFB';
+const TINT_SOFTER = '#FAF5FE';
 
-  const heartScale = useSharedValue(1);
-
-  // Pulse animation for the heart icon
-  React.useEffect(() => {
-    if (visible) {
-      heartScale.value = withRepeat(
-        withSequence(
-          withSpring(1.2, { damping: 2 }),
-          withSpring(1, { damping: 2 })
-        ),
-        -1,
-        true
-      );
-    } else {
-      heartScale.value = 1;
-    }
-  }, [visible]);
-
-  const heartStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: heartScale.value }],
-  }));
+export default function RequestSuccessModal({ visible, onClose }: RequestSuccessModalProps) {
+  const { backdrop, cardOpacity, cardScale, iconScale } = useModalEntrance(visible);
 
   if (!visible) return null;
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="none"
-    >
-      <View style={styles.overlay}>
-        <BlurView intensity={30} style={StyleSheet.absoluteFill} tint="dark" />
-        
-        <Animated.View 
-          entering={ZoomIn.springify().damping(12)} 
-          style={styles.modalContainer}
+    <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
+      <Animated.View style={[styles.backdrop, { opacity: backdrop }]}>
+        <BlurView intensity={28} style={StyleSheet.absoluteFill} tint="dark" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+
+        <Animated.View
+          pointerEvents="box-none"
+          style={[
+            styles.cardWrap,
+            { opacity: cardOpacity, transform: [{ scale: cardScale }] },
+          ]}
         >
           <View style={styles.card}>
-            {/* Celebratory Icon */}
-            <View style={[styles.iconContainer, { backgroundColor: themeLightColor }]}>
-              <Animated.View style={heartStyle}>
-                <Ionicons name="heart" size={ms(80)} color={themeColor} />
+            <View style={[styles.accentBar, { backgroundColor: TINT }]} />
+
+            <View style={styles.cardBody}>
+              <Animated.View
+                style={[
+                  styles.iconChip,
+                  { backgroundColor: TINT_SOFTER, borderColor: TINT_SOFT, transform: [{ scale: iconScale }] },
+                ]}
+              >
+                <Ionicons name="heart" size={ms(28)} color={TINT} />
+                <View style={styles.checkBubble}>
+                  <Ionicons name="checkmark" size={ms(10)} color="#fff" />
+                </View>
               </Animated.View>
-              <View style={styles.checkBadge}>
-                <Ionicons name="checkmark" size={ms(20)} color="#fff" />
+
+              <Text style={styles.title}>Request submitted!</Text>
+
+              <View style={[styles.statusChip, { backgroundColor: TINT_SOFTER }]}>
+                <Feather name="clock" size={ms(11)} color={TINT} />
+                <Text style={[styles.statusText, { color: TINT }]}>Pending Review</Text>
               </View>
+
+              <Text style={styles.bodyLine}>
+                Your story has been shared with us.
+              </Text>
+              <Text style={styles.bodySub}>
+                We&apos;ll send updates as the review progresses.
+              </Text>
+
+              {/* Two compact info chips replace the big "Status Card" block */}
+              <View style={styles.infoRow}>
+                <View style={[styles.infoChip, { backgroundColor: TINT_SOFTER, borderColor: TINT_SOFT }]}>
+                  <MaterialCommunityIcons name="calendar-check" size={ms(16)} color={TINT} />
+                  <Text style={[styles.infoText, { color: TINT }]}>In Calendar</Text>
+                </View>
+                <View style={[styles.infoChip, { backgroundColor: TINT_SOFTER, borderColor: TINT_SOFT }]}>
+                  <MaterialCommunityIcons name="bell-check" size={ms(16)} color={TINT} />
+                  <Text style={[styles.infoText, { color: TINT }]}>Notified</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={onClose}
+                style={[styles.primaryBtn, { backgroundColor: TINT }]}
+              >
+                <Text style={styles.primaryBtnText}>Thank you</Text>
+                <Feather name="arrow-right" size={ms(15)} color="#fff" />
+              </TouchableOpacity>
+
+              <TouchableOpacity activeOpacity={0.7} onPress={onClose} style={styles.secondaryBtn}>
+                <Text style={styles.secondaryBtnText}>Done</Text>
+              </TouchableOpacity>
             </View>
-
-            <Text style={styles.titleText}>Request Submitted!</Text>
-            <Text style={styles.messageText}>
-              Your journey has been shared with us. Your hair request is now <Text style={[styles.highlight, { color: themeColor }]}>Pending Review</Text>. 
-              {"\n\n"}We have automatically saved this in your <Text style={{fontWeight:'900', color: themeColor}}>Calendar</Text> and sent a confirmation <Text style={{fontWeight:'900', color: themeColor}}>Notification</Text>.
-            </Text>
-
-            {/* Status Card */}
-            <View style={[styles.statusCard, { backgroundColor: themeLightColor, borderColor: themeAccentColor }]}>
-              <View style={styles.statusRow}>
-                <MaterialCommunityIcons name="calendar-check" size={ms(24)} color={themeColor} />
-                <Text style={styles.statusLabel}>Saved in Calendar</Text>
-              </View>
-              <View style={[styles.statusRow, { marginTop: vs(12) }]}>
-                <MaterialCommunityIcons name="bell-check" size={ms(24)} color={themeColor} />
-                <Text style={styles.statusLabel}>Notification Sent</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity 
-              style={[styles.actionBtn, { backgroundColor: themeColor, shadowColor: themeColor }]} 
-              onPress={onClose}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionBtnText}>Greatly Appreciated</Text>
-            </TouchableOpacity>
           </View>
         </Animated.View>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(28,25,23,0.55)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: ms(24),
   },
-  modalContainer: {
-    width: '100%',
-    maxWidth: ms(340),
-  },
+  cardWrap: { width: '100%', maxWidth: ms(360) },
   card: {
     backgroundColor: '#fff',
-    borderRadius: ms(35),
-    paddingHorizontal: ms(24),
-    paddingBottom: vs(24),
-    paddingTop: vs(50),
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.1,
-    shadowRadius: 25,
-    elevation: 10,
+    borderRadius: ms(22),
+    overflow: 'hidden',
+    shadowColor: '#1C1917',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.18,
+    shadowRadius: 28,
+    elevation: 14,
   },
-  iconContainer: {
-    position: 'absolute',
-    top: vs(-50),
-    width: ms(120),
-    height: ms(120),
-    borderRadius: ms(60),
-    justifyContent: 'center',
+  accentBar: { height: vs(4), width: '100%' },
+  cardBody: {
+    paddingHorizontal: ms(22),
+    paddingTop: vs(22),
+    paddingBottom: vs(18),
     alignItems: 'center',
-    borderWidth: 6,
+  },
+  iconChip: {
+    width: ms(56),
+    height: ms(56),
+    borderRadius: ms(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginBottom: vs(14),
+  },
+  checkBubble: {
+    position: 'absolute',
+    bottom: -ms(4),
+    right: -ms(4),
+    width: ms(20),
+    height: ms(20),
+    borderRadius: ms(10),
+    backgroundColor: '#16A34A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
     borderColor: '#fff',
   },
-  checkBadge: {
-    position: 'absolute',
-    bottom: vs(15),
-    right: ms(15),
-    backgroundColor: '#27AE60',
-    borderRadius: ms(15),
-    padding: ms(4),
-    elevation: 3,
+  title: {
+    fontSize: ms(22),
+    fontWeight: '800',
+    color: '#1C1917',
+    letterSpacing: -0.4,
+    marginBottom: vs(8),
   },
-  titleText: {
-    fontSize: ms(24),
-    fontWeight: '900',
-    color: '#1a1a1a',
-    marginBottom: vs(12),
-    textAlign: 'center',
-  },
-  messageText: {
-    fontSize: ms(15),
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: vs(22),
-    marginBottom: vs(24),
-  },
-  highlight: {
-    fontWeight: '900',
-  },
-  statusCard: {
-    width: '100%',
-    borderRadius: ms(20),
-    padding: ms(20),
-    marginBottom: vs(24),
-    borderWidth: 1.5,
-  },
-  statusRow: {
+  statusChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ms(12),
+    gap: ms(5),
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(4),
+    borderRadius: 999,
+    marginBottom: vs(14),
   },
-  statusLabel: {
+  statusText: {
+    fontSize: ms(10.5),
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  bodyLine: {
+    fontSize: ms(13.5),
+    color: '#44403C',
+    textAlign: 'center',
+    lineHeight: ms(19),
+    marginBottom: vs(2),
+    fontWeight: '500',
+  },
+  bodySub: {
+    fontSize: ms(12),
+    color: '#78716C',
+    textAlign: 'center',
+    lineHeight: ms(17),
+    marginBottom: vs(16),
+    fontWeight: '500',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    gap: ms(8),
+    marginBottom: vs(16),
+  },
+  infoChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(6),
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(7),
+    borderRadius: ms(10),
+    borderWidth: 1,
+  },
+  infoText: {
+    fontSize: ms(11.5),
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  primaryBtn: {
+    width: '100%',
+    height: vs(46),
+    borderRadius: ms(13),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: ms(8),
+    marginBottom: vs(8),
+  },
+  primaryBtnText: {
+    color: '#fff',
     fontSize: ms(14),
     fontWeight: '800',
-    color: '#444',
+    letterSpacing: 0.2,
   },
-  actionBtn: {
-    width: '100%',
-    height: vs(58),
-    borderRadius: ms(20),
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
+  secondaryBtn: {
+    paddingVertical: vs(8),
+    paddingHorizontal: ms(12),
   },
-  actionBtnText: {
-    color: '#fff',
-    fontSize: ms(16),
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  secondaryBtnText: {
+    color: '#78716C',
+    fontSize: ms(13),
+    fontWeight: '700',
   },
 });

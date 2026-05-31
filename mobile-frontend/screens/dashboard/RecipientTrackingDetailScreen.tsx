@@ -113,7 +113,7 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
     return (
       <View style={styles.container}>
         <StatusBar style="light" />
-        <LinearGradient colors={['#8E44AD', '#9B59B6']} style={[styles.header, { paddingTop: insets.top }]}>
+        <LinearGradient colors={['#9B6BBF', '#B084CC']} style={[styles.header, { paddingTop: insets.top }]}>
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={onBack} style={styles.backBtn}>
               <Ionicons name="chevron-back" size={ms(28)} color="#fff" />
@@ -123,7 +123,7 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
           </View>
         </LinearGradient>
         <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color="#9B59B6" />
+          <ActivityIndicator size="large" color="#B084CC" />
         </View>
       </View>
     );
@@ -133,7 +133,7 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      <LinearGradient colors={['#8E44AD', '#9B59B6']} style={[styles.header, { paddingTop: insets.top }]}>
+      <LinearGradient colors={['#9B6BBF', '#B084CC']} style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={onBack} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={ms(28)} color="#fff" />
@@ -150,12 +150,12 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
         {/* Summary grid */}
         <Animated.View entering={FadeInUp.springify()} style={styles.summaryGrid}>
           <View style={styles.summaryCard}>
-            <MaterialCommunityIcons name="pound" size={ms(18)} color="#9B59B6" />
+            <MaterialCommunityIcons name="pound" size={ms(18)} color="#B084CC" />
             <Text style={styles.summaryLabel}>Reference</Text>
             <Text style={styles.summaryValue} numberOfLines={1}>{data.reference}</Text>
           </View>
           <View style={styles.summaryCard}>
-            <MaterialCommunityIcons name="information-outline" size={ms(18)} color="#9B59B6" />
+            <MaterialCommunityIcons name="information-outline" size={ms(18)} color="#B084CC" />
             <Text style={styles.summaryLabel}>Status</Text>
             {tint && (
               <View style={[styles.statusPill, { backgroundColor: tint.bg }]}>
@@ -164,12 +164,12 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
             )}
           </View>
           <View style={styles.summaryCard}>
-            <MaterialCommunityIcons name="calendar" size={ms(18)} color="#9B59B6" />
+            <MaterialCommunityIcons name="calendar" size={ms(18)} color="#B084CC" />
             <Text style={styles.summaryLabel}>Submitted</Text>
             <Text style={styles.summaryValue}>{new Date(data.createdAt).toLocaleDateString()}</Text>
           </View>
           <View style={styles.summaryCard}>
-            <MaterialCommunityIcons name="account" size={ms(18)} color="#9B59B6" />
+            <MaterialCommunityIcons name="account" size={ms(18)} color="#B084CC" />
             <Text style={styles.summaryLabel}>Recipient</Text>
             <Text style={styles.summaryValue} numberOfLines={1}>{fullName}</Text>
           </View>
@@ -204,7 +204,7 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
         {/* Roadmap timeline */}
         <Animated.View entering={FadeInUp.delay(150).springify()} style={styles.card}>
           <View style={styles.cardHeader}>
-            <MaterialCommunityIcons name="source-branch" size={ms(20)} color="#9B59B6" />
+            <MaterialCommunityIcons name="source-branch" size={ms(20)} color="#B084CC" />
             <Text style={styles.cardTitle}>Request Roadmap</Text>
           </View>
           {data.statusHistories && data.statusHistories.length > 0 ? (
@@ -232,7 +232,7 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
         {/* Wig info */}
         <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.card}>
           <View style={styles.cardHeader}>
-            <MaterialCommunityIcons name="ribbon" size={ms(20)} color="#9B59B6" />
+            <MaterialCommunityIcons name="ribbon" size={ms(20)} color="#B084CC" />
             <Text style={styles.cardTitle}>Wig Info</Text>
           </View>
           <View style={styles.wigInfoRow}>
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   header: {
     borderBottomLeftRadius: ms(30),
     borderBottomRightRadius: ms(30),
-    shadowColor: '#8E44AD', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
+    shadowColor: '#9B6BBF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
   },
   headerContent: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -334,10 +334,10 @@ const styles = StyleSheet.create({
   emptyHint: { fontSize: ms(12), color: '#8C7895', fontStyle: 'italic' },
 
   timelineItem: { flexDirection: 'row', marginBottom: vs(14) },
-  timelineDot: { width: ms(10), height: ms(10), borderRadius: ms(5), backgroundColor: '#9B59B6', marginTop: vs(4), marginRight: ms(12) },
+  timelineDot: { width: ms(10), height: ms(10), borderRadius: ms(5), backgroundColor: '#B084CC', marginTop: vs(4), marginRight: ms(12) },
   timelineContent: { flex: 1, borderLeftWidth: 2, borderLeftColor: '#F2EBF4', paddingLeft: ms(12), marginLeft: -ms(7), marginTop: -vs(2), paddingTop: vs(2) },
   timelineMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: vs(4) },
-  timelineStatus: { fontSize: ms(13), fontWeight: '800', color: '#9B59B6' },
+  timelineStatus: { fontSize: ms(13), fontWeight: '800', color: '#B084CC' },
   timelineTime: { fontSize: ms(10), color: '#8C7895', fontWeight: '600' },
   timelineDesc: { backgroundColor: '#FDF7FB', borderRadius: ms(8), borderWidth: 1, borderColor: '#F2EBF4', padding: ms(10) },
   timelineDescText: { fontSize: ms(12), color: '#4D3F56' },
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   wigInfoCell: { flex: 1, backgroundColor: '#FDF7FB', borderRadius: ms(12), padding: ms(12) },
   wigInfoLabel: { fontSize: ms(11), color: '#8C7895', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   wigInfoValue: { fontSize: ms(14), color: '#1a1a1a', fontWeight: '900', marginTop: vs(4) },
-  storyBox: { backgroundColor: '#FDF7FB', borderRadius: ms(12), padding: ms(14), marginTop: vs(12), borderLeftWidth: 3, borderLeftColor: '#9B59B6' },
+  storyBox: { backgroundColor: '#FDF7FB', borderRadius: ms(12), padding: ms(14), marginTop: vs(12), borderLeftWidth: 3, borderLeftColor: '#B084CC' },
   storyText: { fontSize: ms(13), color: '#4D3F56', fontStyle: 'italic', lineHeight: ms(20) },
 
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: ms(20) },

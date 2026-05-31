@@ -102,9 +102,9 @@ function DeliveryLinkForm({
   return (
     <View style={styles.trackingBox}>
       <View style={styles.trackingHeader}>
-        <Ionicons name="cube-outline" size={ms(16)} color="#AD246D" />
+        <Ionicons name="cube-outline" size={ms(14)} color="#D63B8A" />
         <Text style={styles.trackingTitle}>
-          {initialLink ? 'Delivery Tracking' : 'Submit Delivery Tracking Link'}
+          {initialLink ? 'Tracking' : 'Add Tracking Link'}
         </Text>
       </View>
 
@@ -127,7 +127,7 @@ function DeliveryLinkForm({
       ) : (
         <>
           <Text style={styles.trackingHint}>
-            Paste the tracking URL from your courier (Grab, Lalamove, J&T, etc.) so our staff can monitor the arrival.
+            Paste your courier tracking URL.
           </Text>
           <TextInput
             style={styles.trackingInput}
@@ -357,33 +357,48 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
                      </View>
                   </View>
 
-                   {item.type === 'hair' && ['approved', 'completed', 'received hair', 'wig received', 'verified', 'received'].includes(item.status.toLowerCase()) && (
+                   {/* Certificate gate — show ONLY after staff confirms physical
+                       receipt of the hair. The backend sets `certificateNo`
+                       server-side at the `Received Hair` status transition
+                       (see donation.routes.ts), so a non-null cert number is the
+                       single source of truth that the hair has been received. */}
+                   {item.type === 'hair' && !!item.certificateNo && (
                      <TouchableOpacity
                        style={styles.certificateBtn}
-                       onPress={() => setSelectedCertificate({ reference: item.reference || item.id, certificateNo: item.certificateNo || 'Pending' })}
+                       onPress={() => setSelectedCertificate({ reference: item.reference || item.id, certificateNo: item.certificateNo as string })}
                      >
                        <Ionicons name="ribbon-outline" size={ms(16)} color="#fff" style={{ marginRight: ms(8) }} />
                        <Text style={styles.certificateBtnText}>VIEW CERTIFICATE</Text>
                      </TouchableOpacity>
                    )}
+
+                   {/* If approved but hair not yet received, surface a small
+                       hint so the donor understands why the cert isn't ready. */}
+                   {item.type === 'hair' && !item.certificateNo && ['approved', 'verified'].includes(item.status.toLowerCase()) && (
+                     <View style={styles.certPendingChip}>
+                       <Ionicons name="time-outline" size={ms(13)} color="#A8A29E" />
+                       <Text style={styles.certPendingText}>
+                         Certificate unlocks once staff confirms receipt
+                       </Text>
+                     </View>
+                   )}
                    
                    {item.type === 'hair' && ['approved', 'verified'].includes(item.status.toLowerCase()) && (
                      <>
+                       {/* Trimmed delivery instructions — was a wordy multi-paragraph
+                           block. Now: tight header + address pill + one-line ref. */}
                        <View style={styles.deliveryContainer}>
                           <View style={styles.deliveryHeader}>
-                            <Ionicons name="location" size={ms(16)} color="#FF1493" />
-                            <Text style={styles.deliveryTitle}>Delivery Instructions</Text>
+                            <Ionicons name="location" size={ms(14)} color="#D63B8A" />
+                            <Text style={styles.deliveryTitle}>Drop-off</Text>
                           </View>
-                          <Text style={styles.deliveryText}>
-                            Deliver your hair to our Strand Up for Cancer Receiving Area:
-                          </Text>
                           <View style={styles.addressBox}>
                             <Text style={styles.addressText}>
-                              Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)
+                              Manila Downtown YMCA · 945 Sabino Padilla St., Sta. Cruz, Manila
                             </Text>
                           </View>
                           <Text style={styles.deliveryNote}>
-                            Please present your Reference ID: <Text style={{ fontWeight: '800' }}>{item.reference || item.id}</Text> upon delivery.
+                            Ref: <Text style={{ fontWeight: '800' }}>{item.reference || item.id}</Text>
                           </Text>
                        </View>
 
@@ -608,5 +623,21 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   certificateBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(13), letterSpacing: 0.5 },
+  certPendingChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(6),
+    paddingHorizontal: ms(12),
+    paddingVertical: vs(8),
+    backgroundColor: '#F5F5F0',
+    borderRadius: ms(10),
+    marginTop: vs(8),
+    alignSelf: 'flex-start',
+  },
+  certPendingText: {
+    fontSize: ms(11),
+    color: '#78716C',
+    fontWeight: '600',
+  },
 });
 
