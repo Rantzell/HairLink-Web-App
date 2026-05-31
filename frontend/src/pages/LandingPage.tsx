@@ -115,18 +115,19 @@ const hlStyles = `
   border-radius: 999px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #fff;
-  background: #D63B8A;
-  border: 1.5px solid #D63B8A;
+  color: #ad246d;
+  background: #fce4ec;
+  border: 1.5px solid #f8bbd9;
   transition: all 0.18s ease;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(214,59,138,.22);
+  box-shadow: 0 2px 8px rgba(214,59,138,.12);
 }
 
 .hl-btn-primary:hover {
-  background: #B52B72;
-  border-color: #B52B72;
-  box-shadow: 0 4px 14px rgba(214,59,138,.30);
+  background: #f48fb1;
+  border-color: #f48fb1;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(214,59,138,.25);
   transform: translateY(-1px);
 }
 

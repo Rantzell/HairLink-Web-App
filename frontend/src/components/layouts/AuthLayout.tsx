@@ -110,19 +110,22 @@ const shellStyles = `
   border-radius: 999px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #fff;
-  background: #D63B8A;
-  border: 1.5px solid #D63B8A;
+  color: #ad246d;
+  background: #fce4ec;
+  border: 1.5px solid #f8bbd9;
   text-decoration: none;
   transition: all 0.18s ease;
   white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(214,59,138,.12);
 }
 
 .hl-auth-btn-primary:hover,
 .hl-auth-btn-primary.active {
-  background: #B52B72;
-  border-color: #B52B72;
-  box-shadow: 0 4px 14px rgba(214,59,138,.30);
+  background: #f48fb1;
+  border-color: #f48fb1;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(214,59,138,.25);
+  transform: translateY(-1px);
 }
 
 /* Burger */
@@ -251,7 +254,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           <Link
             to="/register"
             onClick={() => setMenuOpen(false)}
-            style={{ color: '#D63B8A', fontWeight: 600 }}
+            style={{ color: '#ad246d', fontWeight: 600 }}
           >
             Register
           </Link>

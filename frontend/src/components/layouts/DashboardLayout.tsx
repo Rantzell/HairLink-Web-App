@@ -591,8 +591,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       <header className="dash-header">
         <nav className="dash-nav" aria-label="Dashboard navigation">
           <Link className="dash-brand" to={getDashboardPath()} aria-label="HairLink home">
-            <img src="/assets/images/landing/pink-ribbon.png" alt="Pink ribbon icon" />
-            <span>HairLink</span>
+            <img src="/assets/images/landing/pink-ribbon.png" alt="HairLink" />
+            <span>Hair<em>Link</em></span>
           </Link>
 
           <button

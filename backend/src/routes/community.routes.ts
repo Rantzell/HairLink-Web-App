@@ -71,18 +71,19 @@ router.post('/posts', authenticate, upload.single('image'), async (req: Request,
     const content = (req.body.content || '').toString().trim();
     console.log('[Community] Creating post: content=', content, 'file=', req.file ? req.file.originalname : 'none');
     if (!content) { res.status(400).json({ error: 'Caption is required' }); return; }
-    // Enforce mandatory image at the API layer so neither mobile nor web can bypass.
-    if (!req.file) { res.status(400).json({ error: 'A photo is required to create a post' }); return; }
 
-    const path = await uploadFile(req.file, 'hairlink', 'community/posts');
-    const imageUrl = getPublicUrl('hairlink', path);
+    let imageUrl: string | null = null;
+    if (req.file) {
+      const path = await uploadFile(req.file, 'hairlink', 'community/posts');
+      imageUrl = getPublicUrl('hairlink', path);
+    }
 
     const post = await prisma.communityPost.create({
-      data: { 
+      data: {
         id: uuidv4(),
-        userId: req.user!.id, 
-        content, 
-        imageUrl 
+        userId: req.user!.id,
+        content,
+        imageUrl
       },
       include: { user: true, comments: true },
     });

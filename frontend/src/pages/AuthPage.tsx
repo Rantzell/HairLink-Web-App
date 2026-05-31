@@ -28,8 +28,8 @@ const authStyles = `
 ═══════════════════════════════════════════════ */
 .hl-auth-main {
   position: relative;
-  width: min(920px, 96vw);
-  min-height: 580px;
+  width: min(1060px, 96vw);
+  min-height: 640px;
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 24px 64px rgba(0,0,0,.14), 0 4px 16px rgba(0,0,0,.06);
@@ -45,11 +45,11 @@ const authStyles = `
   width: 50%;
   overflow-y: auto;
   background: #ffffff;
-  padding: clamp(1.5rem,3vw,2.25rem) clamp(1.25rem,3vw,2.25rem);
+  padding: clamp(1.75rem,3.5vw,2.75rem) clamp(1.5rem,3.5vw,2.75rem);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   transition: all 0.6s ease-in-out;
 }
 
@@ -69,6 +69,8 @@ const authStyles = `
   z-index: 1;
   opacity: 0;
   pointer-events: none;
+  justify-content: flex-start;
+  padding-top: clamp(1.5rem,3vw,2.25rem);
 }
 
 /* ═══════════════════════════════════════════════
@@ -240,12 +242,26 @@ const authStyles = `
   color: #F4AACC;
 }
 
+/* Register action button on overlay — matches landing page Register pill */
+.hl-ov-btn-register {
+  background: #fce4ec;
+  border-color: #f8bbd9;
+  color: #ad246d;
+  font-weight: 700;
+}
+
+.hl-ov-btn-register:hover {
+  background: #f48fb1;
+  border-color: #f48fb1;
+  color: #fff;
+}
+
 /* ═══════════════════════════════════════════════
    FORM INNER WRAPPER
 ═══════════════════════════════════════════════ */
 .hl-form-inner {
   width: 100%;
-  max-width: 360px;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
 }
@@ -338,8 +354,8 @@ const authStyles = `
 .hl-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.6rem;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
 }
 
 .hl-label {
@@ -351,11 +367,11 @@ const authStyles = `
 
 .hl-input {
   width: 100%;
-  padding: 0.58rem 0.85rem;
+  padding: 0.65rem 0.9rem;
   border: 1.5px solid #E5E5E0;
   border-radius: 10px;
   background: #FAFAF9;
-  font-size: 0.865rem;
+  font-size: 0.875rem;
   color: #1C1917;
   font-family: 'Inter', sans-serif;
   outline: none;
@@ -380,7 +396,7 @@ const authStyles = `
 }
 
 /* ── Two column grid ── */
-.hl-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+.hl-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
 
 /* ── Phone input ── */
 .hl-phone-row {
@@ -469,11 +485,11 @@ const authStyles = `
   width: 100%;
   padding: 0.72rem;
   border-radius: 10px;
-  background: #1a1617;
-  color: #fff;
+  background: #fce4ec;
+  color: #ad246d;
   font-size: 0.88rem;
-  font-weight: 600;
-  border: none;
+  font-weight: 700;
+  border: 1.5px solid #f8bbd9;
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: 0.4rem;
@@ -481,11 +497,20 @@ const authStyles = `
   font-family: 'Inter', sans-serif;
 }
 .hl-submit:hover:not(:disabled) {
-  background: #D63B8A;
-  box-shadow: 0 4px 14px rgba(214,59,138,.32);
+  background: #f48fb1;
+  border-color: #f48fb1;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(214,59,138,.25);
   transform: translateY(-1px);
 }
 .hl-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Register-specific submit — pill shape matching landing Register button */
+.hl-submit-register {
+  border-radius: 999px !important;
+  font-size: 0.92rem;
+  letter-spacing: 0.015em;
+}
 
 /* ── Full-screen loader ── */
 .hl-loader {
@@ -874,7 +899,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 </div>
               </div>
 
-              <button type="submit" className="hl-submit" disabled={loading}>
+              <button type="submit" className="hl-submit hl-submit-register" disabled={loading}>
                 Create Account
               </button>
             </form>
@@ -899,7 +924,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
               <p className="hl-ov-sub">
                 Log in to continue your HairLink journey and track the impact of your donation.
               </p>
-              <button type="button" className="hl-ov-btn" onClick={() => switchTo(true)}>
+              <button type="button" className="hl-ov-btn hl-ov-btn-register" onClick={() => switchTo(true)}>
                 Create an Account →
               </button>
             </div>

@@ -115,10 +115,16 @@ body {
 }
 
 .dash-brand {
-  color: var(--w900) !important;
+  color: #1a1625 !important;
   font-family: var(--font-display) !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.01em !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  font-size: 1.15rem !important;
+}
+
+.dash-brand span em {
+  font-style: normal !important;
+  color: #D63B8A !important;
 }
 
 .dash-links a {
