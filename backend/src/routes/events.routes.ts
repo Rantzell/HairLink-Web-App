@@ -122,7 +122,8 @@ const eventUpdateSchema = z.object({
 router.patch('/:id', authenticate, validate(eventUpdateSchema), async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
-    const id = parseInt(req.params.id, 10);
+  const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(String(idParam), 10);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid event id' });
       return;

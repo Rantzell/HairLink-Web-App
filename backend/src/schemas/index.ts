@@ -73,6 +73,7 @@ export const requestCreateSchema = z.object({
   notes: z.string().optional(),
   wig_length: z.string().optional(),
   wig_color: z.string().optional(),
+  delivery_method: z.enum(['delivery', 'pickup']).default('delivery'),
 });
 
 export const requestStatusSchema = z.object({

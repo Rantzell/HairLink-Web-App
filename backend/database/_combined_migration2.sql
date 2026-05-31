@@ -1,3 +1,34 @@
+-- migration_prelude.sql
+-- Drop possibly-existing RLS policies that reference public.users.id so the
+-- main migration script can alter the users table safely.
+
+-- Drop policies on public.users
+DROP POLICY IF EXISTS "users read own profile" ON public.users;
+DROP POLICY IF EXISTS "users update own profile" ON public.users;
+DROP POLICY IF EXISTS "staff read all profiles" ON public.users;
+
+-- Drop policies that might reference public.users in other tables
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='hair_requests') THEN
+    DROP POLICY IF EXISTS "staff see all requests" ON public.hair_requests;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='donations') THEN
+    DROP POLICY IF EXISTS "staff see all donations" ON public.donations;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='monetary_donations') THEN
+    DROP POLICY IF EXISTS "staff see all monetary donations" ON public.monetary_donations;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='wig_productions') THEN
+    DROP POLICY IF EXISTS "staff manage wig productions" ON public.wig_productions;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='events') THEN
+    DROP POLICY IF EXISTS "staff manage events" ON public.events;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='partnerships') THEN
+    DROP POLICY IF EXISTS "admin manages partnerships" ON public.partnerships;
+  END IF;
+END $$;
 -- ==============================================================
 -- HairLink – Auth Migration v3 (IDEMPOTENT / SAFE TO RE-RUN)
 -- The previous run completed structure changes but failed on data.
@@ -132,7 +163,7 @@ SELECT
   )                                                           AS name,
   COALESCE(au.raw_user_meta_data->>'first_name', '')         AS first_name,
   COALESCE(au.raw_user_meta_data->>'last_name',  '')         AS last_name,
-  COALESCE(lower(au.raw_user_meta_data->>'role'),       'donor')    AS role,
+  COALESCE(au.raw_user_meta_data->>'role',       'donor')    AS role,
   NOW()                                                       AS created_at,
   NOW()                                                       AS updated_at
 FROM auth.users au
@@ -317,3 +348,25 @@ END $$;
 -- Done! Run: SELECT id, email, name, role FROM public.users;
 -- to verify the 5 demo accounts are present.
 -- ==============================================================
+-- Insert auth.users into public.users, normalizing role to lowercase
+INSERT INTO public.users (id, email, name, first_name, last_name, role, created_at, updated_at)
+SELECT
+  au.id,
+  au.email,
+  COALESCE(
+    NULLIF(
+      TRIM(
+        COALESCE(au.raw_user_meta_data->>'first_name', '') || ' ' ||
+        COALESCE(au.raw_user_meta_data->>'last_name',  '')
+      ), ' '
+    ),
+    au.email
+  ) AS name,
+  COALESCE(au.raw_user_meta_data->>'first_name', '') AS first_name,
+  COALESCE(au.raw_user_meta_data->>'last_name',  '') AS last_name,
+  -- normalize role to lowercase and default to 'donor'
+  COALESCE(lower(au.raw_user_meta_data->>'role'), 'donor') AS role,
+  NOW() AS created_at,
+  NOW() AS updated_at
+FROM auth.users au
+ON CONFLICT (id) DO NOTHING;

@@ -97,6 +97,7 @@ router.post('/', authenticate, upload.fields([
         notes: req.body.notes || null,
         wigLength: req.body.wig_length || null,
         wigColor: req.body.wig_color || null,
+        deliveryMethod: req.body.delivery_method || 'delivery',
       },
     });
 
@@ -165,7 +166,7 @@ router.post('/:reference/status', authenticate, validate(requestStatusSchema), a
   } catch (err) { res.status(500).json({ error: 'Failed to update status' }); }
 });
 
-// POST /internal-api/requests/:reference/confirm-received (recipient confirms wig)
+// POST /internal-api/requests/:reference/confirm-received (recipient confirms delivery wig)
 router.post('/:reference/confirm-received', authenticate, async (req: Request, res: Response) => {
   try {
     const hairRequest = await prisma.hairRequest.findFirst({
@@ -203,6 +204,38 @@ router.post('/:reference/confirm-received', authenticate, async (req: Request, r
       wig_received_at: now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     });
   } catch (err) { res.status(500).json({ error: 'Failed to confirm' }); }
+});
+
+// POST /internal-api/requests/:reference/confirm-pickup (recipient confirms they collected from office)
+router.post('/:reference/confirm-pickup', authenticate, async (req: Request, res: Response) => {
+  try {
+    const hairRequest = await prisma.hairRequest.findFirst({
+      where: { reference: req.params.reference as string, userId: req.user!.id },
+    });
+    if (!hairRequest) { res.status(404).json({ message: 'Request not found' }); return; }
+
+    if ((hairRequest as any).deliveryMethod !== 'pickup') {
+      res.status(422).json({ message: 'This action is only available for pick-up requests.', success: false });
+      return;
+    }
+    if (hairRequest.status !== 'Ready for Pickup') {
+      res.status(422).json({ message: 'Pickup can only be confirmed when status is Ready for Pickup.', success: false });
+      return;
+    }
+
+    const now = new Date();
+    await prisma.hairRequest.update({
+      where: { id: hairRequest.id },
+      data: { status: 'Pickup Confirmed', receivedAt: now },
+    });
+    await createStatusHistory(REQUEST_TYPE, hairRequest.id, 'Pickup Confirmed', 'Recipient confirmed receipt of wig from Binondo office.');
+
+    if (hairRequest.userId) {
+      await notifyRequestStatus(hairRequest.userId, 'Completed', hairRequest.reference!);
+    }
+
+    res.json({ message: 'Pickup confirmed! Staff will close your request shortly.', success: true });
+  } catch (err) { res.status(500).json({ error: 'Failed to confirm pickup' }); }
 });
 
 

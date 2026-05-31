@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
+import Pagination from '../components/Pagination';
 import '../styles/StaffVerificationList.css';
+
+const PAGE_SIZE = 10;
 
 const StaffVerificationList: React.FC = () => {
   const { type } = useParams<{ type: 'donor' | 'recipient' | 'monetary' }>();
@@ -10,6 +13,9 @@ const StaffVerificationList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter, type]);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -40,6 +46,9 @@ const StaffVerificationList: React.FC = () => {
     const matchesStatus = statusFilter === 'All Status' || item.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
+
+  const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE);
+  const pagedItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const title = type === 'donor' ? 'Hair Donations' : type === 'recipient' ? 'Recipient Requests' : 'Monetary Donations';
   const hasActions = type !== 'monetary';
@@ -90,8 +99,8 @@ const StaffVerificationList: React.FC = () => {
                   <i className='bx bx-loader-alt bx-spin tracking-table-loading-icon'></i>
                   Loading verification queue...
                 </td></tr>
-              ) : filteredItems.length > 0 ? (
-                filteredItems.map(item => (
+              ) : pagedItems.length > 0 ? (
+                pagedItems.map(item => (
                   <tr key={item.id} className="tracking-table-row">
                     <td className="tracking-table-td"><strong className="tracking-table-td-bold">{item.reference || item.referenceNumber}</strong></td>
                     <td className="tracking-table-td-date">{new Date(item.createdAt).toLocaleDateString()}</td>
@@ -118,6 +127,7 @@ const StaffVerificationList: React.FC = () => {
             </tbody>
           </table>
         </div>
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </article>
     </div>
   );

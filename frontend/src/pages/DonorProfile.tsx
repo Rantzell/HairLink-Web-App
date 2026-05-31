@@ -284,7 +284,7 @@ const DonorProfile: React.FC = () => {
         <div className="modal-overlay">
           <div className="modal-content animate-in zoom-in">
             <header className="modal-header">
-              <h2>Edit Your Profile</h2>
+              <h2>Edit Personal Information</h2>
               <button className="modal-close-btn" onClick={() => setIsModalOpen(false)}>
                 <i className='bx bx-x'></i>
               </button>
@@ -297,7 +297,7 @@ const DonorProfile: React.FC = () => {
                   <input 
                     type="text" 
                     value={editData.firstName} 
-                    onChange={e => setEditData({...editData, firstName: e.target.value})}
+                    readOnly
                     className="form-input-premium"
                   />
                 </div>
@@ -306,10 +306,20 @@ const DonorProfile: React.FC = () => {
                   <input 
                     type="text" 
                     value={editData.lastName} 
-                    onChange={e => setEditData({...editData, lastName: e.target.value})}
+                    readOnly
                     className="form-input-premium"
                   />
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label className="detail-label">Email Address</label>
+                <input 
+                  type="email" 
+                  value={user?.email || ''} 
+                  readOnly
+                  className="form-input-premium"
+                />
               </div>
 
               <div className="form-group">
@@ -322,33 +332,32 @@ const DonorProfile: React.FC = () => {
                 />
               </div>
 
-              <div className="details-grid-form">
-                <div className="form-group">
-                  <label className="detail-label">Age</label>
-                  <input 
-                    type="number" 
-                    value={editData.age} 
-                    onChange={e => setEditData({...editData, age: e.target.value})}
-                    className="form-input-premium"
-                    min="1"
-                    max="120"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="detail-label">Gender</label>
-                  <select 
-                    value={editData.gender} 
-                    onChange={e => setEditData({...editData, gender: e.target.value})}
-                    className="form-input-premium"
-                    style={{ height: '42px' }}
-                  >
-                    <option value="" disabled>Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="nonbinary">Non-binary</option>
-                    <option value="prefer_not_say">Prefer not to say</option>
-                  </select>
-                </div>
+              <div className="form-group">
+                <label className="detail-label">Age</label>
+                <input 
+                  type="number" 
+                  value={editData.age} 
+                  onChange={e => setEditData({...editData, age: e.target.value})}
+                  className="form-input-premium"
+                  min="1"
+                  max="120"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="detail-label">Gender</label>
+                <select 
+                  value={editData.gender} 
+                  onChange={e => setEditData({...editData, gender: e.target.value})}
+                  className="form-input-premium"
+                  style={{ height: '42px' }}
+                >
+                  <option value="" disabled>Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="nonbinary">Non-binary</option>
+                  <option value="prefer_not_say">Prefer not to say</option>
+                </select>
               </div>
 
               <div className="form-group">
@@ -381,11 +390,8 @@ const DonorProfile: React.FC = () => {
               </div>
 
               <div className="modal-actions-premium">
-                <button type="submit" disabled={isSubmitting} className="submit-code-btn flex-1">
+                <button type="submit" disabled={isSubmitting} className="save-btn-premium">
                   {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </button>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="cancel-btn-premium">
-                  Cancel
                 </button>
               </div>
             </form>

@@ -76,6 +76,33 @@ const DonorDonate: React.FC = () => {
 
   return (
     <section className="section-wrap donate-page reveal active">
+      <style>{`
+        .checkbox-wrap {
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: center !important;
+          justify-content: flex-start !important;
+          gap: 0.5rem !important;
+          grid-column: span 2 !important;
+          margin-top: 0.5rem !important;
+          margin-bottom: 0.8rem !important;
+          cursor: pointer !important;
+        }
+        .checkbox-wrap input[type="checkbox"] {
+          margin: 0 !important;
+          width: 18px !important;
+          height: 18px !important;
+          flex-shrink: 0 !important;
+          cursor: pointer !important;
+          display: inline-block !important;
+        }
+        .checkbox-wrap span {
+          display: inline-block !important;
+          color: #d33f7f !important;
+          font-weight: 600 !important;
+          text-align: left !important;
+        }
+      `}</style>
       <div className="section-title-block center">
         <h1>Donate Hair</h1>
         <p>Your donation helps create wigs for people with medical hair loss.</p>
@@ -99,17 +126,29 @@ const DonorDonate: React.FC = () => {
           </div>
 
           <div className="form-grid two-col">
+            {/* Line 1 */}
             <label>
-              Full Name <span>*</span>
+              <span>First Name <span>*</span></span>
               <input 
                 type="text" 
-                value={user?.firstName ? `${user.firstName} ${user.lastName}` : (user?.name || '')} 
+                value={user?.firstName || ''} 
                 readOnly 
                 style={{ background: '#f5f3f7', cursor: 'not-allowed' }} 
               />
             </label>
             <label>
-              Email <span>*</span>
+              <span>Last Name <span>*</span></span>
+              <input 
+                type="text" 
+                value={user?.lastName || ''} 
+                readOnly 
+                style={{ background: '#f5f3f7', cursor: 'not-allowed' }} 
+              />
+            </label>
+
+            {/* Line 2 */}
+            <label>
+              <span>Email <span>*</span></span>
               <input 
                 type="email" 
                 value={user?.email || ''} 
@@ -118,7 +157,7 @@ const DonorDonate: React.FC = () => {
               />
             </label>
             <label>
-              Phone Number <span>*</span>
+              <span>Phone Number <span>*</span></span>
               <input 
                 type="tel" 
                 value={user?.phone || ''} 
@@ -126,8 +165,10 @@ const DonorDonate: React.FC = () => {
                 style={{ background: '#f5f3f7', cursor: 'not-allowed' }} 
               />
             </label>
+
+            {/* Line 3 */}
             <label>
-              Hair Length <span>*</span>
+              <span>Hair Length <span>*</span></span>
               <select 
                 value={formData.hairLength} 
                 onChange={e => setFormData({...formData, hairLength: e.target.value})}
@@ -139,7 +180,7 @@ const DonorDonate: React.FC = () => {
               </select>
             </label>
             <label>
-              Natural Hair Color <span>*</span>
+              <span>Natural Hair Color <span>*</span></span>
               <select 
                 value={formData.hairColor} 
                 onChange={e => setFormData({...formData, hairColor: e.target.value})}
@@ -152,6 +193,8 @@ const DonorDonate: React.FC = () => {
                 <option>Other</option>
               </select>
             </label>
+
+            {/* Line 4 */}
             <label className="checkbox-wrap">
               <input 
                 type="checkbox" 
@@ -164,7 +207,7 @@ const DonorDonate: React.FC = () => {
 
           <div className="form-grid two-col">
             <label>
-              Shipping Address <span>*</span>
+              <span>Shipping Address <span>*</span></span>
               <textarea 
                 rows={4} 
                 value={formData.address}
@@ -173,7 +216,7 @@ const DonorDonate: React.FC = () => {
               ></textarea>
             </label>
             <label>
-              Why are you donating? <span>*</span>
+              <span>Why are you donating? <span>*</span></span>
               <textarea 
                 rows={4} 
                 value={formData.reason}

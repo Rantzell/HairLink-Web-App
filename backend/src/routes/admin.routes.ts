@@ -304,7 +304,7 @@ router.get('/reports', ...adminOnly, async (_req, res) => {
       prisma.wigProduction.count({ where: { status: 'completed' } }),
       prisma.user.count(), prisma.event.count(),
     ]);
-    const mt = await prisma.monetaryDonation.aggregate({ where: { status: 'Completed' }, _sum: { amount: true } });
+    const mt = await prisma.monetaryDonation.aggregate({ where: { status: { not: 'Rejected' } }, _sum: { amount: true } });
     const rs = await prisma.hairRequest.count({ where: { status: { in: ['Validated', 'Matched', 'Completed'] } } });
     res.json(s({ donationsCount: dc, requestsCount: rc, wigsDistributed: wd, usersCount: uc, monetaryTotal: mt._sum.amount || 0, eventsCount: ec, recipientsServed: rs }));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }

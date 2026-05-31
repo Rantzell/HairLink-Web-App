@@ -61,10 +61,17 @@ const StaffRealtimeTracking: React.FC = () => {
   const handleUpdateStatus = async (reference: string, _type: 'donor' | 'recipient', status: string, deliveryTrackingLink?: string) => {
     setIsSubmitting(true);
     try {
-      await apiClient.post(`/internal-api/staff/tracking/${reference}/status`, { 
-        status, 
-        delivery_tracking_link: deliveryTrackingLink 
-      });
+      if (status === 'Ready for Pickup') {
+        await apiClient.post(`/internal-api/staff/requests/${reference}/ready-for-pickup`);
+      } else if (status === 'Completed' && _type === 'recipient') {
+        // For pickup requests: recipient has confirmed pickup, staff marks complete
+        await apiClient.post(`/internal-api/staff/requests/${reference}/complete-pickup`);
+      } else {
+        await apiClient.post(`/internal-api/staff/tracking/${reference}/status`, {
+          status,
+          delivery_tracking_link: deliveryTrackingLink,
+        });
+      }
       fetchData();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Update failed');
@@ -315,7 +322,7 @@ const StaffRealtimeTracking: React.FC = () => {
       </div>
 
       <div className="tracking-list-layout tracking-list-layout-margin">
-        <div className="tracking-table-wrap" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(73, 20, 52, 0.05)' }}>
+        <div className="tracking-table-wrap" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', overflowX: 'auto', boxShadow: '0 10px 30px rgba(73, 20, 52, 0.05)' }}>
           <table className="tracking-table tracking-table">
             <thead className="tracking-thead">
               <tr>
@@ -616,7 +623,11 @@ const StaffRealtimeTracking: React.FC = () => {
                 </>
               ) : (
                 filteredRequests.map((request) => {
-                  const stageIndex = ['Validated', 'Matched', 'In Transit', 'Completed'].indexOf(request.status);
+                  const isPickup = (request as any).deliveryMethod === 'pickup';
+                  const pickupStages = ['Validated', 'Matched', 'Ready for Pickup', 'Pickup Confirmed', 'Completed'];
+                  const deliveryStages = ['Validated', 'Matched', 'In Transit', 'Completed'];
+                  const stages = isPickup ? pickupStages : deliveryStages;
+                  const stageIndex = stages.indexOf(request.status);
                   const photoUrl = request.additionalPhoto ? getPublicUrl('hairlink', request.additionalPhoto) : null;
 
                   return (
@@ -660,6 +671,22 @@ const StaffRealtimeTracking: React.FC = () => {
                           <div>
                             <div className="tracking-user-name">{request.user?.firstName} {request.user?.lastName}</div>
                             <div className="tracking-user-role-recipient">Recipient</div>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              marginTop: '3px',
+                              background: (request as any).deliveryMethod === 'pickup' ? '#fdf2f8' : '#f0fdf4',
+                              color: (request as any).deliveryMethod === 'pickup' ? '#ad246d' : '#16a34a',
+                              border: `1px solid ${(request as any).deliveryMethod === 'pickup' ? '#f9cde8' : '#bbf7d0'}`,
+                              borderRadius: '20px',
+                              padding: '1px 8px',
+                              fontSize: '0.68rem',
+                              fontWeight: 700,
+                            }}>
+                              <i className={`bx ${(request as any).deliveryMethod === 'pickup' ? 'bx-store' : 'bx-car'}`} style={{ fontSize: '0.75rem' }}></i>
+                              {(request as any).deliveryMethod === 'pickup' ? 'Pick-up' : 'Delivery'}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -670,19 +697,19 @@ const StaffRealtimeTracking: React.FC = () => {
                         <div className="tracking-progress-col">
                           <div className="tracking-progress-head">
                             <span className="tracking-progress-label">Progress</span>
-                            <span className="tracking-progress-percent">{Math.round(((stageIndex + 1) / 4) * 100)}%</span>
+                            <span className="tracking-progress-percent">{Math.round(((stageIndex + 1) / stages.length) * 100)}%</span>
                           </div>
                           <div className="tracking-progress-bar-bg">
                             <div style={{
                               position: 'absolute', left: 0, top: 0, bottom: 0,
-                              width: `${((stageIndex + 1) / 4) * 100}%`,
-                              background: 'linear-gradient(90deg, #ad246d, #ff6bb5)',
+                              width: `${((stageIndex + 1) / stages.length) * 100}%`,
+                              background: request.status === 'Completed' ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #ad246d, #ff6bb5)',
                               borderRadius: '10px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
                               boxShadow: '0 0 8px rgba(173, 36, 109, 0.3)'
                             }}></div>
                           </div>
                           <div className="tracking-progress-status">
-                            <i className='bx bx-map-pin' style={{ color: '#ad246d' }}></i>
+                            <i className={`bx ${request.status === 'Completed' ? 'bx-check-circle' : request.status === 'Pickup Confirmed' ? 'bx-store' : 'bx-map-pin'}`} style={{ color: request.status === 'Completed' ? '#10b981' : '#ad246d' }}></i>
                             {request.status}
                           </div>
                         </div>
@@ -691,7 +718,17 @@ const StaffRealtimeTracking: React.FC = () => {
                         {request.status === 'Validated' && (
                           <Link to={`/staff/matching?reference=${request.reference}`} className="soft-btn" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', textDecoration: 'none', borderRadius: '50px', display: 'inline-block', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Match Wig</Link>
                         )}
-                        {request.status === 'Matched' && (
+                        {request.status === 'Matched' && (request as any).deliveryMethod === 'pickup' && (
+                          <button
+                            className="soft-btn"
+                            onClick={() => triggerAction(request.reference, 'recipient', 'Ready for Pickup', 'Mark as Ready for Pick-up')}
+                            disabled={isSubmitting}
+                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <i className='bx bx-store'></i> Ready for Pick-up
+                          </button>
+                        )}
+                        {request.status === 'Matched' && (request as any).deliveryMethod !== 'pickup' && (
                           <div className="tracking-action-col-wide">
                             <div className="tracking-input-wrapper">
                               <i className='bx bx-link' style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#ad246d', fontSize: '0.9rem' }}></i>
@@ -703,13 +740,13 @@ const StaffRealtimeTracking: React.FC = () => {
                                 className="tracking-input"
                               />
                             </div>
-                            <button 
-                              className="soft-btn" 
+                            <button
+                              className="soft-btn"
                               onClick={() => {
                                 const link = materialLinks[request.reference];
                                 triggerAction(request.reference, 'recipient', 'In Transit', 'Ship Wig', link);
-                              }} 
-                              disabled={isSubmitting} 
+                              }}
+                              disabled={isSubmitting}
                               style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}
                             >
                               Ship Wig
@@ -718,6 +755,22 @@ const StaffRealtimeTracking: React.FC = () => {
                         )}
                         {request.status === 'In Transit' && (
                           <span className="tracking-awaiting-text">Awaiting Recipient Confirmation...</span>
+                        )}
+                        {request.status === 'Ready for Pickup' && (
+                          <span className="tracking-awaiting-text" style={{ color: '#ad246d', fontWeight: 700 }}>
+                            <i className='bx bx-store' style={{ verticalAlign: 'middle', marginRight: '4px' }}></i>
+                            Awaiting Recipient Pick-up
+                          </span>
+                        )}
+                        {request.status === 'Pickup Confirmed' && (
+                          <button
+                            className="soft-btn"
+                            onClick={() => triggerAction(request.reference, 'recipient', 'Completed', 'Mark Transaction Complete')}
+                            disabled={isSubmitting}
+                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <i className='bx bx-check-circle'></i> Mark Transaction Complete
+                          </button>
                         )}
                       </td>
                     </tr>
@@ -747,7 +800,13 @@ const StaffRealtimeTracking: React.FC = () => {
           setPendingAction(null);
         }}
         title={pendingAction?.label || 'Confirm Action'}
-        message={`Are you sure you want to ${pendingAction?.status === 'In Transit' ? 'mark this wig as shipped and notify the recipient' : pendingAction?.status === 'Received Hair' ? 'confirm receipt of this hair donation' : 'confirm receipt of this finished wig'}?`}
+        message={`Are you sure you want to ${
+          pendingAction?.status === 'In Transit' ? 'mark this wig as shipped and notify the recipient' :
+          pendingAction?.status === 'Received Hair' ? 'confirm receipt of this hair donation' :
+          pendingAction?.status === 'Ready for Pickup' ? 'mark this wig as Ready for Pick-up? The recipient will be notified to collect it at the Binondo office.' :
+          pendingAction?.status === 'Completed' ? 'mark this transaction as Complete? This will close the hair request.' :
+          'confirm receipt of this finished wig'
+        }?`}
         confirmText={`Yes, ${pendingAction?.label || 'Confirm'}`}
         isConfirming={isSubmitting}
       />

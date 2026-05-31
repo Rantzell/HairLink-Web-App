@@ -129,7 +129,7 @@
 .dashboard-task-table-wrap {
   border: 1px solid #ead7e8;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .dashboard-task-table {

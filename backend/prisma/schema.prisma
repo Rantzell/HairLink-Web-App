@@ -93,6 +93,7 @@ model HairRequest {
   recipientPhoto     String?         @map("recipient_photo")
   deliveryLink       String?         @map("delivery_link")
   receivedAt         DateTime?       @map("received_at") @db.Timestamptz(6)
+  deliveryMethod     String?         @default("delivery") @map("delivery_method")
   user               User?           @relation(fields: [userId], references: [id], onUpdate: NoAction)
   wigProductions     WigProduction[]
 

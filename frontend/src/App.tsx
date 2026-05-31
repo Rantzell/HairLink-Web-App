@@ -18,7 +18,7 @@ import RecipientDashboard from './pages/RecipientDashboard';
 import RecipientRequest from './pages/RecipientRequest';
 import RecipientTracking from './pages/RecipientTracking';
 import RecipientTrackingDetail from './pages/RecipientTrackingDetail';
-import RecipientMonetary from './pages/RecipientMonetary';
+// import RecipientMonetary from './pages/RecipientMonetary';
 import MonetaryDonation from './pages/MonetaryDonation';
 import HairCareHub from './pages/HairCareHub';
 
@@ -87,7 +87,7 @@ function App() {
                   <Route path="tracking" element={<RecipientTracking />} />
                   <Route path="tracking/:reference" element={<RecipientTrackingDetail />} />
                    <Route path="profile" element={<DonorProfile />} /> {/* Recipient uses same profile UI */}
-                   <Route path="monetary" element={<RecipientMonetary />} />
+                   <Route path="monetary" element={<MonetaryDonation />} />
                    <Route path="community" element={<CommunityFeed />} />
                    <Route path="haircare" element={<HairCareHub />} />
                   <Route path="*" element={<Navigate to="dashboard" replace />} />

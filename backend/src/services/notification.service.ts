@@ -3,7 +3,7 @@ import prisma from '../config/database';
 export const createNotification = async (userId: string, title: string, message: string, type: string = 'general') => {
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || (user.role !== 'donor' && user.role !== 'recipient')) return null;
+    if (!user) return null;
 
     const notif = await prisma.notifications.create({
       data: {
@@ -88,7 +88,7 @@ export const notifyAllDonorsAndRecipients = async (title: string, message: strin
   try {
     const targetUsers = await prisma.user.findMany({
       where: {
-        role: { in: ['donor', 'recipient'] },
+        role: { in: ['donor', 'recipient', 'staff'] },
         isActive: true,
       },
       select: { id: true },
@@ -124,7 +124,7 @@ export const notifyMonetaryReceived = async (userId: string, amount: number, ref
 export const notifyAllUsers = async (title: string, message: string, type: string = 'announcement') => {
   try {
     const users = await prisma.user.findMany({
-      where: { isActive: true, role: { in: ['donor', 'recipient'] } },
+      where: { isActive: true, role: { in: ['donor', 'recipient', 'staff'] } },
       select: { id: true },
     });
     if (users.length === 0) return 0;
@@ -143,6 +143,15 @@ export const notifyAllUsers = async (title: string, message: string, type: strin
     console.error('[Notify] notifyAllUsers failed:', err);
     return 0;
   }
+};
+
+export const notifyPickupReady = async (userId: string, reference: string) => {
+  return createNotification(
+    userId,
+    '🎉 Your Wig is Ready for Pick-up!',
+    `Your custom wig is now ready for collection at our Binondo office. Please visit during office hours to claim your wig. If you have any questions, feel free to contact our staff. Reference: ${reference}`,
+    'pickup_ready'
+  );
 };
 
 export const notifyNewEvent = async (eventTitle: string, eventDate: Date, eventLocation: string | null) => {

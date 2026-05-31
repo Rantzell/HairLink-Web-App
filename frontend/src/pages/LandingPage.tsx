@@ -948,6 +948,178 @@ const hlStyles = `
 }
 
 /* ═══════════════════════════════════════════════════════
+   UPCOMING EVENTS — FEATURED + SECONDARY LAYOUT
+═══════════════════════════════════════════════════════ */
+.hl-upcoming-wrap {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: clamp(40px,5vw,64px) clamp(20px,4vw,56px);
+}
+
+.hl-no-events {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.hl-no-events-msg {
+  color: #A8A29E;
+  font-size: 1rem;
+}
+
+.hl-upcoming-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .hl-upcoming-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Featured event */
+.hl-featured-event {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hl-featured-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.hl-featured-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #D4CAC6;
+  font-weight: 500;
+}
+
+.hl-featured-meta-item svg {
+  color: #E880BC;
+  flex-shrink: 0;
+}
+
+.hl-featured-desc {
+  font-size: 0.88rem;
+  color: #A8A29E;
+  line-height: 1.65;
+  max-width: 520px;
+  margin-top: 0.25rem;
+}
+
+/* Secondary events panel */
+.hl-secondary-events {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 18px;
+  padding: 1.5rem;
+}
+
+.hl-secondary-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #E880BC;
+  margin: 0 0 1.1rem;
+}
+
+.hl-secondary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hl-secondary-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.hl-secondary-card:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.hl-secondary-card-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #D63B8A;
+  border-radius: 10px;
+  padding: 0.4rem 0.65rem;
+  min-width: 44px;
+  flex-shrink: 0;
+}
+
+.hl-secondary-month {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #ffd6ee;
+  line-height: 1;
+}
+
+.hl-secondary-day {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.hl-secondary-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hl-secondary-card-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hl-secondary-card-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  color: #A8A29E;
+}
+
+.hl-secondary-card-loc svg {
+  color: #E880BC;
+  flex-shrink: 0;
+}
+
+.hl-secondary-card-date-str {
+  font-size: 0.72rem;
+  color: #78716C;
+}
+
+/* ═══════════════════════════════════════════════════════
    PAST EVENTS
    ═══════════════════════════════════════════════════════ */
 .hl-past-events {
@@ -1661,6 +1833,7 @@ const LandingPage: React.FC = () => {
   const [aboutIndex, setAboutIndex] = useState(0);
   const [partnerIndex, setPartnerIndex] = useState(0);
   const [nextEvent, setNextEvent] = useState<any>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -1677,7 +1850,11 @@ const LandingPage: React.FC = () => {
 
   useEffect(() => {
     apiClient.get('/api/public/site-settings').then(r => setCms(r.data)).catch(() => {});
-    apiClient.get('/api/public/events/next').then(r => { if (r.data) setNextEvent(r.data); }).catch(() => {});
+    apiClient.get('/api/public/events/upcoming').then(r => {
+      const events: any[] = Array.isArray(r.data) ? r.data : [];
+      if (events.length > 0) setNextEvent(events[0]);
+      setUpcomingEvents(events);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -1742,9 +1919,16 @@ const LandingPage: React.FC = () => {
     { title: 'Donation Celebration', description: 'Donors showcasing their ponytails alongside certificates of appreciation for supporting cancer survivors.', date: 'Feb 2, 2026', imageKey: 'eventImg4' }
   ]);
 
-  const eventDateStr = nextEvent
-    ? new Date(nextEvent.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : null;
+  const featuredEvent = upcomingEvents[0] || null;
+  const secondaryEvents = upcomingEvents.slice(1);
+
+  const fmtFeaturedDate = (d: string) =>
+    new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const fmtFeaturedTime = (d: string) =>
+    new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const fmtSecondaryDate = (d: string) =>
+    new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
 
 
   return (
@@ -1869,34 +2053,99 @@ const LandingPage: React.FC = () => {
 
       {/* ── EVENT COUNTDOWN ── */}
       <section className="hl-event">
-        <div className="hl-event-inner">
-          <div className="hl-event-info">
-            <span className="hl-event-badge">
-              {eventDateStr ? `Upcoming Event · ${nextEvent?.location || 'Manila'}` : 'Next Event'}
-            </span>
-            <h2 className="hl-event-title">
-              {nextEvent ? nextEvent.title : 'Hearts of Hope Gala'}
-            </h2>
-            {eventDateStr && <span className="hl-event-date">{eventDateStr}</span>}
-          </div>
+        <div className="hl-upcoming-wrap">
 
-          <div className="hl-event-countdown">
-            {(['days', 'hours', 'minutes', 'seconds'] as const).map((unit, idx) => (
-              <React.Fragment key={unit}>
-                <div className="hl-count-item">
-                  <div className="hl-count-box">
-                    {String((countdown as any)[unit]).padStart(2, '0')}
+          {upcomingEvents.length === 0 ? (
+            <div className="hl-no-events">
+              <span className="hl-event-badge">Upcoming Events</span>
+              <p className="hl-no-events-msg">No upcoming events scheduled at the moment.</p>
+            </div>
+          ) : (
+            <div className="hl-upcoming-grid">
+
+              {/* ── FEATURED EVENT (left / top) ── */}
+              {featuredEvent && (
+                <div className="hl-featured-event">
+                  <span className="hl-event-badge">
+                    ★ Featured Upcoming Event
+                  </span>
+                  <h2 className="hl-event-title">{featuredEvent.title}</h2>
+
+                  <div className="hl-featured-meta">
+                    <span className="hl-featured-meta-item">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      {fmtFeaturedDate(featuredEvent.date)}
+                    </span>
+                    <span className="hl-featured-meta-item">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      {fmtFeaturedTime(featuredEvent.date)}
+                    </span>
+                    {featuredEvent.location && (
+                      <span className="hl-featured-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {featuredEvent.location}
+                      </span>
+                    )}
                   </div>
-                  <span className="hl-count-label">{unit.charAt(0).toUpperCase() + unit.slice(1, 4)}</span>
-                </div>
-                {idx < 3 && <span className="hl-count-sep">:</span>}
-              </React.Fragment>
-            ))}
-          </div>
 
-          <Link to="/donate-monetary" className="hl-event-cta">
-            ♥ Support the Event
-          </Link>
+                  {featuredEvent.description && (
+                    <p className="hl-featured-desc">{featuredEvent.description}</p>
+                  )}
+
+                  {/* Countdown */}
+                  <div className="hl-event-countdown" style={{ marginTop: '1.5rem' }}>
+                    {(['days', 'hours', 'minutes', 'seconds'] as const).map((unit, idx) => (
+                      <React.Fragment key={unit}>
+                        <div className="hl-count-item">
+                          <div className="hl-count-box">
+                            {String((countdown as any)[unit]).padStart(2, '0')}
+                          </div>
+                          <span className="hl-count-label">{unit.charAt(0).toUpperCase() + unit.slice(1, 4)}</span>
+                        </div>
+                        {idx < 3 && <span className="hl-count-sep">:</span>}
+                      </React.Fragment>
+                    ))}
+                  </div>
+
+                  <Link to="/donate-monetary" className="hl-event-cta" style={{ marginTop: '1.75rem', alignSelf: 'flex-start' }}>
+                    ♥ Support the Event
+                  </Link>
+                </div>
+              )}
+
+              {/* ── SECONDARY EVENTS (right / below) ── */}
+              {secondaryEvents.length > 0 && (
+                <div className="hl-secondary-events">
+                  <p className="hl-secondary-heading">More Upcoming Events</p>
+                  <div className="hl-secondary-list">
+                    {secondaryEvents.map((ev: any) => (
+                      <div key={ev.id} className="hl-secondary-card">
+                        <div className="hl-secondary-card-date">
+                          <span className="hl-secondary-month">
+                            {new Date(ev.date).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
+                          </span>
+                          <span className="hl-secondary-day">
+                            {new Date(ev.date).getDate()}
+                          </span>
+                        </div>
+                        <div className="hl-secondary-card-body">
+                          <h4 className="hl-secondary-card-title">{ev.title}</h4>
+                          {ev.location && (
+                            <span className="hl-secondary-card-loc">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                              {ev.location}
+                            </span>
+                          )}
+                          <span className="hl-secondary-card-date-str">{fmtSecondaryDate(ev.date)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
         </div>
       </section>
 

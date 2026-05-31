@@ -24,6 +24,7 @@ import publicRoutes from './routes/public.routes';
 import notificationRoutes from './routes/notification.routes';
 import eventsRoutes from './routes/events.routes';
 import calendarRoutes from './routes/calendar.routes';
+import demoRoutes from './routes/demo.routes';
 
 const app = express();
 
@@ -90,6 +91,9 @@ app.use('/api/monetary', monetaryRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/referral', referralRoutes);
+
+// Dev-only demo auth helper
+app.use('/auth', demoRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

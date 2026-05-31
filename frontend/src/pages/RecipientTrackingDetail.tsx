@@ -12,6 +12,7 @@ const RecipientTrackingDetail: React.FC = () => {
   const [requestData, setRequestData] = useState<HairRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [showWigConfirm, setShowWigConfirm] = useState(false);
+  const [showPickupConfirm, setShowPickupConfirm] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
   useEffect(() => {
@@ -36,6 +37,19 @@ const RecipientTrackingDetail: React.FC = () => {
       window.location.reload();
     } catch {
       alert('Failed to confirm receipt.');
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  const doConfirmPickup = async () => {
+    setShowPickupConfirm(false);
+    setIsConfirming(true);
+    try {
+      await apiClient.post(`/internal-api/requests/${requestData?.reference}/confirm-pickup`);
+      window.location.reload();
+    } catch {
+      alert('Failed to confirm pickup.');
     } finally {
       setIsConfirming(false);
     }
@@ -66,12 +80,22 @@ const RecipientTrackingDetail: React.FC = () => {
             </a>
           )}
           {requestData.status === 'In Transit' && (
-            <button 
+            <button
               onClick={() => setShowWigConfirm(true)}
               disabled={isConfirming}
               className="detail-confirm-btn"
             >
               {isConfirming ? '...' : 'Confirm Wig Received'}
+            </button>
+          )}
+          {requestData.status === 'Ready for Pickup' && (requestData as any).deliveryMethod === 'pickup' && (
+            <button
+              onClick={() => setShowPickupConfirm(true)}
+              disabled={isConfirming}
+              className="detail-confirm-btn"
+              style={{ background: 'linear-gradient(135deg, #ad246d, #cf2f84)' }}
+            >
+              {isConfirming ? '...' : 'I Have Received My Wig'}
             </button>
           )}
         </div>
@@ -192,6 +216,16 @@ const RecipientTrackingDetail: React.FC = () => {
         title="Confirm Wig Received"
         message="Please confirm that you have received your wig. This action cannot be undone and will finalize your request."
         confirmText="Yes, I Received It"
+        isConfirming={isConfirming}
+      />
+
+      <ConfirmModal
+        isOpen={showPickupConfirm}
+        onClose={() => setShowPickupConfirm(false)}
+        onConfirm={doConfirmPickup}
+        title="Confirm Wig Collection"
+        message="Are you sure you have received your wig from the Binondo office? Please only confirm after you have personally collected it."
+        confirmText="Yes, I Collected My Wig"
         isConfirming={isConfirming}
       />
     </section>

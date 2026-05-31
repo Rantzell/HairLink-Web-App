@@ -208,7 +208,7 @@
     background: #fff;
     border: 1px solid #ead7e8;
     border-radius: 20px;
-    overflow: hidden;
+    overflow-x: auto;
     box-shadow: 0 10px 30px rgba(73, 20, 52, 0.05);
 }
 

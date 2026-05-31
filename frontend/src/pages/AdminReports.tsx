@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
+import Pagination from '../components/Pagination';
 
+const PAGE_SIZE = 10;
 
 const AdminReports: React.FC = () => {
   const location = useLocation();
@@ -10,11 +12,16 @@ const AdminReports: React.FC = () => {
   const [monetaryData, setMonetaryData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [reportType, setReportType] = useState('full');
+  const [donationsPage, setDonationsPage] = useState(1);
+  const [wigStockPage, setWigStockPage] = useState(1);
+  const [monetaryPage, setMonetaryPage] = useState(1);
+  const [fullLogsPage, setFullLogsPage] = useState(1);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const type = params.get('type');
     if (type) setReportType(type);
+    setDonationsPage(1); setWigStockPage(1); setMonetaryPage(1); setFullLogsPage(1);
   }, [location.search]);
 
   useEffect(() => {
@@ -93,7 +100,7 @@ const AdminReports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {monetaryData.map((m: any) => (
+                  {monetaryData.slice((monetaryPage - 1) * PAGE_SIZE, monetaryPage * PAGE_SIZE).map((m: any) => (
                     <tr key={m.id}>
                       <td className="admin-report-td"><strong>{m.referenceNumber}</strong></td>
                       <td className="admin-report-td">{m.name || m.user?.firstName || 'Anonymous'} <br/><small>{m.email || m.user?.email}</small></td>
@@ -105,6 +112,7 @@ const AdminReports: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+              <Pagination currentPage={monetaryPage} totalPages={Math.ceil(monetaryData.length / PAGE_SIZE)} onPageChange={setMonetaryPage} />
             </section>
           </div>
         );
@@ -153,7 +161,7 @@ const AdminReports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.inventory.allDonations.map((d: any) => (
+                  {data.inventory.allDonations.slice((donationsPage - 1) * PAGE_SIZE, donationsPage * PAGE_SIZE).map((d: any) => (
                     <tr key={d.id}>
                       <td className="admin-report-td"><strong>{d.reference}</strong></td>
                       <td className="admin-report-td">{d.user?.firstName} {d.user?.lastName}</td>
@@ -165,6 +173,7 @@ const AdminReports: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+              <Pagination currentPage={donationsPage} totalPages={Math.ceil(data.inventory.allDonations.length / PAGE_SIZE)} onPageChange={setDonationsPage} />
             </section>
           </div>
         );
@@ -212,7 +221,7 @@ const AdminReports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.inventory.wigStock.map((w: any) => (
+                  {data.inventory.wigStock.slice((wigStockPage - 1) * PAGE_SIZE, wigStockPage * PAGE_SIZE).map((w: any) => (
                     <tr key={w.id}>
                       <td className="admin-report-td"><strong>{w.taskCode}</strong></td>
                       <td className="admin-report-td">{w.wigmaker?.firstName} {w.wigmaker?.lastName}</td>
@@ -223,6 +232,7 @@ const AdminReports: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+              <Pagination currentPage={wigStockPage} totalPages={Math.ceil(data.inventory.wigStock.length / PAGE_SIZE)} onPageChange={setWigStockPage} />
             </section>
           </div>
         );
@@ -266,27 +276,39 @@ const AdminReports: React.FC = () => {
             </section>
 
             <section>
-              <h3 className="admin-report-section-title">Global Operational Logs (Recent)</h3>
+              <h3 className="admin-report-section-title">Full Hair Donation Records</h3>
               <table className="admin-report-table">
                 <thead>
                   <tr className="admin-compact-table-head-row">
                     <th className="admin-report-th">Reference</th>
-                    <th className="admin-report-th">Activity</th>
-                    <th className="admin-report-th">Participant</th>
+                    <th className="admin-report-th">Donor Name</th>
+                    <th className="admin-report-th">Length</th>
+                    <th className="admin-report-th">Color</th>
                     <th className="admin-report-th">Date</th>
+                    <th className="admin-report-th">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.dashboard.monetaryDonations.slice(0, 5).map((m: any) => (
-                    <tr key={m.id}>
-                      <td className="admin-report-td">{m.referenceNumber}</td>
-                      <td className="admin-report-td">Monetary Donation (₱{m.amount})</td>
-                      <td className="admin-report-td">{m.name || 'Anonymous'}</td>
-                      <td className="admin-report-td">{new Date(m.createdAt).toLocaleDateString()}</td>
+                  {(data.inventory.allDonations || []).slice((fullLogsPage - 1) * PAGE_SIZE, fullLogsPage * PAGE_SIZE).map((d: any) => (
+                    <tr key={d.id}>
+                      <td className="admin-report-td"><strong>{d.reference}</strong></td>
+                      <td className="admin-report-td">{d.user?.firstName} {d.user?.lastName}</td>
+                      <td className="admin-report-td">{d.hairLength}</td>
+                      <td className="admin-report-td">{d.hairColor}</td>
+                      <td className="admin-report-td">{new Date(d.createdAt).toLocaleDateString()}</td>
+                      <td className="admin-report-td">{d.status}</td>
                     </tr>
                   ))}
+                  {(data.inventory.allDonations || []).length === 0 && (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '1rem', color: '#8c7895', fontSize: '0.75rem' }}>No donation records found.</td></tr>
+                  )}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={fullLogsPage}
+                totalPages={Math.ceil((data.inventory.allDonations || []).length / PAGE_SIZE)}
+                onPageChange={setFullLogsPage}
+              />
             </section>
           </div>
         );
@@ -301,16 +323,16 @@ const AdminReports: React.FC = () => {
           <h1 className="admin-page-title">System Reports</h1>
           <p className="admin-page-subtitle">Generate comprehensive operational audits for inventory and finance.</p>
         </div>
-        
+
         <div className="admin-btn-actions">
-          <a 
+          <a
             href={`${apiClient.defaults.baseURL}/internal-api/admin/reports/export/csv`}
             download
             className="admin-btn-icon"
           >
             <i className='bx bx-download'></i> Download CSV
           </a>
-          <button 
+          <button
             onClick={handlePrint}
             className="admin-btn-print"
           >
@@ -318,6 +340,38 @@ const AdminReports: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Report type tab bar */}
+      <div className="no-print" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+        {[
+          { key: 'full',     label: '📋 All Donations' },
+          { key: 'hair',     label: '✂️ Hair Inventory' },
+          { key: 'wigs',     label: '🧵 Wig Stock' },
+          { key: 'monetary', label: '💳 Monetary' },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => {
+              setReportType(tab.key);
+              setDonationsPage(1); setWigStockPage(1); setMonetaryPage(1); setFullLogsPage(1);
+            }}
+            style={{
+              padding: '0.45rem 1rem',
+              borderRadius: '8px',
+              border: '1.5px solid',
+              borderColor: reportType === tab.key ? '#ad246d' : '#ead7e8',
+              background: reportType === tab.key ? '#ad246d' : '#fff',
+              color: reportType === tab.key ? '#fff' : '#665772',
+              fontWeight: 700,
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {/* Selectable Report Content */}
       {renderReportContent()}

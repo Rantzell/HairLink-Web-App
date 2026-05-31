@@ -103,11 +103,20 @@
 }
 
 .checkbox-wrap {
-    align-content: end;
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    align-self: end;
+    margin-bottom: 0.8rem;
 }
 
 .checkbox-wrap input {
-    margin-right: 0.3rem;
+    margin: 0;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
 }
 
 .checkbox-wrap span {

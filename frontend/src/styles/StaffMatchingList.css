@@ -68,7 +68,7 @@
 .matching-list-table-wrap {
   border: 1px solid #f2ebf4;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
 }
 .matching-list-table {
   width: 100%;
