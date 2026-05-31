@@ -36,6 +36,7 @@ import NotificationScreen from './NotificationScreen';
 import HairRequestScreen from './HairRequestScreen';
 import HairRequestHistoryScreen from './HairRequestHistoryScreen';
 import CommunityScreen from './CommunityScreen';
+import HairCareScreen from './HairCareScreen';
 
 interface RecipientDashboardProps {
   onLogout?: () => void;
@@ -52,6 +53,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
   const [showHistory, setShowHistory] = useState(false);
   const [showAR, setShowAR] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
+  const [showHairCare, setShowHairCare] = useState(false);
   const [starPoints, setStarPoints] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [latestRequest, setLatestRequest] = useState<any>(null);
@@ -135,6 +137,28 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
       console.log('Error fetching latest request:', err);
     }
   }, []);
+  const confirmWigReceived = (reference: string) => {
+    Alert.alert(
+      'Confirm Wig Received',
+      'Please confirm that you have received your wig. This action cannot be undone and will complete your request.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes, I Received It',
+          onPress: async () => {
+            try {
+              await api.post(`/requests/${reference}/confirm-received`);
+              Alert.alert('Success', 'Thank you! Your wig request is now complete.');
+              fetchLatestRequest();
+            } catch (err: any) {
+              const msg = err.response?.data?.message || 'Failed to confirm receipt.';
+              Alert.alert('Error', msg);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   useEffect(() => {
     fetchUnreadCount();
@@ -142,12 +166,12 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
   }, [fetchUnreadCount, fetchLatestRequest]);
 
   useEffect(() => {
-    if (!showCalendar && !showNotifications && !showMonetary && !showProfile && !showHairRequest && !showHistory && !showCommunity) {
+    if (!showCalendar && !showNotifications && !showMonetary && !showProfile && !showHairRequest && !showHistory && !showCommunity && !showHairCare) {
       fetchUnreadCount();
       fetchLatestRequest();
       notificationsViewedRef.current = false;
     }
-  }, [showCalendar, showNotifications, showMonetary, showProfile, showHairRequest, showHistory, showCommunity, fetchUnreadCount, fetchLatestRequest]);
+  }, [showCalendar, showNotifications, showMonetary, showProfile, showHairRequest, showHistory, showCommunity, showHairCare, fetchUnreadCount, fetchLatestRequest]);
 
 
 
@@ -254,6 +278,18 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
     );
   }
 
+  if (showHairCare) {
+    return (
+      <Animated.View
+        style={{ flex: 1 }}
+        entering={FadeInUp.springify().damping(15).stiffness(120)}
+        exiting={FadeOut.duration(200)}
+      >
+        <HairCareScreen role="Recipient" onBack={() => setShowHairCare(false)} />
+      </Animated.View>
+    );
+  }
+
   const insets = useSafeAreaInsets();
 
   return (
@@ -337,8 +373,39 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
 
           {/* Steps */}
           {!latestRequest ? (
-            <View style={{ alignItems: 'center', paddingVertical: 10 }}>
-              <Text style={{ color: '#aaa', fontStyle: 'italic' }}>No active requests. Start your journey below! ✨</Text>
+            <View style={styles.statusContent}>
+              <View style={{ alignItems: 'center', paddingVertical: vs(12), marginBottom: vs(12) }}>
+                <Text style={{ color: '#aaa', fontStyle: 'italic', fontSize: ms(13) }}>
+                  No active requests. Start your journey below! ✨
+                </Text>
+              </View>
+              
+              {/* Visual Roadmap Preview */}
+              <View style={{ borderTopWidth: 1, borderTopColor: '#F4ECF7', paddingTop: vs(14) }}>
+                <Text style={{ fontSize: ms(12), fontWeight: '800', color: '#9B59B6', marginBottom: vs(14), letterSpacing: 0.5 }}>
+                  WIG REQUEST JOURNEY MAP
+                </Text>
+                {[
+                  { label: '1. Application Pending', desc: 'Submit request with medical diagnosis & story.' },
+                  { label: '2. Application Approved', desc: 'Medical review & document verification complete.' },
+                  { label: '3. Wig in Production', desc: 'Assigned wigmaker builds your custom hairpiece.' },
+                  { label: '4. Wig Ready for Pickup', desc: 'Wig transit updates & pick-up details unlocked.' },
+                ].map((step, i) => (
+                  <View key={i} style={styles.stepRow}>
+                    <View style={[styles.stepDot, { backgroundColor: '#F4ECF7' }]}>
+                      <Ionicons name="ellipse" size={8} color="#9B59B6" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.stepLabel, { color: '#555', fontWeight: '700' }]}>
+                        {step.label}
+                      </Text>
+                      <Text style={{ fontSize: ms(11), color: '#888', marginTop: vs(2), fontWeight: '500' }}>
+                        {step.desc}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
             </View>
           ) : (
             <View style={styles.statusContent}>
@@ -374,6 +441,15 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
                   </View>
                 </View>
               ))}
+              {['in transit', 'ready'].includes(latestRequest.status.toLowerCase()) && (
+                <TouchableOpacity
+                  style={styles.dashboardConfirmBtn}
+                  onPress={() => confirmWigReceived(latestRequest.reference)}
+                >
+                  <Ionicons name="checkmark-circle-outline" size={ms(16)} color="#fff" style={{ marginRight: ms(6) }} />
+                  <Text style={styles.dashboardConfirmBtnText}>Confirm Wig Received</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </Animated.View>
@@ -420,6 +496,23 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
               </TouchableOpacity>
             </View>
           </View>
+        </Animated.View>
+
+        {/* ── Hair Care Hub ────────────────────────── */}
+        <Animated.View entering={FadeInDown.springify().delay(350)} style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="sparkles" size={20} color="#9B59B6" />
+            <Text style={[styles.cardTitle, { color: '#9B59B6' }]}>  Hair Care Hub</Text>
+          </View>
+          <Text style={{ fontSize: ms(13), color: '#666', lineHeight: vs(18), marginBottom: vs(14), fontWeight: '500' }}>
+            Keep your wig fresh and vibrant. Access expert guides on styling, washing, and long-term storage.
+          </Text>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => setShowHairCare(true)}
+          >
+            <Text style={styles.actionBtnText}>Explore Tips & Care</Text>
+          </TouchableOpacity>
         </Animated.View>
 
         {/* ── Banner ─────────────────────────────────── */}
@@ -810,5 +903,21 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#fff',
   },
+
+  dashboardConfirmBtn: {
+    backgroundColor: '#27AE60',
+    borderRadius: ms(12),
+    height: vs(42),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: vs(16),
+    shadowColor: '#27AE60',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  dashboardConfirmBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(13), letterSpacing: 0.5 },
 
 });

@@ -8,6 +8,8 @@ const DonorProfile: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [otherReferral, setOtherReferral] = useState('');
+  const [submittingReferral, setSubmittingReferral] = useState(false);
   const [editData, setEditData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -61,6 +63,24 @@ const DonorProfile: React.FC = () => {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(referralCode);
     alert('Referral code copied to clipboard!');
+  };
+
+  const submitOtherReferral = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otherReferral.trim()) return;
+    setSubmittingReferral(true);
+    try {
+      const res = await apiClient.post('/internal-api/referral', { referral_code: otherReferral });
+      alert(res.data.message || 'Referral code applied successfully!');
+      
+      const profileRes = await apiClient.get('/auth/me');
+      updateUser(profileRes.data);
+      setOtherReferral('');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Invalid referral code.');
+    } finally {
+      setSubmittingReferral(false);
+    }
   };
 
   return (
@@ -174,6 +194,66 @@ const DonorProfile: React.FC = () => {
               <button className="submit-code-btn w-full flex items-center justify-center gap-2" onClick={copyToClipboard}>
                 <i className='bx bx-copy'></i> Copy Code
               </button>
+            </article>
+          )}
+
+          {/* Redeem Referral Code - Only for Donors who haven't used one yet */}
+          {user?.role === 'donor' && !user?.referredBy && (
+            <article className="referral-card-new" style={{ marginTop: '1.5rem', background: '#fff', border: '1px solid #f2eef2' }}>
+              <i className='bx bxs-coupon bg-icon' style={{ color: '#ad246d', opacity: 0.08 }}></i>
+              <h3 className="detail-label" style={{marginBottom: '0.8rem', color: '#3b2e43'}}>Redeem Referral</h3>
+              <p style={{ fontSize: '0.85rem', color: '#6b5b6d', marginBottom: '1rem', lineHeight: '1.4' }}>
+                Were you referred by another user? Enter their code below to help them earn 5 points.
+              </p>
+              <form onSubmit={submitOtherReferral} style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  placeholder="e.g. HL-XXXXXX"
+                  value={otherReferral}
+                  onChange={e => setOtherReferral(e.target.value.toUpperCase())}
+                  disabled={submittingReferral}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem 1.1rem',
+                    borderRadius: '25px',
+                    border: '1.5px solid #f2eef2',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    color: '#ad246d',
+                    textTransform: 'uppercase'
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={submittingReferral || !otherReferral.trim()}
+                  className="submit-code-btn"
+                  style={{
+                    background: '#ad246d',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '0 1.2rem',
+                    borderRadius: '25px',
+                    fontSize: '0.8rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {submittingReferral ? 'Applying...' : 'Apply'}
+                </button>
+              </form>
+            </article>
+          )}
+
+          {user?.role === 'donor' && user?.referredBy && (
+            <article className="referral-card-new" style={{ marginTop: '1.5rem', background: '#fdfafd', border: '1.5px dashed #ad246d' }}>
+              <i className='bx bxs-check-circle bg-icon' style={{ color: '#ad246d', opacity: 0.12 }}></i>
+              <h3 className="detail-label" style={{marginBottom: '0.5rem', color: '#3b2e43'}}>Referral Status</h3>
+              <p style={{ fontSize: '0.85rem', color: '#ad246d', fontWeight: 700, margin: 0 }}>
+                ✓ Referral code applied!
+              </p>
             </article>
           )}
 

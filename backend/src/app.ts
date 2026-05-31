@@ -89,6 +89,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/monetary', monetaryRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/referral', referralRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

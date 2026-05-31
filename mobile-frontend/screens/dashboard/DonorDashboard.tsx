@@ -38,6 +38,7 @@ import DonationHistoryScreen from './DonationHistoryScreen';
 import ProfileScreen from './ProfileScreen';
 import ARScreen from '../ar/ARScreen';
 import CommunityScreen from './CommunityScreen';
+import HairCareScreen from './HairCareScreen';
 
 interface DonorDashboardProps {
   onLogout?: () => void;
@@ -117,6 +118,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
   const [showProfile, setShowProfile] = useState(false);
   const [showAR, setShowAR] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
+  const [showHairCare, setShowHairCare] = useState(false);
   const [starPoints, setStarPoints] = useState(0);
   const [referralCode, setReferralCode] = useState('---');
   const [unreadCount, setUnreadCount] = useState(0);
@@ -180,13 +182,13 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
 
   useEffect(() => {
     // Only re-fetch unread count when returning from other screens, not notifications
-    if (!showMonetary && !showHairDonation && !showCalendar && !showNotifications && !showHistory && !showProfile && !showCommunity) {
+    if (!showMonetary && !showHairDonation && !showCalendar && !showNotifications && !showHistory && !showProfile && !showCommunity && !showHairCare) {
       fetchPoints();
       if (!notificationsViewedRef.current) {
         fetchUnreadCount();
       }
     }
-  }, [showMonetary, showHairDonation, showCalendar, showNotifications, showHistory, showProfile, showCommunity, fetchPoints, fetchUnreadCount]);
+  }, [showMonetary, showHairDonation, showCalendar, showNotifications, showHistory, showProfile, showCommunity, showHairCare, fetchPoints, fetchUnreadCount]);
 
   const navPlaceholder = (screen: string) =>
     Alert.alert('Coming Soon', `${screen} is coming soon!`);
@@ -319,6 +321,18 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
     );
   }
 
+  if (showHairCare) {
+    return (
+      <Animated.View
+        style={{ flex: 1 }}
+        entering={FadeInUp.springify().damping(15).stiffness(120)}
+        exiting={FadeOut.duration(200)}
+      >
+        <HairCareScreen role="Donor" onBack={() => setShowHairCare(false)} />
+      </Animated.View>
+    );
+  }
+
   const insets = useSafeAreaInsets();
 
   return (
@@ -376,7 +390,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
             <Text style={styles.heroSubtitle}>Hope begins, one strand at a time</Text>
             <ScaleButton
               style={styles.heroCTA}
-              onPress={() => setShowMonetary(true)}
+              onPress={() => setShowHairDonation(true)}
             >
               <Text style={styles.heroCTAText}>Donate Now →</Text>
             </ScaleButton>
@@ -463,6 +477,23 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
               </ScaleButton>
             </View>
           </View>
+        </Animated.View>
+
+        {/* ── Hair Care Hub ────────────────────────── */}
+        <Animated.View entering={FadeInDown.springify().delay(450)} style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="sparkles" size={20} color="#FF1493" />
+            <Text style={styles.cardTitle}>  Hair Care Hub</Text>
+          </View>
+          <Text style={{ fontSize: ms(13), color: '#666', lineHeight: vs(18), marginBottom: vs(14), fontWeight: '500' }}>
+            Keep your wig fresh and vibrant. Access expert guides on styling, washing, and long-term storage.
+          </Text>
+          <ScaleButton
+            style={styles.actionBtn}
+            onPress={() => setShowHairCare(true)}
+          >
+            <Text style={styles.actionBtnText}>Explore Tips & Care</Text>
+          </ScaleButton>
         </Animated.View>
 
         {/* ── Banner ─────────────────────────────────── */}

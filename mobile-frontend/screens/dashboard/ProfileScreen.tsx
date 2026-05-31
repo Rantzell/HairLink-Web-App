@@ -97,7 +97,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 setPoints(computedPoints);
                 setReferralCode(data.referralCode || data.referral_code || '---');
                 setAvatarUrl(getAvatarUrl(data.profile_photo_url || data.profilePhotoUrl));
-                setHasRedeemed(data.has_redeemed_code || data.hasRedeemedCode || false);
+                setHasRedeemed(!!(data.referredBy || data.referred_by || data.has_redeemed_code || data.hasRedeemedCode));
                 roleToggleValue.value = withSpring(fetchedRole === 'Donor' ? 0 : 1);
             }
         } catch (error: any) {
@@ -108,8 +108,19 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     };
 
     const handleRedeemCode = async () => {
-        // Referral redemption logic on Laravel backend still pending implementation
-        Alert.alert('Coming Soon', 'Referral code redemption will be available in the next update!');
+        if (!otherReferralCode.trim()) return;
+        setIsRedeeming(true);
+        try {
+            const res = await api.post('/referral/', { referral_code: otherReferralCode });
+            Alert.alert('Success', res.data.message || 'Referral code applied successfully! ✨');
+            setOtherReferralCode('');
+            await fetchProfile();
+        } catch (error: any) {
+            const msg = error.response?.data?.error || error.response?.data?.message || 'Invalid referral code.';
+            Alert.alert('Redeem Failed', msg);
+        } finally {
+            setIsRedeeming(false);
+        }
     };
 
     const handleUpdateProfile = async () => {
@@ -371,6 +382,64 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
 
                                 {/* Referral code removed per user request */}
                             </LinearGradient>
+                        </Animated.View>
+                    )}
+
+                    {/* Referral Share Card - Only for Donors */}
+                    {role === 'Donor' && (
+                        <Animated.View entering={FadeInUp.delay(350)} style={[styles.glassCard, { padding: ms(20), marginBottom: vs(20) }]}>
+                            <Text style={styles.sectionHeading}>My Referral Code</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF0F5', borderRadius: ms(15), paddingHorizontal: ms(16), paddingVertical: vs(12) }}>
+                                <Text style={{ fontSize: ms(16), fontWeight: '900', color: '#FF1493', letterSpacing: 1.5 }}>{referralCode}</Text>
+                                <TouchableOpacity onPress={copyReferral} style={{ backgroundColor: 'rgba(255,20,147,0.1)', paddingHorizontal: ms(12), paddingVertical: vs(6), borderRadius: ms(10) }}>
+                                    <Text style={{ fontSize: ms(12), fontWeight: '800', color: '#FF1493' }}>Copy Code</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={{ fontSize: ms(11), color: '#888', marginTop: vs(8), fontWeight: '600' }}>
+                                Share your code with friends. You will earn 5 points for every new donor referred!
+                            </Text>
+                        </Animated.View>
+                    )}
+
+                    {/* Redeem Referral Card - Only for Donors */}
+                    {role === 'Donor' && (
+                        <Animated.View entering={FadeInUp.delay(400)} style={styles.redeemCard}>
+                            <View style={styles.redeemHeader}>
+                                <View style={styles.redeemIconBg}>
+                                    <Ionicons name={hasRedeemed ? "checkmark-circle" : "gift"} size={24} color="#FF1493" />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.redeemTitle}>{hasRedeemed ? 'Referral Status' : 'Redeem Referral Code'}</Text>
+                                    <Text style={styles.redeemSubtitle}>
+                                        {hasRedeemed ? 'Referral code successfully redeemed!' : 'Enter code from other user referal.'}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {!hasRedeemed && (
+                                <View style={styles.redeemInputRow}>
+                                    <TextInput
+                                        style={styles.redeemInput}
+                                        placeholder="e.g. HL-XXXXXX"
+                                        placeholderTextColor="#ccc"
+                                        value={otherReferralCode}
+                                        onChangeText={text => setOtherReferralCode(text.toUpperCase())}
+                                        autoCapitalize="characters"
+                                        editable={!isRedeeming}
+                                    />
+                                    <TouchableOpacity
+                                        style={[styles.claimBtn, { backgroundColor: '#FF1493' }]}
+                                        onPress={handleRedeemCode}
+                                        disabled={isRedeeming || !otherReferralCode.trim()}
+                                    >
+                                        {isRedeeming ? (
+                                            <ActivityIndicator size="small" color="#fff" />
+                                        ) : (
+                                            <Text style={styles.claimBtnText}>Apply</Text>
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </Animated.View>
                     )}
 

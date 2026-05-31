@@ -19,6 +19,7 @@ export interface User {
   gender: string | null;
   phone: string | null;
   referralCode: string | null;
+  referredBy?: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

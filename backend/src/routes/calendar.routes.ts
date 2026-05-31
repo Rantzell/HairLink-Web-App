@@ -44,59 +44,117 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     const end = new Date(Date.UTC(year, month, 1, 0, 0, 0));
 
     const userId = req.user!.id;
+    const role = req.user!.role;
 
-    const [donations, events] = await Promise.all([
-      prisma.donation.findMany({
-        where: {
-          userId,
-          createdAt: { gte: start, lt: end },
-        },
-        orderBy: { createdAt: 'asc' },
-        select: {
-          id: true,
-          reference: true,
-          status: true,
-          hairLength: true,
-          hairColor: true,
-          dropoffLocation: true,
-          appointmentAt: true,
-          createdAt: true,
-        },
-      }),
-      prisma.event.findMany({
-        where: { date: { gte: start, lt: end } },
-        orderBy: { date: 'asc' },
-      }),
-    ]);
+    let donationItems: any[] = [];
+    let eventItems: any[] = [];
 
-    const donationItems = donations.map((d) => {
-      const when = d.appointmentAt || d.createdAt;
-      return {
-        id: `donation-${d.id}`,
-        kind: 'donation' as const,
-        title: 'Hair Donation',
-        subtitle: [d.hairLength, d.hairColor].filter(Boolean).join(' · ') || 'Submitted donation',
-        location: d.dropoffLocation || null,
-        date: when.toISOString().slice(0, 10),     // YYYY-MM-DD for calendar grid
-        datetime: when.toISOString(),
-        status: d.status,
-        decision: toDecision(d.status),
-        reference: d.reference,
-      };
-    });
+    if (role === 'recipient') {
+      const [requests, events] = await Promise.all([
+        prisma.hairRequest.findMany({
+          where: {
+            userId,
+            createdAt: { gte: start, lt: end },
+          },
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            reference: true,
+            status: true,
+            wigLength: true,
+            wigColor: true,
+            appointmentAt: true,
+            createdAt: true,
+          },
+        }),
+        prisma.event.findMany({
+          where: { date: { gte: start, lt: end } },
+          orderBy: { date: 'asc' },
+        }),
+      ]);
 
-    const eventItems = events.map((e) => ({
-      id: `event-${e.id}`,
-      kind: 'event' as const,
-      title: e.title,
-      subtitle: e.description || '',
-      location: e.location || null,
-      date: e.date.toISOString().slice(0, 10),
-      datetime: e.date.toISOString(),
-      status: e.status,
-      decision: null,
-      reference: null,
-    }));
+      donationItems = requests.map((r) => {
+        const when = r.appointmentAt || r.createdAt || new Date();
+        return {
+          id: `request-${r.id}`,
+          kind: 'request' as const,
+          title: 'Hair Request',
+          subtitle: [r.wigLength, r.wigColor].filter(Boolean).join(' · ') || 'Submitted request',
+          location: 'Medical Review',
+          date: when.toISOString().slice(0, 10),     // YYYY-MM-DD for calendar grid
+          datetime: when.toISOString(),
+          status: r.status,
+          decision: toDecision(r.status || ''),
+          reference: r.reference,
+        };
+      });
+
+      eventItems = events.map((e) => ({
+        id: `event-${e.id}`,
+        kind: 'event' as const,
+        title: e.title,
+        subtitle: e.description || '',
+        location: e.location || null,
+        date: e.date.toISOString().slice(0, 10),
+        datetime: e.date.toISOString(),
+        status: e.status,
+        decision: null,
+        reference: null,
+      }));
+    } else {
+      const [donations, events] = await Promise.all([
+        prisma.donation.findMany({
+          where: {
+            userId,
+            createdAt: { gte: start, lt: end },
+          },
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            reference: true,
+            status: true,
+            hairLength: true,
+            hairColor: true,
+            dropoffLocation: true,
+            appointmentAt: true,
+            createdAt: true,
+          },
+        }),
+        prisma.event.findMany({
+          where: { date: { gte: start, lt: end } },
+          orderBy: { date: 'asc' },
+        }),
+      ]);
+
+      donationItems = donations.map((d) => {
+        const when = d.appointmentAt || d.createdAt || new Date();
+        return {
+          id: `donation-${d.id}`,
+          kind: 'donation' as const,
+          title: 'Hair Donation',
+          subtitle: [d.hairLength, d.hairColor].filter(Boolean).join(' · ') || 'Submitted donation',
+          location: d.dropoffLocation || null,
+          date: when.toISOString().slice(0, 10),     // YYYY-MM-DD for calendar grid
+          datetime: when.toISOString(),
+          status: d.status,
+          decision: toDecision(d.status || ''),
+          reference: d.reference,
+        };
+      });
+
+      eventItems = events.map((e) => ({
+        id: `event-${e.id}`,
+        kind: 'event' as const,
+        title: e.title,
+        subtitle: e.description || '',
+        location: e.location || null,
+        date: e.date.toISOString().slice(0, 10),
+        datetime: e.date.toISOString(),
+        status: e.status,
+        decision: null,
+        reference: null,
+      }));
+    }
 
     res.json({
       year,

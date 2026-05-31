@@ -151,11 +151,15 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
         case 'wig':
         case 'hair_donation':
         case 'donation':
+        case 'request':
           return { icon: 'ribbon', color: '#8E44AD', bg: '#F5EEF8' };
         case 'monetary_donation':
+        case 'monetary':
           return { icon: 'wallet', color: '#9B59B6', bg: '#FDF7FF' };
         case 'announcement':
           return { icon: 'bullhorn', color: '#8E44AD', bg: '#F5EEF8' };
+        case 'community':
+          return { icon: 'comment-text-multiple-outline', color: '#9B59B6', bg: '#F5EEF8' };
         default:
           return { icon: 'mail', color: '#9B59B6', bg: '#FDF7FF' };
       }
@@ -164,9 +168,13 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
     switch (type) {
       case 'wig': return { icon: 'ribbon', color: '#8E44AD', bg: '#F3E5F5' };
       case 'hair_donation': return { icon: 'content-cut', color: '#D81B60', bg: '#FCE4EC' };
-      case 'monetary_donation': return { icon: 'wallet', color: '#1E88E5', bg: '#E3F2FD' };
+      case 'monetary_donation':
+      case 'monetary':
+        return { icon: 'wallet', color: '#1E88E5', bg: '#E3F2FD' };
       case 'donation': return { icon: 'heart-pulse', color: '#FF1493', bg: '#FFF0F5' };
+      case 'request': return { icon: 'ribbon', color: '#8E44AD', bg: '#F3E5F5' };
       case 'announcement': return { icon: 'bullhorn', color: '#FB8C00', bg: '#FFF3E0' };
+      case 'community': return { icon: 'comment-text-multiple-outline', color: '#FF1493', bg: '#FFF0F5' };
       default: return { icon: 'mail', color: themeMedium, bg: themePale };
     }
   };
@@ -302,7 +310,7 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
                           <Text style={styles.notifTime}>{getRelativeTime(n.created_at)}</Text>
                         </View>
                         
-                        {['donation', 'hair_donation', 'monetary_donation', 'wig'].includes(n.type) && onTrack && (
+                        {['donation', 'hair_donation', 'monetary_donation', 'wig', 'request', 'monetary'].includes(n.type) && onTrack && (
                           <TouchableOpacity
                             style={[styles.trackBtn, { backgroundColor: themeBg, borderColor: themeLight }]}
                             onPress={(e) => {

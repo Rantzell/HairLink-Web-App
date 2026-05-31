@@ -7,6 +7,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
+  Linking,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,14 +19,16 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import api from '../../lib/api';
+import RecipientTrackingDetailScreen from './RecipientTrackingDetailScreen';
 
 interface RequestRecord {
   id: string;
   reference: string;
   status: string;
-  created_at: string;
-  wig_length: string;
-  wig_color: string;
+  createdAt: string;
+  wigLength: string | null;
+  wigColor: string | null;
+  trackingLink: string | null;
 }
 
 const ScaleButton = ({ children, onPress, style }: any) => {
@@ -50,13 +56,28 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [requests, setRequests] = useState<RequestRecord[]>([]);
+  const [filter, setFilter] = useState('');
+  const [detailRef, setDetailRef] = useState<string | null>(null);
+  const [confirmRef, setConfirmRef] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const insets = useSafeAreaInsets();
 
   const fetchHistory = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get('/requests');
-      setRequests(response.data || []);
+      // Backend returns Prisma camelCase; normalize defensively in case any
+      // older snake_case data is around.
+      const rows: RequestRecord[] = (response.data || []).map((r: any) => ({
+        id: String(r.id),
+        reference: r.reference,
+        status: r.status,
+        createdAt: r.createdAt || r.created_at,
+        wigLength: r.wigLength || r.wig_length || null,
+        wigColor: r.wigColor || r.wig_color || null,
+        trackingLink: r.trackingLink || null,
+      }));
+      setRequests(rows);
     } catch (err) {
       console.error('Error fetching history:', err);
     } finally {
@@ -73,6 +94,71 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
     setRefreshing(true);
     fetchHistory();
   };
+
+  const doConfirmReceived = async () => {
+    if (!confirmRef) return;
+    setConfirming(true);
+    try {
+      await api.post(`/requests/${confirmRef}/confirm-received`);
+      setConfirmRef(null);
+      Alert.alert('Confirmed', 'Thank you! Your wig request has been marked as received.');
+      fetchHistory();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Failed to confirm receipt.';
+      Alert.alert('Error', msg);
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const confirmWigReceived = (reference: string) => {
+    Alert.alert(
+      'Confirm Wig Received',
+      'Please confirm that you have received your wig. This action cannot be undone and will complete your request.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Yes, I Received It', 
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await api.post(`/requests/${reference}/confirm-received`);
+              Alert.alert('Confirmed', 'Thank you! Your wig request has been marked as completed.');
+              fetchHistory();
+            } catch (err: any) {
+              const msg = err.response?.data?.message || 'Failed to confirm receipt.';
+              Alert.alert('Error', msg);
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const filteredRequests = requests.filter((r) => {
+    if (!filter.trim()) return true;
+    const q = filter.toLowerCase();
+    return (
+      r.reference.toLowerCase().includes(q) ||
+      r.status.toLowerCase().includes(q) ||
+      (r.wigColor || '').toLowerCase().includes(q) ||
+      (r.wigLength || '').toLowerCase().includes(q)
+    );
+  });
+
+  // Render the detail screen as an overlay when a row is opened.
+  if (detailRef) {
+    return (
+      <RecipientTrackingDetailScreen
+        reference={detailRef}
+        onBack={() => {
+          setDetailRef(null);
+          fetchHistory(); // refresh in case status changed (e.g. confirmed received)
+        }}
+      />
+    );
+  }
 
   const getStatusStyle = (status: string) => {
     const s = status.toLowerCase();
@@ -158,7 +244,7 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
                   </View>
                   <View style={styles.headerText}>
                     <Text style={styles.referenceText}>{item.reference}</Text>
-                    <Text style={styles.dateText}>{formatDate(item.created_at)}</Text>
+                    <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
                   </View>
                   <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
                     <Text style={[styles.statusText, { color: statusStyle.text }]}>{statusStyle.label}</Text>
@@ -169,16 +255,36 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
                   <View style={styles.detailRow}>
                     <View style={styles.detailItem}>
                       <Text style={styles.detailLabel}>Wig Length</Text>
-                      <Text style={styles.detailValue}>{item.wig_length}</Text>
+                      <Text style={styles.detailValue}>{item.wigLength}</Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={styles.detailLabel}>Wig Color</Text>
-                      <Text style={styles.detailValue}>{item.wig_color}</Text>
+                      <Text style={styles.detailValue}>{item.wigColor}</Text>
                     </View>
                   </View>
                 </View>
 
-                {/* Footer removed per user request */}
+                {!['cancelled', 'rejected'].includes(item.status.toLowerCase()) && (
+                  <View style={styles.cardFooter}>
+                    <TouchableOpacity
+                      style={styles.trackBtn}
+                      onPress={() => setDetailRef(item.reference)}
+                    >
+                      <Ionicons name="location-outline" size={ms(16)} color="#fff" style={{ marginRight: ms(6) }} />
+                      <Text style={styles.trackBtnText}>TRACK STATUS / DELIVERY</Text>
+                    </TouchableOpacity>
+
+                    {['in transit', 'ready'].includes(item.status.toLowerCase()) && (
+                      <TouchableOpacity
+                        style={styles.confirmReceivedBtn}
+                        onPress={() => confirmWigReceived(item.reference)}
+                      >
+                        <Ionicons name="checkmark-circle-outline" size={ms(16)} color="#fff" style={{ marginRight: ms(6) }} />
+                        <Text style={styles.confirmReceivedBtnText}>CONFIRM WIG RECEIVED</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
               </Animated.View>
             );
           })
@@ -228,7 +334,35 @@ const styles = StyleSheet.create({
   detailLabel: { fontSize: ms(11), color: '#999', fontWeight: '700', textTransform: 'uppercase', marginBottom: vs(4) },
   detailValue: { fontSize: ms(14), fontWeight: '800', color: '#1a1a1a' },
 
-  cardFooter: { marginTop: vs(12), alignItems: 'flex-end' },
+  cardFooter: { marginTop: vs(12), borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: vs(12), gap: vs(8) },
+  trackBtn: {
+    backgroundColor: '#9B59B6',
+    borderRadius: ms(12),
+    height: vs(40),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#9B59B6',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  trackBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(13), textTransform: 'uppercase', letterSpacing: 0.5 },
+  confirmReceivedBtn: {
+    backgroundColor: '#27AE60',
+    borderRadius: ms(12),
+    height: vs(40),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#27AE60',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  confirmReceivedBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(13), textTransform: 'uppercase', letterSpacing: 0.5 },
   detailsBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: vs(4) },
   detailsBtnText: { fontSize: ms(13), fontWeight: '900', color: '#9B59B6', marginRight: ms(4) },
 });

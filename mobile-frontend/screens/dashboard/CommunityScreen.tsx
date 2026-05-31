@@ -49,6 +49,7 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
   const [activePost, setActivePost] = useState<any>(null);
   const [commentContent, setCommentContent] = useState('');
   const [postingComment, setPostingComment] = useState(false);
+  const [replyingToComment, setReplyingToComment] = useState<any>(null);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -141,16 +142,37 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
     setPostingComment(true);
     try {
       const response = await api.post(`/community/posts/${activePost.id}/comments`, {
-        content: commentContent.trim()
+        content: commentContent.trim(),
+        parent_id: replyingToComment ? replyingToComment.id : null
       });
 
       setCommentContent('');
+      
+      let updatedComments = [...(activePost.comments || [])];
+      if (replyingToComment) {
+        // Find parent comment and append the reply
+        updatedComments = updatedComments.map(c => {
+          if (c.id === replyingToComment.id) {
+            return {
+              ...c,
+              replies: [...(c.replies || []), response.data]
+            };
+          }
+          return c;
+        });
+      } else {
+        // Add top level comment
+        updatedComments = [...updatedComments, response.data];
+      }
+
       const updatedPost = { 
         ...activePost, 
-        comments: [...(activePost.comments || []), response.data] 
+        comments: updatedComments 
       };
+
       setActivePost(updatedPost);
       setPosts(current => current.map(p => p.id === activePost.id ? updatedPost : p));
+      setReplyingToComment(null);
     } catch (error) {
       console.error('Error posting comment:', error);
       Alert.alert('Error', 'Failed to post comment.');
@@ -237,7 +259,9 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
           
           <View style={styles.authorInfo}>
             <Text style={styles.authorName}>{authorName}</Text>
-            <Text style={styles.postTime}>{formatTime(postedAt)}</Text>
+            <Text style={styles.postTime}>
+              {postedAt ? new Date(postedAt).toLocaleDateString() : ''} • {formatTime(postedAt)}
+            </Text>
           </View>
           
           <View style={[styles.roleBadge, role.toLowerCase() === 'donor' ? styles.roleBadgeDonor : styles.roleBadgeRecipient]}>
@@ -410,26 +434,72 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                 const cPostedAt = item.createdAt || item.created_at;
 
                 return (
-                  <View style={styles.commentItem}>
-                    {cAvatar ? (
-                      <Image source={{ uri: cAvatar }} style={styles.commentAvatar} />
-                    ) : (
-                      <View style={[styles.commentAvatar, styles.avatarFallback, { width: ms(32), height: ms(32) }]}>
-                        <Text style={[styles.avatarInitials, { fontSize: ms(11) }]}>{cInitials}</Text>
-                      </View>
-                    )}
-                    <View style={styles.commentBubble}>
-                      <View style={styles.commentHeader}>
-                        <Text style={styles.commentAuthor}>{cAuthor}</Text>
-                        <View style={[styles.roleBadge, cRole.toLowerCase() === 'donor' ? styles.roleBadgeDonor : styles.roleBadgeRecipient, { paddingVertical: 2, transform: [{ scale: 0.8 }] }]}>
-                           <Text style={[styles.roleBadgeText, cRole.toLowerCase() === 'donor' ? styles.roleBadgeTextDonor : styles.roleBadgeTextRecipient]}>
-                            {cRole.toUpperCase()}
-                          </Text>
+                  <View style={{ marginBottom: vs(16) }}>
+                    <View style={styles.commentItem}>
+                      {cAvatar ? (
+                        <Image source={{ uri: cAvatar }} style={styles.commentAvatar} />
+                      ) : (
+                        <View style={[styles.commentAvatar, styles.avatarFallback, { width: ms(32), height: ms(32) }]}>
+                          <Text style={[styles.avatarInitials, { fontSize: ms(11) }]}>{cInitials}</Text>
                         </View>
-                        <Text style={styles.commentTime}>{formatTime(cPostedAt)}</Text>
+                      )}
+                      <View style={styles.commentBubble}>
+                        <View style={styles.commentHeader}>
+                          <Text style={styles.commentAuthor}>{cAuthor}</Text>
+                          <View style={[styles.roleBadge, cRole.toLowerCase() === 'donor' ? styles.roleBadgeDonor : styles.roleBadgeRecipient, { paddingVertical: 2, transform: [{ scale: 0.8 }] }]}>
+                             <Text style={[styles.roleBadgeText, cRole.toLowerCase() === 'donor' ? styles.roleBadgeTextDonor : styles.roleBadgeTextRecipient]}>
+                              {cRole.toUpperCase()}
+                            </Text>
+                          </View>
+                          <Text style={styles.commentTime}>{formatTime(cPostedAt)}</Text>
+                        </View>
+                        <Text style={styles.commentText}>{item.content}</Text>
                       </View>
-                      <Text style={styles.commentText}>{item.content}</Text>
                     </View>
+
+                    {/* Comment Actions: Reply button */}
+                    <View style={{ flexDirection: 'row', marginLeft: ms(44), marginTop: vs(-8), marginBottom: vs(8) }}>
+                      <TouchableOpacity onPress={() => setReplyingToComment(item)}>
+                        <Text style={{ fontSize: ms(12), fontWeight: '800', color: '#FF1493' }}>Reply</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Comment Replies */}
+                    {item.replies && item.replies.map((reply: any) => {
+                      const ru = reply.user || {};
+                      const rFirst = ru.firstName || ru.first_name || '';
+                      const rLast = ru.lastName || ru.last_name || '';
+                      const rFallback = ru.name || (ru.email ? ru.email.split('@')[0] : '');
+                      const rAuthor = `${rFirst} ${rLast}`.trim() || rFallback || 'Member';
+                      const rAvatar = getAvatarUrl(ru.profile_photo_url || ru.profilePhotoUrl);
+                      const rRole = ru.role || 'user';
+                      const rInitials = rAuthor.substring(0, 2).toUpperCase();
+                      const rPostedAt = reply.createdAt || reply.created_at;
+
+                      return (
+                        <View key={reply.id} style={[styles.commentItem, { marginLeft: ms(36), marginTop: vs(6) }]}>
+                          {rAvatar ? (
+                            <Image source={{ uri: rAvatar }} style={[styles.commentAvatar, { width: ms(26), height: ms(26), borderRadius: ms(13) }]} />
+                          ) : (
+                            <View style={[styles.commentAvatar, styles.avatarFallback, { width: ms(26), height: ms(26), borderRadius: ms(13) }]}>
+                              <Text style={[styles.avatarInitials, { fontSize: ms(9) }]}>{rInitials}</Text>
+                            </View>
+                          )}
+                          <View style={[styles.commentBubble, { backgroundColor: '#FFF5FA' }]}>
+                            <View style={styles.commentHeader}>
+                              <Text style={[styles.commentAuthor, { fontSize: ms(12) }]}>{rAuthor}</Text>
+                              <View style={[styles.roleBadge, rRole.toLowerCase() === 'donor' ? styles.roleBadgeDonor : styles.roleBadgeRecipient, { paddingVertical: 1, transform: [{ scale: 0.7 }] }]}>
+                                 <Text style={[styles.roleBadgeText, rRole.toLowerCase() === 'donor' ? styles.roleBadgeTextDonor : styles.roleBadgeTextRecipient]}>
+                                  {rRole.toUpperCase()}
+                                </Text>
+                              </View>
+                              <Text style={styles.commentTime}>{formatTime(rPostedAt)}</Text>
+                            </View>
+                            <Text style={[styles.commentText, { fontSize: ms(12) }]}>{reply.content}</Text>
+                          </View>
+                        </View>
+                      );
+                    })}
                   </View>
                 );
               }}
@@ -439,6 +509,21 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                 </View>
               }
             />
+
+            {/* Replying banner */}
+            {replyingToComment && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF0F5', paddingHorizontal: ms(20), paddingVertical: vs(8), borderTopWidth: 1, borderTopColor: '#FFD6EF' }}>
+                <Text style={{ fontSize: ms(12), color: '#FF1493', fontWeight: '700' }}>
+                  Replying to @{
+                    (((replyingToComment.user?.firstName || replyingToComment.user?.first_name || '') + ' ' + (replyingToComment.user?.lastName || replyingToComment.user?.last_name || '')).trim()) || 
+                    replyingToComment.user?.name || 'Member'
+                  }
+                </Text>
+                <TouchableOpacity onPress={() => setReplyingToComment(null)}>
+                  <Ionicons name="close-circle" size={18} color="#FF1493" />
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Comment Input */}
             <View style={[styles.commentInputRow, { paddingBottom: insets.bottom + ms(10) }]}>

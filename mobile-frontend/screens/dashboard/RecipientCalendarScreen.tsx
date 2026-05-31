@@ -72,49 +72,48 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
   const [loading, setLoading] = useState(true);
   const insets = useSafeAreaInsets();
 
-  // ── Fetch Donations ──────────────────────────
+  // ── Fetch Calendar ──────────────────────────
   React.useEffect(() => {
-    fetchDonations();
+    fetchCalendar();
   }, [viewDate]);
 
-  const fetchDonations = async () => {
+  const fetchCalendar = async () => {
     try {
       setLoading(true);
-      
-      // Fetch both donations and hair requests simultaneously using API
-      const [donationsRes, requestsRes] = await Promise.all([
-        api.get('/donations'),
-        api.get('/requests')
-      ]);
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth() + 1;
+      const response = await api.get(`/calendar?year=${year}&month=${month}`);
+      const items: any[] = response.data?.items || [];
 
-      const donationsData = donationsRes.data || [];
-      const requestsData = requestsRes.data || [];
+      const mapped: Event[] = items.map((it) => {
+        const dt = new Date(it.datetime);
+        const time = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (it.kind === 'event') {
+          return {
+            id: it.id,
+            title: it.title,
+            location: it.location || 'TBA',
+            time,
+            date: it.date,
+            type: 'drive',
+            accepted: true,
+            status: it.status,
+          };
+        }
+        // hair request (or other aid)
+        return {
+          id: it.id,
+          title: it.title || 'Hair Request',
+          location: it.location || 'Medical Review',
+          time,
+          date: it.date,
+          type: 'other',
+          accepted: it.decision === 'Approved',
+          status: it.decision || it.status,
+        };
+      });
 
-      // Map donations to Events
-      const mappedDonations: Event[] = donationsData.map((d: any) => ({
-        id: d.id,
-        title: d.type === 'hair' ? 'Hair Donation' : `Monetary Support (₱${d.amount})`,
-        location: d.type === 'hair' ? 'Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)' : 'Financial Aid',
-        time: new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: d.created_at.split('T')[0],
-        type: d.type === 'hair' ? 'drive' : 'other', 
-        accepted: ['approved', 'completed', 'received hair'].includes(d.status.toLowerCase()),
-        status: d.status
-      }));
-
-      // Map hair requests to Events
-      const mappedRequests: Event[] = requestsData.map((h: any) => ({
-        id: h.id,
-        title: 'Hair Request',
-        location: 'Medical Review',
-        time: new Date(h.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: h.created_at.split('T')[0],
-        type: 'drive',
-        accepted: h.status.toLowerCase() === 'approved' || h.status.toLowerCase() === 'matched',
-        status: h.status
-      }));
-
-      setEvents([...mappedDonations, ...mappedRequests]);
+      setEvents(mapped);
     } catch (err) {
       console.error("Error fetching calendar events:", err);
     } finally {
@@ -283,30 +282,45 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
                       </View>
                       
                       <LinearGradient
-                        colors={['#9B59B6', '#8E44AD']}
+                        colors={item.title.includes('Hair') ? ['#9B59B6', '#8E44AD'] : ['#4FACFE', '#009EFD']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.eventCard}
                       >
-                    <View style={styles.eventIconBg}>
+                    <View style={[
+                      styles.eventIconBg,
+                      !item.title.includes('Hair') && { backgroundColor: '#E3F2FD' }
+                    ]}>
                       {item.title.includes('Hair') ? (
                         <MaterialCommunityIcons name="heart-pulse" size={ms(24)} color="#9B59B6" />
                       ) : (
-                        <MaterialCommunityIcons name="cash-multiple" size={ms(24)} color="#9B59B6" />
+                        <MaterialCommunityIcons name="calendar-star" size={ms(24)} color="#1976D2" />
                       )}
                     </View>
                     <View style={styles.eventDetails}>
                       <Text style={styles.eventTitle}>{item.title}</Text>
                       <Text style={styles.eventLoc}>{item.location}</Text>
                       
-                      {item.status && (
+                      {item.status ? (
                         <View style={[
                           styles.statusBadge, 
-                          { backgroundColor: item.status === 'approved' ? '#27AE60' : '#F39C12' }
+                          { backgroundColor: ['verified', 'approved', 'completed', 'matched'].includes(item.status.toLowerCase()) ? '#27AE60' : '#F39C12' }
                         ]}>
                           <Text style={styles.statusBadgeText}>
-                            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                            {item.status}
                           </Text>
+                        </View>
+                      ) : !item.accepted ? (
+                        <ScaleButton
+                          style={styles.acceptBtn}
+                          onPress={() => handleAccept(item.id)}
+                        >
+                          <Text style={styles.acceptBtnText}>Accept Invitation</Text>
+                        </ScaleButton>
+                      ) : (
+                        <View style={styles.acceptedTag}>
+                          <Ionicons name="checkmark-circle" size={ms(16)} color="#4CAF50" />
+                          <Text style={styles.acceptedText}> Invitation Accepted</Text>
                         </View>
                       )}
                     </View>
@@ -515,6 +529,21 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  acceptBtn: {
+    backgroundColor: '#fff',
+    borderRadius: ms(16),
+    height: vs(42),
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  acceptBtnText: { color: '#9B59B6', fontWeight: '900', fontSize: ms(14), textTransform: 'uppercase' },
+  acceptedTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: ms(12), paddingVertical: vs(6), borderRadius: ms(12), alignSelf: 'flex-start' },
+  acceptedText: { fontSize: ms(13), color: '#fff', fontWeight: '900', marginLeft: ms(6) },
 
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: vs(60) },
   emptyText: { fontSize: ms(18), color: '#bbb', fontWeight: '800', marginTop: vs(20), textAlign: 'center' },
