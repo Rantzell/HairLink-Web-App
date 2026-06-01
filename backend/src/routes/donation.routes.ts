@@ -51,6 +51,15 @@ router.post('/', authenticate, upload.fields([
       photoSide = await uploadFile(files.photo_side[0], 'hairlink', 'donations/photos');
     }
 
+    // Reject past appointment dates
+    if (req.body.appointment_at) {
+      const appt = new Date(req.body.appointment_at);
+      if (appt < new Date()) {
+        res.status(422).json({ error: 'Appointment date cannot be in the past.' });
+        return;
+      }
+    }
+
     const donation = await prisma.donation.create({
       data: {
         userId: req.user!.id,

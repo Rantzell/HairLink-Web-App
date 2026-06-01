@@ -3,6 +3,13 @@ import '../styles/Admin.css';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
 
+/** Returns today's datetime in YYYY-MM-DDTHH:mm format for min attribute */
+function todayMin(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
 const AdminEvents: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -29,6 +36,10 @@ const AdminEvents: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.date) return;
+    if (new Date(form.date) < new Date()) {
+      alert('Event date cannot be in the past. Please select a future date and time.');
+      return;
+    }
     setShowConfirm(true);
   };
 
@@ -106,7 +117,7 @@ const AdminEvents: React.FC = () => {
             </div>
             <div className="form-group">
               <label className="admin-form-label">Date & Time *</label>
-              <input type="datetime-local" value={form.date} onChange={e => setForm({...form, date: e.target.value})} required />
+              <input type="datetime-local" value={form.date} onChange={e => setForm({...form, date: e.target.value})} min={todayMin()} required />
             </div>
           </div>
           <div className="form-group">

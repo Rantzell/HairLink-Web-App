@@ -2,12 +2,19 @@
    COMMUNITY FEED — Modern social-style redesign
 ═══════════════════════════════════════════════════════════ */
 
-/* ── Root wrapper ── */
+/* ── Root wrapper — break out of any parent padding/width constraints ── */
 .cf-root {
-  min-height: 100%;
+  /* Full-bleed: expand to true viewport width regardless of parent container */
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Prevent horizontal scrollbar */
+  overflow-x: clip;
   background: #f6f7fb;
   display: flex;
   flex-direction: column;
+  min-height: 100%;
 }
 
 /* ════════════════════════════════════════════════
@@ -18,7 +25,7 @@
   padding: 2.75rem 0 3rem;
   overflow: hidden;
   background: #d9609a;
-  /* Fallback solid colour shown while image loads */
+  width: 100%;
 }
 
 /* Background image layer */
@@ -49,9 +56,9 @@
 .cf-hero-inner {
   position: relative;
   z-index: 1;
-  max-width: 1320px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 clamp(1rem, 4vw, 3rem);
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -120,12 +127,13 @@
   top: 0;
   z-index: 50;
   box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  width: 100%;
 }
 
 .cf-toolbar-inner {
-  max-width: 1320px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0.65rem 2rem;
+  padding: 0.65rem clamp(1rem, 4vw, 3rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -171,7 +179,7 @@
   max-width: 860px;
   margin: 0 auto;
   width: 100%;
-  padding: 1.5rem 2rem 3rem;
+  padding: 1.5rem clamp(1rem, 4vw, 3rem) 3rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -909,17 +917,15 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 1.2rem;
-    padding: 0 1.1rem;
   }
 
   .cf-toolbar-inner {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
-    padding: 0.6rem 1.1rem;
   }
 
-  .cf-feed-wrap { padding: 1rem 0.85rem 2.5rem; }
+  .cf-feed-wrap { padding: 1rem 1rem 2.5rem; }
 
   .cf-vote-strip { padding: 0.9rem 0.5rem 0.9rem 0.6rem; min-width: 36px; }
 

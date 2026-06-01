@@ -84,6 +84,36 @@ export const notifyCommunityInteraction = async (ownerId: string, actorName: str
   return createNotification(ownerId, 'Community Update 💬', message, 'community');
 };
 
+/** Send an announcement notification only to the specified audience.
+ *  audience: 'all' | 'donor' | 'recipient' | 'staff'
+ */
+export const notifyAnnouncement = async (title: string, message: string, audience: string = 'all') => {
+  try {
+    const roles: string[] =
+      audience === 'donor'     ? ['donor'] :
+      audience === 'recipient' ? ['recipient'] :
+      audience === 'staff'     ? ['staff'] :
+      ['donor', 'recipient', 'staff'];
+
+    const targetUsers = await prisma.user.findMany({
+      where: { role: { in: roles }, isActive: true },
+      select: { id: true },
+    });
+    if (targetUsers.length === 0) return;
+    await prisma.notifications.createMany({
+      data: targetUsers.map((u) => ({
+        user_id: u.id,
+        title: `📢 Announcement: ${title}`,
+        message,
+        type: 'announcement',
+        is_read: false,
+      })),
+    });
+  } catch (err: any) {
+    console.error('Error sending targeted announcement notification:', err);
+  }
+};
+
 export const notifyAllDonorsAndRecipients = async (title: string, message: string) => {
   try {
     const targetUsers = await prisma.user.findMany({

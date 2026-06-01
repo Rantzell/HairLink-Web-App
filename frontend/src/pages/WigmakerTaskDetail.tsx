@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+
+
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 
@@ -18,6 +20,11 @@ const WigmakerTaskDetail: React.FC = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [targetStatus, setTargetStatus] = useState<string | null>(null);
   const [customDate, setCustomDate] = useState(new Date().toISOString().slice(0, 16));
+  const todayMin = useMemo(() => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }, []);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showMaterialConfirm, setShowMaterialConfirm] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
@@ -435,6 +442,7 @@ const WigmakerTaskDetail: React.FC = () => {
                       type="datetime-local"
                       value={customDate}
                       onChange={e => setCustomDate(e.target.value)}
+                      min={todayMin}
                       className="task-detail-form-input-text"
                     />
                   </div>

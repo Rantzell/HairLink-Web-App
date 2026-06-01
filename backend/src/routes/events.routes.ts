@@ -86,10 +86,15 @@ router.get('/next', authenticate, async (_req: Request, res: Response) => {
 router.post('/', authenticate, validate(eventCreateSchema), async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
+    const eventDate = new Date(req.body.event_date);
+    if (eventDate < new Date()) {
+      res.status(422).json({ error: 'Event date cannot be in the past.' });
+      return;
+    }
     const created = await prisma.event.create({
       data: {
         title: req.body.event_title,
-        date: new Date(req.body.event_date),
+        date: eventDate,
         description: req.body.event_description || '',
         location: req.body.event_location || '',
         status: 'Upcoming',
@@ -129,7 +134,14 @@ router.patch('/:id', authenticate, validate(eventUpdateSchema), async (req: Requ
       return;
     }
     const data: any = { ...req.body };
-    if (data.date) data.date = new Date(data.date);
+    if (data.date) {
+      const parsedDate = new Date(data.date);
+      if (parsedDate < new Date()) {
+        res.status(422).json({ error: 'Event date cannot be in the past.' });
+        return;
+      }
+      data.date = parsedDate;
+    }
 
     const updated = await prisma.event.update({ where: { id }, data });
     res.json(serializeEvent(updated));

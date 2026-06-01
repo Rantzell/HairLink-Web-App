@@ -80,6 +80,15 @@ router.post('/', authenticate, upload.fields([
 
     console.log('[HairRequest] All files uploaded. Creating database record...');
 
+    // Reject past appointment dates
+    if (req.body.appointment_at) {
+      const appt = new Date(req.body.appointment_at);
+      if (appt < new Date()) {
+        res.status(422).json({ error: 'Appointment date cannot be in the past.' });
+        return;
+      }
+    }
+
     const hairRequest = await prisma.hairRequest.create({
       data: {
         userId: req.user!.id,

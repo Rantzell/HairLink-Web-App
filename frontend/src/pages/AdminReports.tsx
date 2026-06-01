@@ -54,6 +54,25 @@ const AdminReports: React.FC = () => {
     window.print();
   };
 
+  const handleDownloadCSV = async () => {
+    try {
+      const res = await apiClient.get('/internal-api/admin/reports/export/csv', {
+        responseType: 'blob',
+      });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'hairlink_report.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('CSV download failed', err);
+      alert('Failed to download CSV. Please try again.');
+    }
+  };
+
   if (loading) return <div className="section-wrap">Aggregating system and financial records...</div>;
   if (!data) return <div className="section-wrap">Error: Could not generate system reports. Please check your connection.</div>;
 
@@ -325,13 +344,13 @@ const AdminReports: React.FC = () => {
         </div>
 
         <div className="admin-btn-actions">
-          <a
-            href={`${apiClient.defaults.baseURL}/internal-api/admin/reports/export/csv`}
-            download
+          <button
+            type="button"
+            onClick={handleDownloadCSV}
             className="admin-btn-icon"
           >
             <i className='bx bx-download'></i> Download CSV
-          </a>
+          </button>
           <button
             onClick={handlePrint}
             className="admin-btn-print"

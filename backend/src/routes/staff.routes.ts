@@ -164,8 +164,8 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
       where: { reference: { in: donation_references } }
     });
 
-    if (donations.length !== 6) {
-      res.status(400).json({ message: 'Exactly 6 valid donations are required.' });
+    if (donations.length === 0) {
+      res.status(400).json({ message: 'At least 1 valid donation is required.' });
       return;
     }
 

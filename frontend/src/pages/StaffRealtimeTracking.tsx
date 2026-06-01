@@ -81,8 +81,8 @@ const StaffRealtimeTracking: React.FC = () => {
   };
 
   const handleAssignBatch = () => {
-    if (selectedDonations.length !== 6) {
-      alert('You must select exactly 6 donations to create a batch.');
+    if (selectedDonations.length === 0) {
+      alert('Please select at least 1 donation to create a batch.');
       return;
     }
     if (!batchWigmakerId) {
@@ -256,9 +256,9 @@ const StaffRealtimeTracking: React.FC = () => {
               {selectedDonations.length}
             </div>
             <div className="batch-status-text">
-              {selectedDonations.length === 6 
-                ? 'Batch ready to assign! 🚀' 
-                : `Select ${6 - selectedDonations.length} more donations for a batch (6 required)`}
+              {selectedDonations.length > 0
+                ? `${selectedDonations.length} donation${selectedDonations.length > 1 ? 's' : ''} selected — ready to assign! 🚀`
+                : 'Select donations to create a batch'}
             </div>
           </div>
           
@@ -280,16 +280,16 @@ const StaffRealtimeTracking: React.FC = () => {
             </select>
             <button 
               onClick={handleAssignBatch}
-              disabled={selectedDonations.length !== 6 || !batchWigmakerId || isSubmitting}
-              style={{ 
-                height: '36px', 
-                padding: '0 1.5rem', 
-                borderRadius: '8px', 
-                border: 'none', 
-                background: selectedDonations.length === 6 ? '#fff' : 'rgba(255,255,255,0.3)', 
-                color: selectedDonations.length === 6 ? '#ad246d' : '#fff', 
-                fontWeight: 900, 
-                cursor: selectedDonations.length === 6 ? 'pointer' : 'not-allowed',
+              disabled={selectedDonations.length === 0 || !batchWigmakerId || isSubmitting}
+              style={{
+                height: '36px',
+                padding: '0 1.5rem',
+                borderRadius: '8px',
+                border: 'none',
+                background: selectedDonations.length > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
+                color: selectedDonations.length > 0 ? '#ad246d' : '#fff',
+                fontWeight: 900,
+                cursor: selectedDonations.length > 0 ? 'pointer' : 'not-allowed',
                 transition: 'all 0.2s ease'
               }}
             >

@@ -62,7 +62,7 @@ const AdminCMS: React.FC = () => {
   const [saving, setSaving]               = useState(false);
   const [saveSuccess, setSaveSuccess]     = useState(false);
   const [isSubmitting, setIsSubmitting]   = useState(false);
-  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', category: 'Care', author: 'Admin' });
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', category: 'Care', author: 'Admin', target_audience: 'all' });
   const [partnershipForm, setPartnershipForm]   = useState({ name: '', type: 'Wigmaker', contact: '', email: '', description: '', status: 'Active' });
   
   const [showLandingConfirm, setShowLandingConfirm] = useState(false);
@@ -227,7 +227,7 @@ const AdminCMS: React.FC = () => {
     setIsSubmitting(true);
     try {
       await apiClient.post('/internal-api/admin/announcements', announcementForm);
-      setAnnouncementForm({ title: '', content: '', category: 'Care', author: 'Admin' });
+      setAnnouncementForm({ title: '', content: '', category: 'Care', author: 'Admin', target_audience: 'all' });
       fetchData();
     } catch (err) { console.error('Failed to create announcement', err); }
     finally { setIsSubmitting(false); }
@@ -503,16 +503,25 @@ const AdminCMS: React.FC = () => {
             <h2 className="admin-card-subtitle"><i className='bx bx-news'></i> Published Announcements</h2>
             <div className="table-wrap">
               <table className="admin-table">
-                <thead><tr><th>Title</th><th>Category</th><th>Author</th><th>Date</th></tr></thead>
+                <thead><tr><th>Title</th><th>Category</th><th>Audience</th><th>Author</th><th>Date</th></tr></thead>
                 <tbody>
-                  {announcements.map(a => (
+                  {announcements.map(a => {
+                    const audienceMap: Record<string, string> = { all: 'All Users', donor: 'Donors', recipient: 'Recipients', staff: 'Staff' };
+                    const audienceLabel = audienceMap[a.targetAudience ?? 'all'] ?? 'All Users';
+                    return (
                     <tr key={a.id}>
                       <td><strong>{a.title}</strong></td>
                       <td>{a.category}</td>
+                      <td>
+                        <span style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, background: '#fdf2f8', color: '#ad246d', border: '1px solid #f9cde8' }}>
+                          {audienceLabel}
+                        </span>
+                      </td>
                       <td>{a.author}</td>
                       <td>{new Date(a.createdAt).toLocaleDateString()}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -532,6 +541,15 @@ const AdminCMS: React.FC = () => {
                     <option value="Styling">Styling</option>
                     <option value="Advocacy">Advocacy</option>
                     <option value="Update">System Update</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="admin-form-label-sm">Target Audience</label>
+                  <select value={announcementForm.target_audience} onChange={e => setAnnouncementForm({...announcementForm, target_audience: e.target.value})}>
+                    <option value="all">All Users</option>
+                    <option value="donor">Donors Only</option>
+                    <option value="recipient">Recipients Only</option>
+                    <option value="staff">Staff Only</option>
                   </select>
                 </div>
                 <div className="form-group">

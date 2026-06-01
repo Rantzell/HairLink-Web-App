@@ -214,14 +214,15 @@ model Event {
 }
 
 model HaircareArticle {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
-  image_url String?
-  author    String?
-  category  String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id              Int      @id @default(autoincrement())
+  title           String
+  content         String
+  image_url       String?
+  author          String?
+  category        String?
+  targetAudience  String?  @default("all") @map("target_audience")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("haircare_articles")
 }

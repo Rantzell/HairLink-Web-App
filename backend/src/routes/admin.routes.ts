@@ -6,7 +6,7 @@ import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/requireRole';
 import { validate } from '../middleware/validate';
 import { eventCreateSchema } from '../schemas';
-import { notifyAllDonorsAndRecipients } from '../services/notification.service';
+import { notifyAllDonorsAndRecipients, notifyAnnouncement } from '../services/notification.service';
 
 
 const router = Router();
@@ -166,7 +166,11 @@ router.get('/events', ...adminOnly, async (_req, res) => {
 router.post('/events', ...adminOnly, validate(eventCreateSchema), async (req, res) => {
   try {
     const dateObj = new Date(req.body.event_date);
-    const status = dateObj.getTime() < Date.now() ? 'Completed' : 'Upcoming';
+    if (dateObj < new Date()) {
+      res.status(422).json({ error: 'Event date cannot be in the past.' });
+      return;
+    }
+    const status = 'Upcoming';
     const created = await prisma.event.create({
       data: {
         title: req.body.event_title,
@@ -196,9 +200,13 @@ router.put('/events/:id', ...adminOnly, validate(eventCreateSchema), async (req,
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID' });
     const { event_title, event_date, event_description, event_location } = req.body;
-    
+
     const dateObj = new Date(event_date);
-    const status = dateObj.getTime() < Date.now() ? 'Completed' : 'Upcoming';
+    if (dateObj < new Date()) {
+      res.status(422).json({ error: 'Event date cannot be in the past.' });
+      return;
+    }
+    const status = 'Upcoming';
 
     const ev = await prisma.event.update({
       where: { id },
@@ -286,12 +294,14 @@ router.get('/announcements', ...adminOnly, async (_req, res) => {
 // POST /internal-api/admin/announcements
 router.post('/announcements', ...adminOnly, async (req, res) => {
   try {
-    const { title, content, category, author } = req.body;
-    const a = await prisma.haircareArticle.create({ data: { title, content, category, author } });
-    
-    // Broadcast notification to all active donors and recipients
-    await notifyAllDonorsAndRecipients(title, content);
-    
+    const { title, content, category, author, target_audience = 'all' } = req.body;
+    const a = await prisma.haircareArticle.create({
+      data: { title, content, category, author, targetAudience: target_audience }
+    });
+
+    // Broadcast only to the selected audience
+    await notifyAnnouncement(title, content, target_audience);
+
     res.status(201).json(s(a));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
