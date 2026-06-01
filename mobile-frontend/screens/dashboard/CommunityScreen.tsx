@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,20 +12,88 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  ScrollView,
+  Pressable,
+  Animated as RNAnimated,
+  Easing,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
 import api from '../../lib/api';
 import { supabase } from '../../lib/supabase';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
+
+/**
+ * Mobile Community feed — visual + behavioural parity with the web
+ * `frontend/src/pages/CommunityFeed.tsx`:
+ *   - "Hairlink community" hero with a + Create Post CTA
+ *   - Filter pills (All · Stories · Questions · Updates) and sort pills
+ *     (New · Top)
+ *   - Post cards show a coloured category tag + bold title + body + image
+ *   - Create-post modal with category dropdown, title, body, photo picker
+ *
+ * Topic / title is stored inside the `content` string using the same
+ * `[TOPIC:Stories]\n**Title**\n\nBody` convention the web uses, so posts
+ * created from either platform render identically on both.
+ */
 
 interface CommunityScreenProps {
   onBack: () => void;
 }
 
-const ScaleButton = Animated.createAnimatedComponent(TouchableOpacity);
+// ── topic helpers (mirror frontend/src/pages/CommunityFeed.tsx) ──
+const TOPIC_PREFIX = '[TOPIC:';
+const TOPIC_SUFFIX = ']';
+const CATEGORIES = ['Stories', 'Questions', 'Updates'] as const;
+type Category = (typeof CATEGORIES)[number];
+
+function encodeTopicInContent(topic: string, title: string, body: string): string {
+  const topicTag = `${TOPIC_PREFIX}${topic}${TOPIC_SUFFIX}`;
+  if (title.trim()) return `${topicTag}\n**${title.trim()}**\n\n${body.trim()}`;
+  return `${topicTag}\n${body.trim()}`;
+}
+
+function decodePost(content: string): { topic: string; title: string | null; body: string } {
+  let rest = content ?? '';
+  let topic = 'all';
+  if (rest.startsWith(TOPIC_PREFIX)) {
+    const end = rest.indexOf(TOPIC_SUFFIX);
+    if (end !== -1) {
+      topic = rest.slice(TOPIC_PREFIX.length, end).toLowerCase();
+      rest = rest.slice(end + TOPIC_SUFFIX.length).trimStart();
+    }
+  }
+  const titleMatch = rest.match(/^\*\*(.+?)\*\*\n\n([\s\S]*)$/);
+  if (titleMatch) return { topic, title: titleMatch[1], body: titleMatch[2] };
+  return { topic, title: null, body: rest };
+}
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*\*(.+?)\*\*\*/g, '$1')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/___(.+?)___/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/_(.+?)_/g, '$1');
+}
+
+// Same role palette as the web
+const ROLE_COLORS: Record<string, { bg: string; color: string; label: string }> = {
+  donor:     { bg: '#EEF3FF', color: '#3B66D4', label: 'Donor' },
+  recipient: { bg: '#FEF2FB', color: '#CF2F84', label: 'Recipient' },
+  staff:     { bg: '#F0FDF4', color: '#15803D', label: 'Staff' },
+  wigmaker:  { bg: '#FFF7ED', color: '#C05621', label: 'Wigmaker' },
+  admin:     { bg: '#F5F3FF', color: '#6D28D9', label: 'Admin' },
+};
+
+const TOPIC_COLORS: Record<string, { bg: string; fg: string }> = {
+  stories:   { bg: '#FFF0F8', fg: '#D63B8A' },
+  questions: { bg: '#EFF6FF', fg: '#1D4ED8' },
+  updates:   { bg: '#ECFDF5', fg: '#047857' },
+};
 
 const getAvatarUrl = (photoUrl: string | null | undefined): string | null => {
   if (!photoUrl) return null;
@@ -34,18 +102,41 @@ const getAvatarUrl = (photoUrl: string | null | undefined): string | null => {
   return data.publicUrl;
 };
 
+function timeAgo(iso: string | undefined | null) {
+  if (!iso) return 'just now';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return 'just now';
+  const diff = Date.now() - d.getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const dys = Math.floor(h / 24);
+  if (dys < 7) return `${dys}d ago`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export default function CommunityScreen({ onBack }: CommunityScreenProps) {
   const insets = useSafeAreaInsets();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Post Creation State
-  const [newPostContent, setNewPostContent] = useState('');
-  const [newPostImage, setNewPostImage] = useState<string | null>(null);
+  // Filter / sort state — same model as the web
+  const [filter, setFilter] = useState<'all' | string>('all');
+  const [sort, setSort] = useState<'new' | 'top'>('new');
+
+  // Create-post modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState<Category>('Stories');
+  const [catOpen, setCatOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newContent, setNewContent] = useState('');
+  const [newImage, setNewImage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Comment State
+  // Comment modal state (kept from previous design — already wired to API)
   const [activePost, setActivePost] = useState<any>(null);
   const [commentContent, setCommentContent] = useState('');
   const [postingComment, setPostingComment] = useState(false);
@@ -55,7 +146,6 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
     try {
       const response = await api.get('/community/posts');
       setPosts(response.data);
-      
       if (activePost) {
         const updated = response.data.find((p: any) => p.id === activePost.id);
         if (updated) setActivePost(updated);
@@ -69,53 +159,56 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
     }
   }, [activePost]);
 
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+  useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
   const handleRefresh = () => {
     setRefreshing(true);
     fetchPosts();
   };
 
+  // ── Create post ──
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
+      Alert.alert('Permission needed', 'We need access to your photos to attach one.');
       return;
     }
-
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.8,
+      quality: 0.85,
     });
-
-    if (!result.canceled) {
-      setNewPostImage(result.assets[0].uri);
-    }
+    if (!result.canceled) setNewImage(result.assets[0].uri);
   };
 
-  const handleCreatePost = async () => {
-    if (!newPostImage) {
-      Alert.alert('Image Required', 'Please attach a photo before publishing your post.');
-      return;
-    }
-    if (!newPostContent.trim()) {
-      Alert.alert('Caption Required', 'Add a short caption to go with your photo.');
+  const resetComposer = () => {
+    setNewTitle('');
+    setNewContent('');
+    setNewImage(null);
+    setNewCategory('Stories');
+    setCatOpen(false);
+  };
+
+  const handlePublish = async () => {
+    // Photo is now optional — backend (community.routes.ts) only requires
+    // `content`. Only block when the body itself is empty.
+    if (!newContent.trim()) {
+      Alert.alert('Body required', 'Write a short body before publishing.');
       return;
     }
 
     setSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append('content', newPostContent.trim());
+      const fullContent = encodeTopicInContent(newCategory, newTitle, newContent);
+      formData.append('content', fullContent);
 
-      if (newPostImage) {
-        const fileExt = newPostImage.split('.').pop()?.toLowerCase();
+      // Attach the image only if the user picked one.
+      if (newImage) {
+        const fileExt = newImage.split('.').pop()?.toLowerCase();
         const fileName = `post-image-${Date.now()}.${fileExt}`;
         formData.append('image', {
-          uri: Platform.OS === 'android' ? newPostImage : newPostImage.replace('file://', ''),
+          uri: Platform.OS === 'android' ? newImage : newImage.replace('file://', ''),
           name: fileName,
           type: `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
         } as any);
@@ -124,10 +217,9 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
       const response = await api.post('/community/posts', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      setNewPostContent('');
-      setNewPostImage(null);
       setPosts([response.data, ...posts]);
+      resetComposer();
+      setModalOpen(false);
     } catch (error) {
       console.error('Error creating post:', error);
       Alert.alert('Error', 'Failed to publish post.');
@@ -136,42 +228,27 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
     }
   };
 
+  // ── Comment + like — unchanged from previous design ──
   const handlePostComment = async () => {
     if (!commentContent.trim() || !activePost) return;
-
     setPostingComment(true);
     try {
       const response = await api.post(`/community/posts/${activePost.id}/comments`, {
         content: commentContent.trim(),
-        parent_id: replyingToComment ? replyingToComment.id : null
+        parent_id: replyingToComment ? replyingToComment.id : null,
       });
-
       setCommentContent('');
-      
       let updatedComments = [...(activePost.comments || [])];
       if (replyingToComment) {
-        // Find parent comment and append the reply
-        updatedComments = updatedComments.map(c => {
-          if (c.id === replyingToComment.id) {
-            return {
-              ...c,
-              replies: [...(c.replies || []), response.data]
-            };
-          }
-          return c;
-        });
+        updatedComments = updatedComments.map((c) =>
+          c.id === replyingToComment.id ? { ...c, replies: [...(c.replies || []), response.data] } : c
+        );
       } else {
-        // Add top level comment
         updatedComments = [...updatedComments, response.data];
       }
-
-      const updatedPost = { 
-        ...activePost, 
-        comments: updatedComments 
-      };
-
+      const updatedPost = { ...activePost, comments: updatedComments };
       setActivePost(updatedPost);
-      setPosts(current => current.map(p => p.id === activePost.id ? updatedPost : p));
+      setPosts((current) => current.map((p) => (p.id === activePost.id ? updatedPost : p)));
       setReplyingToComment(null);
     } catch (error) {
       console.error('Error posting comment:', error);
@@ -182,54 +259,39 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
   };
 
   const handleToggleLike = async (postId: string) => {
-    setPosts(currentPosts => 
-      currentPosts.map(post => {
-        if (post.id === postId) {
-          const isLiked = !post.is_liked;
-          const likesCount = isLiked ? post.likes + 1 : Math.max(0, post.likes - 1);
-          return { ...post, is_liked: isLiked, likes: likesCount };
-        }
-        return post;
+    setPosts((current) =>
+      current.map((post) => {
+        if (post.id !== postId) return post;
+        const isLiked = !post.is_liked;
+        return { ...post, is_liked: isLiked, likes: isLiked ? post.likes + 1 : Math.max(0, post.likes - 1) };
       })
     );
-
     try {
       const response = await api.post(`/community/posts/${postId}/like`);
-      setPosts(currentPosts => 
-        currentPosts.map(post => {
-          if (post.id === postId) {
-            return { ...post, is_liked: response.data.is_liked, likes: response.data.likes };
-          }
-          return post;
-        })
+      setPosts((current) =>
+        current.map((p) => (p.id === postId ? { ...p, is_liked: response.data.is_liked, likes: response.data.likes } : p))
       );
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      fetchPosts(); 
+    } catch {
+      fetchPosts();
     }
   };
 
-  const formatTime = (dateString: string | null | undefined) => {
-    if (!dateString) return 'Recently';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Recently';
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    
-    const mins = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  // ── Derived: filtered + sorted feed (mirrors the web) ──
+  const filteredPosts = posts
+    .filter((p) => {
+      if (filter === 'all') return true;
+      const { topic } = decodePost(p.content ?? '');
+      return topic === filter.toLowerCase();
+    })
+    .sort((a, b) =>
+      sort === 'top'
+        ? (b.likes || 0) - (a.likes || 0)
+        : new Date(b.createdAt || b.created_at || 0).getTime()
+          - new Date(a.createdAt || a.created_at || 0).getTime()
+    );
 
-  const renderPost = ({ item, index }: { item: any, index: number }) => {
-    // Prisma returns camelCase; older responses used snake_case. Fall back so
-    // posts authored either way render the real name instead of "Anonymous".
+  // ── Render one post card (web parity) ──
+  const renderPost = ({ item, index }: { item: any; index: number }) => {
     const u = item.user || {};
     const first = u.firstName || u.first_name || '';
     const last = u.lastName || u.last_name || '';
@@ -237,77 +299,90 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
     const authorName = `${first} ${last}`.trim() || fallbackName || 'Member';
 
     const avatarUrl = getAvatarUrl(u.profile_photo_url || u.profilePhotoUrl);
-    const role = u.role || 'user';
+    const role = (u.role || 'user').toLowerCase();
+    const roleStyle = ROLE_COLORS[role] || ROLE_COLORS.donor;
 
     const initials = authorName.substring(0, 2).toUpperCase();
     const postedAt = item.createdAt || item.created_at;
+    const imageUrl = item.imageUrl || item.full_image_url;
+
+    const { topic, title, body } = decodePost(item.content ?? '');
+    const topicLabel = topic.charAt(0).toUpperCase() + topic.slice(1);
+    const topicStyle = TOPIC_COLORS[topic] || { bg: '#F5F5F0', fg: '#78716C' };
+
+    const commentCount = (item.comments || []).reduce(
+      (acc: number, c: any) => acc + 1 + (c.replies?.length || 0),
+      0
+    );
 
     return (
-      <Animated.View 
-        entering={FadeInDown.delay(index * 50).springify().damping(12)} 
+      <Animated.View
+        entering={FadeInDown.delay(index * 40).springify().damping(14)}
         style={styles.postCard}
       >
-        {/* Post Header */}
+        {/* Header */}
         <View style={styles.postHeader}>
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
           ) : (
-            <View style={styles.avatarFallback}>
+            <View style={[styles.avatar, styles.avatarFallback]}>
               <Text style={styles.avatarInitials}>{initials}</Text>
             </View>
           )}
-          
-          <View style={styles.authorInfo}>
-            <Text style={styles.authorName}>{authorName}</Text>
-            <Text style={styles.postTime}>
-              {postedAt ? new Date(postedAt).toLocaleDateString() : ''} • {formatTime(postedAt)}
-            </Text>
+          <View style={styles.authorBlock}>
+            <Text style={styles.authorName} numberOfLines={1}>{authorName}</Text>
+            <View style={styles.metaRow}>
+              <View style={[styles.roleBadge, { backgroundColor: roleStyle.bg }]}>
+                <Text style={[styles.roleBadgeText, { color: roleStyle.color }]}>{roleStyle.label}</Text>
+              </View>
+              <Text style={styles.dotSep}>·</Text>
+              <Text style={styles.timeAgo}>{timeAgo(postedAt)}</Text>
+            </View>
           </View>
-          
-          <View style={[styles.roleBadge, role.toLowerCase() === 'donor' ? styles.roleBadgeDonor : styles.roleBadgeRecipient]}>
-            <Text style={[styles.roleBadgeText, role.toLowerCase() === 'donor' ? styles.roleBadgeTextDonor : styles.roleBadgeTextRecipient]}>
-              {role.toUpperCase()}
-            </Text>
+
+          <View style={[styles.topicChip, { backgroundColor: topicStyle.bg }]}>
+            <Text style={[styles.topicChipText, { color: topicStyle.fg }]}>{topicLabel}</Text>
           </View>
         </View>
 
-        {/* Post Content */}
-        <Text style={styles.postContent}>{item.content}</Text>
-        
-        {/* Post Image — backend returns `imageUrl` (camelCase from Prisma);
-            older mobile snapshots referenced `full_image_url` and silently
-            dropped photos. Fall back to either so old + new payloads render. */}
-        {(item.imageUrl || item.full_image_url) && (
-          <Image
-            source={{ uri: item.imageUrl || item.full_image_url }}
-            style={styles.postImage}
-            resizeMode="cover"
-          />
+        {/* Title + body */}
+        {title && <Text style={styles.postTitle}>{title}</Text>}
+        {body ? <Text style={styles.postBody}>{stripMarkdown(body)}</Text> : null}
+
+        {/* Image */}
+        {imageUrl && (
+          <Image source={{ uri: imageUrl }} style={styles.postImage} resizeMode="cover" />
         )}
 
-        {/* Post Stats */}
-        <View style={styles.postStats}>
-          <Text style={styles.statsText}>{item.likes} Likes • {item.comments?.length || 0} Comments</Text>
+        {/* Footer counts + actions */}
+        <View style={styles.postCounts}>
+          <Text style={styles.countsText}>
+            {item.likes || 0} {item.likes === 1 ? 'like' : 'likes'}
+            {' · '}
+            {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+          </Text>
         </View>
-
-        {/* Post Actions */}
         <View style={styles.postActions}>
-          <TouchableOpacity 
-            style={styles.actionBtn} 
+          <TouchableOpacity
+            style={styles.actionBtn}
             activeOpacity={0.7}
             onPress={() => handleToggleLike(item.id)}
           >
-            <Ionicons name={item.is_liked ? "heart" : "heart-outline"} size={ms(20)} color={item.is_liked ? "#D63B8A" : "#6b5b6d"} />
-            <Text style={[styles.actionBtnText, item.is_liked && { color: '#D63B8A' }]}>Like</Text>
+            <Ionicons
+              name={item.is_liked ? 'heart' : 'heart-outline'}
+              size={ms(19)}
+              color={item.is_liked ? '#D63B8A' : '#78716C'}
+            />
+            <Text style={[styles.actionText, item.is_liked && { color: '#D63B8A' }]}>Like</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionBtn} 
+
+          <TouchableOpacity
+            style={styles.actionBtn}
             activeOpacity={0.7}
             onPress={() => setActivePost(item)}
           >
-            <Ionicons name="chatbubble-outline" size={ms(18)} color="#6b5b6d" />
-            <Text style={styles.actionBtnText}>Comment</Text>
+            <Ionicons name="chatbubble-outline" size={ms(17)} color="#78716C" />
+            <Text style={styles.actionText}>Comment</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -316,26 +391,23 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
+      {/* ── Top bar ── */}
+      <View style={styles.topBar}>
         <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="chevron-back" size={28} color="#1a1a1a" />
+          <Ionicons name="chevron-back" size={ms(24)} color="#1C1917" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Community</Text>
-        <View style={{ width: 28 }} />
+        <Text style={styles.topBarTitle}>Community</Text>
+        <View style={{ width: ms(40) }} />
       </View>
 
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <FlatList
-          data={posts}
+          data={filteredPosts}
           keyExtractor={(item) => item.id}
           renderItem={renderPost}
           contentContainerStyle={[
             styles.feedContent,
-            { paddingBottom: Math.max(vs(40), insets.bottom + vs(20)) }
+            { paddingBottom: Math.max(vs(40), insets.bottom + vs(20)) },
           ]}
           showsVerticalScrollIndicator={false}
           refreshing={refreshing}
@@ -343,213 +415,283 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
           ListEmptyComponent={
             !loading ? (
               <View style={styles.emptyState}>
-                <Ionicons name="people" size={ms(48)} color="#ead7e8" />
-                <Text style={styles.emptyStateText}>No posts yet. Be the first to share!</Text>
+                <View style={styles.emptyIconBubble}>
+                  <Ionicons name="chatbubbles-outline" size={ms(32)} color="#D63B8A" />
+                </View>
+                <Text style={styles.emptyText}>
+                  Be the first to share something with the community!
+                </Text>
+                <TouchableOpacity style={styles.emptyCta} onPress={() => setModalOpen(true)}>
+                  <Text style={styles.emptyCtaText}>+ Create Post</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               <ActivityIndicator size="large" color="#D63B8A" style={{ marginTop: vs(40) }} />
             )
           }
           ListHeaderComponent={
-            <View style={styles.createPostContainer}>
-              <Text style={styles.createPostTitle}>Share Your Story</Text>
-              <View style={styles.createPostInputWrapper}>
-                <TextInput
-                  style={styles.createPostInput}
-                  placeholder="What's on your mind?"
-                  placeholderTextColor="#9b8a9e"
-                  multiline
-                  value={newPostContent}
-                  onChangeText={setNewPostContent}
-                  maxLength={500}
-                />
+            <View>
+              {/* ── Hero ── */}
+              <View style={styles.hero}>
+                <Text style={styles.heroTitle}>Hairlink community</Text>
+                <Text style={styles.heroSub}>
+                  Share your journey, celebrate others, ask questions, and find support from
+                  people who truly understand.
+                </Text>
+                <TouchableOpacity style={styles.heroCta} onPress={() => setModalOpen(true)} activeOpacity={0.85}>
+                  <Feather name="plus" size={ms(16)} color="#fff" />
+                  <Text style={styles.heroCtaText}>Create Post</Text>
+                </TouchableOpacity>
               </View>
-              
-              {newPostImage && (
-                <View style={styles.previewImageContainer}>
-                  <Image source={{ uri: newPostImage }} style={styles.previewImage} />
-                  <TouchableOpacity 
-                    style={styles.removeImageBtn}
-                    onPress={() => setNewPostImage(null)}
-                  >
-                    <Ionicons name="close" size={16} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-              )}
 
-              <View style={styles.createPostActions}>
-                <TouchableOpacity style={styles.attachBtn} onPress={pickImage}>
-                  <Ionicons name="camera" size={ms(22)} color="#D63B8A" />
-                  <Text style={styles.attachBtnText}>Add Photo</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[
-                    styles.postBtn,
-                    (!newPostContent.trim() || !newPostImage || submitting) ? styles.postBtnDisabled : null
-                  ]}
-                  onPress={handleCreatePost}
-                  disabled={!newPostContent.trim() || !newPostImage || submitting}
-                >
-                  {submitting ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={styles.postBtnText}>Post</Text>
-                  )}
-                </TouchableOpacity>
+              {/* ── Toolbar: filters + sort ── */}
+              <View style={styles.toolbar}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillScroll}>
+                  {(['all', ...CATEGORIES] as const).map((f) => {
+                    const active = filter.toLowerCase() === f.toLowerCase();
+                    return (
+                      <TouchableOpacity
+                        key={f}
+                        style={[styles.pill, active && styles.pillActive]}
+                        onPress={() => setFilter(f === 'all' ? 'all' : f)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.pillText, active && styles.pillTextActive]}>
+                          {f === 'all' ? 'All' : f}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+
+                <View style={styles.sortGroup}>
+                  {(['new', 'top'] as const).map((s) => {
+                    const active = sort === s;
+                    return (
+                      <TouchableOpacity
+                        key={s}
+                        style={[styles.sortPill, active && styles.sortPillActive]}
+                        onPress={() => setSort(s)}
+                      >
+                        <Text style={[styles.sortPillText, active && styles.sortPillTextActive]}>
+                          {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
             </View>
           }
         />
       </KeyboardAvoidingView>
 
-      {/* ── Comment Modal ────────────────────────────── */}
-      <Modal
-        visible={!!activePost}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setActivePost(null)}
-      >
+      {/* ── Create Post Modal ── */}
+      <Modal visible={modalOpen} animationType="slide" transparent onRequestClose={() => setModalOpen(false)}>
         <View style={styles.modalOverlay}>
-          <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.modalContent}
-          >
-            {/* Modal Header */}
+          <KeyboardAvoidingView style={styles.modalSheet} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Comments</Text>
-              <TouchableOpacity onPress={() => setActivePost(null)} style={styles.closeBtn}>
-                <Ionicons name="close" size={24} color="#1a1a1a" />
+              <Text style={styles.modalTitle}>Create a Post</Text>
+              <TouchableOpacity onPress={() => setModalOpen(false)} style={styles.modalClose}>
+                <Ionicons name="close" size={ms(22)} color="#1C1917" />
               </TouchableOpacity>
             </View>
 
-            {/* Comments List */}
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: ms(20), paddingBottom: vs(20) + insets.bottom }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Category dropdown */}
+              <Pressable
+                style={styles.dropdown}
+                onPress={() => setCatOpen((v) => !v)}
+              >
+                <Text style={styles.dropdownText}>{newCategory}</Text>
+                <Feather name={catOpen ? 'chevron-up' : 'chevron-down'} size={ms(16)} color="#78716C" />
+              </Pressable>
+              {catOpen && (
+                <View style={styles.dropdownList}>
+                  {CATEGORIES.map((c) => {
+                    const selected = c === newCategory;
+                    return (
+                      <TouchableOpacity
+                        key={c}
+                        style={[styles.dropdownItem, selected && { backgroundColor: '#FFF0F8' }]}
+                        onPress={() => { setNewCategory(c); setCatOpen(false); }}
+                      >
+                        <Text style={[styles.dropdownItemText, selected && { color: '#D63B8A', fontWeight: '800' }]}>
+                          {c}
+                        </Text>
+                        {selected && <Feather name="check" size={ms(15)} color="#D63B8A" />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Title */}
+              <TextInput
+                style={styles.titleInput}
+                placeholder="Post title…"
+                placeholderTextColor="#A8A29E"
+                value={newTitle}
+                onChangeText={setNewTitle}
+                maxLength={120}
+              />
+
+              {/* Body */}
+              <TextInput
+                style={styles.bodyInput}
+                placeholder="Share your thoughts with this community..."
+                placeholderTextColor="#A8A29E"
+                value={newContent}
+                onChangeText={setNewContent}
+                multiline
+                maxLength={1500}
+              />
+
+              {/* Image preview */}
+              {newImage && (
+                <View style={styles.previewBox}>
+                  <Image source={{ uri: newImage }} style={styles.previewImage} />
+                  <TouchableOpacity style={styles.removeImageBtn} onPress={() => setNewImage(null)}>
+                    <Ionicons name="close" size={ms(15)} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Footer actions */}
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.addPhotoBtn} onPress={pickImage} activeOpacity={0.85}>
+                  <Feather name="image" size={ms(15)} color="#D63B8A" />
+                  <Text style={styles.addPhotoBtnText}>Add Photo</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.publishBtn,
+                    (submitting || !newContent.trim()) && styles.publishBtnDisabled,
+                  ]}
+                  onPress={handlePublish}
+                  disabled={submitting || !newContent.trim()}
+                  activeOpacity={0.85}
+                >
+                  {submitting ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Feather name="send" size={ms(14)} color="#fff" />
+                      <Text style={styles.publishBtnText}>Publish</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      {/* ── Comments Modal ── */}
+      <Modal visible={!!activePost} animationType="slide" transparent onRequestClose={() => setActivePost(null)}>
+        <View style={styles.commentsOverlay}>
+          <KeyboardAvoidingView style={styles.commentsSheet} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Comments</Text>
+              <TouchableOpacity onPress={() => setActivePost(null)} style={styles.modalClose}>
+                <Ionicons name="close" size={ms(22)} color="#1C1917" />
+              </TouchableOpacity>
+            </View>
+
             <FlatList
               data={activePost?.comments || []}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.commentsList}
+              contentContainerStyle={{ padding: ms(18) }}
               renderItem={({ item }) => {
                 const cu = item.user || {};
-                const cFirst = cu.firstName || cu.first_name || '';
-                const cLast = cu.lastName || cu.last_name || '';
-                const cFallback = cu.name || (cu.email ? cu.email.split('@')[0] : '');
-                const cAuthor = `${cFirst} ${cLast}`.trim() || cFallback || 'Member';
+                const cAuthor =
+                  `${cu.firstName || cu.first_name || ''} ${cu.lastName || cu.last_name || ''}`.trim() ||
+                  cu.name ||
+                  'Member';
                 const cAvatar = getAvatarUrl(cu.profile_photo_url || cu.profilePhotoUrl);
-                const cRole = cu.role || 'user';
                 const cInitials = cAuthor.substring(0, 2).toUpperCase();
-                const cPostedAt = item.createdAt || item.created_at;
+                const cRole = (cu.role || 'user').toLowerCase();
+                const cRoleStyle = ROLE_COLORS[cRole] || ROLE_COLORS.donor;
 
                 return (
-                  <View style={{ marginBottom: vs(16) }}>
-                    <View style={styles.commentItem}>
+                  <View style={{ marginBottom: vs(14) }}>
+                    <View style={styles.commentRow}>
                       {cAvatar ? (
                         <Image source={{ uri: cAvatar }} style={styles.commentAvatar} />
                       ) : (
-                        <View style={[styles.commentAvatar, styles.avatarFallback, { width: ms(32), height: ms(32) }]}>
+                        <View style={[styles.commentAvatar, styles.avatarFallback]}>
                           <Text style={[styles.avatarInitials, { fontSize: ms(11) }]}>{cInitials}</Text>
                         </View>
                       )}
                       <View style={styles.commentBubble}>
                         <View style={styles.commentHeader}>
                           <Text style={styles.commentAuthor}>{cAuthor}</Text>
-                          <View style={[styles.roleBadge, cRole.toLowerCase() === 'donor' ? styles.roleBadgeDonor : styles.roleBadgeRecipient, { paddingVertical: 2, transform: [{ scale: 0.8 }] }]}>
-                             <Text style={[styles.roleBadgeText, cRole.toLowerCase() === 'donor' ? styles.roleBadgeTextDonor : styles.roleBadgeTextRecipient]}>
-                              {cRole.toUpperCase()}
+                          <View style={[styles.roleBadge, { backgroundColor: cRoleStyle.bg, paddingVertical: 2 }]}>
+                            <Text style={[styles.roleBadgeText, { color: cRoleStyle.color, fontSize: ms(8) }]}>
+                              {cRoleStyle.label}
                             </Text>
                           </View>
-                          <Text style={styles.commentTime}>{formatTime(cPostedAt)}</Text>
+                          <Text style={[styles.timeAgo, { marginLeft: 'auto' }]}>
+                            {timeAgo(item.createdAt || item.created_at)}
+                          </Text>
                         </View>
                         <Text style={styles.commentText}>{item.content}</Text>
                       </View>
                     </View>
-
-                    {/* Comment Actions: Reply button */}
-                    <View style={{ flexDirection: 'row', marginLeft: ms(44), marginTop: vs(-8), marginBottom: vs(8) }}>
+                    <View style={{ flexDirection: 'row', marginLeft: ms(44), marginTop: vs(4) }}>
                       <TouchableOpacity onPress={() => setReplyingToComment(item)}>
-                        <Text style={{ fontSize: ms(12), fontWeight: '800', color: '#D63B8A' }}>Reply</Text>
+                        <Text style={styles.replyLink}>Reply</Text>
                       </TouchableOpacity>
                     </View>
-
-                    {/* Comment Replies */}
-                    {item.replies && item.replies.map((reply: any) => {
-                      const ru = reply.user || {};
-                      const rFirst = ru.firstName || ru.first_name || '';
-                      const rLast = ru.lastName || ru.last_name || '';
-                      const rFallback = ru.name || (ru.email ? ru.email.split('@')[0] : '');
-                      const rAuthor = `${rFirst} ${rLast}`.trim() || rFallback || 'Member';
-                      const rAvatar = getAvatarUrl(ru.profile_photo_url || ru.profilePhotoUrl);
-                      const rRole = ru.role || 'user';
-                      const rInitials = rAuthor.substring(0, 2).toUpperCase();
-                      const rPostedAt = reply.createdAt || reply.created_at;
-
-                      return (
-                        <View key={reply.id} style={[styles.commentItem, { marginLeft: ms(36), marginTop: vs(6) }]}>
-                          {rAvatar ? (
-                            <Image source={{ uri: rAvatar }} style={[styles.commentAvatar, { width: ms(26), height: ms(26), borderRadius: ms(13) }]} />
-                          ) : (
-                            <View style={[styles.commentAvatar, styles.avatarFallback, { width: ms(26), height: ms(26), borderRadius: ms(13) }]}>
-                              <Text style={[styles.avatarInitials, { fontSize: ms(9) }]}>{rInitials}</Text>
-                            </View>
-                          )}
-                          <View style={[styles.commentBubble, { backgroundColor: '#FFF5FA' }]}>
-                            <View style={styles.commentHeader}>
-                              <Text style={[styles.commentAuthor, { fontSize: ms(12) }]}>{rAuthor}</Text>
-                              <View style={[styles.roleBadge, rRole.toLowerCase() === 'donor' ? styles.roleBadgeDonor : styles.roleBadgeRecipient, { paddingVertical: 1, transform: [{ scale: 0.7 }] }]}>
-                                 <Text style={[styles.roleBadgeText, rRole.toLowerCase() === 'donor' ? styles.roleBadgeTextDonor : styles.roleBadgeTextRecipient]}>
-                                  {rRole.toUpperCase()}
-                                </Text>
-                              </View>
-                              <Text style={styles.commentTime}>{formatTime(rPostedAt)}</Text>
-                            </View>
-                            <Text style={[styles.commentText, { fontSize: ms(12) }]}>{reply.content}</Text>
-                          </View>
-                        </View>
-                      );
-                    })}
                   </View>
                 );
               }}
               ListEmptyComponent={
-                <View style={styles.emptyComments}>
-                  <Text style={styles.emptyCommentsText}>No comments yet. Be the first to reply!</Text>
+                <View style={{ alignItems: 'center', paddingVertical: vs(40) }}>
+                  <Text style={{ color: '#A8A29E', fontSize: ms(14) }}>No comments yet — be the first.</Text>
                 </View>
               }
             />
 
-            {/* Replying banner */}
             {replyingToComment && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF0F5', paddingHorizontal: ms(20), paddingVertical: vs(8), borderTopWidth: 1, borderTopColor: '#FFD6EF' }}>
-                <Text style={{ fontSize: ms(12), color: '#D63B8A', fontWeight: '700' }}>
-                  Replying to @{
-                    (((replyingToComment.user?.firstName || replyingToComment.user?.first_name || '') + ' ' + (replyingToComment.user?.lastName || replyingToComment.user?.last_name || '')).trim()) || 
-                    replyingToComment.user?.name || 'Member'
-                  }
+              <View style={styles.replyBanner}>
+                <Text style={styles.replyBannerText} numberOfLines={1}>
+                  Replying to @
+                  {(((replyingToComment.user?.firstName || replyingToComment.user?.first_name || '') +
+                    ' ' +
+                    (replyingToComment.user?.lastName || replyingToComment.user?.last_name || '')).trim()) ||
+                    replyingToComment.user?.name ||
+                    'Member'}
                 </Text>
                 <TouchableOpacity onPress={() => setReplyingToComment(null)}>
-                  <Ionicons name="close-circle" size={18} color="#D63B8A" />
+                  <Ionicons name="close-circle" size={ms(18)} color="#D63B8A" />
                 </TouchableOpacity>
               </View>
             )}
 
-            {/* Comment Input */}
-            <View style={[styles.commentInputRow, { paddingBottom: insets.bottom + ms(10) }]}>
+            <View style={[styles.commentInputRow, { paddingBottom: insets.bottom + vs(8) }]}>
               <TextInput
                 style={styles.commentInput}
-                placeholder="Write a comment..."
-                placeholderTextColor="#9b8a9e"
+                placeholder="Write a comment…"
+                placeholderTextColor="#A8A29E"
                 value={commentContent}
                 onChangeText={setCommentContent}
                 multiline
               />
-              <TouchableOpacity 
-                style={[styles.sendBtn, !commentContent.trim() && { opacity: 0.5 }]}
+              <TouchableOpacity
+                style={[styles.sendBtn, !commentContent.trim() && { opacity: 0.45 }]}
                 onPress={handlePostComment}
                 disabled={!commentContent.trim() || postingComment}
               >
                 {postingComment ? (
                   <ActivityIndicator size="small" color="#D63B8A" />
                 ) : (
-                  <Ionicons name="send" size={20} color="#D63B8A" />
+                  <Ionicons name="send" size={ms(18)} color="#D63B8A" />
                 )}
               </TouchableOpacity>
             </View>
@@ -561,168 +703,328 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F0F5' },
+  container: { flex: 1, backgroundColor: '#FAFAF9' },
+
+  // Top bar
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: ms(12),
+    paddingBottom: vs(10),
+    backgroundColor: '#FAFAF9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0EDE9',
+  },
+  backBtn: { width: ms(40), height: ms(40), alignItems: 'center', justifyContent: 'center' },
+  topBarTitle: { fontSize: ms(16), fontWeight: '800', color: '#1C1917', letterSpacing: -0.2 },
+
+  feedContent: { paddingBottom: vs(40) },
+
+  // ── Hero ──
+  hero: {
+    paddingHorizontal: ms(20),
+    paddingTop: vs(22),
+    paddingBottom: vs(18),
+  },
+  heroTitle: {
+    fontSize: ms(24),
+    fontWeight: '800',
+    color: '#1C1917',
+    letterSpacing: -0.5,
+    marginBottom: vs(6),
+  },
+  heroSub: {
+    fontSize: ms(13),
+    color: '#78716C',
+    lineHeight: vs(19),
+    fontWeight: '500',
+    marginBottom: vs(14),
+  },
+  heroCta: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(7),
+    backgroundColor: '#D63B8A',
+    paddingHorizontal: ms(16),
+    paddingVertical: vs(10),
+    borderRadius: 999,
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  heroCtaText: { color: '#fff', fontWeight: '800', fontSize: ms(13), letterSpacing: 0.2 },
+
+  // ── Toolbar ──
+  toolbar: {
+    paddingTop: vs(2),
+    paddingBottom: vs(10),
+    backgroundColor: '#FAFAF9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0EDE9',
+    marginBottom: vs(12),
+  },
+  pillScroll: {
+    paddingHorizontal: ms(16),
+    paddingVertical: vs(6),
+    gap: ms(6),
+  },
+  pill: {
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(7),
+    borderRadius: 999,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#EEEDE8',
+  },
+  pillActive: {
+    backgroundColor: '#D63B8A',
+    borderColor: '#D63B8A',
+  },
+  pillText: {
+    fontSize: ms(12),
+    fontWeight: '700',
+    color: '#78716C',
+  },
+  pillTextActive: { color: '#fff' },
+  sortGroup: {
+    flexDirection: 'row',
+    paddingHorizontal: ms(16),
+    paddingTop: vs(6),
+    gap: ms(6),
+  },
+  sortPill: {
+    paddingHorizontal: ms(12),
+    paddingVertical: vs(6),
+    borderRadius: 999,
+    backgroundColor: '#FFF0F8',
+  },
+  sortPillActive: { backgroundColor: '#D63B8A' },
+  sortPillText: {
+    fontSize: ms(11),
+    fontWeight: '700',
+    color: '#D63B8A',
+    letterSpacing: 0.3,
+  },
+  sortPillTextActive: { color: '#fff' },
+
+  // ── Empty state ──
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: vs(60),
+    paddingHorizontal: ms(40),
+  },
+  emptyIconBubble: {
+    width: ms(64),
+    height: ms(64),
+    borderRadius: ms(20),
+    backgroundColor: '#FFF0F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: vs(14),
+  },
+  emptyText: {
+    fontSize: ms(14),
+    color: '#78716C',
+    textAlign: 'center',
+    marginBottom: vs(16),
+    lineHeight: vs(20),
+  },
+  emptyCta: {
+    backgroundColor: '#D63B8A',
+    paddingHorizontal: ms(18),
+    paddingVertical: vs(10),
+    borderRadius: 999,
+  },
+  emptyCtaText: { color: '#fff', fontWeight: '800', fontSize: ms(13) },
+
+  // ── Post card ──
+  postCard: {
+    backgroundColor: '#fff',
+    borderRadius: ms(18),
+    paddingHorizontal: ms(16),
+    paddingTop: vs(14),
+    paddingBottom: vs(8),
+    marginHorizontal: ms(14),
+    marginBottom: vs(12),
+    borderWidth: 1,
+    borderColor: '#F0EDE9',
+    shadowColor: '#1C1917',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: vs(10),
+  },
+  avatar: {
+    width: ms(36),
+    height: ms(36),
+    borderRadius: ms(18),
+    backgroundColor: '#F0F0F0',
+  },
+  avatarFallback: {
+    backgroundColor: '#D63B8A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: { color: '#fff', fontWeight: '800', fontSize: ms(13) },
+  authorBlock: { flex: 1, marginLeft: ms(10) },
+  authorName: { fontSize: ms(13.5), fontWeight: '800', color: '#1C1917', letterSpacing: -0.2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: vs(2), gap: ms(4) },
+  roleBadge: {
+    paddingHorizontal: ms(7),
+    paddingVertical: vs(2),
+    borderRadius: 999,
+  },
+  roleBadgeText: {
+    fontSize: ms(9),
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  dotSep: { color: '#A8A29E', fontSize: ms(11) },
+  timeAgo: { fontSize: ms(11), color: '#A8A29E', fontWeight: '500' },
+  topicChip: {
+    paddingHorizontal: ms(8),
+    paddingVertical: vs(3),
+    borderRadius: 999,
+  },
+  topicChipText: {
+    fontSize: ms(10),
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  postTitle: {
+    fontSize: ms(15.5),
+    fontWeight: '800',
+    color: '#1C1917',
+    letterSpacing: -0.3,
+    marginBottom: vs(6),
+  },
+  postBody: {
+    fontSize: ms(13.5),
+    color: '#44403C',
+    lineHeight: vs(20),
+    marginBottom: vs(12),
+    fontWeight: '500',
+  },
+  postImage: {
+    width: '100%',
+    height: vs(220),
+    borderRadius: ms(12),
+    marginBottom: vs(10),
+    backgroundColor: '#F5F5F0',
+  },
+  postCounts: {
+    paddingBottom: vs(8),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F4F1ED',
+    marginBottom: vs(4),
+  },
+  countsText: { fontSize: ms(11.5), color: '#78716C', fontWeight: '600' },
+  postActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(6),
+    paddingVertical: vs(8),
+    paddingHorizontal: ms(20),
+  },
+  actionText: { fontSize: ms(12.5), fontWeight: '700', color: '#78716C' },
+
+  // ── Create-post modal ──
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(28,25,23,0.55)',
     justifyContent: 'flex-end',
   },
-  modalContent: {
+  modalSheet: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: ms(24),
-    borderTopRightRadius: ms(24),
-    height: '80%',
-    paddingBottom: Platform.OS === 'android' ? vs(10) : 0,
+    borderTopLeftRadius: ms(22),
+    borderTopRightRadius: ms(22),
+    height: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: ms(20),
+    paddingHorizontal: ms(18),
+    paddingTop: vs(14),
+    paddingBottom: vs(12),
     borderBottomWidth: 1,
-    borderBottomColor: '#F8F0F5',
+    borderBottomColor: '#F0EDE9',
   },
-  modalTitle: {
-    fontSize: ms(18),
-    fontWeight: '800',
-    color: '#1a1a1a',
-  },
-  closeBtn: {
-    padding: ms(4),
-  },
-  commentsList: {
-    padding: ms(20),
-  },
-  commentItem: {
-    flexDirection: 'row',
-    marginBottom: vs(16),
-  },
-  commentAvatar: {
-    width: ms(32),
-    height: ms(32),
-    borderRadius: ms(16),
-    marginRight: ms(12),
-  },
-  commentBubble: {
-    flex: 1,
-    backgroundColor: '#F8F0F5',
-    borderRadius: ms(16),
-    padding: ms(12),
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: vs(4),
-  },
-  commentAuthor: {
-    fontSize: ms(13),
-    fontWeight: '800',
-    color: '#3b2e43',
-    marginRight: ms(6),
-  },
-  commentTime: {
-    fontSize: ms(10),
-    color: '#9b8a9e',
-    marginLeft: 'auto',
-  },
-  commentText: {
-    fontSize: ms(13),
-    color: '#3b2e43',
-    lineHeight: vs(18),
-  },
-  emptyComments: {
-    alignItems: 'center',
-    paddingVertical: vs(40),
-  },
-  emptyCommentsText: {
-    color: '#9b8a9e',
-    fontSize: ms(14),
-  },
-  commentInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: ms(20),
-    paddingTop: vs(10),
-    borderTopWidth: 1,
-    borderTopColor: '#F8F0F5',
-  },
-  commentInput: {
-    flex: 1,
-    backgroundColor: '#F8F0F5',
-    borderRadius: ms(20),
-    paddingHorizontal: ms(16),
-    paddingVertical: vs(8),
-    fontSize: ms(14),
-    color: '#3b2e43',
-    maxHeight: vs(80),
-  },
-  sendBtn: {
-    marginLeft: ms(12),
-    padding: ms(8),
-  },
-  header: {
+  modalTitle: { fontSize: ms(16), fontWeight: '800', color: '#1C1917', letterSpacing: -0.2 },
+  modalClose: { padding: ms(2) },
+
+  dropdown: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: ms(16),
-    paddingBottom: vs(12),
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-    backgroundColor: '#F8F0F5',
-    zIndex: 10,
-  },
-  backBtn: { padding: ms(4) },
-  headerTitle: { fontSize: ms(18), fontWeight: '800', color: '#1a1a1a' },
-  
-  feedContent: {
-    padding: ms(14),
-    paddingBottom: vs(40),
-  },
-  
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: vs(60),
-  },
-  emptyStateText: {
-    marginTop: vs(16),
-    fontSize: ms(14),
-    color: '#9b8a9e',
-    fontWeight: '500',
-  },
-
-  createPostContainer: {
-    backgroundColor: '#fff',
-    borderRadius: ms(16),
-    padding: ms(16),
-    marginBottom: vs(16),
-    shadowColor: '#D63B8A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  createPostTitle: {
-    fontSize: ms(14),
-    fontWeight: '800',
-    color: '#3b2e43',
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(12),
+    borderRadius: ms(10),
+    borderWidth: 1,
+    borderColor: '#EEEDE8',
+    backgroundColor: '#FAFAF9',
     marginBottom: vs(10),
   },
-  createPostInputWrapper: {
-    backgroundColor: '#F8F0F5',
-    borderRadius: ms(12),
-    paddingHorizontal: ms(12),
-    paddingVertical: vs(10),
-    minHeight: vs(80),
-    marginBottom: vs(12),
+  dropdownText: { fontSize: ms(14), fontWeight: '700', color: '#1C1917' },
+  dropdownList: {
+    backgroundColor: '#fff',
+    borderRadius: ms(10),
+    borderWidth: 1,
+    borderColor: '#EEEDE8',
+    overflow: 'hidden',
+    marginBottom: vs(10),
   },
-  createPostInput: {
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(11),
+  },
+  dropdownItemText: { fontSize: ms(14), color: '#1C1917', fontWeight: '600' },
+
+  titleInput: {
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(12),
+    borderRadius: ms(10),
+    borderWidth: 1,
+    borderColor: '#EEEDE8',
+    backgroundColor: '#FAFAF9',
+    fontSize: ms(15),
+    color: '#1C1917',
+    fontWeight: '700',
+    marginBottom: vs(10),
+  },
+  bodyInput: {
+    paddingHorizontal: ms(14),
+    paddingTop: vs(12),
+    paddingBottom: vs(12),
+    borderRadius: ms(10),
+    borderWidth: 1,
+    borderColor: '#EEEDE8',
+    backgroundColor: '#FAFAF9',
     fontSize: ms(14),
-    color: '#3b2e43',
-    minHeight: vs(60),
+    color: '#1C1917',
+    minHeight: vs(120),
     textAlignVertical: 'top',
+    marginBottom: vs(10),
   },
-  previewImageContainer: {
+  previewBox: {
     position: 'relative',
     marginBottom: vs(12),
     borderRadius: ms(12),
@@ -731,152 +1033,108 @@ const styles = StyleSheet.create({
   previewImage: {
     width: '100%',
     height: vs(200),
-    borderRadius: ms(12),
   },
   removeImageBtn: {
     position: 'absolute',
     top: ms(8),
     right: ms(8),
+    width: ms(26),
+    height: ms(26),
+    borderRadius: ms(13),
     backgroundColor: 'rgba(0,0,0,0.6)',
-    width: ms(24),
-    height: ms(24),
-    borderRadius: ms(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  createPostActions: {
+  modalFooter: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginTop: vs(6),
   },
-  attachBtn: {
+  addPhotoBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF0F8',
-    paddingHorizontal: ms(12),
-    paddingVertical: vs(8),
-    borderRadius: ms(20),
-  },
-  attachBtnText: {
-    marginLeft: ms(6),
-    color: '#D63B8A',
-    fontWeight: '700',
-    fontSize: ms(13),
-  },
-  postBtn: {
-    backgroundColor: '#D63B8A',
-    paddingHorizontal: ms(24),
+    gap: ms(7),
+    paddingHorizontal: ms(14),
     paddingVertical: vs(10),
-    borderRadius: ms(20),
-    minWidth: ms(80),
+    borderRadius: 999,
+    backgroundColor: '#FFF0F8',
+    borderWidth: 1,
+    borderColor: '#FFD9EC',
+  },
+  addPhotoBtnText: { color: '#D63B8A', fontWeight: '800', fontSize: ms(13) },
+  publishBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: ms(7),
+    paddingHorizontal: ms(18),
+    paddingVertical: vs(11),
+    borderRadius: 999,
+    backgroundColor: '#D63B8A',
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
-  postBtnDisabled: {
-    backgroundColor: '#ead7e8',
-  },
-  postBtnText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: ms(14),
-  },
+  publishBtnDisabled: { backgroundColor: '#E8C9DC', shadowOpacity: 0, elevation: 0 },
+  publishBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(13) },
 
-  postCard: {
-    backgroundColor: '#fff',
-    borderRadius: ms(16),
-    padding: ms(16),
-    marginBottom: vs(14),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: vs(12),
-  },
-  avatarImage: {
-    width: ms(40),
-    height: ms(40),
-    borderRadius: ms(20),
-    backgroundColor: '#f0f0f0',
-  },
-  avatarFallback: {
-    width: ms(40),
-    height: ms(40),
-    borderRadius: ms(20),
-    backgroundColor: '#cf2f84',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitials: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: ms(14),
-  },
-  authorInfo: {
+  // ── Comments modal ──
+  commentsOverlay: {
     flex: 1,
-    marginLeft: ms(10),
+    backgroundColor: 'rgba(28,25,23,0.55)',
+    justifyContent: 'flex-end',
   },
-  authorName: {
-    fontSize: ms(14),
-    fontWeight: '800',
-    color: '#3b2e43',
+  commentsSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: ms(22),
+    borderTopRightRadius: ms(22),
+    height: '85%',
   },
-  postTime: {
-    fontSize: ms(11),
-    color: '#9b8a9e',
-    marginTop: vs(2),
+  commentRow: { flexDirection: 'row' },
+  commentAvatar: { width: ms(32), height: ms(32), borderRadius: ms(16), marginRight: ms(10) },
+  commentBubble: {
+    flex: 1,
+    backgroundColor: '#FAFAF9',
+    borderRadius: ms(14),
+    paddingHorizontal: ms(12),
+    paddingVertical: vs(10),
   },
-  roleBadge: {
-    paddingHorizontal: ms(8),
-    paddingVertical: vs(4),
-    borderRadius: ms(12),
-  },
-  roleBadgeDonor: { backgroundColor: '#e8f2ff' },
-  roleBadgeRecipient: { backgroundColor: '#ffe8f2' },
-  roleBadgeText: { fontSize: ms(10), fontWeight: '800' },
-  roleBadgeTextDonor: { color: '#0066cc' },
-  roleBadgeTextRecipient: { color: '#cf2f84' },
-  
-  postContent: {
-    fontSize: ms(14),
-    color: '#3b2e43',
-    lineHeight: vs(20),
-    marginBottom: vs(12),
-  },
-  postImage: {
-    width: '100%',
-    height: vs(250),
-    borderRadius: ms(12),
-    marginBottom: vs(12),
-    backgroundColor: '#F8F0F5',
-  },
-  postStats: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F8F0F5',
-    paddingBottom: vs(10),
-    marginBottom: vs(10),
-  },
-  statsText: {
-    fontSize: ms(12),
-    color: '#9b8a9e',
-  },
-  postActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  actionBtn: {
+  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: ms(6), marginBottom: vs(4) },
+  commentAuthor: { fontSize: ms(12.5), fontWeight: '800', color: '#1C1917' },
+  commentText: { fontSize: ms(13), color: '#44403C', lineHeight: vs(18) },
+  replyLink: { fontSize: ms(11.5), fontWeight: '800', color: '#D63B8A' },
+  replyBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: vs(6),
-    paddingHorizontal: ms(20),
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF0F8',
+    paddingHorizontal: ms(18),
+    paddingVertical: vs(8),
+    borderTopWidth: 1,
+    borderTopColor: '#FFD9EC',
   },
-  actionBtnText: {
-    marginLeft: ms(6),
-    fontSize: ms(13),
-    fontWeight: '600',
-    color: '#6b5b6d',
+  replyBannerText: { fontSize: ms(12), color: '#D63B8A', fontWeight: '700', flex: 1 },
+  commentInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: ms(16),
+    paddingTop: vs(10),
+    borderTopWidth: 1,
+    borderTopColor: '#F0EDE9',
   },
+  commentInput: {
+    flex: 1,
+    backgroundColor: '#FAFAF9',
+    borderRadius: 999,
+    paddingHorizontal: ms(16),
+    paddingVertical: vs(9),
+    fontSize: ms(13.5),
+    color: '#1C1917',
+    maxHeight: vs(90),
+    borderWidth: 1,
+    borderColor: '#EEEDE8',
+  },
+  sendBtn: { marginLeft: ms(10), padding: ms(8) },
 });

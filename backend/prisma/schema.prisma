@@ -189,7 +189,7 @@ model MonetaryDonation {
   paymentMethod   String?   @map("payment_method")
   referenceNumber String?   @unique @map("reference_number")
   proofPath       String?   @map("proof_path")
-  status          String?   @default("Submitted")
+  status          String?   @default("Completed")
   remarks         String?
   anonymous       Boolean?  @default(false)
   createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)

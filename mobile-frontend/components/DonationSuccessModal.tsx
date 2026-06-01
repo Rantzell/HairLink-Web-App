@@ -141,8 +141,10 @@ export default function DonationSuccessModal({
               <Text style={styles.title}>Thank you!</Text>
 
               <View style={[styles.statusChip, { backgroundColor: tintSofter }]}>
-                <Feather name="clock" size={ms(11)} color={tint} />
-                <Text style={[styles.statusText, { color: tint }]}>Pending Review</Text>
+                <Feather name={type === 'hair' ? 'clock' : 'check-circle'} size={ms(11)} color={tint} />
+                <Text style={[styles.statusText, { color: tint }]}>
+                  {type === 'hair' ? 'Pending Review' : 'Completed'}
+                </Text>
               </View>
 
               {/* Body — trimmed copy */}
@@ -157,30 +159,38 @@ export default function DonationSuccessModal({
                 )}
               </Text>
               <Text style={styles.bodySub}>
-                We&apos;ll credit your stars once a reviewer approves it.
+                {type === 'hair' ? (
+                  <>We&apos;ll credit your stars once a reviewer approves it.</>
+                ) : (
+                  <>Thank you — a reviewer will verify your payment shortly.</>
+                )}
               </Text>
 
-              {/* Rewards strip — slides in from the right */}
-              <Animated.View
-                style={[
-                  styles.rewardStrip,
-                  {
-                    backgroundColor: tintSofter,
-                    borderColor: tintSoft,
-                    opacity: starsOp,
-                    transform: [{ translateX: starsX }],
-                  },
-                ]}
-              >
-                <View style={styles.rewardStripLeft}>
-                  <MaterialCommunityIcons name="star-four-points" size={ms(18)} color={tint} />
-                  <Text style={[styles.rewardLabel, { color: tint }]}>Estimated Stars</Text>
-                </View>
-                <View style={styles.rewardStripRight}>
-                  <Text style={styles.rewardPlus}>+{stars}</Text>
-                  <MaterialCommunityIcons name="star" size={ms(16)} color={BRAND.star} />
-                </View>
-              </Animated.View>
+              {/* Rewards strip — hair only. Monetary donations no longer
+                  award stars, so the strip is skipped entirely for them
+                  (also skipped if `stars` is 0). */}
+              {type === 'hair' && stars > 0 && (
+                <Animated.View
+                  style={[
+                    styles.rewardStrip,
+                    {
+                      backgroundColor: tintSofter,
+                      borderColor: tintSoft,
+                      opacity: starsOp,
+                      transform: [{ translateX: starsX }],
+                    },
+                  ]}
+                >
+                  <View style={styles.rewardStripLeft}>
+                    <MaterialCommunityIcons name="star-four-points" size={ms(18)} color={tint} />
+                    <Text style={[styles.rewardLabel, { color: tint }]}>Estimated Stars</Text>
+                  </View>
+                  <View style={styles.rewardStripRight}>
+                    <Text style={styles.rewardPlus}>+{stars}</Text>
+                    <MaterialCommunityIcons name="star" size={ms(16)} color={BRAND.star} />
+                  </View>
+                </Animated.View>
+              )}
 
               {/* Actions */}
               <TouchableOpacity
@@ -188,7 +198,9 @@ export default function DonationSuccessModal({
                 onPress={onClose}
                 style={[styles.primaryBtn, { backgroundColor: tint }]}
               >
-                <Text style={styles.primaryBtnText}>See My Rewards</Text>
+                <Text style={styles.primaryBtnText}>
+                  {type === 'hair' ? 'See My Rewards' : 'Got it'}
+                </Text>
                 <Feather name="arrow-right" size={ms(15)} color="#fff" />
               </TouchableOpacity>
 

@@ -57,6 +57,8 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
   const [starPoints, setStarPoints] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [latestRequest, setLatestRequest] = useState<any>(null);
+  // Real upcoming event (same source as the donor dashboard: GET /events/next)
+  const [upcomingEvent, setUpcomingEvent] = useState<{ title: string; location: string; date: string } | null>(null);
   const notificationsViewedRef = React.useRef(false);
 
   const ScaleButton = ({ children, onPress, style }: any) => {
@@ -80,22 +82,27 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
     );
   };
 
-  // Extracted Countdown Component to prevent entire dashboard re-renders
-  const CountdownTimer = () => {
-    const [timeLeft, setTimeLeft] = useState({ days: 2, hours: 14, mins: 30, secs: 45 });
+  // Real countdown — counts down to the actual upcoming event's date.
+  // Matches the donor dashboard's `CountdownTimer`, so the recipient
+  // card no longer ticks against a fake "2d 14h 30m" hardcoded start.
+  const CountdownTimer = ({ targetDate }: { targetDate?: string | null }) => {
+    const compute = React.useCallback(() => {
+      if (!targetDate) return { days: 0, hours: 0, mins: 0, secs: 0 };
+      const diff = Math.max(0, new Date(targetDate).getTime() - Date.now());
+      const days = Math.floor(diff / 86_400_000);
+      const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+      const mins = Math.floor((diff % 3_600_000) / 60_000);
+      const secs = Math.floor((diff % 60_000) / 1000);
+      return { days, hours, mins, secs };
+    }, [targetDate]);
+
+    const [timeLeft, setTimeLeft] = useState(compute);
 
     useEffect(() => {
-      const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev.secs > 0) return { ...prev, secs: prev.secs - 1 };
-          if (prev.mins > 0) return { ...prev, mins: prev.mins - 1, secs: 59 };
-          if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, mins: 59, secs: 59 };
-          if (prev.days > 0) return { ...prev, days: prev.days - 1, hours: 23, mins: 59, secs: 59 };
-          return prev;
-        });
-      }, 1000);
+      setTimeLeft(compute());
+      const timer = setInterval(() => setTimeLeft(compute()), 1000);
       return () => clearInterval(timer);
-    }, []);
+    }, [compute]);
 
     return (
       <View style={styles.countdownRow}>
@@ -160,10 +167,32 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
     );
   };
 
+  // Same upcoming-event source as the donor dashboard so both surfaces
+  // surface the same next admin-scheduled drive (instead of the recipient
+  // showing a hardcoded "Annual Grand Hair Drive").
+  const fetchUpcomingEvent = React.useCallback(async () => {
+    try {
+      const response = await api.get('/events/next');
+      const ev = response.data;
+      if (ev && ev.date) {
+        setUpcomingEvent({
+          title: ev.title || 'Upcoming Event',
+          location: ev.location || 'TBA',
+          date: ev.date,
+        });
+      } else {
+        setUpcomingEvent(null);
+      }
+    } catch (err) {
+      console.log('Error fetching upcoming event:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchUnreadCount();
     fetchLatestRequest();
-  }, [fetchUnreadCount, fetchLatestRequest]);
+    fetchUpcomingEvent();
+  }, [fetchUnreadCount, fetchLatestRequest, fetchUpcomingEvent]);
 
   useEffect(() => {
     if (!showCalendar && !showNotifications && !showMonetary && !showProfile && !showHairRequest && !showHistory && !showCommunity && !showHairCare) {
@@ -515,49 +544,64 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           </TouchableOpacity>
         </Animated.View>
 
-        {/* ── Banner ─────────────────────────────────── */}
-        <Animated.View entering={FadeInDown.springify().delay(400)} style={styles.bannerWrapper}>
-          <Image
-            source={require('../../assets/group.jpg')}
-            style={styles.bannerImage}
-            resizeMode="cover"
-          />
-        </Animated.View>
-
-        {/* ── About Us ───────────────────────────────── */}
-        <Animated.View entering={FadeInUp.springify().delay(500)} style={styles.aboutUsContainer}>
-          <View style={styles.aboutUsHeader}>
-            <Text style={styles.aboutUsTitle}>About Us</Text>
-            <MaterialCommunityIcons
-              name="ribbon"
-              size={32}
-              color="#B084CC"
-              style={styles.ribbonIcon}
+        {/* ── About Us — image + body + stats in a single rounded panel ── */}
+        <Animated.View entering={FadeInUp.springify().delay(400)} style={styles.aboutPanel}>
+          <View style={styles.aboutImageWrap}>
+            <Image
+              source={require('../../assets/group.jpg')}
+              style={styles.aboutImage}
+              resizeMode="cover"
             />
+            <LinearGradient
+              colors={['transparent', 'rgba(28,25,23,0.55)']}
+              style={styles.aboutImageScrim}
+            />
+            <View style={styles.aboutPill}>
+              <MaterialCommunityIcons name="ribbon" size={ms(12)} color="#B084CC" />
+              <Text style={styles.aboutPillText}>Strand Up for Cancer</Text>
+            </View>
           </View>
-          <Text style={styles.aboutUsText}>
-            Strand Up for Cancer (SUFC) is a youth-led initiative of the Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila) dedicated to supporting patients who experience long-term hair loss caused by illness and medical treatment. Through hair donations, we craft wigs that restore not only appearance but also a sense of dignity, comfort, and renewed self-confidence. Each strand given is more than just hair—it’s a gift of hope and strength.
-          </Text>
+
+          <View style={styles.aboutBody}>
+            <View style={styles.aboutHeaderRow}>
+              <Text style={styles.aboutEyebrow}>OUR STORY</Text>
+              <View style={styles.aboutDivider} />
+            </View>
+            <Text style={styles.aboutTitle}>About Us</Text>
+            <Text style={styles.aboutText}>
+              <Text style={{ fontWeight: '800', color: '#1C1917' }}>Strand Up for Cancer (SUFC)</Text> is a youth-led initiative of the Manila Downtown YMCA dedicated to supporting patients experiencing long-term hair loss from illness and medical treatment.
+            </Text>
+            <Text style={[styles.aboutText, { marginTop: vs(8) }]}>
+              Through hair donations, we craft wigs that restore dignity, comfort, and renewed self-confidence — each strand is a gift of hope and strength.
+            </Text>
+          </View>
         </Animated.View>
 
-        {/* ── Our Partners ───────────────────────────── */}
+        {/* ── Our Partners ── */}
         <View style={styles.partnersSection}>
-          <Text style={styles.sectionTitle}>Our Partners</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionEyebrow}>TRUSTED PARTNERS</Text>
+            <Text style={styles.sectionH2}>Organizations behind our cause</Text>
+          </View>
+
           <View style={styles.partnersGrid}>
             {[
-              { id: 1, name: 'YMCA Youth Club', img: require('../../assets/ymca.jpg'), url: 'https://web.facebook.com/ManilaDowntownYMCAYouthClub' },
-              { id: 2, name: 'Richard D. Manila', img: require('../../assets/RDM.png'), url: 'https://web.facebook.com/Richarddmanilawigmaker' },
-              { id: 3, name: 'PGH Hospital', img: require('../../assets/pgh_logo.png'), url: 'https://pgh.gov.ph/' }
-            ].map((p, idx) => (
+              { id: 1, name: 'YMCA Youth',  tag: 'Community',   img: require('../../assets/ymca.jpg'),    url: 'https://web.facebook.com/ManilaDowntownYMCAYouthClub' },
+              { id: 2, name: 'Richard D.',  tag: 'Wigmaker',    img: require('../../assets/RDM.png'),     url: 'https://web.facebook.com/Richarddmanilawigmaker' },
+              { id: 3, name: 'PGH Hospital', tag: 'Medical',    img: require('../../assets/pgh_logo.png'), url: 'https://pgh.gov.ph/' },
+            ].map((p) => (
               <ScaleButton
                 key={p.id}
                 style={styles.partnerCard}
                 onPress={() => handleOpenURL(p.url)}
               >
-                <View style={styles.partnerLogoPlaceholder}>
+                <View style={styles.partnerLogoBox}>
                   <Image source={p.img} style={styles.partnerImg} />
                 </View>
-                <Text style={styles.partnerName}>{p.name}</Text>
+                {/* Allow up to 2 lines so longer names don't truncate
+                    with an ellipsis in narrow columns. */}
+                <Text style={styles.partnerName} numberOfLines={2}>{p.name}</Text>
+                <Text style={styles.partnerTag} numberOfLines={1}>{p.tag}</Text>
               </ScaleButton>
             ))}
           </View>
@@ -576,10 +620,14 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
                 <Text style={styles.eventLabel}>UPCOMING EVENT</Text>
                 <Ionicons name="calendar" size={20} color="#fff" />
               </View>
-              <Text style={styles.eventTitle}>Annual Grand Hair Drive</Text>
-              <Text style={styles.eventSubtitle}>Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)</Text>
+              <Text style={styles.eventTitle}>
+                {upcomingEvent?.title || 'No upcoming events'}
+              </Text>
+              <Text style={styles.eventSubtitle}>
+                {upcomingEvent?.location || 'Check back soon for the next drive.'}
+              </Text>
 
-              <CountdownTimer />
+              <CountdownTimer targetDate={upcomingEvent?.date} />
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -756,40 +804,116 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(13) },
 
-  aboutUsContainer: {
-    paddingHorizontal: ms(20),
-    marginBottom: vs(30),
-    alignItems: 'center',
-  },
-  aboutUsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: vs(12),
-  },
-  aboutUsTitle: {
-    fontSize: ms(26),
-    fontWeight: '900',
-    color: '#1a1a1a',
-    marginRight: ms(8),
-  },
-  ribbonIcon: {
-    transform: [{ rotate: '15deg' }],
-  },
-  aboutUsText: {
-    fontSize: ms(14),
-    color: '#333',
-    textAlign: 'center',
-    lineHeight: vs(22),
-    fontWeight: '500',
-  },
-  bannerWrapper: {
-    marginHorizontal: ms(14), marginBottom: vs(24),
-    borderRadius: ms(18), overflow: 'hidden',
-    backgroundColor: '#F4ECF7',
+  // ── New About panel: image header + body + stats (light-purple themed) ──
+  aboutPanel: {
+    marginHorizontal: ms(14),
+    marginBottom: vs(24),
+    borderRadius: ms(22),
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#F0EDE9',
+    shadowColor: '#1C1917',
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
-  bannerImage: { width: '100%', height: vs(250) },
+  aboutImageWrap: {
+    position: 'relative',
+    width: '100%',
+    height: vs(180),
+  },
+  aboutImage: { width: '100%', height: '100%' },
+  aboutImageScrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '55%',
+  },
+  aboutPill: {
+    position: 'absolute',
+    bottom: vs(12),
+    left: ms(14),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(6),
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(5),
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+  },
+  aboutPillText: {
+    fontSize: ms(11),
+    fontWeight: '800',
+    color: '#B084CC',
+    letterSpacing: 0.4,
+  },
+  aboutBody: {
+    paddingHorizontal: ms(20),
+    paddingTop: vs(18),
+    paddingBottom: vs(18),
+  },
+  aboutHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(8),
+    marginBottom: vs(6),
+  },
+  aboutEyebrow: {
+    fontSize: ms(10),
+    fontWeight: '800',
+    color: '#B084CC',
+    letterSpacing: 1.2,
+  },
+  aboutDivider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#F0EDE9',
+  },
+  aboutTitle: {
+    fontSize: ms(22),
+    fontWeight: '800',
+    color: '#1C1917',
+    letterSpacing: -0.4,
+    marginBottom: vs(10),
+  },
+  aboutText: {
+    fontSize: ms(13.5),
+    color: '#57534E',
+    lineHeight: ms(20),
+    fontWeight: '500',
+  },
+  aboutStatsRow: {
+    marginTop: vs(16),
+    paddingTop: vs(14),
+    paddingHorizontal: ms(2),
+    borderTopWidth: 1,
+    borderTopColor: '#F4F1ED',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  aboutStat: { flex: 1, alignItems: 'center' },
+  aboutStatNum: {
+    fontSize: ms(18),
+    fontWeight: '800',
+    color: '#B084CC',
+    letterSpacing: -0.5,
+  },
+  aboutStatLbl: {
+    marginTop: vs(2),
+    fontSize: ms(9.5),
+    fontWeight: '700',
+    color: '#A8A29E',
+    letterSpacing: 0.8,
+  },
+  aboutStatDivider: {
+    width: 1,
+    height: vs(28),
+    backgroundColor: '#F0EDE9',
+  },
   historyBtnSmall: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -826,46 +950,77 @@ const styles = StyleSheet.create({
   },
 
   partnersSection: { marginBottom: vs(24), paddingHorizontal: ms(14) },
+  sectionHeader: {
+    marginBottom: vs(14),
+    paddingHorizontal: ms(2),
+  },
+  sectionEyebrow: {
+    fontSize: ms(10),
+    fontWeight: '800',
+    color: '#B084CC',
+    letterSpacing: 1.4,
+    marginBottom: vs(4),
+  },
+  sectionH2: {
+    fontSize: ms(17),
+    fontWeight: '800',
+    color: '#1C1917',
+    letterSpacing: -0.3,
+  },
   partnersGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: ms(12),
-    marginTop: vs(14),
+    justifyContent: 'space-between',
+    gap: ms(10),
   },
   partnerCard: {
-    width: ms(105),
+    flex: 1,
+    minWidth: ms(98),
     backgroundColor: '#fff',
-    borderRadius: ms(20),
-    padding: ms(12),
+    borderRadius: ms(16),
+    paddingVertical: vs(14),
+    paddingHorizontal: ms(10),
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: '#1C1917',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    elevation: 2,
     borderWidth: 1,
-    borderColor: '#F5EEF8',
+    borderColor: '#F0EDE9',
   },
-  partnerLogoPlaceholder: {
-    width: ms(70),
-    height: ms(70),
-    borderRadius: ms(35),
-    backgroundColor: '#fff',
-    justifyContent: 'center',
+  partnerLogoBox: {
+    width: ms(64),
+    height: ms(64),
+    borderRadius: ms(14),
+    // Transparent so the logo sits cleanly on the card instead of inside
+    // a second framed cream box.
+    backgroundColor: 'transparent',
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: vs(8),
     overflow: 'hidden',
-    alignSelf: 'center',
-    shadowColor: '#B084CC',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: ms(4),
   },
   partnerImg: { width: '100%', height: '100%', resizeMode: 'contain' },
-  partnerName: { fontSize: ms(11), color: '#444', fontWeight: '700', textAlign: 'center' },
+  partnerName: {
+    fontSize: ms(11),
+    fontWeight: '800',
+    color: '#1C1917',
+    textAlign: 'center',
+    letterSpacing: -0.2,
+    lineHeight: vs(14),
+  },
+  partnerTag: {
+    fontSize: ms(9),
+    fontWeight: '600',
+    color: '#A8A29E',
+    textAlign: 'center',
+    marginTop: vs(3),
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
 
   eventsSection: { marginHorizontal: ms(14), marginBottom: vs(30) },
   eventCard: {

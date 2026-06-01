@@ -225,7 +225,11 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
         <Animated.View entering={FadeInDown.delay(200)} style={styles.tabsRow}>
           <View style={styles.tabsGroup}>
             {['All', 'Unread'].map((tab: any) => {
-              const count = notifications.filter(n => tab === 'All' ? true : !n.is_read).length;
+              // Both tabs show the *unread* count — that's the number the
+              // user actually cares about ("things I haven't dealt with").
+              // Showing a total on the All tab was misleading because the
+              // "Mark all as read" action left it stuck at the same number.
+              const count = notifications.filter(n => !n.is_read).length;
               return (
                 <TouchableOpacity
                   key={tab}
@@ -233,9 +237,13 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
                   onPress={() => setActiveTab(tab)}
                 >
                   <Text style={[styles.tabText, activeTab === tab && { color: themeColor }]}>{tab}</Text>
-                  <View style={[styles.badge, activeTab === tab && { backgroundColor: themeMedium }]}>
-                    <Text style={[styles.badgeText, activeTab === tab && styles.activeBadgeText]}>{count}</Text>
-                  </View>
+                  {/* Hide the badge entirely when there's nothing unread,
+                      so "Mark all as read" visibly clears the chip. */}
+                  {count > 0 && (
+                    <View style={[styles.badge, activeTab === tab && { backgroundColor: themeMedium }]}>
+                      <Text style={[styles.badgeText, activeTab === tab && styles.activeBadgeText]}>{count}</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}

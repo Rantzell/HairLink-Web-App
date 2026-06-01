@@ -79,7 +79,7 @@ export default function DonationSuccessModal({
 
             <Text style={styles.titleText}>Thank You!</Text>
             <Text style={styles.messageText}>
-              Your {type === 'hair' ? 'hair donation' : <><Text style={[styles.highlight, { color: themeColor }]}>₱{amount.toLocaleString()}</Text> donation</>} has been received and is <Text style={{fontWeight:'900', color: themeColor}}>Pending Review</Text>.
+              Your {type === 'hair' ? 'hair donation' : <><Text style={[styles.highlight, { color: themeColor }]}>₱{amount.toLocaleString()}</Text> donation</>} has been received{type === 'hair' ? ' and is ' : ''}{type === 'hair' ? <Text style={{fontWeight:'900', color: themeColor}}>Pending Review</Text> : <Text style={{fontWeight:'900', color: themeColor}}>Completed</Text>}.
               Together, we are making a difference!
             </Text>
 

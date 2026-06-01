@@ -19,6 +19,7 @@ import api from "../../lib/api";
 import { supabase } from "../../lib/supabase";
 import Animated, { FadeInDown, FadeInUp, Layout } from "react-native-reanimated";
 import AuthStatusModal from "../../components/AuthStatusModal";
+import AuthAnimatedBackground from "../../components/AuthAnimatedBackground";
 
 interface LoginScreenProps {
     onLogin: (role: "Donor" | "Recipient") => void;
@@ -266,10 +267,15 @@ export default function LoginScreen({
     }
 
     return (
-        <KeyboardAvoidingView 
-            behavior={Platform.OS === "ios" ? "padding" : "height"} 
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={[styles.root, { paddingTop: insets.top }]}
         >
+            {/* Looping "movie" background — drifting pink orbs + slowly
+                rising ribbon glyphs. Sits behind everything, doesn't
+                intercept touches. */}
+            <AuthAnimatedBackground />
+
             <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <View style={[styles.mainBox, { paddingTop: vs(20) }]}>
                     {/* Logo */}
@@ -346,7 +352,9 @@ export default function LoginScreen({
 }
 
 const styles = StyleSheet.create({
-    root: { flex: 1, backgroundColor: '#FAFAF9' },
+    // Background is supplied by <AuthAnimatedBackground/> (gradient + orbs).
+    // Keep root transparent so the animated layer is visible.
+    root: { flex: 1, backgroundColor: 'transparent' },
     scrollContent: { flexGrow: 1, justifyContent: 'center' },
     mainBox: { paddingHorizontal: ms(32), paddingVertical: vs(40), alignItems: 'center', width: '100%' },
     innerContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: ms(32) },

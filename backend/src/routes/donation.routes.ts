@@ -92,18 +92,18 @@ router.post('/', authenticate, upload.fields([
 
 // GET /internal-api/donations/stats
 //
-// Star-point rules — must match the website:
+// Star-point rules:
 //   • Hair donations are worth 10 pts each, but ONLY after staff confirms
 //     the hair was physically received. A submitted-but-unverified donation
 //     is worth zero. Statuses that count: 'Received Hair', 'In Queue',
 //     'In Production', 'In Progress', 'Completed', 'Wig Received'.
 //   • Referrals: 5 pts per referred user (any time).
-//   • Monetary: 1 pt per ₱100, only for completed/verified payments
-//     ('Approved', 'Verified', 'Completed').
+//   • Monetary: NO LONGER credited. Monetary donations are tracked for
+//     reporting/transparency only and do not award Star Points. (Product
+//     decision — donors shouldn't feel "paid" for paying.)
 //
 // `pendingHairDonations` / `pendingMonetaryAmount` are returned alongside so
-// the dashboard can show "X donation(s) awaiting verification" without
-// inflating Star Points.
+// the dashboard can show "X donation(s) awaiting verification".
 const RECEIVED_HAIR_STATUSES = [
   'Received Hair',
   'In Queue',
@@ -151,9 +151,13 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
     const verifiedAmount = Number(verifiedMonetary._sum.amount || 0);
     const verifiedCount = verifiedMonetary._count || 0;
     const pendingMonetaryAmount = Math.max(0, Number(allMonetary._sum.amount || 0) - verifiedAmount);
-    const monetaryPoints = Math.floor(verifiedAmount / 100);
+    // Monetary donations no longer award stars (product decision).
+    // Kept the variable for backwards-compat with API consumers but it is
+    // always 0 — every existing client that reads `monetaryPoints` will
+    // simply see 0 instead of breaking.
+    const monetaryPoints = 0;
 
-    const totalPoints = (receivedHairCount * 10) + (referrals * 5) + monetaryPoints;
+    const totalPoints = (receivedHairCount * 10) + (referrals * 5);
 
     console.log(`[Stats] User ${userId}: ReceivedHair=${receivedHairCount}(pending ${pendingHairDonations}), Ref=${referrals}, MonAmt=${verifiedAmount}(pending ₱${pendingMonetaryAmount}), Total=${totalPoints}`);
 

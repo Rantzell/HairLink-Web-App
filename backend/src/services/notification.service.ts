@@ -146,7 +146,7 @@ export const notifyMonetaryReceived = async (userId: string, amount: number, ref
   return createNotification(
     userId,
     'Donation Received 💖',
-    `Thank you! Your monetary contribution of ₱${amount.toLocaleString()} (${reference}) was received and is awaiting verification.`,
+    `Thank you! Your monetary contribution of ₱${amount.toLocaleString()} (${reference}) has been successfully received and verified.`,
     'monetary',
   );
 };

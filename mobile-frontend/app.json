@@ -3,22 +3,18 @@
     "name": "Hair Link",
     "slug": "Hair Link",
     "version": "1.0.0",
-
     "web": {},
-
     "experiments": {
       "tsconfigPaths": true
     },
-
-    "plugins": [],
-
+    "plugins": [
+      "expo-asset"
+    ],
     "orientation": "portrait",
-
-
     "userInterfaceStyle": "light",
-
-
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },

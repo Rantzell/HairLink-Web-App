@@ -51,7 +51,7 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
     // ── Success Modal State ──────────────────────────────────────
     const [showSuccess, setShowSuccess] = useState(false);
     const [lastAmount, setLastAmount] = useState(0);
-    const [earnedStars, setEarnedStars] = useState(0);
+    // Monetary donations no longer award stars — no `earnedStars` state.
 
     const amounts = [50, 100, 150, 200, 250];
 
@@ -98,7 +98,6 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
       if (response.status === 201 || response.status === 200) {
         const donationAmount = parseFloat(numAmount);
         setLastAmount(donationAmount);
-        setEarnedStars(Math.floor(donationAmount / 100));
         setShowSuccess(true);
       } else {
         throw new Error('Unexpected server response.');
@@ -302,7 +301,8 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
             <DonationSuccessModal
                 visible={showSuccess}
                 amount={lastAmount}
-                stars={earnedStars}
+                stars={0}
+                type="monetary"
                 role={role}
                 onClose={() => {
                     setShowSuccess(false);

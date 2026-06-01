@@ -246,7 +246,7 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
                     >
                       {m.date}
                     </Text>
-                    {hasEvent && <View style={[styles.calEventDot, isSelected && { backgroundColor: '#fff' }]} />}
+                    {hasEvent && <View style={styles.calEventDot} />}
                   </ScaleButton>
                 );
               })}
@@ -272,7 +272,7 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
                     <Text style={[styles.calWeekDate, isSelected && styles.calCellTextSelected]}>
                       {w.date}
                     </Text>
-                    {hasEvent && <View style={[styles.calEventDot, isSelected && { backgroundColor: '#fff' }]} />}
+                    {hasEvent && <View style={styles.calEventDot} />}
                   </ScaleButton>
                 );
               })}
@@ -471,7 +471,11 @@ const styles = StyleSheet.create({
     marginTop: vs(12),
     backgroundColor: '#fff',
     borderRadius: ms(18),
-    paddingVertical: vs(12),
+    // Extra bottom padding to give the event dots (which now sit slightly
+    // below each cell via negative `bottom`) some breathing room before
+    // they meet the card's bottom edge.
+    paddingTop: vs(12),
+    paddingBottom: vs(18),
     paddingHorizontal: ms(8),
     borderWidth: 1,
     borderColor: '#F0EDE9',
@@ -543,13 +547,18 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1C1917',
   },
+  // Event dot — pushed BELOW the chip border so it never overlaps the
+  // date number. Inside the selected purple chip the old `bottom: 4` made
+  // the white dot read as a period right after the date ("1·").
   calEventDot: {
-    width: ms(4),
-    height: ms(4),
-    borderRadius: ms(2),
+    width: ms(5),
+    height: ms(5),
+    borderRadius: ms(2.5),
     backgroundColor: '#B084CC',
     position: 'absolute',
-    bottom: vs(4),
+    bottom: -vs(7),
+    left: '50%',
+    marginLeft: -ms(2.5),
   },
 
   content: { flex: 1, backgroundColor: '#FAFAF9', marginTop: vs(8) },

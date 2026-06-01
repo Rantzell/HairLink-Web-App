@@ -497,48 +497,68 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         </Animated.View>
 
         {/* ── Banner ─────────────────────────────────── */}
-        <Animated.View entering={FadeInDown.springify().delay(500)} style={styles.bannerWrapper}>
-          <Image
-            source={require('../../assets/group.jpg')}
-            style={styles.bannerImage}
-            resizeMode="cover"
-          />
-        </Animated.View>
-
-        {/* ── About Us ───────────────────────────────── */}
-        <Animated.View entering={FadeInUp.springify().delay(600)} style={styles.aboutUsContainer}>
-          <View style={styles.aboutUsHeader}>
-            <Text style={styles.aboutUsTitle}>About Us</Text>
-            <MaterialCommunityIcons
-              name="ribbon"
-              size={32}
-              color="#FF66B2"
-              style={styles.ribbonIcon}
+        {/* ── About Us — image + card combined into one rounded panel ── */}
+        <Animated.View
+          entering={FadeInUp.springify().delay(500)}
+          style={styles.aboutPanel}
+        >
+          <View style={styles.aboutImageWrap}>
+            <Image
+              source={require('../../assets/group.jpg')}
+              style={styles.aboutImage}
+              resizeMode="cover"
             />
+            {/* Soft gradient scrim so the section pill reads cleanly */}
+            <LinearGradient
+              colors={['transparent', 'rgba(28,25,23,0.55)']}
+              style={styles.aboutImageScrim}
+            />
+            <View style={styles.aboutPill}>
+              <MaterialCommunityIcons name="ribbon" size={ms(12)} color="#D63B8A" />
+              <Text style={styles.aboutPillText}>Strand Up for Cancer</Text>
+            </View>
           </View>
-          <Text style={styles.aboutUsText}>
-            Strand Up for Cancer (SUFC) is a youth-led initiative of the Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila) dedicated to supporting patients who experience long-term hair loss caused by illness and medical treatment. Through hair donations, we craft wigs that restore not only appearance but also a sense of dignity, comfort, and renewed self-confidence. Each strand given is more than just hair—it’s a gift of hope and strength.
-          </Text>
+
+          <View style={styles.aboutBody}>
+            <View style={styles.aboutHeaderRow}>
+              <Text style={styles.aboutEyebrow}>OUR STORY</Text>
+              <View style={styles.aboutDivider} />
+            </View>
+            <Text style={styles.aboutTitle}>About Us</Text>
+            <Text style={styles.aboutText}>
+              <Text style={{ fontWeight: '800', color: '#1C1917' }}>Strand Up for Cancer (SUFC)</Text> is a youth-led initiative of the Manila Downtown YMCA dedicated to supporting patients experiencing long-term hair loss from illness and medical treatment.
+            </Text>
+            <Text style={[styles.aboutText, { marginTop: vs(8) }]}>
+              Through hair donations, we craft wigs that restore dignity, comfort, and renewed self-confidence — each strand is a gift of hope and strength.
+            </Text>
+          </View>
         </Animated.View>
 
-        {/* ── Our Partners ───────────────────────────── */}
+        {/* ── Our Partners — clean section header + card grid ── */}
         <View style={styles.partnersSection}>
-          <Text style={styles.sectionTitle}>Our Partners</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionEyebrow}>TRUSTED PARTNERS</Text>
+            <Text style={styles.sectionH2}>Organizations behind our cause</Text>
+          </View>
+
           <View style={styles.partnersGrid}>
             {[
-              { id: 1, name: 'YMCA Youth Club', img: require('../../assets/ymca.jpg'), url: 'https://web.facebook.com/ManilaDowntownYMCAYouthClub' },
-              { id: 2, name: 'Richard D. Manila', img: require('../../assets/RDM.png'), url: 'https://web.facebook.com/Richarddmanilawigmaker' },
-              { id: 3, name: 'PGH Hospital', img: require('../../assets/pgh_logo.png'), url: 'https://pgh.gov.ph/' }
-            ].map((p, idx) => (
+              { id: 1, name: 'YMCA Youth',  tag: 'Community',   img: require('../../assets/ymca.jpg'),    url: 'https://web.facebook.com/ManilaDowntownYMCAYouthClub' },
+              { id: 2, name: 'Richard D.',  tag: 'Wigmaker',    img: require('../../assets/RDM.png'),     url: 'https://web.facebook.com/Richarddmanilawigmaker' },
+              { id: 3, name: 'PGH Hospital', tag: 'Medical',    img: require('../../assets/pgh_logo.png'), url: 'https://pgh.gov.ph/' },
+            ].map((p) => (
               <ScaleButton
                 key={p.id}
                 style={styles.partnerCard}
                 onPress={() => handleOpenURL(p.url)}
               >
-                <View style={styles.partnerLogoPlaceholder}>
+                <View style={styles.partnerLogoBox}>
                   <Image source={p.img} style={styles.partnerImg} />
                 </View>
-                <Text style={styles.partnerName}>{p.name}</Text>
+                {/* Allow up to 2 lines so longer names don't truncate
+                    with an ellipsis in narrow columns. */}
+                <Text style={styles.partnerName} numberOfLines={2}>{p.name}</Text>
+                <Text style={styles.partnerTag} numberOfLines={1}>{p.tag}</Text>
               </ScaleButton>
             ))}
           </View>
@@ -762,82 +782,175 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(13) },
 
-  bannerWrapper: {
-    marginHorizontal: ms(14), marginBottom: vs(24),
-    borderRadius: ms(18), overflow: 'hidden',
-    backgroundColor: '#FFF0F8',
+  // ── New About panel: one card containing image header + body + stats ──
+  aboutPanel: {
+    marginHorizontal: ms(14),
+    marginBottom: vs(24),
+    borderRadius: ms(22),
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#F0EDE9',
+    shadowColor: '#1C1917',
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
-  bannerImage: { width: '100%', height: vs(250) },
-
-  aboutUsContainer: {
-    paddingHorizontal: ms(20),
-    marginBottom: vs(30),
-    alignItems: 'center',
+  aboutImageWrap: {
+    position: 'relative',
+    width: '100%',
+    height: vs(180),
   },
-  aboutUsHeader: {
+  aboutImage: { width: '100%', height: '100%' },
+  aboutImageScrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '55%',
+  },
+  aboutPill: {
+    position: 'absolute',
+    bottom: vs(12),
+    left: ms(14),
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: vs(12),
+    gap: ms(6),
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(5),
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.95)',
   },
-  aboutUsTitle: {
-    fontSize: ms(26),
-    fontWeight: '900',
-    color: '#1a1a1a',
-    marginRight: ms(8),
+  aboutPillText: {
+    fontSize: ms(11),
+    fontWeight: '800',
+    color: '#D63B8A',
+    letterSpacing: 0.4,
   },
-  ribbonIcon: {
-    transform: [{ rotate: '15deg' }],
+  aboutBody: {
+    paddingHorizontal: ms(20),
+    paddingTop: vs(18),
+    paddingBottom: vs(18),
   },
-  aboutUsText: {
-    fontSize: ms(14),
-    color: '#333',
-    textAlign: 'center',
-    lineHeight: vs(22),
+  aboutHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(8),
+    marginBottom: vs(6),
+  },
+  aboutEyebrow: {
+    fontSize: ms(10),
+    fontWeight: '800',
+    color: '#D63B8A',
+    letterSpacing: 1.2,
+  },
+  aboutDivider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#F0EDE9',
+  },
+  aboutTitle: {
+    fontSize: ms(22),
+    fontWeight: '800',
+    color: '#1C1917',
+    letterSpacing: -0.4,
+    marginBottom: vs(10),
+  },
+  aboutText: {
+    fontSize: ms(13.5),
+    color: '#57534E',
+    lineHeight: ms(20),
     fontWeight: '500',
+  },
+  aboutStatsRow: {
+    marginTop: vs(16),
+    paddingTop: vs(14),
+    paddingHorizontal: ms(2),
+    borderTopWidth: 1,
+    borderTopColor: '#F4F1ED',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  aboutStat: { flex: 1, alignItems: 'center' },
+  aboutStatNum: {
+    fontSize: ms(18),
+    fontWeight: '800',
+    color: '#D63B8A',
+    letterSpacing: -0.5,
+  },
+  aboutStatLbl: {
+    marginTop: vs(2),
+    fontSize: ms(9.5),
+    fontWeight: '700',
+    color: '#A8A29E',
+    letterSpacing: 0.8,
+  },
+  aboutStatDivider: {
+    width: 1,
+    height: vs(28),
+    backgroundColor: '#F0EDE9',
   },
 
   partnersSection: {
     marginBottom: vs(30),
     paddingHorizontal: ms(14),
   },
+  // Section header used across the dashboard (eyebrow + H2)
+  sectionHeader: {
+    marginBottom: vs(14),
+    paddingHorizontal: ms(2),
+  },
+  sectionEyebrow: {
+    fontSize: ms(10),
+    fontWeight: '800',
+    color: '#D63B8A',
+    letterSpacing: 1.4,
+    marginBottom: vs(4),
+  },
+  sectionH2: {
+    fontSize: ms(17),
+    fontWeight: '800',
+    color: '#1C1917',
+    letterSpacing: -0.3,
+  },
   partnersGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: ms(12),
-    marginTop: vs(14),
+    justifyContent: 'space-between',
+    gap: ms(10),
   },
   partnerCard: {
+    flex: 1,
+    minWidth: ms(98),
     backgroundColor: '#fff',
-    borderRadius: ms(20),
-    padding: ms(12),
+    borderRadius: ms(16),
+    paddingVertical: vs(14),
+    paddingHorizontal: ms(10),
     alignItems: 'center',
     justifyContent: 'center',
-    width: ms(105),
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
+    shadowColor: '#1C1917',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#FFF0F8',
+    borderColor: '#F0EDE9',
   },
-  partnerLogoPlaceholder: {
-    width: ms(68),
-    height: ms(68),
-    borderRadius: ms(34),
-    backgroundColor: '#fff',
+  partnerLogoBox: {
+    width: ms(64),
+    height: ms(64),
+    borderRadius: ms(14),
+    // Transparent — the surrounding card is already white, so a second
+    // cream box creates an unwanted "framed" look. Let the logo sit on
+    // the card directly with just a hairline edge for definition.
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: vs(10),
-    alignSelf: 'center',
+    marginBottom: vs(8),
     overflow: 'hidden',
-    shadowColor: '#FF66B2',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: ms(4),
   },
   partnerImg: {
     width: '100%',
@@ -846,9 +959,20 @@ const styles = StyleSheet.create({
   },
   partnerName: {
     fontSize: ms(11),
-    fontWeight: '700',
-    color: '#666',
+    fontWeight: '800',
+    color: '#1C1917',
     textAlign: 'center',
+    letterSpacing: -0.2,
+    lineHeight: vs(14),
+  },
+  partnerTag: {
+    fontSize: ms(9),
+    fontWeight: '600',
+    color: '#A8A29E',
+    textAlign: 'center',
+    marginTop: vs(3),
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
   },
 
   eventsSection: {

@@ -227,27 +227,53 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
     fetchHistory();
   };
 
-  const getStatusStyle = (status: string, type: string) => {
-    const s = status.toLowerCase();
-    const isHair = type === 'hair';
+  /**
+   * Status pill style for the donation card.
+   *
+   * Two product rules baked in here:
+   *   1. **Monetary** has no "Pending" state from the donor's POV — once
+   *      they hit submit, it's just "Submitted". We use a soft neutral
+   *      blue, not the alarming orange.
+   *   2. **Hair** with a certificate already issued (staff confirmed
+   *      receipt → backend generated `certificateNo`) collapses every
+   *      downstream status (`In Queue`, `In Progress`, `Wig Received`...)
+   *      into one green "Completed" badge. Those downstream statuses are
+   *      wigmaker-facing and shouldn't surface in the donor's history.
+   */
+  const getStatusStyle = (
+    status: string,
+    type: string,
+    hasCertificate: boolean = false,
+  ) => {
+    const s = (status || '').toLowerCase();
+
+    // Rule 2 — hair with cert: this IS the end of the donor's tracking.
+    if (type === 'hair' && hasCertificate) {
+      return { bg: '#E8F5E9', text: '#2E7D32', label: 'Completed' };
+    }
+
+    // Rule 1 — monetary stays "Submitted" until verified (no Pending tone).
+    if (type === 'monetary' && (s === 'pending' || s === 'submitted')) {
+      return { bg: '#E0F2FE', text: '#0369A1', label: 'Submitted' };
+    }
 
     switch (s) {
-      case 'approved': 
+      case 'approved':
       case 'completed':
       case 'received hair':
       case 'wig received':
       case 'verified':
       case 'received':
-        return { 
-          bg: '#E8F5E9', 
-          text: '#2E7D32', 
-          label: 'Approved' 
-        };
-      case 'pending': 
+        return { bg: '#E8F5E9', text: '#2E7D32', label: 'Approved' };
+      case 'pending':
       case 'submitted':
+        // Only hair hits this branch now — keep the "Pending" tone so the
+        // donor knows they still need to deliver / wait for verification.
         return { bg: '#FFF3E0', text: '#EF6C00', label: 'Pending' };
-      case 'rejected': return { bg: '#FFEBEE', text: '#C62828', label: 'Rejected' };
-      default: return { bg: '#F5F5F5', text: '#757575', label: status };
+      case 'rejected':
+        return { bg: '#FFEBEE', text: '#C62828', label: 'Rejected' };
+      default:
+        return { bg: '#F5F5F5', text: '#757575', label: status };
     }
   };
 
@@ -317,12 +343,15 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
             <View style={styles.statusHintCard}>
               <Ionicons name="information-circle" size={ms(18)} color="#FF66B2" />
               <Text style={styles.statusHintText}>
-                <Text style={{ fontWeight: '800' }}>Note:</Text> Star Points are awarded once your donation status changes from <Text style={{ color: '#EF6C00', fontWeight: '700' }}>Pending</Text> to <Text style={{ color: '#2E7D32', fontWeight: '700' }}>Approved</Text>.
+                <Text style={{ fontWeight: '800' }}>Note:</Text> Stars are credited once your hair donation reaches <Text style={{ color: '#2E7D32', fontWeight: '700' }}>Approved</Text>. Monetary donations are tracked for transparency and don&apos;t award stars.
               </Text>
             </View>
 
             {donations.map((item, idx) => {
-              const status = getStatusStyle(item.status, item.type);
+              // Pass cert presence so hair donations with a generated cert
+              // collapse to a single "Completed" badge instead of leaking
+              // downstream wigmaker statuses like "In Queue" into the UI.
+              const status = getStatusStyle(item.status, item.type, !!item.certificateNo);
               return (
                 <Animated.View 
                   key={item.id} 
