@@ -115,7 +115,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {
         label: 'Production & Stock',
         items: [
-          { icon: 'bx bx-radar',        label: 'Wigmaker Tracking',      to: '/staff/tracking/donation' },
+          { icon: 'bx bx-radar',        label: 'Wigmaker Tracking',      to: '/staff/tracking/wigmaker' },
           { icon: 'bx bx-package',      label: 'Donation Trackers',      to: '/staff/tracking/donation' },
           { icon: 'bx bx-transfer-alt', label: 'Request Trackers',       to: '/staff/tracking/recipient' },
           { icon: 'bx bx-cut',          label: 'Hair Stock',             to: '/staff/hair-stock' },
@@ -135,7 +135,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       if (location.pathname.startsWith('/staff/verification/donor')) return 'Donation Verification Desk';
       if (location.pathname.startsWith('/staff/verification/recipient')) return 'Request Verification Desk';
       if (location.pathname.startsWith('/staff/verification/monetary')) return 'Monetary Verification Desk';
-      if (location.pathname.startsWith('/staff/tracking/donation')) return 'Production & Inventory Trackers';
+      if (location.pathname.startsWith('/staff/tracking/wigmaker')) return 'Wigmaker Production Trackers';
+      if (location.pathname.startsWith('/staff/tracking/donation')) return 'Donation Trackers';
       if (location.pathname.startsWith('/staff/tracking/recipient')) return 'Request Trackers';
       if (location.pathname.startsWith('/staff/hair-stock')) return 'Hair Stock Inventory';
       if (location.pathname.startsWith('/staff/wig-stock')) return 'Wig Stock Inventory';

@@ -72,6 +72,18 @@ router.get('/monetary-verification', ...staffOnly, async (_req, res) => {
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
+// GET /internal-api/staff/monetary-donations
+// Read-only: full list of all monetary donations for staff record-keeping
+router.get('/monetary-donations', ...staffOnly, async (_req, res) => {
+  try {
+    const donations = await prisma.monetaryDonation.findMany({
+      include: { user: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(s(donations));
+  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
 // GET /internal-api/staff/verification/:type/:reference
 router.get('/verification/:type/:reference', ...staffOnly, async (req, res) => {
   try {
