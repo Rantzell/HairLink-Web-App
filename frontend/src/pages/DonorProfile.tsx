@@ -282,120 +282,124 @@ const DonorProfile: React.FC = () => {
 
       {/* Edit Profile Modal */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content animate-in zoom-in">
-            <header className="modal-header">
-              <h2>Edit Personal Information</h2>
-              <button className="modal-close-btn" onClick={() => setIsModalOpen(false)}>
-                <i className='bx bx-x'></i>
+        <div className="ep-overlay" onClick={e => { if (e.target === e.currentTarget) setIsModalOpen(false); }}>
+          <div className="ep-modal">
+
+            {/* ── Top bar ── */}
+            <div className="ep-topbar">
+              <h2 className="ep-title">My profile</h2>
+              <button className="ep-close" type="button" onClick={() => setIsModalOpen(false)} aria-label="Close">
+                ×
               </button>
-            </header>
-            
-            <form onSubmit={handleUpdate} className="modal-body-scroll">
-              <div className="details-grid-form">
-                <div className="form-group">
-                  <label className="detail-label">First Name</label>
-                  <input 
-                    type="text" 
-                    value={editData.firstName} 
-                    readOnly
-                    className="form-input-premium"
-                  />
+            </div>
+
+            {/* ── Body: photo column + form column ── */}
+            <form id="ep-form" onSubmit={handleUpdate} className="ep-body">
+
+              {/* Photo column */}
+              <div className="ep-photo-col">
+                <div className="ep-avatar">
+                  {profilePhoto ? (
+                    <img src={URL.createObjectURL(profilePhoto)} alt="Preview" className="ep-avatar-img" />
+                  ) : user?.profile_photo_url ? (
+                    <img src={user.profile_photo_url} alt="Profile" className="ep-avatar-img"
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : (
+                    <span className="ep-avatar-initials">{initials}</span>
+                  )}
                 </div>
-                <div className="form-group">
-                  <label className="detail-label">Last Name</label>
-                  <input 
-                    type="text" 
-                    value={editData.lastName} 
-                    readOnly
-                    className="form-input-premium"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="detail-label">Email Address</label>
-                <input 
-                  type="email" 
-                  value={user?.email || ''} 
-                  readOnly
-                  className="form-input-premium"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="detail-label">Phone Number</label>
-                <input 
-                  type="text" 
-                  value={editData.phone} 
-                  onChange={e => setEditData({...editData, phone: e.target.value})}
-                  className="form-input-premium"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="detail-label">Age</label>
-                <input 
-                  type="number" 
-                  value={editData.age} 
-                  onChange={e => setEditData({...editData, age: e.target.value})}
-                  className="form-input-premium"
-                  min="1"
-                  max="120"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="detail-label">Gender</label>
-                <select 
-                  value={editData.gender} 
-                  onChange={e => setEditData({...editData, gender: e.target.value})}
-                  className="form-input-premium"
-                  style={{ height: '42px' }}
-                >
-                  <option value="" disabled>Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="nonbinary">Non-binary</option>
-                  <option value="prefer_not_say">Prefer not to say</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="detail-label">Quick Bio</label>
-                <textarea 
-                  rows={3} 
-                  value={editData.bio} 
-                  onChange={e => setEditData({...editData, bio: e.target.value})}
-                  className="form-input-premium"
-                  style={{resize: 'none'}}
-                ></textarea>
-              </div>
-
-              <div className="form-group">
-                <label className="detail-label">Profile Photo</label>
-                <div className="upload-zone-premium">
-                  <input 
-                    type="file" 
+                <label className="ep-edit-photo-btn">
+                  <i className='bx bx-image-add'></i> Edit photo
+                  <input
+                    type="file"
                     accept="image/jpeg,image/png,image/webp"
                     onChange={e => setProfilePhoto(e.target.files?.[0] || null)}
-                    className="upload-input-hidden"
+                    style={{ display: 'none' }}
                   />
-                  <div className="upload-content-premium">
-                    <i className='bx bx-cloud-upload'></i>
-                    <span>
-                      {profilePhoto ? profilePhoto.name : 'Select new image (JPG/PNG/WEBP)'}
-                    </span>
-                  </div>
-                </div>
+                </label>
+                {profilePhoto && (
+                  <span className="ep-photo-name">{profilePhoto.name}</span>
+                )}
               </div>
 
-              <div className="modal-actions-premium">
-                <button type="submit" disabled={isSubmitting} className="save-btn-premium">
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </button>
+              {/* Form column */}
+              <div className="ep-form-col">
+                <div className="ep-field">
+                  <label className="ep-label">Name</label>
+                  <div className="ep-name-row">
+                    <input type="text" value={editData.firstName} readOnly className="ep-input ep-input-readonly" placeholder="First name" />
+                    <input type="text" value={editData.lastName} readOnly className="ep-input ep-input-readonly" placeholder="Last name" />
+                  </div>
+                </div>
+
+                <div className="ep-field">
+                  <label className="ep-label">Email</label>
+                  <input type="email" value={user?.email || ''} readOnly className="ep-input ep-input-readonly" />
+                </div>
+
+                <div className="ep-field">
+                  <label className="ep-label">Phone number</label>
+                  <input
+                    type="text"
+                    value={editData.phone}
+                    onChange={e => setEditData({...editData, phone: e.target.value})}
+                    className="ep-input"
+                    placeholder="e.g. 09171234567"
+                  />
+                </div>
+
+                <div className="ep-two-col">
+                  <div className="ep-field">
+                    <label className="ep-label">Age</label>
+                    <input
+                      type="number"
+                      value={editData.age}
+                      onChange={e => setEditData({...editData, age: e.target.value})}
+                      className="ep-input"
+                      min="1" max="120"
+                      placeholder="Age"
+                    />
+                  </div>
+                  <div className="ep-field">
+                    <label className="ep-label">Gender</label>
+                    <select
+                      value={editData.gender}
+                      onChange={e => setEditData({...editData, gender: e.target.value})}
+                      className="ep-input ep-select"
+                    >
+                      <option value="" disabled>Select gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="nonbinary">Non-binary</option>
+                      <option value="prefer_not_say">Prefer not to say</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="ep-field">
+                  <label className="ep-label">Short bio</label>
+                  <textarea
+                    rows={3}
+                    value={editData.bio}
+                    onChange={e => setEditData({...editData, bio: e.target.value})}
+                    className="ep-input ep-textarea"
+                    placeholder="Tell us a bit about yourself..."
+                    style={{ resize: 'none' }}
+                  />
+                </div>
               </div>
             </form>
+
+            {/* ── Footer ── */}
+            <div className="ep-footer">
+              <button type="button" className="ep-btn-close" onClick={() => setIsModalOpen(false)}>
+                Close
+              </button>
+              <button type="submit" form="ep-form" disabled={isSubmitting} className="ep-btn-save">
+                {isSubmitting ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+
           </div>
         </div>
       )}
