@@ -290,10 +290,19 @@ router.post('/tracking/:reference/status', ...staffOnly, validate(trackingStatus
       if (record.userId) await notifyDonationStatus(record.userId, ns, reference as string);
 
       if (ns === 'Wig Received') {
+        const completedWigs = await prisma.wigProduction.findMany({
+          where: { donations: { some: { id: record.id } }, status: { in: ['completed', 'shipped'] } } as any,
+        });
+
         await prisma.wigProduction.updateMany({
           where: { donations: { some: { id: record.id } }, status: { in: ['completed', 'shipped'] } } as any,
           data: { status: 'received' }
         });
+
+        const { notifyWigmakerStaffReceivedWig } = await import('../services/notification.service');
+        for (const cw of completedWigs) {
+          await notifyWigmakerStaffReceivedWig(cw.wigmakerId, cw.taskCode);
+        }
       }
     } else {
       await prisma.hairRequest.update({ where: { id: record.id }, data: ud });

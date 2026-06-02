@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, AuthResponse } from '../types';
 import { supabase } from '../lib/supabase';
@@ -160,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await new Promise(resolve => setTimeout(resolve, 100));
             const profile = await fetchProfile(session.access_token);
             if (!profile) {
-              alert('Demo login succeeded but profile could not be loaded. Ensure the database migrations and triggers have run.');
+              toast.success('Demo login succeeded but profile could not be loaded. Ensure the database migrations and triggers have run.');
               return;
             }
             setUser(profile);
@@ -174,7 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const friendlyMsg = isNetworkError
             ? 'Backend server is not running. Please start it with: cd backend && npm run dev'
             : (e?.response?.data?.error || e?.message || 'Backend demo auth failed');
-          alert(`Demo login failed: ${friendlyMsg}`);
+          toast.error(`Demo login failed: ${friendlyMsg}`);
           return;
         }
       }
@@ -188,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.location.href = dashboardPath[profile.role] || '/donor/dashboard';
     } catch (err: any) {
       console.error('[Auth] Demo login failed:', err);
-      alert(`Demo login failed: ${err?.message || err?.response?.data?.error || JSON.stringify(err)}`);
+      toast.error(`Demo login failed: ${err?.message || err?.response?.data?.error || JSON.stringify(err)}`);
     }
   };
 

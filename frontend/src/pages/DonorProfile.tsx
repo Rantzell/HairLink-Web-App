@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
@@ -51,10 +52,10 @@ const DonorProfile: React.FC = () => {
 
       updateUser(res.data.user);
       setIsModalOpen(false);
-      alert('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
     } catch (err: any) {
       console.error('Profile update failed', err);
-      alert(err.response?.data?.message || 'Failed to update profile.');
+      toast.error(err.response?.data?.message || 'Failed to update profile.');
     } finally {
       setIsSubmitting(false);
     }
@@ -62,7 +63,7 @@ const DonorProfile: React.FC = () => {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(referralCode);
-    alert('Referral code copied to clipboard!');
+    toast.error('Referral code copied to clipboard!');
   };
 
   const submitOtherReferral = async (e: React.FormEvent) => {
@@ -71,13 +72,13 @@ const DonorProfile: React.FC = () => {
     setSubmittingReferral(true);
     try {
       const res = await apiClient.post('/internal-api/referral', { referral_code: otherReferral });
-      alert(res.data.message || 'Referral code applied successfully!');
+      toast.error(res.data.message || 'Referral code applied successfully!');
       
       const profileRes = await apiClient.get('/auth/me');
       updateUser(profileRes.data);
       setOtherReferral('');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Invalid referral code.');
+      toast.error(err.response?.data?.message || 'Invalid referral code.');
     } finally {
       setSubmittingReferral(false);
     }

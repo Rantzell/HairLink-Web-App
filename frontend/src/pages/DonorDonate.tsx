@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,7 +25,7 @@ const DonorDonate: React.FC = () => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       if (selectedFile.size > 10 * 1024 * 1024) {
-        alert('File is too large. Please upload an image up to 10MB.');
+        toast.error('File is too large. Please upload an image up to 10MB.');
         return;
       }
       setFile(selectedFile);
@@ -34,7 +35,7 @@ const DonorDonate: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.hairLength || !formData.hairColor || !formData.address || !formData.reason || !file) {
-      alert('Please fill in all required fields and upload a photo.');
+      toast.error('Please fill in all required fields and upload a photo.');
       return;
     }
     setShowConfirm(true);
@@ -45,7 +46,9 @@ const DonorDonate: React.FC = () => {
     setIsSubmitting(true);
     try {
       const data = new FormData();
-      const reference = `HD-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 900 + 100)}`;
+      const currentYear = new Date().getFullYear();
+      const randomId = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const reference = `HD-${currentYear}-${randomId}`;
       
       data.append('reference', reference);
       data.append('hair_length', formData.hairLength);
@@ -60,15 +63,16 @@ const DonorDonate: React.FC = () => {
       
       data.append('photo_front', file!);
 
-      await apiClient.post('/internal-api/donations', data, {
+      const res = await apiClient.post('/internal-api/donations', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      navigate(`/donor/tracking/${reference}`);
+      const actualReference = res.data.reference || reference;
+      navigate(`/donor/tracking/${actualReference}`);
     } catch (err: any) {
       const data = err.response?.data;
       const errorMsg = (data?.error ? `${data.error}: ` : '') + (data?.message || 'Failed to submit donation. Please try again.');
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -239,7 +243,7 @@ const DonorDonate: React.FC = () => {
                 const droppedFile = e.dataTransfer.files?.[0];
                 if (droppedFile) {
                   if (droppedFile.size > 10 * 1024 * 1024) {
-                    alert('File is too large. Please upload an image up to 10MB.');
+                    toast.error('File is too large. Please upload an image up to 10MB.');
                     return;
                   }
                   setFile(droppedFile);

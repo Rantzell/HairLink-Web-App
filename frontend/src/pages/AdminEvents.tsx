@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import apiClient from '../api/client';
@@ -37,7 +38,7 @@ const AdminEvents: React.FC = () => {
     e.preventDefault();
     if (!form.title || !form.date) return;
     if (new Date(form.date) < new Date()) {
-      alert('Event date cannot be in the past. Please select a future date and time.');
+      toast.error('Event date cannot be in the past. Please select a future date and time.');
       return;
     }
     setShowConfirm(true);

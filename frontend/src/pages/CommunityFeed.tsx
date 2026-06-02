@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useRef } from 'react';
 import apiClient from '../api/client';
 import type { CommunityPost } from '../types';
@@ -120,7 +121,7 @@ const CommunityFeed: React.FC = () => {
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newContent.trim())  { alert('Please write something before publishing.'); return; }
+    if (!newContent.trim())  { toast.success('Please write something before publishing.'); return; }
 
     setIsSubmitting(true);
     const formData = new FormData();

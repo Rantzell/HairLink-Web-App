@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import '../styles/StaffRealtimeTracking.css';
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -74,7 +75,7 @@ const StaffRealtimeTracking: React.FC = () => {
       }
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Update failed');
+      toast.error(err.response?.data?.message || 'Update failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -82,11 +83,11 @@ const StaffRealtimeTracking: React.FC = () => {
 
   const handleAssignBatch = () => {
     if (selectedDonations.length === 0) {
-      alert('Please select at least 1 donation to create a batch.');
+      toast.error('Please select at least 1 donation to create a batch.');
       return;
     }
     if (!batchWigmakerId) {
-      alert('Please select a wigmaker.');
+      toast.error('Please select a wigmaker.');
       return;
     }
     setShowBatchConfirm(true);
@@ -101,13 +102,13 @@ const StaffRealtimeTracking: React.FC = () => {
         donation_references: selectedDonations,
         material_delivery_link: batchMaterialLink
       });
-      alert('Batch assigned successfully!');
+      toast.success('Batch assigned successfully!');
       setSelectedDonations([]);
       setBatchWigmakerId('');
       setBatchMaterialLink('');
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Assignment failed');
+      toast.error(err.response?.data?.message || 'Assignment failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -173,7 +174,7 @@ const StaffRealtimeTracking: React.FC = () => {
       }
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Batch update failed');
+      toast.error(err.response?.data?.message || 'Batch update failed');
     } finally {
       setIsSubmitting(false);
       setPendingBatchRefs([]);
@@ -189,13 +190,13 @@ const StaffRealtimeTracking: React.FC = () => {
 
   const handleSaveDeliveryLink = async () => {
     if (!deliveryLinkValue) {
-      alert('Please enter a tracking URL.');
+      toast.error('Please enter a tracking URL.');
       return;
     }
     try {
       new URL(deliveryLinkValue);
     } catch (_) {
-      alert('Please enter a valid absolute URL (e.g., https://...).');
+      toast.error('Please enter a valid absolute URL (e.g., https://...).');
       return;
     }
 
@@ -209,7 +210,7 @@ const StaffRealtimeTracking: React.FC = () => {
       setDeliveryLinkValue('');
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to update material delivery link');
+      toast.error(err.response?.data?.message || 'Failed to update material delivery link');
     } finally {
       setIsSubmitting(false);
     }

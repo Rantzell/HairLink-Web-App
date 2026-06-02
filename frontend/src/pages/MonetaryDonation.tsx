@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
@@ -50,7 +51,7 @@ const MonetaryDonation: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amountNumber || !proofFile) {
-      alert('Please fill in all required fields and upload proof of donation.');
+      toast.error('Please fill in all required fields and upload proof of donation.');
       return;
     }
     setShowConfirm(true);
@@ -71,11 +72,11 @@ const MonetaryDonation: React.FC = () => {
       await apiClient.post('/internal-api/monetary/donate', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      alert('Thank you for your donation! It has been successfully received and verified.');
+      toast.success('Thank you for your donation! It has been successfully received and verified.');
       navigate(user?.role === 'recipient' ? '/recipient/dashboard' : '/donor/dashboard');
     } catch (err) {
       console.error('Donation failed', err);
-      alert('Failed to submit donation. Please try again.');
+      toast.error('Failed to submit donation. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -896,7 +897,7 @@ const DonorDashboard: React.FC = () => {
       setReferralCode('');
       setReferralStatus('idle');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Invalid referral code');
+      toast.error(err.response?.data?.message || 'Invalid referral code');
       setReferralStatus('idle');
     }
   };

@@ -34,7 +34,10 @@ export const notifyDonationStatus = async (userId: string, status: string, refer
   };
 
   const title = titles[status] || 'Donation Status Updated 🌸';
-  const message = `Your donation (${reference}) is now: ${status}. Thank you for your support!`;
+  let message = `Your donation (${reference}) is now: ${status}. Thank you for your support!`;
+  if (status === 'Verified') {
+    message = `Your donation (${reference}) is now Verified. You can now put the submission delivery tracking link on the tracking page.`;
+  }
   return createNotification(userId, title, message, 'donation');
 };
 
@@ -43,17 +46,32 @@ export const notifyRequestStatus = async (userId: string, status: string, refere
     'Approved': 'Request Approved! 💖',
     'Verified': 'Request Verified! ✅',
     'Rejected': 'Request Update',
-    'Validated': 'Request Validated',
+    'Validated': 'Request Validated! ✅',
     'In Production': 'Wig in Production 🧵',
     'Matched': 'Wig Matched! ✨',
     'In Transit': 'Wig on its Way! 🚚',
+    'Ready for Pickup': 'Wig Ready for Pickup! 📦',
     'Arrived': 'Wig Arrived! 📦',
     'Completed': 'Hope Delivered! 🌸',
     'Submitted': 'Request Submitted 📝',
   };
 
+  const messages: Record<string, string> = {
+    'Submitted': `Your wig request (${reference}) has been submitted successfully. Our team will review and validate your request shortly.`,
+    'Validated': `Great news! Your wig request (${reference}) has been validated and approved. Please wait while we find and create the perfect wig for you. We will notify you once a matched wig is ready!`,
+    'Approved': `Your wig request (${reference}) has been approved! We are now looking for the best wig match for you.`,
+    'Verified': `Your wig request (${reference}) has been verified. Sit tight — we're working on finding the right wig for you!`,
+    'Matched': `Wonderful news! A wig has been matched to your request (${reference})! Your wig is being prepared for delivery.`,
+    'In Production': `Your wig for request (${reference}) is now being crafted by our skilled wigmaker. We'll update you once it's ready!`,
+    'In Transit': `Your wig for request (${reference}) is on its way! Check your tracking page for delivery details.`,
+    'Ready for Pickup': `Your wig for request (${reference}) is ready for pickup at our Binondo office. Please visit during office hours to collect it.`,
+    'Arrived': `Your wig for request (${reference}) has arrived! Please confirm receipt on your tracking page.`,
+    'Completed': `Your wig request (${reference}) is now complete. We hope your new wig brings you confidence and joy! 🌸`,
+    'Rejected': `We're sorry, but your wig request (${reference}) could not be approved at this time. Please check the details or contact our team for more information.`,
+  };
+
   const title = titles[status] || 'Request Status Updated 💖';
-  const message = `Your wig request (${reference}) is now: ${status}. We are with you on this journey.`;
+  const message = messages[status] || `Your wig request (${reference}) is now: ${status}. We are with you on this journey.`;
   return createNotification(userId, title, message, 'request');
 };
 
@@ -93,7 +111,7 @@ export const notifyAnnouncement = async (title: string, message: string, audienc
       audience === 'donor'     ? ['donor'] :
       audience === 'recipient' ? ['recipient'] :
       audience === 'staff'     ? ['staff'] :
-      ['donor', 'recipient', 'staff'];
+      ['donor', 'recipient'];
 
     const targetUsers = await prisma.user.findMany({
       where: { role: { in: roles }, isActive: true },
@@ -118,7 +136,7 @@ export const notifyAllDonorsAndRecipients = async (title: string, message: strin
   try {
     const targetUsers = await prisma.user.findMany({
       where: {
-        role: { in: ['donor', 'recipient', 'staff'] },
+        role: { in: ['donor', 'recipient'] },
         isActive: true,
       },
       select: { id: true },
@@ -154,7 +172,7 @@ export const notifyMonetaryReceived = async (userId: string, amount: number, ref
 export const notifyAllUsers = async (title: string, message: string, type: string = 'announcement') => {
   try {
     const users = await prisma.user.findMany({
-      where: { isActive: true, role: { in: ['donor', 'recipient', 'staff'] } },
+      where: { isActive: true, role: { in: ['donor', 'recipient'] } },
       select: { id: true },
     });
     if (users.length === 0) return 0;
@@ -191,5 +209,104 @@ export const notifyNewEvent = async (eventTitle: string, eventDate: Date, eventL
     `📣 New Event: ${eventTitle}`,
     `Mark your calendar — ${eventTitle} is happening on ${when}${where}.`,
     'event',
+  );
+};
+
+export const notifyStaffNewDonation = async (donorName: string, reference: string) => {
+  try {
+    const staff = await prisma.user.findMany({ where: { role: 'staff', isActive: true }, select: { id: true } });
+    if (staff.length === 0) return;
+    await prisma.notifications.createMany({
+      data: staff.map((s) => ({
+        user_id: s.id,
+        title: 'New Hair Donation 🌸',
+        message: `${donorName} has submitted a new hair donation (Ref: ${reference}).`,
+        type: 'staff_donation',
+        is_read: false,
+      })),
+    });
+  } catch (err) {
+    console.error('[Notify] notifyStaffNewDonation failed:', err);
+  }
+};
+
+export const notifyStaffNewRequest = async (recipientName: string, reference: string) => {
+  try {
+    const staff = await prisma.user.findMany({ where: { role: 'staff', isActive: true }, select: { id: true } });
+    if (staff.length === 0) return;
+    await prisma.notifications.createMany({
+      data: staff.map((s) => ({
+        user_id: s.id,
+        title: 'New Wig Request 💖',
+        message: `${recipientName} has submitted a new wig request (Ref: ${reference}).`,
+        type: 'staff_request',
+        is_read: false,
+      })),
+    });
+  } catch (err) {
+    console.error('[Notify] notifyStaffNewRequest failed:', err);
+  }
+};
+
+export const notifyStaffNewMonetary = async (donorName: string, reference: string, amount: number) => {
+  try {
+    const staff = await prisma.user.findMany({ where: { role: 'staff', isActive: true }, select: { id: true } });
+    if (staff.length === 0) return;
+    await prisma.notifications.createMany({
+      data: staff.map((s) => ({
+        user_id: s.id,
+        title: 'New Monetary Donation 💰',
+        message: `${donorName} has submitted a new monetary donation of ₱${amount.toLocaleString()} (Ref: ${reference}).`,
+        type: 'staff_monetary',
+        is_read: false,
+      })),
+    });
+  } catch (err) {
+    console.error('[Notify] notifyStaffNewMonetary failed:', err);
+  }
+};
+
+export const notifyStaffWigmakerReceivedMaterial = async (taskCode: string, wigmakerName: string) => {
+  try {
+    const staff = await prisma.user.findMany({ where: { role: 'staff', isActive: true }, select: { id: true } });
+    if (staff.length === 0) return;
+    await prisma.notifications.createMany({
+      data: staff.map((s) => ({
+        user_id: s.id,
+        title: 'Hair Batch Received 📦',
+        message: `${wigmakerName} has confirmed receipt of materials for Task #${taskCode}.`,
+        type: 'staff_wig_production',
+        is_read: false,
+      })),
+    });
+  } catch (err) {
+    console.error('[Notify] notifyStaffWigmakerReceivedMaterial failed:', err);
+  }
+};
+
+export const notifyStaffWigmakerCompletedWig = async (taskCode: string, wigmakerName: string, deliveryLink: string) => {
+  try {
+    const staff = await prisma.user.findMany({ where: { role: 'staff', isActive: true }, select: { id: true } });
+    if (staff.length === 0) return;
+    await prisma.notifications.createMany({
+      data: staff.map((s) => ({
+        user_id: s.id,
+        title: 'Wig Batch Completed ✨',
+        message: `${wigmakerName} has completed Task #${taskCode} and shipped it back. Tracking: ${deliveryLink}`,
+        type: 'staff_wig_production',
+        is_read: false,
+      })),
+    });
+  } catch (err) {
+    console.error('[Notify] notifyStaffWigmakerCompletedWig failed:', err);
+  }
+};
+
+export const notifyWigmakerStaffReceivedWig = async (wigmakerId: string, taskCode: string) => {
+  return createNotification(
+    wigmakerId,
+    'Wig Received by Staff 🎉',
+    `The staff has safely received the completed wig for Task #${taskCode}. Great job!`,
+    'wigmaker'
   );
 };

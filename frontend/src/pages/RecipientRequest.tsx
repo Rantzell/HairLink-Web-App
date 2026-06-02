@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -28,7 +29,7 @@ const RecipientRequest: React.FC = () => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       const validFiles = files.filter(f => f.size <= 10 * 1024 * 1024);
-      if (validFiles.length < files.length) alert('Some files were too large and were skipped.');
+      if (validFiles.length < files.length) toast.error('Some files were too large and were skipped.');
       setDocuments(prev => [...prev, ...validFiles]);
     }
   };
@@ -37,7 +38,7 @@ const RecipientRequest: React.FC = () => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
       if (file.size > 10 * 1024 * 1024) {
-        alert('Photo is too large. Max 10MB.');
+        toast.error('Photo is too large. Max 10MB.');
         return;
       }
       setAdditionalPhoto(file);
@@ -51,7 +52,7 @@ const RecipientRequest: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.story || !formData.wigLength || !formData.wigColor || !formData.deliveryMethod || documents.length === 0 || !additionalPhoto) {
-      alert('Please fill all required fields and upload the necessary documents.');
+      toast.error('Please fill all required fields and upload the necessary documents.');
       return;
     }
     setShowConfirm(true);
@@ -62,7 +63,9 @@ const RecipientRequest: React.FC = () => {
     setIsSubmitting(true);
     try {
       const data = new FormData();
-      const reference = `REQ-${Math.random().toString(36).substr(2, 5).toUpperCase()}-${Date.now().toString().slice(-6)}`;
+      const currentYear = new Date().getFullYear();
+      const randomId = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const reference = `WR-${currentYear}-${randomId}`;
       
       data.append('reference', reference);
       data.append('contact_number', user?.phone || '');
@@ -78,14 +81,15 @@ const RecipientRequest: React.FC = () => {
       });
       data.append('additional_photo', additionalPhoto!);
 
-      await apiClient.post('/internal-api/requests', data, {
+      const res = await apiClient.post('/internal-api/requests', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      navigate(`/recipient/tracking/${reference}`);
+      const actualReference = res.data.reference || reference;
+      navigate(`/recipient/tracking/${actualReference}`);
     } catch (err: any) {
       console.error('Request submission failed', err);
-      alert(err.response?.data?.message || 'Failed to submit request.');
+      toast.error(err.response?.data?.message || 'Failed to submit request.');
     } finally {
       setIsSubmitting(false);
     }

@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -46,13 +47,13 @@ const DonorMonetary: React.FC = () => {
 
     try {
       await apiClient.post('/internal-api/donor/monetary', formData);
-      alert('Financial donation submitted for verification! Thank you for your support.');
+      toast.success('Financial donation submitted for verification! Thank you for your support.');
       setAmount('');
       setProof(null);
       fetchHistory();
     } catch (err) {
       console.error('Submission failed', err);
-      alert('Failed to submit donation. Please try again.');
+      toast.error('Failed to submit donation. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

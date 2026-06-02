@@ -6,7 +6,8 @@ import { validate } from '../middleware/validate';
 import { donationCreateSchema, donationStatusSchema, deliveryLinkSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { uploadFile, getPublicUrl } from '../services/storage.service';
-import { notifyDonationStatus } from '../services/notification.service';
+import { notifyDonationStatus, notifyStaffNewDonation } from '../services/notification.service';
+import { generateSequentialReference } from '../services/reference.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -60,10 +61,12 @@ router.post('/', authenticate, upload.fields([
       }
     }
 
+    const newReference = await generateSequentialReference('HD');
+
     const donation = await prisma.donation.create({
       data: {
         userId: req.user!.id,
-        reference: req.body.reference,
+        reference: newReference,
         hairLength: req.body.hair_length,
         hairColor: req.body.hair_color,
         treatedHair: req.body.treated_hair === 'true' || req.body.treated_hair === true || req.body.treated_hair === '1',
@@ -80,6 +83,8 @@ router.post('/', authenticate, upload.fields([
     await createStatusHistory(DONATION_TYPE, donation.id, 'Submitted');
     // Confirm to the donor that we got their submission.
     await notifyDonationStatus(req.user!.id, 'Submitted', donation.reference!);
+    // Notify staff about the new donation
+    await notifyStaffNewDonation(req.user!.name || 'A donor', donation.reference!);
     res.status(201).json(serializeDonation(donation));
   } catch (err) {
     console.error('[Donation] Create error:', err);

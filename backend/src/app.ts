@@ -2,11 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load env vars before anything else
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// env vars are now loaded in server.ts via import './env'
 
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth.routes';

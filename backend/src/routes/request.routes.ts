@@ -6,7 +6,8 @@ import { validate } from '../middleware/validate';
 import { requestCreateSchema, requestStatusSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { uploadFile } from '../services/storage.service';
-import { notifyRequestStatus, notifyDonationStatus } from '../services/notification.service';
+import { notifyRequestStatus, notifyDonationStatus, notifyStaffNewRequest } from '../services/notification.service';
+import { generateSequentialReference } from '../services/reference.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -89,10 +90,12 @@ router.post('/', authenticate, upload.fields([
       }
     }
 
+    const newReference = await generateSequentialReference('WR');
+
     const hairRequest = await prisma.hairRequest.create({
       data: {
         userId: req.user!.id,
-        reference: req.body.reference,
+        reference: newReference,
         contactNumber: req.body.contact_number || null,
         gender: req.body.gender || null,
         story: req.body.story || null,
@@ -115,6 +118,8 @@ router.post('/', authenticate, upload.fields([
     await createStatusHistory(REQUEST_TYPE, hairRequest.id, 'Submitted');
     // Confirm to the recipient that we received their wig request.
     await notifyRequestStatus(req.user!.id, 'Submitted', hairRequest.reference!);
+    // Notify staff
+    await notifyStaffNewRequest(req.user!.name || 'A recipient', hairRequest.reference!);
     console.log('[HairRequest] Status history created. Responding to client.');
     res.status(201).json(serializeRequest(hairRequest));
   } catch (err) {

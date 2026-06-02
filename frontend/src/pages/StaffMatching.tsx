@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
@@ -112,7 +113,7 @@ const StaffMatching: React.FC = () => {
       });
       navigate('/staff/tracking');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Matching failed');
+      toast.error(err.response?.data?.message || 'Matching failed');
     } finally {
       setIsSubmitting(false);
       setPendingWigId(null);

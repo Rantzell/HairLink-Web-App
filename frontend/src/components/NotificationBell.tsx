@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 
 interface Notification {
@@ -12,6 +13,7 @@ interface Notification {
 }
 
 const NotificationBell: React.FC = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -48,11 +50,32 @@ const NotificationBell: React.FC = () => {
 
 
 
+  /** Check if a notification has a clickable link */
+  const getNotifLink = (n: Notification): { label: string; path: string } | null => {
+    if (n.type === 'announcement' || n.title.includes('Announcement:')) {
+      return { label: 'View Announcement', path: '' };
+    }
+    const match = n.message.match(/\(((?:HD|WR|REQ|MD)-[A-Z0-9-]+)\)/i);
+    if (match) {
+      const ref = match[1];
+      if (ref.startsWith('HD-')) return { label: 'View Tracking →', path: `/donor/tracking/${ref}` };
+      if (ref.startsWith('WR-') || ref.startsWith('REQ-')) return { label: 'View Tracking →', path: `/recipient/tracking/${ref}` };
+    }
+    if (n.type === 'donation') return { label: 'View Donation →', path: '/donor/tracking' };
+    if (n.type === 'request') return { label: 'View Request →', path: '/recipient/tracking' };
+    if (n.type === 'community') return { label: 'View Post →', path: '/community' };
+    if (n.type === 'wigmaker') return { label: 'View Tasks →', path: '/wigmaker/tasks' };
+    if (n.type === 'staff_donation') return { label: 'View Donations →', path: '/staff/verification/donor' };
+    if (n.type === 'staff_request') return { label: 'View Requests →', path: '/staff/verification/recipient' };
+    if (n.type === 'staff_monetary') return { label: 'View Monetary →', path: '/staff/verification/monetary' };
+    if (n.type === 'staff_wig_production') return { label: 'View Tracking →', path: '/staff/tracking/donation' };
+    return null;
+  };
+
   const handleNotifClick = async (n: Notification) => {
     if (!n.is_read) {
       try {
         await apiClient.put(`/internal-api/notifications/${n.id}/read`);
-        // Optimistically update read status locally for instant feedback
         setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, is_read: true } : item));
         setUnreadCount(prev => Math.max(0, prev - 1));
         fetchNotifications();
@@ -60,9 +83,13 @@ const NotificationBell: React.FC = () => {
         console.error('Failed to mark as read', err);
       }
     }
+    const link = getNotifLink(n);
     if (n.type === 'announcement' || n.title.includes('Announcement:')) {
       setSelectedAnnouncement(n);
-      setIsOpen(false); // Close dropdown when opening announcement modal
+      setIsOpen(false);
+    } else if (link?.path) {
+      setIsOpen(false);
+      navigate(link.path);
     }
   };
 
@@ -117,22 +144,28 @@ const NotificationBell: React.FC = () => {
             {notifications.length === 0 ? (
               <div className="notif-empty">No notifications yet</div>
             ) : (
-              notifications.map(n => (
-                <div 
-                  key={n.id} 
-                  className={`notif-item ${!n.is_read ? 'unread' : ''}`}
-                  onClick={() => handleNotifClick(n)}
-                >
-                  <div className="notif-content">
-                    <p className="notif-title">{n.title}</p>
-                    <p className="notif-message">{n.message}</p>
-                    <span className="notif-time">{new Date(n.created_at).toLocaleString()}</span>
+              notifications.map(n => {
+                const link = getNotifLink(n);
+                return (
+                  <div 
+                    key={n.id} 
+                    className={`notif-item ${!n.is_read ? 'unread' : ''} ${link ? 'clickable' : ''}`}
+                    onClick={() => handleNotifClick(n)}
+                  >
+                    <div className="notif-content">
+                      <p className="notif-title">{n.title}</p>
+                      <p className="notif-message">{n.message}</p>
+                      <div className="notif-meta">
+                        <span className="notif-time">{new Date(n.created_at).toLocaleString()}</span>
+                        {link && <span className="notif-link-hint">{link.label}</span>}
+                      </div>
+                    </div>
+                    <button className="notif-delete" onClick={(e) => deleteNotification(n.id, e)}>
+                      <i className='bx bx-x'></i>
+                    </button>
                   </div>
-                  <button className="notif-delete" onClick={(e) => deleteNotification(n.id, e)}>
-                    <i className='bx bx-x'></i>
-                  </button>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -332,6 +365,32 @@ const NotificationBell: React.FC = () => {
         }
         .notif-delete:hover {
           color: #ff4d4d;
+        }
+        .notif-item.clickable {
+          cursor: pointer;
+        }
+        .notif-item.clickable:hover {
+          background: #fef0f7;
+          border-left: 3px solid #ad246d;
+          padding-left: 13px;
+        }
+        .notif-meta {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          margin-top: 2px;
+        }
+        .notif-link-hint {
+          font-size: 0.65rem;
+          color: #ad246d;
+          font-weight: 700;
+          white-space: nowrap;
+          transition: color 0.2s;
+        }
+        .notif-item.clickable:hover .notif-link-hint {
+          color: #8c1e58;
+          text-decoration: underline;
         }
 
         /* ── Announcement Modal Styling ── */

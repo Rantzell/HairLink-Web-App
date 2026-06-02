@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useMemo } from 'react';
 
 
@@ -52,18 +53,18 @@ const WigmakerTaskDetail: React.FC = () => {
     e.preventDefault();
     if (!data) return;
     if (task.status !== 'completed' && !notes.trim()) {
-      alert('Please add a progress note.');
+      toast.success('Please add a progress note.');
       return;
     }
     if (task.status === 'completed') {
       if (!task.deliveryLink || !task.deliveryLink.trim()) {
-        alert('Please enter a return tracking link.');
+        toast.error('Please enter a return tracking link.');
         return;
       }
       try {
         new URL(task.deliveryLink);
       } catch (_) {
-        alert('Please enter a valid absolute tracking URL (e.g. https://...).');
+        toast.error('Please enter a valid absolute tracking URL (e.g. https://...).');
         return;
       }
     }
@@ -71,9 +72,9 @@ const WigmakerTaskDetail: React.FC = () => {
   };
 
   const requestStatusUpdate = (status: string) => {
-    if (!notes) { alert('Please add a progress note before updating.'); return; }
+    if (!notes) { toast.success('Please add a progress note before updating.'); return; }
     if (status === 'completed' && (!wigLength || !wigColor)) {
-      alert('Please select the wig length and color before marking production as finished.');
+      toast.error('Please select the wig length and color before marking production as finished.');
       return;
     }
     setPendingStatus(status);
@@ -103,7 +104,7 @@ const WigmakerTaskDetail: React.FC = () => {
       window.location.reload();
     } catch (err: any) {
       console.error('Update failed:', err);
-      alert(err.response?.data?.message || err.message || 'Update failed');
+      toast.error(err.response?.data?.message || err.message || 'Update failed');
     } finally {
       setIsSubmitting(false);
       setPendingStatus(null);
@@ -472,13 +473,13 @@ const WigmakerTaskDetail: React.FC = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     if (!task.deliveryLink || !task.deliveryLink.trim()) {
-                      alert('Please provide a return tracking link.');
+                      toast.error('Please provide a return tracking link.');
                       return;
                     }
                     try {
                       new URL(task.deliveryLink);
                     } catch (_) {
-                      alert('Please enter a valid absolute tracking URL (e.g. https://...).');
+                      toast.error('Please enter a valid absolute tracking URL (e.g. https://...).');
                       return;
                     }
                     setShowConfirm(true);

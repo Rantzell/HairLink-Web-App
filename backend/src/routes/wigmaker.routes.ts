@@ -7,7 +7,7 @@ import { validate } from '../middleware/validate';
 import { taskUpdateSchema, materialConfirmationSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { uploadFile } from '../services/storage.service';
-import { notifyDonationStatus } from '../services/notification.service';
+import { notifyDonationStatus, notifyStaffWigmakerCompletedWig, notifyStaffWigmakerReceivedMaterial } from '../services/notification.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -100,6 +100,11 @@ router.post('/tasks/:taskCode', ...wmOnly, upload.single('previewPhoto'), valida
       }
     }
 
+    if (status === 'completed' && updateData.deliveryLink) {
+      const wmUser = await prisma.user.findUnique({ where: { id: task.wigmakerId } });
+      await notifyStaffWigmakerCompletedWig(task.taskCode, wmUser?.name || 'Wigmaker', updateData.deliveryLink);
+    }
+
     res.json({ message: 'Task updated successfully and synced with tracking.', success: true, delivery_link: updateData.deliveryLink || task.deliveryLink });
   } catch (err) {
     console.error('[Wigmaker] Task update error:', err);
@@ -128,6 +133,9 @@ router.post('/tasks/:taskCode/confirm-material', ...wmOnly, validate(materialCon
         if (don.userId) await notifyDonationStatus(don.userId, 'In Progress', don.reference!);
       }
     }
+
+    const wmUser = await prisma.user.findUnique({ where: { id: task.wigmakerId } });
+    await notifyStaffWigmakerReceivedMaterial(task.taskCode, wmUser?.name || 'Wigmaker');
 
     res.json({ message: 'Material receipt confirmed.', success: true });
   } catch (err) {

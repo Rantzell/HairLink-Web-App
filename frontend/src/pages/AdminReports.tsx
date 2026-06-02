@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
@@ -69,7 +70,7 @@ const AdminReports: React.FC = () => {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('CSV download failed', err);
-      alert('Failed to download CSV. Please try again.');
+      toast.error('Failed to download CSV. Please try again.');
     }
   };
 

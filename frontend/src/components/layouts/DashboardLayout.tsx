@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import NotificationBell from '../NotificationBell';
+import ConfirmModal from '../ConfirmModal';
 import apiClient from '../../api/client';
 import '../../styles/StaffDashboard.css';
 import '../../styles/RecipientDashboard.css';
@@ -18,11 +19,40 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [_staffStats, setStaffStats] = useState({ pendingDonations: 0, pendingRequests: 0 });
 
-  const handleLogout = async (e: React.MouseEvent) => {
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
-    await logout();
-    navigate('/login');
+    setIsLogoutModalOpen(true);
   };
+
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout failed:', err);
+    } finally {
+      setIsLoggingOut(false);
+      setIsLogoutModalOpen(false);
+    }
+  };
+
+  const renderLogoutModal = () => (
+    <ConfirmModal
+      isOpen={isLogoutModalOpen}
+      onClose={() => setIsLogoutModalOpen(false)}
+      onConfirm={confirmLogout}
+      title="Log Out"
+      message="Are you sure you want to log out of your account?"
+      confirmText="Log Out"
+      cancelText="Cancel"
+      variant="danger"
+      isConfirming={isLoggingOut}
+    />
+  );
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -216,6 +246,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {children}
           </main>
         </div>
+        {renderLogoutModal()}
       </div>
     );
   }
@@ -400,6 +431,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {children}
           </main>
         </div>
+        {renderLogoutModal()}
       </div>
     );
   }
@@ -528,6 +560,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {children}
           </main>
         </div>
+        {renderLogoutModal()}
       </div>
     );
   }
@@ -714,6 +747,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       <main className="dash-main">
         {children}
       </main>
+      {renderLogoutModal()}
     </div>
   );
 };

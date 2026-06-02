@@ -5,7 +5,8 @@ import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { monetaryDonationSchema } from '../schemas';
 import { uploadFile } from '../services/storage.service';
-import { notifyMonetaryReceived } from '../services/notification.service';
+import { notifyMonetaryReceived, notifyStaffNewMonetary } from '../services/notification.service';
+import { generateSequentialReference } from '../services/reference.service';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
@@ -15,7 +16,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 router.post('/donate', upload.single('proof'), authenticate, validate(monetaryDonationSchema), async (req, res) => {
   try {
     const userId = req.user!.id;
-    const reference = 'MD-' + uuidv4().substring(0, 10).toUpperCase();
+    const reference = await generateSequentialReference('MD');
     let proofPath: string | null = null;
 
     console.log(`[Monetary] Processing donation for user ${userId}. File present: ${!!req.file}`);
@@ -49,6 +50,9 @@ router.post('/donate', upload.single('proof'), authenticate, validate(monetaryDo
 
     // Confirm receipt to the donor; verification will be a separate notification.
     await notifyMonetaryReceived(userId, Number(validatedData.amount || 0), reference);
+
+    // Notify staff about new monetary donation
+    await notifyStaffNewMonetary(finalName || 'A donor', reference, Number(validatedData.amount || 0));
 
     res.json({ success: true, message: 'Monetary donation processed successfully!', reference });
   } catch (err) {

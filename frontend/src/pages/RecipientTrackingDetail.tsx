@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
@@ -36,7 +37,7 @@ const RecipientTrackingDetail: React.FC = () => {
       await apiClient.post(`/internal-api/requests/${requestData?.reference}/confirm-received`);
       window.location.reload();
     } catch {
-      alert('Failed to confirm receipt.');
+      toast.error('Failed to confirm receipt.');
     } finally {
       setIsConfirming(false);
     }
@@ -49,7 +50,7 @@ const RecipientTrackingDetail: React.FC = () => {
       await apiClient.post(`/internal-api/requests/${requestData?.reference}/confirm-pickup`);
       window.location.reload();
     } catch {
-      alert('Failed to confirm pickup.');
+      toast.error('Failed to confirm pickup.');
     } finally {
       setIsConfirming(false);
     }

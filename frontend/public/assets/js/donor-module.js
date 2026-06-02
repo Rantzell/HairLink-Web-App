@@ -95,7 +95,9 @@
 
         async createDonation(payload) {
             const formData = new FormData();
-            formData.append('reference', payload.reference || `HD-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 900 + 100)}`);
+            const currentYear = new Date().getFullYear();
+            const randomId = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            formData.append('reference', payload.reference || `HD-${currentYear}-${randomId}`);
             formData.append('hair_length', payload.hairLength);
             formData.append('hair_color', payload.hairColor);
             formData.append('treated_hair', payload.treatedHair ? '1' : '0');

@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/Admin.css';
 import apiClient from '../api/client';
@@ -9,7 +10,7 @@ interface ServiceItem    { title: string; description: string; ctaLabel: string 
 interface AboutSettings  { heading: string; body: string }
 interface ExtendedFooterSettings { orgName: string; address: string; facebook: string; instagram: string; tagline: string }
 interface BrandingSettings { primaryColor: string; primaryTextColor: string; btnRadius: string }
-interface ImagesSettings   { heroLogo: string; aboutImg1: string; aboutImg2: string; partnerLogo1: string; partnerLogo2: string; eventImg1: string; eventImg2: string; eventImg3: string; eventImg4: string }
+interface ImagesSettings   { heroLogo: string; aboutImg1: string; aboutImg2: string; partnerLogo1: string; partnerLogo2: string; partnerLogo3: string; eventImg1: string; eventImg2: string; eventImg3: string; eventImg4: string }
 interface TypographySettings { headingFont: string; bodyFont: string }
 
 const GOOGLE_FONTS = ['Inter','Poppins','Manrope','Nunito','Lato','Roboto','Playfair Display','Merriweather','Raleway','Montserrat'];
@@ -31,7 +32,7 @@ const AdminCMS: React.FC = () => {
   type TabType = 'landing' | 'announcements' | 'partnerships';
   const [activeTab, setActiveTab] = useState<TabType>('landing');
 
-  type LandingSection = 'hero' | 'services' | 'about' | 'footer' | 'branding' | 'images' | 'typography' | 'pastEvents';
+  type LandingSection = 'hero' | 'services' | 'about' | 'footer' | 'branding' | 'images' | 'partners' | 'typography' | 'pastEvents';
   const [landingSection, setLandingSection] = useState<LandingSection>('hero');
   const [hero, setHero]         = useState<ExtendedHeroSettings>({ heading: '', subheading: '', ctaLabel: '', ghostLabel: '', pillText: '', floatBadgeText: '' });
 
@@ -51,8 +52,9 @@ const AdminCMS: React.FC = () => {
   const [about, setAbout]       = useState<AboutSettings>({ heading: '', body: '' });
   const [footer, setFooter]     = useState<ExtendedFooterSettings>({ orgName: '', address: '', facebook: '', instagram: '', tagline: '' });
   const [branding, setBranding] = useState<BrandingSettings>({ primaryColor: '#ad246d', primaryTextColor: '#ffffff', btnRadius: '8px' });
-  const [images, setImages]     = useState<ImagesSettings>({ heroLogo: '', aboutImg1: '', aboutImg2: '', partnerLogo1: '', partnerLogo2: '', eventImg1: '', eventImg2: '', eventImg3: '', eventImg4: '' });
+  const [images, setImages]     = useState<ImagesSettings>({ heroLogo: '', aboutImg1: '', aboutImg2: '', partnerLogo1: '', partnerLogo2: '', partnerLogo3: '', eventImg1: '', eventImg2: '', eventImg3: '', eventImg4: '' });
   const [typography, setTypography] = useState<TypographySettings>({ headingFont: 'Playfair Display', bodyFont: 'Inter' });
+  const [partnerLogos, setPartnerLogos] = useState<{name: string, url: string}[]>([]);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
   // Existing CMS state
@@ -96,11 +98,17 @@ const AdminCMS: React.FC = () => {
       aboutImg2: '/assets/images/landing/sufc-team2.jpg',
       partnerLogo1: '/assets/images/landing/pgh.png',
       partnerLogo2: '/assets/images/landing/wigmaker.png',
+      partnerLogo3: '/assets/images/landing/YMCA_partner.jpg',
       eventImg1: '/assets/images/landing/past-event-1.jpg',
       eventImg2: '/assets/images/landing/past-event-2.jpg',
       eventImg3: '/assets/images/landing/past-event-3.jpg',
       eventImg4: '/assets/images/landing/past-event-4.jpg',
-    }
+    },
+    partnerLogos: [
+      { name: 'Philippine General Hospital', url: '/assets/images/landing/pgh.png' },
+      { name: 'Partner Wigmaker', url: '/assets/images/landing/wigmaker.png' },
+      { name: 'Manila Downtown YMCA Youth Club', url: '/assets/images/landing/YMCA_partner.jpg' },
+    ]
   };
 
   const fetchData = useCallback(async () => {
@@ -131,11 +139,13 @@ const AdminCMS: React.FC = () => {
         aboutImg2:    s.images?.aboutImg2    || DEFAULTS.images.aboutImg2,
         partnerLogo1: s.images?.partnerLogo1 || DEFAULTS.images.partnerLogo1,
         partnerLogo2: s.images?.partnerLogo2 || DEFAULTS.images.partnerLogo2,
+        partnerLogo3: s.images?.partnerLogo3 || DEFAULTS.images.partnerLogo3,
         eventImg1:    s.images?.eventImg1    || DEFAULTS.images.eventImg1,
         eventImg2:    s.images?.eventImg2    || DEFAULTS.images.eventImg2,
         eventImg3:    s.images?.eventImg3    || DEFAULTS.images.eventImg3,
         eventImg4:    s.images?.eventImg4    || DEFAULTS.images.eventImg4,
       });
+      setPartnerLogos(s.partnerLogos ?? DEFAULTS.partnerLogos);
     } catch (err) {
       console.error('Failed to fetch CMS data', err);
     } finally {
@@ -165,12 +175,13 @@ const AdminCMS: React.FC = () => {
         { key: 'branding',         value: branding },
         { key: 'images',           value: images },
         { key: 'typography',       value: typography },
+        { key: 'partnerLogos',     value: partnerLogos },
       ]);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error('Failed to save settings', err);
-      alert('Save failed. Please try again.');
+      toast.error('Save failed. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -194,6 +205,7 @@ const AdminCMS: React.FC = () => {
       setBranding(DEFAULTS.branding);
       setTypography(DEFAULTS.typography);
       setImages(DEFAULTS.images);
+      setPartnerLogos(DEFAULTS.partnerLogos);
 
       await apiClient.put('/internal-api/admin/site-settings', [
         { key: 'hero',             value: DEFAULTS.hero },
@@ -206,6 +218,7 @@ const AdminCMS: React.FC = () => {
         { key: 'branding',         value: DEFAULTS.branding },
         { key: 'images',           value: DEFAULTS.images },
         { key: 'typography',       value: DEFAULTS.typography },
+        { key: 'partnerLogos',     value: DEFAULTS.partnerLogos },
       ]);
       
       setSaveSuccess(true);
@@ -269,7 +282,32 @@ const AdminCMS: React.FC = () => {
       setImages(prev => ({ ...prev, [key]: publicUrl }));
     } catch (err) {
       console.error('Upload failed', err);
-      alert('Upload failed');
+      toast.error('Upload failed');
+    } finally {
+      setUploadingKey(null);
+    }
+  };
+
+  const addPartnerLogo = () => setPartnerLogos([...partnerLogos, { name: '', url: '' }]);
+  const removePartnerLogo = (i: number) => setPartnerLogos(partnerLogos.filter((_, idx) => idx !== i));
+  const updatePartnerLogo = (i: number, field: string, value: string) => {
+    const updated = [...partnerLogos];
+    updated[i] = { ...updated[i], [field]: value };
+    setPartnerLogos(updated);
+  };
+  const handlePartnerLogoUpload = async (index: number, file: File) => {
+    setUploadingKey(`partner-${index}`);
+    try {
+      const { supabase } = await import('../lib/supabase');
+      const fileExt = file.name.split('.').pop();
+      const fileName = `cms/partner-${index}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('hairlink').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('hairlink').getPublicUrl(fileName);
+      updatePartnerLogo(index, 'url', publicUrl);
+    } catch (err) {
+      console.error('Upload failed', err);
+      toast.error('Upload failed');
     } finally {
       setUploadingKey(null);
     }
@@ -295,7 +333,7 @@ const AdminCMS: React.FC = () => {
         <div className="admin-cms-sidebar-grid">
           <aside className="admin-card-rounded admin-cms-sidebar-aside">
             <p className="admin-page-kicker">Sections</p>
-            {(['hero', 'services', 'about', 'footer', 'branding', 'images', 'typography', 'pastEvents'] as LandingSection[]).map(sec => (
+            {(['hero', 'services', 'about', 'footer', 'branding', 'images', 'partners', 'typography', 'pastEvents'] as LandingSection[]).map(sec => (
               <button key={sec} onClick={() => setLandingSection(sec)} className={`admin-cms-section-pill${landingSection === sec ? ' active' : ''}`}>
                 {{ 
                   hero: '🎯 Hero', 
@@ -304,6 +342,7 @@ const AdminCMS: React.FC = () => {
                   footer: '🔻 Footer',
                   branding: '🎨 Branding',
                   images: '🖼️ Images',
+                  partners: '🤝 Partners',
                   typography: '🔡 Fonts',
                   pastEvents: '🎬 Past Highlights'
                 }[sec]}
@@ -463,6 +502,70 @@ const AdminCMS: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </>
+            )}
+
+            {landingSection === 'partners' && (
+              <>
+                <h2 className="admin-cms-section-title">🤝 Landing Page Partners</h2>
+                <p style={{ fontSize: '0.85rem', color: '#78716C', marginBottom: '1.5rem' }}>
+                  Manage partner logos displayed on the landing page carousel. Add, remove, or reorder your partners.
+                </p>
+                {partnerLogos.map((partner, i) => (
+                  <div key={i} className="admin-cms-item-card" style={{ position: 'relative' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <p className="admin-cms-item-label">Partner {i + 1}</p>
+                      {partnerLogos.length > 1 && (
+                        <button
+                          onClick={() => removePartnerLogo(i)}
+                          className="admin-cms-clear-btn"
+                          title="Remove this partner"
+                          style={{ color: '#ef4444' }}
+                        >
+                          <i className='bx bx-trash'></i>
+                        </button>
+                      )}
+                    </div>
+                    <Field label="Partner Name" value={partner.name} onChange={v => updatePartnerLogo(i, 'name', v)} />
+                    <div className="admin-cms-img-preview" style={{ height: 140, marginTop: '0.5rem' }}>
+                      {partner.url ? (
+                        <img src={partner.url} alt={partner.name} className="admin-cms-img-preview-img" />
+                      ) : (
+                        <i className="bx bx-image admin-cms-img-placeholder-icon"></i>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id={`upload-partner-${i}`}
+                      className="admin-hidden"
+                      onChange={e => e.target.files?.[0] && handlePartnerLogoUpload(i, e.target.files[0])}
+                    />
+                    <div className="admin-cms-upload-row" style={{ marginTop: '0.5rem' }}>
+                      <button
+                        onClick={() => document.getElementById(`upload-partner-${i}`)?.click()}
+                        disabled={uploadingKey === `partner-${i}`}
+                        className="admin-cms-upload-btn"
+                      >
+                        {uploadingKey === `partner-${i}` ? 'Uploading...' : 'Change Image'}
+                      </button>
+                      <button
+                        onClick={() => updatePartnerLogo(i, 'url', '')}
+                        className="admin-cms-clear-btn"
+                        title="Clear image"
+                      >
+                        <i className='bx bx-undo'></i>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={addPartnerLogo}
+                  className="admin-btn-primary-full"
+                  style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                >
+                  <i className='bx bx-plus'></i> Add New Partner
+                </button>
               </>
             )}
 

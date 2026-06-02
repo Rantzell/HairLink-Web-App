@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,13 +42,13 @@ const RecipientMonetary: React.FC = () => {
     setIsSubmitting(true);
     try {
       await apiClient.post('/internal-api/recipient/monetary', { amount, reason });
-      alert('Your request for financial assistance has been submitted. Our team will review it shortly.');
+      toast.success('Your request for financial assistance has been submitted. Our team will review it shortly.');
       setAmount('');
       setReason('');
       fetchHistory();
     } catch (err) {
       console.error('Submission failed', err);
-      alert('Failed to submit request. Please try again.');
+      toast.error('Failed to submit request. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
