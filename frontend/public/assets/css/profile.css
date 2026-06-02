@@ -1,10 +1,28 @@
 /* Ported styles from Laravel Blade (Tailwind-like logic) */
 .profile-shell {
-    max-width: 1200px;
-    margin-inline: auto;
+    max-width: 100%;
+    margin-inline: 0;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.25rem;
+    /* Fill available page height — removes empty white space below content */
+    min-height: calc(100vh - 130px);
+    flex: 1;
+}
+
+/* Strip the section-wrap card styling for the profile page */
+.section-wrap.profile-shell {
+    padding: clamp(0.5rem, 1vw, 0.75rem);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+/* Pass height down to profile-shell when inside sidebar or top-nav layouts */
+.sd-content:has(.profile-shell),
+.dash-main:has(.profile-shell) {
+    display: flex;
+    flex-direction: column;
 }
 
 .profile-head {
@@ -500,5 +518,14 @@
 @media (max-width: 900px) {
     .profile-grid-main {
         grid-template-columns: 1fr;
+    }
+    .profile-shell {
+        min-height: calc(100vh - 100px);
+    }
+}
+
+@media (max-width: 520px) {
+    .profile-shell {
+        min-height: calc(100vh - 80px);
     }
 }

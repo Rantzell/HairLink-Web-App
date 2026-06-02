@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
+import Pagination from '../components/Pagination';
 import type { Donation } from '../types';
+
+const PAGE_SIZE = 10;
 
 const DonorTracking: React.FC = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchDonations = async () => {
@@ -23,11 +27,15 @@ const DonorTracking: React.FC = () => {
     fetchDonations();
   }, []);
 
-  const filteredDonations = donations.filter(d => 
+  const filteredDonations = donations.filter(d =>
     d.reference.toLowerCase().includes(filter.toLowerCase()) ||
     d.status.toLowerCase().includes(filter.toLowerCase()) ||
     d.hairLength.toLowerCase().includes(filter.toLowerCase())
   );
+
+  useEffect(() => { setCurrentPage(1); }, [filter]);
+  const totalPages    = Math.ceil(filteredDonations.length / PAGE_SIZE);
+  const pagedDonations = filteredDonations.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <section className="section-wrap donor-module-page reveal active">
@@ -76,8 +84,8 @@ const DonorTracking: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>Loading donations...</td></tr>
-              ) : filteredDonations.length > 0 ? (
-                filteredDonations.map(d => (
+              ) : pagedDonations.length > 0 ? (
+                pagedDonations.map(d => (
                   <tr key={d.id}>
                     <td style={{ fontSize: '0.85rem' }}><strong>{d.reference}</strong></td>
                     <td style={{ fontSize: '0.85rem' }}>{new Date(d.createdAt).toLocaleDateString()}</td>
@@ -120,6 +128,7 @@ const DonorTracking: React.FC = () => {
             </tbody>
           </table>
         </div>
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </article>
     </section>
   );

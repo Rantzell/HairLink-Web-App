@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
+import Pagination from '../components/Pagination';
 import '../styles/StaffWigStock.css';
+
+const PAGE_SIZE = 10;
 
 const StaffWigStock: React.FC = () => {
   const [wigs, setWigs] = useState<any[]>([]);
@@ -8,6 +11,7 @@ const StaffWigStock: React.FC = () => {
   const [colorFilter, setColorFilter] = useState('All Colors');
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchStock = async () => {
@@ -33,6 +37,10 @@ const StaffWigStock: React.FC = () => {
     
     return matchesSearch && matchesColor;
   });
+
+  useEffect(() => { setCurrentPage(1); }, [filter, colorFilter]);
+  const totalPages = Math.ceil(filteredWigs.length / PAGE_SIZE);
+  const pagedWigs  = filteredWigs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const handlePrint = () => {
     window.print();
@@ -123,8 +131,8 @@ const StaffWigStock: React.FC = () => {
                     Loading stock...
                   </td>
                 </tr>
-              ) : filteredWigs.length > 0 ? (
-                filteredWigs.map(wig => (
+              ) : pagedWigs.length > 0 ? (
+                pagedWigs.map(wig => (
                   <tr key={wig.id} className="staff-wig-tr-body">
                     <td className="staff-wig-td stock-id">{wig.taskCode || wig.task_code}</td>
                     <td className="staff-wig-td-center">
@@ -158,6 +166,7 @@ const StaffWigStock: React.FC = () => {
             </tbody>
           </table>
         </div>
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </article>
 
       <style dangerouslySetInnerHTML={{ __html: `

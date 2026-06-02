@@ -3,14 +3,18 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
+import Pagination from '../components/Pagination';
 import type { HairRequest } from '../types';
 import ConfirmModal from '../components/ConfirmModal';
 import '../styles/RecipientTracking.css';
+
+const PAGE_SIZE = 10;
 
 const RecipientTracking: React.FC = () => {
   const [requests, setRequests] = useState<HairRequest[]>([]);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingRef, setPendingRef] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -34,6 +38,10 @@ const RecipientTracking: React.FC = () => {
     r.status.toLowerCase().includes(filter.toLowerCase()) ||
     (r.user?.firstName + ' ' + r.user?.lastName).toLowerCase().includes(filter.toLowerCase())
   );
+
+  useEffect(() => { setCurrentPage(1); }, [filter]);
+  const totalPages   = Math.ceil(filteredRequests.length / PAGE_SIZE);
+  const pagedRequests = filteredRequests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const doConfirmReceived = async () => {
     if (!pendingRef) return;
@@ -85,8 +93,8 @@ const RecipientTracking: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr><td colSpan={6} className="tracking-td-loading">Loading requests...</td></tr>
-              ) : filteredRequests.length > 0 ? (
-                filteredRequests.map(r => (
+              ) : pagedRequests.length > 0 ? (
+                pagedRequests.map(r => (
                   <tr key={r.id}>
                     <td className="tracking-td-text"><strong>{r.reference}</strong></td>
                     <td className="tracking-td-text">{new Date(r.createdAt).toLocaleDateString()}</td>
@@ -121,6 +129,7 @@ const RecipientTracking: React.FC = () => {
             </tbody>
           </table>
         </div>
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </article>
 
       <ConfirmModal

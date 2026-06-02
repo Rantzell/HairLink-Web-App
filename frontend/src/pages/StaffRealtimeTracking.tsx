@@ -2,6 +2,7 @@ import toast from 'react-hot-toast';
 import '../styles/StaffRealtimeTracking.css';
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import Pagination from '../components/Pagination';
 import apiClient from '../api/client';
 import type { Donation, HairRequest, User, WigProduction } from '../types';
 import { getPublicUrl, getProfilePhotoUrl } from '../lib/storage';
@@ -9,7 +10,7 @@ import StatusPill from '../components/StatusPill';
 import ConfirmModal from '../components/ConfirmModal';
 
 const StaffRealtimeTracking: React.FC = () => {
-  const { type } = useParams<{ type: 'donation' | 'recipient' }>();
+  const { type } = useParams<{ type: 'donation' | 'recipient' | 'wigmaker' }>();
   const [data, setData] = useState<{
     donations: Donation[];
     requests: HairRequest[];
@@ -121,6 +122,12 @@ const StaffRealtimeTracking: React.FC = () => {
   };
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const PAGE_SIZE = 10;
+
+  // Reset page when view or search changes
+  useEffect(() => { setCurrentPage(1); }, [type, searchTerm]);
 
   const filteredDonations = (data.donations || []).filter(d => {
     const ref = d.reference || '';
@@ -136,7 +143,8 @@ const StaffRealtimeTracking: React.FC = () => {
       name.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  const isDonation = type === 'donation';
+  const isWigmaker = type === 'wigmaker';  // WIG-XXXXXX batch rows only
+  const isDonation = type === 'donation';  // solo HD- donation rows only
 
   // Group batched donations by wigProductionId
   const batchGroups = new Map<number, { wp: any; donations: typeof filteredDonations }>();
@@ -155,6 +163,17 @@ const StaffRealtimeTracking: React.FC = () => {
       soloDonations.push(d);
     }
   }
+
+  // Pagination slices — computed after grouping loop
+  const batchGroupsArray = Array.from(batchGroups.entries());
+  const batchTotalPages  = Math.ceil(batchGroupsArray.length / PAGE_SIZE);
+  const pagedBatchGroups = batchGroupsArray.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const donationTotalPages = Math.ceil(soloDonations.length / PAGE_SIZE);
+  const pagedSoloDonations = soloDonations.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const requestTotalPages = Math.ceil(filteredRequests.length / PAGE_SIZE);
+  const pagedRequests     = filteredRequests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const triggerBatchAction = (refs: string[], status: string, link?: string) => {
     setPendingBatchRefs(refs);
@@ -223,19 +242,23 @@ const StaffRealtimeTracking: React.FC = () => {
       <div className="section-title-block tracking-title-block">
         <div>
           <h1 className="tracking-page-title">
-            {type === 'donation' ? 'Donation Trackers' : 'Request Trackers'}
+            {isWigmaker ? 'Wigmaker Tracking' : isDonation ? 'Donation Trackers' : 'Request Trackers'}
           </h1>
           <p className="tracking-page-subtitle">
-            {type === 'donation' ? 'Monitor hair contributions and professional production stages.' : 'Monitor real-time status and manage workflow for wig requests.'}
+            {isWigmaker
+              ? 'Monitor wig production batches assigned to wigmakers.'
+              : isDonation
+              ? 'Monitor received hair donations and batch assignment.'
+              : 'Monitor real-time status and manage workflow for wig requests.'}
           </p>
         </div>
         <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)' }}>
           <span className="tracking-active-dot"></span>
-          {isDonation ? filteredDonations.length : filteredRequests.length} Active {isDonation ? 'Donations' : 'Requests'}
+          {isWigmaker ? batchGroups.size : isDonation ? soloDonations.length : filteredRequests.length} Active {isWigmaker ? 'Batches' : isDonation ? 'Donations' : 'Requests'}
         </div>
       </div>
 
-      {isDonation && selectedDonations.length > 0 && (
+      {(isDonation || isWigmaker) && selectedDonations.length > 0 && (
         <div className="batch-action-bar" style={{ 
           position: 'sticky', 
           top: '20px', 
@@ -306,7 +329,7 @@ const StaffRealtimeTracking: React.FC = () => {
           <i className='bx bx-search tracking-search-icon'></i>
           <input
             type="text"
-            placeholder={`Search ${isDonation ? 'donors' : 'recipients'} or reference #...`}
+            placeholder={`Search ${isWigmaker ? 'batch/wigmaker' : isDonation ? 'donors' : 'recipients'} or reference #...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="tracking-search-input"
@@ -339,10 +362,10 @@ const StaffRealtimeTracking: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {isDonation ? (
+              {isWigmaker ? (
                 <>
-                  {/* ── Batch Rows ── */}
-                  {Array.from(batchGroups.entries()).map(([wpId, { wp, donations: bd }]) => {
+                  {/* ── Wigmaker view: Batch Rows ONLY (WIG-XXXXXX) ── */}
+                  {pagedBatchGroups.map(([wpId, { wp, donations: bd }]) => {
                     const isOpen = !!batchOpen[wpId];
                     const stageLabel =
                       wp.status === 'assigned' ? `Assigned to ${wp.wigmaker?.firstName || 'Wigmaker'}` :
@@ -473,8 +496,11 @@ const StaffRealtimeTracking: React.FC = () => {
                     );
                   })}
 
-                  {/* ── Solo (un-batched) Donation Rows ── */}
-                  {soloDonations.map((donation) => {
+                </>
+              ) : isDonation ? (
+                <>
+                  {/* ── Donation view: Solo (un-batched) Rows ONLY (HD-XXXXXX) ── */}
+                  {pagedSoloDonations.map((donation) => {
                   const wigProd = data.wigProductions[donation.id];
                   const isWigmakerControlled = !!wigProd || ['In Queue', 'In Progress', 'Processing'].includes(donation.status);
                   const stageIndex = ['Verified', 'Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].indexOf(donation.status);
@@ -623,7 +649,7 @@ const StaffRealtimeTracking: React.FC = () => {
                 })}
                 </>
               ) : (
-                filteredRequests.map((request) => {
+                pagedRequests.map((request) => {
                   const isPickup = (request as any).deliveryMethod === 'pickup';
                   const pickupStages = ['Validated', 'Matched', 'Ready for Pickup', 'Pickup Confirmed', 'Completed'];
                   const deliveryStages = ['Validated', 'Matched', 'In Transit', 'Completed'];
@@ -778,11 +804,11 @@ const StaffRealtimeTracking: React.FC = () => {
                   );
                 })
               )}
-              {((isDonation && data.donations.length === 0) || (!isDonation && data.requests.length === 0)) && (
+              {((isWigmaker && batchGroups.size === 0) || (isDonation && soloDonations.length === 0) || (!isDonation && !isWigmaker && data.requests.length === 0)) && (
                 <tr>
                   <td colSpan={6} className="tracking-empty-col">
                     <i className="bx bx-search tracking-empty-icon"></i>
-                    <p>No active {isDonation ? 'donation' : 'request'} trackers found.</p>
+                    <p>No active {isWigmaker ? 'wigmaker batch' : isDonation ? 'donation' : 'request'} trackers found.</p>
                   </td>
                 </tr>
               )}
@@ -790,6 +816,11 @@ const StaffRealtimeTracking: React.FC = () => {
           </table>
         </div>
       </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={isWigmaker ? batchTotalPages : isDonation ? donationTotalPages : requestTotalPages}
+        onPageChange={setCurrentPage}
+      />
 
       <ConfirmModal
         isOpen={showActionConfirm}

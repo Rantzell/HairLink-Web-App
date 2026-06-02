@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
+import Pagination from '../components/Pagination';
 import '../styles/StaffMatchingList.css';
+
+const PAGE_SIZE = 10;
 
 const StaffMatchingList: React.FC = () => {
   const [matches, setMatches] = useState<any[]>([]);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -21,10 +25,14 @@ const StaffMatchingList: React.FC = () => {
     fetchMatches();
   }, []);
 
-  const filteredMatches = matches.filter(m => 
+  const filteredMatches = matches.filter(m =>
     `${m.user?.firstName} ${m.user?.lastName}`.toLowerCase().includes(filter.toLowerCase()) ||
     m.reference.toLowerCase().includes(filter.toLowerCase())
   );
+
+  useEffect(() => { setCurrentPage(1); }, [filter]);
+  const totalPages   = Math.ceil(filteredMatches.length / PAGE_SIZE);
+  const pagedMatches = filteredMatches.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const handlePrint = () => {
     window.print();
@@ -82,7 +90,7 @@ const StaffMatchingList: React.FC = () => {
                   </td>
                 </tr>
               ) : null}
-              {!loading && filteredMatches.map((m) => (
+              {!loading && pagedMatches.map((m) => (
                 <tr key={m.id} className="matching-list-tr">
                   <td className="matching-list-td-name">{m.user?.firstName} {m.user?.lastName}</td>
                   <td className="matching-list-td-ref">{m.reference}</td>
@@ -97,6 +105,7 @@ const StaffMatchingList: React.FC = () => {
             </tbody>
           </table>
         </div>
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </article>
     </section>
   );
