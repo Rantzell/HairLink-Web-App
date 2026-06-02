@@ -261,7 +261,7 @@ const RecipientRequest: React.FC = () => {
                   <div className="delivery-method-card">
                     <i className='bx bx-car'></i>
                     <strong>Delivery</strong>
-                    <span>We will deliver the wig to your address.</span>
+                    <span>The wig will be delivered to your address.</span>
                   </div>
                 </label>
                 <label className={`delivery-method-option ${formData.deliveryMethod === 'pickup' ? 'selected' : ''}`}>
