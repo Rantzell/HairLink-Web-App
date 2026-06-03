@@ -624,40 +624,8 @@ const StaffRealtimeTracking: React.FC = () => {
                                       <p style={{ margin: 0, fontSize: '0.85rem', color: '#5d4d62', lineHeight: '1.4' }}>{staffNote}</p>
                                     </div>
                                   )}
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                                    {/* Left Column: Batch Donors */}
-                                    <div style={{ minWidth: 0 }}>
-                                      <div className="tracking-batch-expanded-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, color: '#ad246d', marginBottom: '1rem', textTransform: 'uppercase', fontSize: '0.85rem' }}>
-                                        <i className="bx bx-group" style={{ fontSize: '1.2rem' }}></i> Batch Donors — {wp.taskCode}
-                                      </div>
-                                      <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #f2ebf4', borderRadius: '12px' }}>
-                                        <table className="tracking-batch-inner-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                          <thead>
-                                            <tr>
-                                              <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Ref #</th>
-                                              <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Donor Name</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody>
-                                            {bd.map(d => (
-                                              <tr key={d.id}>
-                                                <td style={{ padding: '0.9rem 1rem', fontSize: '0.85rem', color: '#5d4d62', borderBottom: '1px dashed #f2ebf4' }}><code className="tracking-inner-ref">{d.reference}</code></td>
-                                                <td style={{ padding: '0.9rem 1rem', fontSize: '0.85rem', color: '#5d4d62', borderBottom: '1px dashed #f2ebf4' }}>
-                                                  <div className="tracking-inner-donor" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800, color: '#3b2e43' }}>
-                                                    <div className="tracking-inner-avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #ad246d, #cf2f84)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.78rem' }}>
-                                                      {(d.user?.firstName?.[0] || '') + (d.user?.lastName?.[0] || '')}
-                                                    </div>
-                                                    {d.user?.firstName} {d.user?.lastName}
-                                                  </div>
-                                                </td>
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                        </table>
-                                      </div>
-                                    </div>
-
-                                    {/* Right Column: Wigs Produced */}
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                                    {/* Wigs Produced (Batch Donors column removed) */}
                                     <div style={{ minWidth: 0 }}>
                                       <div className="tracking-batch-expanded-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, color: '#ad246d', marginBottom: '1rem', textTransform: 'uppercase', fontSize: '0.85rem' }}>
                                         <i className="bx bxs-crown" style={{ fontSize: '1.2rem' }}></i> Wigs Produced ({(wp.childWigs || []).length})

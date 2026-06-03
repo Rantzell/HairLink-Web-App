@@ -197,7 +197,7 @@ router.post('/tasks/:taskCode/create-wig', ...wmOnly, upload.single('previewPhot
       return;
     }
 
-    // Naming convention: {parentBatchCode}-W{index}  e.g. "BATCH 2026-0001-W1"
+    // Naming convention: {parentWigCode}-W{index}  e.g. "WIG 2026-0001-W1"
     const childPattern = `${parentTask.taskCode}-W`;
     const count = await prisma.wigProduction.count({
       where: {

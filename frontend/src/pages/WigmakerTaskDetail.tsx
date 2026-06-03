@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 
 
 import { useParams, Link } from 'react-router-dom';
@@ -508,58 +509,157 @@ const WigmakerTaskDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Custom Modal for Wig Completed - Create Another? */}
-      {showCreateAnotherModal && (
-        <div className="confirm-modal-overlay">
-          <div className="confirm-modal-card" style={{ maxWidth: '420px', padding: '1.75rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fff0f8', color: '#ad246d', display: 'grid', placeItems: 'center', fontSize: '1.5rem' }}>
-                <i className="bx bx-check-circle"></i>
-              </div>
-              <h3 style={{ margin: 0, fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.25rem', color: '#3b2e43' }}>Wig Finished!</h3>
-              <p style={{ margin: 0, fontSize: '0.88rem', color: '#8c7895', lineHeight: 1.5 }}>
-                Would you like to produce another wig for this batch? Clicking "Yes" keeps the task in progress; clicking "No" will finalize the production task.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '1.25rem' }}>
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => submitWigCreation(true)}
-                  className="task-detail-form-submit-btn"
-                  style={{ width: '100%', margin: 0 }}
-                >
-                  {isSubmitting ? 'Processing...' : 'Yes, Create Another Wig'}
-                </button>
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => submitWigCreation(false)}
-                  className="task-detail-form-submit-btn"
-                  style={{ width: '100%', margin: 0, background: '#fff', color: '#ad246d', border: '1.5px solid #ad246d' }}
-                >
-                  {isSubmitting ? 'Processing...' : 'No, Finalize Task'}
-                </button>
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => setShowCreateAnotherModal(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#8c7895',
-                    fontWeight: 700,
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                    padding: '0.5rem',
-                    marginTop: '0.25rem'
-                  }}
-                >
-                  Cancel
-                </button>
+      {/* Wig Finished — 3-action prompt (Yes/No/Cancel).
+          Rendered via portal as a fixed full-screen overlay so it actually
+          sits above the page, with the same backdrop/animation language as
+          the shared <ConfirmModal>. */}
+      {showCreateAnotherModal && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget && !isSubmitting) setShowCreateAnotherModal(false); }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 999999,
+            background: 'rgba(30, 18, 36, 0.55)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem',
+            animation: 'wfFadeIn 0.18s ease',
+          }}
+        >
+          <style>{`
+            @keyframes wfFadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes wfSlideUp { from { opacity: 0; transform: translateY(20px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            @keyframes wfSpin { to { transform: rotate(360deg); } }
+            .wf-card { animation: wfSlideUp 0.22s cubic-bezier(0.34, 1.56, 0.64, 1); }
+            .wf-btn-primary:not(:disabled):hover { opacity: 0.9; transform: translateY(-1px); }
+            .wf-btn-secondary:not(:disabled):hover { background: #fdf2f8; }
+            .wf-btn-cancel:not(:disabled):hover { background: #f3e8f0; color: #5d4d62; }
+          `}</style>
+
+          <div
+            className="wf-card"
+            style={{
+              background: '#fff',
+              borderRadius: '24px',
+              boxShadow: '0 32px 80px rgba(173, 36, 109, 0.18), 0 8px 24px rgba(0,0,0,0.12)',
+              padding: '2rem',
+              maxWidth: '440px',
+              width: '100%',
+              border: '1px solid #ead7e8',
+            }}
+          >
+            {/* Icon */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+              <div style={{
+                width: '64px', height: '64px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #fdf2f8 0%, #fff0f8 100%)',
+                display: 'grid', placeItems: 'center',
+                border: '2px solid #f9cde8',
+                boxShadow: '0 8px 20px rgba(173, 36, 109, 0.12)',
+              }}>
+                <i className="bx bxs-check-circle" style={{ fontSize: '2rem', color: '#ad246d' }} />
               </div>
             </div>
+
+            {/* Title */}
+            <h2 style={{
+              textAlign: 'center', margin: '0 0 0.5rem 0',
+              fontSize: '1.25rem', fontWeight: 800, color: '#3b2e43',
+              fontFamily: 'Outfit',
+            }}>
+              Wig Finished! 🎉
+            </h2>
+
+            {/* Message */}
+            <p style={{
+              textAlign: 'center', margin: '0 0 1.75rem 0',
+              fontSize: '0.875rem', color: '#8c7895', lineHeight: 1.6,
+            }}>
+              Would you like to produce another wig for this batch?
+              <br />
+              <span style={{ fontSize: '0.8rem', color: '#a89bb0' }}>
+                <strong>Yes</strong> keeps the task in progress.
+                <strong> No</strong> finalizes this production task.
+              </span>
+            </p>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              <button
+                type="button"
+                className="wf-btn-primary"
+                disabled={isSubmitting}
+                onClick={() => submitWigCreation(true)}
+                style={{
+                  height: '46px',
+                  borderRadius: '50px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)',
+                  color: '#fff',
+                  fontWeight: 800, fontSize: '0.9rem',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  opacity: isSubmitting ? 0.7 : 1,
+                  transition: 'opacity 0.15s, transform 0.15s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  boxShadow: '0 6px 16px rgba(173, 36, 109, 0.28)',
+                }}
+              >
+                {isSubmitting ? (
+                  <>
+                    <i className="bx bx-loader-alt" style={{ animation: 'wfSpin 0.8s linear infinite' }} />
+                    Processing…
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-plus-circle" /> Yes, Create Another Wig
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className="wf-btn-secondary"
+                disabled={isSubmitting}
+                onClick={() => submitWigCreation(false)}
+                style={{
+                  height: '46px',
+                  borderRadius: '50px',
+                  border: '1.5px solid #ad246d',
+                  background: '#fff',
+                  color: '#ad246d',
+                  fontWeight: 800, fontSize: '0.9rem',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  opacity: isSubmitting ? 0.7 : 1,
+                  transition: 'background 0.15s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                }}
+              >
+                <i className="bx bx-check-double" /> No, Finalize Task
+              </button>
+
+              <button
+                type="button"
+                className="wf-btn-cancel"
+                disabled={isSubmitting}
+                onClick={() => setShowCreateAnotherModal(false)}
+                style={{
+                  height: '38px',
+                  borderRadius: '50px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#8c7895',
+                  fontWeight: 700, fontSize: '0.8rem',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  marginTop: '0.25rem',
+                  transition: 'background 0.15s, color 0.15s',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* History Table - Full Width */}

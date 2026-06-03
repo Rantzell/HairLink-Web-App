@@ -1,7 +1,7 @@
 import prisma from '../config/database';
 
 export const generateSequentialReference = async (
-  prefixType: 'HD' | 'WR' | 'MD' | 'BATCH'
+  prefixType: 'HD' | 'WR' | 'MD' | 'WIG'
 ): Promise<string> => {
   const currentYear = new Date().getFullYear();
   // Format: "HD 2026-0001" — space between type and year, hyphen before sequence
@@ -24,7 +24,7 @@ export const generateSequentialReference = async (
       where: { referenceNumber: { startsWith: prefix } },
       orderBy: { id: 'desc' }
     });
-  } else if (prefixType === 'BATCH') {
+  } else if (prefixType === 'WIG') {
     lastRecord = await prisma.wigProduction.findFirst({
       where: { taskCode: { startsWith: prefix } },
       orderBy: { id: 'desc' }

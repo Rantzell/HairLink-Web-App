@@ -233,7 +233,7 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
     const wm = await prisma.user.findUnique({ where: { id: wigmaker_id } });
     if (!wm) { res.status(404).json({ message: 'Wigmaker not found' }); return; }
 
-    const tc = await generateSequentialReference('BATCH');
+    const tc = await generateSequentialReference('WIG');
     const due = new Date();
     due.setDate(due.getDate() + 30); // 30 days default
 
