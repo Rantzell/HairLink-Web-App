@@ -33,12 +33,41 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
       include: { user: true, wigProductions: { include: { wigmaker: true } } },
       orderBy: { createdAt: 'desc' },
     });
-    const result = await Promise.all(requests.map(async (r) => {
-      const statusHistories = await getStatusHistories(REQUEST_TYPE, r.id);
+
+    const requestIds = requests.map((r) => r.id);
+
+    // Fetch all status histories for these requests in one query
+    const allStatusHistories = requestIds.length > 0
+      ? await prisma.statusHistory.findMany({
+          where: {
+            trackableType: REQUEST_TYPE,
+            trackableId: { in: requestIds },
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [];
+
+    // Group status histories by trackableId
+    const historiesByRequestId = allStatusHistories.reduce((acc: any, history) => {
+      const id = history.trackableId;
+      if (!acc[id]) acc[id] = [];
+      acc[id].push(history);
+      return acc;
+    }, {});
+
+    const result = requests.map((r) => {
+      const statusHistories = historiesByRequestId[r.id] || [];
       return { ...serializeRequest(r), statusHistories };
-    }));
+    });
+
     res.json(result);
-  } catch (err) { res.status(500).json({ error: 'Failed to fetch requests' }); }
+  } catch (err) {
+    console.error('[HairRequest] Get error:', err);
+    res.status(500).json({ 
+      error: 'Failed to fetch requests',
+      message: err instanceof Error ? err.message : String(err)
+    });
+  }
 });
 
 // POST /internal-api/requests

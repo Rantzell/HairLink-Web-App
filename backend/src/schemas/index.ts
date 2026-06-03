@@ -99,7 +99,8 @@ export const verificationStatusSchema = z.object({
 export const assignWigmakerSchema = z.object({
   wigmaker_id: z.string().uuid(),
   donation_references: z.array(z.string()).min(1, 'At least 1 donation is required to start production.'),
-  material_delivery_link: z.string().url().max(2048).or(z.literal('')).transform(val => val === '' ? undefined : val).optional().nullable(),
+  material_delivery_link: z.string().url('Material delivery link must be a valid URL.').max(2048),
+  staff_note: z.string().max(500).optional().nullable(),
 });
 
 export const trackingStatusSchema = z.object({

@@ -457,6 +457,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         label: 'Production & Tasks',
         items: [
           { icon: 'bx bx-wrench',       label: 'Production Tasks',    to: '/wigmaker/production-tasks' },
+          { icon: 'bx bxs-crown',       label: 'Wig Inventory',       to: '/wigmaker/wig-inventory' },
         ],
       },
     ];
@@ -464,6 +465,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     const getTopbarTitle = () => {
       if (location.pathname.startsWith('/wigmaker/dashboard')) return 'Wigmaker Workspace';
       if (location.pathname.startsWith('/wigmaker/production-tasks')) return 'Production Task Inventory';
+      if (location.pathname.startsWith('/wigmaker/wig-inventory')) return 'Wig Inventory';
       if (location.pathname.startsWith('/wigmaker/task/')) return 'Task Details & Progress';
       if (location.pathname.startsWith('/wigmaker/profile')) return 'My Profile';
       return 'Wigmaker Panel';
@@ -663,6 +665,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <>
                   <Link to="/wigmaker/dashboard" className={isActive('/wigmaker/dashboard') ? 'active' : ''}>Overview</Link>
                   <Link to="/wigmaker/production-tasks" className={isActive('/wigmaker/production-tasks') ? 'active' : ''}>Production Tasks</Link>
+                  <Link to="/wigmaker/wig-inventory" className={isActive('/wigmaker/wig-inventory') ? 'active' : ''}>Wig Inventory</Link>
                 </>
               )}
 

@@ -55,11 +55,11 @@ const NotificationBell: React.FC = () => {
     if (n.type === 'announcement' || n.title.includes('Announcement:')) {
       return { label: 'View Announcement', path: '' };
     }
-    const match = n.message.match(/\(((?:HD|WR|REQ|MD)-[A-Z0-9-]+)\)/i);
+    const match = n.message.match(/\(((?:HD|WR|REQ|MD)[- ][A-Z0-9-]+)\)/i);
     if (match) {
       const ref = match[1];
-      if (ref.startsWith('HD-')) return { label: 'View Tracking →', path: `/donor/tracking/${ref}` };
-      if (ref.startsWith('WR-') || ref.startsWith('REQ-')) return { label: 'View Tracking →', path: `/recipient/tracking/${ref}` };
+      if (ref.startsWith('HD-') || ref.startsWith('HD ')) return { label: 'View Tracking →', path: `/donor/tracking/${ref}` };
+      if (ref.startsWith('WR-') || ref.startsWith('WR ') || ref.startsWith('REQ-') || ref.startsWith('REQ ')) return { label: 'View Tracking →', path: `/recipient/tracking/${ref}` };
     }
     if (n.type === 'donation') return { label: 'View Donation →', path: '/donor/tracking' };
     if (n.type === 'request') return { label: 'View Request →', path: '/recipient/tracking' };

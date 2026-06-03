@@ -7,6 +7,7 @@ import { validate } from '../middleware/validate';
 import { verificationStatusSchema, assignWigmakerSchema, trackingStatusSchema, matchWigSchema, provideMaterialDeliveryLinkSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { calculateCompatibility } from '../services/matching.service';
+import { generateSequentialReference } from '../services/reference.service';
 import { notifyDonationStatus, notifyRequestStatus, createNotification, notifyPickupReady } from '../services/notification.service';
 import crypto from 'crypto';
 
@@ -143,7 +144,7 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
     const wigmakers = await prisma.user.findMany({ where: { role: 'wigmaker', isActive: true } });
     const wpIds = donations
       .map(d => (d as any).wigProductionId)
-      .filter((id: any) => id != null) as number[]; // filter out null/undefined
+      .filter((id: any) => id != null) as number[];
 
     let wps: any[] = [];
     if (wpIds.length > 0) {
@@ -152,13 +153,61 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
         include: { wigmaker: true },
       });
     }
+
+    // Fetch all child wigs associated with these parent tasks
+    const activeTaskCodes = wps.map(w => w.taskCode);
+    const childWigs = activeTaskCodes.length > 0 
+      ? await prisma.wigProduction.findMany({
+          where: {
+            OR: activeTaskCodes.map(code => ({
+              taskCode: { contains: code }
+            })),
+            taskCode: { contains: '-W' }
+          },
+          orderBy: { updatedAt: 'desc' }
+        })
+      : [];
+
+    const childWigsMap: Record<string, any[]> = {};
+    for (const cw of childWigs) {
+      const parentCode = activeTaskCodes.find(code => cw.taskCode.includes(code));
+      if (parentCode) {
+        if (!childWigsMap[parentCode]) childWigsMap[parentCode] = [];
+        childWigsMap[parentCode].push(cw);
+      }
+    }
+
+    // Batch-fetch status histories for all wig productions (carries preview photos)
+    const allWpIds = wps.map(w => w.id);
+    const wpHistories = allWpIds.length > 0
+      ? await prisma.statusHistory.findMany({
+          where: { trackableType: WIG_TYPE, trackableId: { in: allWpIds } },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [];
+
+    // Group histories by wigProduction id
+    const wpHistoriesMap: Record<number, any[]> = {};
+    for (const h of wpHistories) {
+      const id = h.trackableId as number;
+      if (!wpHistoriesMap[id]) wpHistoriesMap[id] = [];
+      wpHistoriesMap[id].push(h);
+    }
+
     const wpMap: Record<string, any> = {};
     for (const d of donations) {
       if ((d as any).wigProductionId) {
         const wp = wps.find(w => w.id === (d as any).wigProductionId);
-        if (wp) wpMap[d.id] = s(wp);
+        if (wp) {
+          wpMap[d.id] = s({
+            ...wp,
+            statusHistories: wpHistoriesMap[wp.id] || [],
+            childWigs: childWigsMap[wp.taskCode] || [],
+          });
+        }
       }
     }
+
     const requests = await prisma.hairRequest.findMany({
       where: { status: { in: ['Validated', 'In Production', 'Matched', 'In Transit', 'Arrived', 'Completed', 'Ready for Pickup', 'Pickup Confirmed'] } },
       include: { user: true }, orderBy: { updatedAt: 'desc' },
@@ -170,7 +219,7 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
 // POST /internal-api/staff/assign-batch
 router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async (req, res) => {
   try {
-    const { wigmaker_id, donation_references, material_delivery_link } = req.body;
+    const { wigmaker_id, donation_references, material_delivery_link, staff_note } = req.body;
 
     const donations = await prisma.donation.findMany({
       where: { reference: { in: donation_references } }
@@ -184,7 +233,7 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
     const wm = await prisma.user.findUnique({ where: { id: wigmaker_id } });
     if (!wm) { res.status(404).json({ message: 'Wigmaker not found' }); return; }
 
-    const tc = `WIG-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    const tc = await generateSequentialReference('BATCH');
     const due = new Date();
     due.setDate(due.getDate() + 30); // 30 days default
 
@@ -214,15 +263,19 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
           wigProductionId: task.id
         } as any
       });
-      await createStatusHistory(DONATION_TYPE, don.id, 'In Queue', `Batched for production. Wigmaker: ${wm.firstName || 'Staff'} ${wm.lastName || ''}`);
+      await createStatusHistory(DONATION_TYPE, don.id, 'In Queue', `Batched for production. Wigmaker: ${wm.firstName || 'Staff'} ${wm.lastName || ''}${staff_note ? ` — Note: ${staff_note}` : ''}`);
       
       if (don.userId) {
         await notifyDonationStatus(don.userId, 'In Queue', don.reference!);
       }
     }
 
+    // Log staff note on the task itself
+    const assignmentNote = `Batch assigned by staff.${staff_note ? ` Staff note: ${staff_note}` : ''}`;
+    await createStatusHistory(WIG_TYPE, task.id, 'assigned', assignmentNote);
+
     // Notify wigmaker
-    await notifyWigmakerAssignment(wm.id, tc);
+    await notifyWigmakerAssignment(wm.id, tc, staff_note || undefined);
     if (material_delivery_link) {
       await notifyWigmakerMaterialDelivery(wm.id, tc, material_delivery_link);
     }
@@ -371,7 +424,78 @@ router.get('/wig-stock', ...staffOnly, async (_req, res) => {
       orderBy: { updatedAt: 'desc' }, 
       take: 50 
     });
-    res.json(s(wigs));
+
+    const allWpIds = wigs.map(w => w.id);
+    const wpHistories = allWpIds.length > 0
+      ? await prisma.statusHistory.findMany({
+          where: { trackableType: WIG_TYPE, trackableId: { in: allWpIds } },
+          orderBy: { id: 'desc' },
+        })
+      : [];
+
+    const wpHistoriesMap: Record<number, any[]> = {};
+    for (const h of wpHistories) {
+      const id = h.trackableId as number;
+      if (!wpHistoriesMap[id]) wpHistoriesMap[id] = [];
+      wpHistoriesMap[id].push(h);
+    }
+
+    const { getPublicUrl } = await import('../services/storage.service');
+
+    const getParentTaskCode = (childWigCode: string): string | null => {
+      const wIdx = childWigCode.lastIndexOf('-W');
+      if (wIdx === -1) return null;
+      const parentWithYear = childWigCode.substring(0, wIdx);
+      const hyphenIdx = parentWithYear.indexOf('-');
+      if (hyphenIdx === -1) return parentWithYear;
+      return parentWithYear.substring(hyphenIdx + 1);
+    };
+
+    const childWigs = wigs.filter(w => w.taskCode.includes('-W'));
+    const parentCodes = childWigs.map(w => getParentTaskCode(w.taskCode)).filter(Boolean) as string[];
+
+    const parentTasks = parentCodes.length > 0
+      ? await prisma.wigProduction.findMany({
+          where: { taskCode: { in: parentCodes } },
+          include: { donations: true }
+        })
+      : [];
+
+    const mappedWigs = wigs.map(w => {
+      let photoPath = w.preview_photo;
+      if (!photoPath) {
+        const histories = wpHistoriesMap[w.id] || [];
+        const historyWithPhoto = histories.find(h => h.metadata && (h.metadata as any).preview_photo);
+        if (historyWithPhoto) {
+          photoPath = (historyWithPhoto.metadata as any).preview_photo;
+        }
+      }
+
+      let donations = w.donations || [];
+      if (w.taskCode.includes('-W')) {
+        const parentCode = getParentTaskCode(w.taskCode);
+        const parentTask = parentTasks.find(pt => pt.taskCode === parentCode);
+        if (parentTask) {
+          donations = parentTask.donations;
+        }
+      }
+
+      let mockDonation = null;
+      if (donations && donations.length > 0) {
+        mockDonation = {
+          reference: donations.map((d: any) => d.reference).join(', ')
+        };
+      }
+
+      return {
+        ...w,
+        photo_url: photoPath ? getPublicUrl('hairlink', photoPath) : null,
+        donations,
+        donation: mockDonation
+      };
+    });
+
+    res.json(s(mappedWigs));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
@@ -461,6 +585,70 @@ router.get('/rule-matching', ...staffOnly, async (_req, res) => {
     });
     res.json({ recipients: s(recipients), wigs: s(wigs) });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
+// POST /internal-api/staff/wigs/:id/receive
+router.post('/wigs/:id/receive', ...staffOnly, async (req, res) => {
+  try {
+    const wigId = parseInt(req.params.id as string);
+    const wig = await prisma.wigProduction.findUnique({
+      where: { id: wigId }
+    });
+
+    if (!wig || !wig.taskCode.includes('-W')) {
+      res.status(404).json({ message: 'Wig not found' });
+      return;
+    }
+
+    await prisma.wigProduction.update({
+      where: { id: wigId },
+      data: { status: 'received' }
+    });
+
+    await createStatusHistory('App\\Models\\WigProduction', wigId, 'received', 'Staff confirmed receipt of the finished wig.');
+
+    // Check if all sibling wigs for the parent batch are now received
+    const getParentTaskCode = (childWigCode: string): string | null => {
+      const wIdx = childWigCode.lastIndexOf('-W');
+      if (wIdx === -1) return null;
+      const parentWithYear = childWigCode.substring(0, wIdx);
+      const hyphenIdx = parentWithYear.indexOf('-');
+      if (hyphenIdx === -1) return parentWithYear;
+      return parentWithYear.substring(hyphenIdx + 1);
+    };
+
+    const parentCode = getParentTaskCode(wig.taskCode);
+    if (parentCode) {
+      const siblingWigs = await prisma.wigProduction.findMany({
+        where: {
+          taskCode: { contains: parentCode },
+          id: { not: wigId }
+        }
+      });
+      const allReceived = siblingWigs.every(s => s.status === 'received');
+      if (allReceived) {
+        const parentTask = await prisma.wigProduction.findFirst({
+          where: { taskCode: parentCode }
+        });
+        if (parentTask) {
+          await prisma.wigProduction.update({
+            where: { id: parentTask.id },
+            data: { status: 'received' }
+          });
+          await createStatusHistory('App\\Models\\WigProduction', parentTask.id, 'received', 'All finished wigs in this batch have been received.');
+        }
+      }
+    }
+
+    // Notify the wigmaker
+    const { notifyWigmakerStaffReceivedWig } = await import('../services/notification.service');
+    await notifyWigmakerStaffReceivedWig(wig.wigmakerId, wig.taskCode);
+
+    res.json({ message: 'Wig marked as received.', success: true });
+  } catch (err) {
+    console.error('[Staff API] Receive wig error:', err);
+    res.status(500).json({ error: 'Failed to receive wig' });
+  }
 });
 
 export default router;

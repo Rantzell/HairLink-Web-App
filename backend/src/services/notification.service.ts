@@ -75,11 +75,12 @@ export const notifyRequestStatus = async (userId: string, status: string, refere
   return createNotification(userId, title, message, 'request');
 };
 
-export const notifyWigmakerAssignment = async (wigmakerId: string, taskCode: string) => {
+export const notifyWigmakerAssignment = async (wigmakerId: string, taskCode: string, staffNote?: string) => {
+  const noteText = staffNote ? ` Staff note: "${staffNote}"` : '';
   return createNotification(
     wigmakerId,
     'New Task Assigned 🧵',
-    `You have been assigned a new wig production task: ${taskCode}. Please check your dashboard.`,
+    `You have been assigned a new wig production task: ${taskCode}. Please check your dashboard.${noteText}`,
     'wigmaker'
   );
 };

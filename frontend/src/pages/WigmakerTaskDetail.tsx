@@ -14,6 +14,8 @@ import '../styles/WigmakerTaskDetail.css';
 const WigmakerTaskDetail: React.FC = () => {
   const { taskCode } = useParams<{ taskCode: string }>();
   const [data, setData] = useState<{ task: any; histories: any[] } | null>(null);
+  const [childWigs, setChildWigs] = useState<any[]>([]);
+  const [showCreateAnotherModal, setShowCreateAnotherModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -39,6 +41,7 @@ const WigmakerTaskDetail: React.FC = () => {
         const res = await apiClient.get(`/internal-api/wigmaker/tasks/${taskCode}`);
         if (res.data.task) {
           setData(res.data);
+          setChildWigs(res.data.childWigs || []);
         }
       } catch (err) {
         console.error('Failed to fetch task detail', err);
@@ -56,30 +59,67 @@ const WigmakerTaskDetail: React.FC = () => {
       toast.success('Please add a progress note.');
       return;
     }
-    if (task.status === 'completed') {
-      if (!task.deliveryLink || !task.deliveryLink.trim()) {
-        toast.error('Please enter a return tracking link.');
-        return;
-      }
-      try {
-        new URL(task.deliveryLink);
-      } catch (_) {
-        toast.error('Please enter a valid absolute tracking URL (e.g. https://...).');
-        return;
-      }
-    }
     setShowConfirm(true);
   };
 
   const requestStatusUpdate = (status: string) => {
     if (!notes) { toast.success('Please add a progress note before updating.'); return; }
-    if (status === 'completed' && (!wigLength || !wigColor)) {
-      toast.error('Please select the wig length and color before marking production as finished.');
+    if (status === 'completed') {
+      if (!wigLength || !wigColor) {
+        toast.error('Please select the wig length and color before marking production as finished.');
+        return;
+      }
+      setShowCreateAnotherModal(true);
       return;
     }
     setPendingStatus(status);
     setTargetStatus(status);
     setShowConfirm(true);
+  };
+
+  const submitWigCreation = async (createAnother: boolean) => {
+    setIsSubmitting(true);
+    const formData = new FormData();
+    formData.append('wigLength', wigLength);
+    formData.append('wigColor', wigColor);
+    formData.append('progressNotes', notes.trim());
+    formData.append('updatedAt', new Date(customDate).toISOString());
+    if (file) formData.append('previewPhoto', file);
+
+    const url = createAnother 
+      ? `/internal-api/wigmaker/tasks/${taskCode}/create-wig` 
+      : `/internal-api/wigmaker/tasks/${taskCode}/complete-task`;
+
+    try {
+      const res = await apiClient.post(url, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success(res.data.message);
+      setShowCreateAnotherModal(false);
+      
+      if (createAnother) {
+        // Reset form inputs
+        setWigLength('');
+        setWigColor('');
+        setNotes('');
+        setFile(null);
+        setPreviewUrl(null);
+        
+        // Reload details
+        const detailRes = await apiClient.get(`/internal-api/wigmaker/tasks/${taskCode}`);
+        if (detailRes.data.task) {
+          setData({ task: detailRes.data.task, histories: detailRes.data.histories });
+          setChildWigs(detailRes.data.childWigs || []);
+        }
+      } else {
+        window.location.reload();
+      }
+    } catch (err: any) {
+      console.error('Wig creation failed:', err);
+      toast.error(err.response?.data?.message || 'Failed to submit production status.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const doSubmit = async () => {
@@ -90,7 +130,7 @@ const WigmakerTaskDetail: React.FC = () => {
     const finalStatus = pendingStatus || targetStatus || nextStatus;
 
     formData.append('status', finalStatus);
-    formData.append('progressNotes', notes.trim() || 'Wig return shipment initiated.');
+    formData.append('progressNotes', notes.trim() || 'Progress update posted.');
     formData.append('updatedAt', new Date(customDate).toISOString());
     if (file) formData.append('previewPhoto', file);
     if (task.deliveryLink) formData.append('deliveryLink', task.deliveryLink);
@@ -100,7 +140,9 @@ const WigmakerTaskDetail: React.FC = () => {
     }
 
     try {
-      await apiClient.post(`/internal-api/wigmaker/tasks/${taskCode}`, formData);
+      await apiClient.post(`/internal-api/wigmaker/tasks/${taskCode}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       window.location.reload();
     } catch (err: any) {
       console.error('Update failed:', err);
@@ -135,6 +177,15 @@ const WigmakerTaskDetail: React.FC = () => {
   const { task, histories } = data;
   const nextStatus = task.status === 'processing' ? 'completed' : 'shipped';
 
+  const assignedHistory = (histories || []).find((h: any) => h.status === 'assigned');
+  let staffNote = '';
+  if (assignedHistory?.notes) {
+    const match = assignedHistory.notes.match(/Staff note:\s*(.*)/i);
+    if (match) {
+      staffNote = match[1];
+    }
+  }
+
   return (
     <section className="wigmaker-page reveal active staff-page task-detail-section">
       {/* Header Row */}
@@ -159,12 +210,10 @@ const WigmakerTaskDetail: React.FC = () => {
           {[
             { stage: 'Assigned', desc: 'Material delivery confirmed', status: 'assigned' },
             { stage: 'In Progress', desc: 'Wig construction & styling', status: 'processing' },
-            { stage: 'Production Finished', desc: 'Ready for shipping', status: 'completed' },
-            { stage: 'Shipping', desc: 'Returning to staff', status: 'shipped' },
-            { stage: 'Finalized', desc: 'Staff received wig', status: 'received' }
+            { stage: 'Completed', desc: 'Production finalized', status: 'completed' }
           ].map((step, idx) => {
-            const statusOrder = ['assigned', 'processing', 'completed', 'shipped', 'received'];
-            const currentIdx = statusOrder.indexOf(task.status);
+            const statusOrder = ['assigned', 'processing', 'completed'];
+            const currentIdx = task.status === 'shipped' || task.status === 'received' ? 2 : statusOrder.indexOf(task.status);
             const stepIdx = statusOrder.indexOf(step.status);
             const isActive = task.status === step.status;
             const isPast = stepIdx < currentIdx;
@@ -199,7 +248,7 @@ const WigmakerTaskDetail: React.FC = () => {
               <div className="task-detail-info-grid">
                 <div className="task-detail-info-block">
                   <span className="task-detail-info-block-label">Inventory Ref</span>
-                  <strong className="task-detail-info-block-value highlight">{task.donation?.reference || 'N/A'}</strong>
+                  <strong className="task-detail-info-block-value highlight">{(task.donations || []).map((d: any) => d.reference).join(', ') || 'N/A'}</strong>
                 </div>
                 <div className="task-detail-info-block">
                   <span className="task-detail-info-block-label">Started On</span>
@@ -210,6 +259,14 @@ const WigmakerTaskDetail: React.FC = () => {
                   <strong className="task-detail-info-block-value">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'TBD'}</strong>
                 </div>
               </div>
+              {staffNote && (
+                <div style={{ marginTop: '1rem', borderTop: '1px solid #f2ebf4', paddingTop: '1rem' }}>
+                  <span className="task-detail-info-block-label" style={{ display: 'block', marginBottom: '0.4rem', color: '#ad246d', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Note from Staff</span>
+                  <div style={{ fontSize: '0.85rem', color: '#5d4d62', background: '#fdf7fb', border: '1px solid #ead7e8', padding: '0.85rem 1.25rem', borderRadius: '12px', lineHeight: '1.4' }}>
+                    {staffNote}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Donor Dropdown Accordion */}
@@ -248,18 +305,52 @@ const WigmakerTaskDetail: React.FC = () => {
             )}
           </article>
 
-          {/* Material Tracking Card (Staff -> Wigmaker) */}
+          {/* List of Wigs Produced */}
+          {childWigs.length > 0 && (
+            <article className="task-detail-assignment-card" style={{ marginTop: '1.25rem' }}>
+              <div className="task-detail-card-title-row">
+                <i className="bx bxs-crown task-detail-card-title-icon" style={{ color: '#ad246d' }}></i>
+                <h2 className="task-detail-card-title">Wigs Produced ({childWigs.length})</h2>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem' }}>
+                {childWigs.map(w => (
+                  <div key={w.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: '#fdf7fb', borderRadius: '12px', border: '1px solid #f8dceb' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #ead7e8', background: '#fff' }}>
+                        {w.preview_photo ? (
+                          <img src={getPublicUrl('hairlink', w.preview_photo) || undefined} alt="Wig" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: '#ecd8e8' }}>
+                            <i className="bx bxs-crown"></i>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <strong style={{ fontSize: '0.85rem', color: '#3b2e43' }}>{w.taskCode}</strong>
+                        <div style={{ fontSize: '0.72rem', color: '#8c7895', marginTop: '2px' }}>
+                          Specs: {w.targetLength} &middot; {w.targetColor}
+                        </div>
+                      </div>
+                    </div>
+                    <StatusPill status={w.status} />
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
+
+          {/* Hair Tracking Card (Staff -> Wigmaker) */}
           {task.status === 'assigned' && !task.isReceived && (
             <div className="task-detail-status-banner-blue">
               <div className="task-detail-status-banner-icon-box">
                 <i className="bx bx-package task-detail-status-banner-icon-blue"></i>
               </div>
               <div className="task-detail-status-banner-content">
-                <small className="task-detail-status-banner-label">Staff Sent Materials</small>
+                <small className="task-detail-status-banner-label">Staff Sent Hair Package</small>
                 {task.materialDeliveryLink ? (
                   <a href={task.materialDeliveryLink} target="_blank" rel="noreferrer" className="task-detail-status-banner-link">Track Incoming Hair Package</a>
                 ) : (
-                  <span className="task-detail-status-banner-link" style={{ textDecoration: 'none', cursor: 'default' }}>Materials ready for production</span>
+                  <span className="task-detail-status-banner-link" style={{ textDecoration: 'none', cursor: 'default' }}>Hair ready for production</span>
                 )}
               </div>
               <button
@@ -365,6 +456,7 @@ const WigmakerTaskDetail: React.FC = () => {
                       type="datetime-local"
                       value={customDate}
                       onChange={e => setCustomDate(e.target.value)}
+                      min={todayMin}
                       className="task-detail-form-input-text"
                     />
                   </div>
@@ -389,6 +481,7 @@ const WigmakerTaskDetail: React.FC = () => {
                       onClick={() => requestStatusUpdate('completed')}
                       disabled={isSubmitting}
                       className="task-detail-form-submit-btn"
+                      style={{ width: '100%' }}
                     >
                       {isSubmitting && pendingStatus === 'completed' ? '...' : 'Production Finished'}
                     </button>
@@ -398,100 +491,76 @@ const WigmakerTaskDetail: React.FC = () => {
             </article>
           )}
 
-          {/* Completion Banner */}
-          {task.status === 'received' && (
+          {/* Completed / Shipped / Received Banners */}
+          {['completed', 'shipped', 'received'].includes(task.status) && (
             <div className="task-detail-success-banner">
               <div className="task-detail-success-banner-icon">
                 <i className="bx bxs-check-circle task-detail-success-banner-icon-i"></i>
               </div>
               <div>
-                <h3 className="task-detail-success-banner-title">Production Fully Finalized</h3>
-                <p className="task-detail-success-banner-sub">Staff has received the wig and finalized this task.</p>
+                <h3 className="task-detail-success-banner-title">Production Completed</h3>
+                <p className="task-detail-success-banner-sub">
+                  You have successfully completed production for this task. All produced wigs are available in your <Link to="/wigmaker/wig-inventory" style={{ color: '#ad246d', fontWeight: 800, textDecoration: 'underline' }}>Wig Inventory</Link> where you can batch and ship them back to staff.
+                </p>
               </div>
             </div>
-          )}
-
-          {/* Shipped Status Notice */}
-          {task.status === 'shipped' && (
-            <div className="task-detail-info-banner-blue">
-              <div className="task-detail-info-banner-blue-icon">
-                <i className="bx bx-paper-plane task-detail-info-banner-blue-icon-i"></i>
-              </div>
-              <div>
-                <h3 className="task-detail-info-banner-blue-title">Wig Returned to Staff</h3>
-                <p className="task-detail-info-banner-blue-sub">Awaiting staff confirmation of receipt.</p>
-                {task.deliveryLink && (
-                  <a href={task.deliveryLink} target="_blank" rel="noreferrer" className="task-detail-info-banner-blue-link">View Your Return Tracking</a>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Stage 3: Ready for Delivery (Completed Status) */}
-          {task.status === 'completed' && (
-            <article className="task-detail-update-card">
-              <div className="task-detail-card-title-row">
-                <i className="bx bx-package task-detail-card-title-icon"></i>
-                <h2 className="task-detail-card-title">Wig Return Delivery</h2>
-              </div>
-              <p className="task-detail-header-sub task-detail-header-sub-margin">Production is finished! Please provide the tracking link for the finished wig being sent back to the staff.</p>
-              <form onSubmit={handleSubmit} className="task-detail-update-form">
-                <div className="task-detail-form-row-2col">
-                  <div>
-                    <label className="task-detail-form-label">Shipping Date</label>
-                    <input
-                      type="datetime-local"
-                      value={customDate}
-                      onChange={e => setCustomDate(e.target.value)}
-                      min={todayMin}
-                      className="task-detail-form-input-text"
-                    />
-                  </div>
-                  <div>
-                    <label className="task-detail-form-label">Return Tracking Link <span className="task-detail-form-label-required">*</span></label>
-                    <div className="task-detail-tracking-input-wrapper">
-                      <i className="bx bx-link task-detail-tracking-input-icon"></i>
-                      <input
-                        type="url"
-                        placeholder="https://courier-tracking-link.com/..."
-                        value={task.deliveryLink || ''}
-                        onChange={e => setData(prev => ({ ...prev!, task: { ...prev!.task, deliveryLink: e.target.value } }))}
-                        required
-                        className="task-detail-tracking-input"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="task-detail-form-label">Final Message (Optional)</label>
-                  <textarea rows={2} placeholder="Any final notes for the staff..." value={notes} onChange={e => setNotes(e.target.value)} className="task-detail-form-textarea"></textarea>
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="task-detail-form-submit-btn"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (!task.deliveryLink || !task.deliveryLink.trim()) {
-                      toast.error('Please provide a return tracking link.');
-                      return;
-                    }
-                    try {
-                      new URL(task.deliveryLink);
-                    } catch (_) {
-                      toast.error('Please enter a valid absolute tracking URL (e.g. https://...).');
-                      return;
-                    }
-                    setShowConfirm(true);
-                  }}
-                >
-                  {isSubmitting ? 'Processing...' : 'Submit Tracking & Mark as Shipped'}
-                </button>
-              </form>
-            </article>
           )}
         </div>
       </div>
+
+      {/* Custom Modal for Wig Completed - Create Another? */}
+      {showCreateAnotherModal && (
+        <div className="confirm-modal-overlay">
+          <div className="confirm-modal-card" style={{ maxWidth: '420px', padding: '1.75rem', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fff0f8', color: '#ad246d', display: 'grid', placeItems: 'center', fontSize: '1.5rem' }}>
+                <i className="bx bx-check-circle"></i>
+              </div>
+              <h3 style={{ margin: 0, fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.25rem', color: '#3b2e43' }}>Wig Finished!</h3>
+              <p style={{ margin: 0, fontSize: '0.88rem', color: '#8c7895', lineHeight: 1.5 }}>
+                Would you like to produce another wig for this batch? Clicking "Yes" keeps the task in progress; clicking "No" will finalize the production task.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '1.25rem' }}>
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => submitWigCreation(true)}
+                  className="task-detail-form-submit-btn"
+                  style={{ width: '100%', margin: 0 }}
+                >
+                  {isSubmitting ? 'Processing...' : 'Yes, Create Another Wig'}
+                </button>
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => submitWigCreation(false)}
+                  className="task-detail-form-submit-btn"
+                  style={{ width: '100%', margin: 0, background: '#fff', color: '#ad246d', border: '1.5px solid #ad246d' }}
+                >
+                  {isSubmitting ? 'Processing...' : 'No, Finalize Task'}
+                </button>
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => setShowCreateAnotherModal(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#8c7895',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    padding: '0.5rem',
+                    marginTop: '0.25rem'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* History Table - Full Width */}
       <article className="task-detail-history-card">
@@ -545,8 +614,24 @@ const WigmakerTaskDetail: React.FC = () => {
         isOpen={showConfirm}
         onClose={() => { setShowConfirm(false); setPendingStatus(null); }}
         onConfirm={doSubmit}
-        title={pendingStatus === 'completed' ? 'Production Finished?' : pendingStatus === 'processing' ? 'Start Production?' : 'Submit Update?'}
-        message={pendingStatus === 'completed' ? 'Mark this task as production finished and ready for the next stage?' : pendingStatus === 'processing' ? 'Start production on this task? This will update the status for linked donors.' : 'Submit this tracking update and mark the wig as shipped?'}
+        title={
+          pendingStatus === 'completed'
+            ? 'Production Finished?'
+            : pendingStatus === 'processing'
+              ? task.status === 'processing'
+                ? 'Post Progress Update?'
+                : 'Start Production?'
+              : 'Submit Update?'
+        }
+        message={
+          pendingStatus === 'completed'
+            ? 'Mark this task as production finished and ready for the next stage?'
+            : pendingStatus === 'processing'
+              ? task.status === 'processing'
+                ? 'Submit this progress update and photo? This will log your current progress without finishing production.'
+                : 'Start production on this task? This will update the status for linked donors.'
+              : 'Submit this tracking update and mark the wig as shipped?'
+        }
         confirmText="Yes, Confirm"
         isConfirming={isSubmitting}
       />
@@ -555,9 +640,9 @@ const WigmakerTaskDetail: React.FC = () => {
         isOpen={showMaterialConfirm}
         onClose={() => setShowMaterialConfirm(false)}
         onConfirm={doConfirmMaterial}
-        title="Confirm Hair Materials Received"
-        message="Confirm that you have received the hair materials from staff? This action cannot be undone."
-        confirmText="Yes, Materials Received"
+        title="Confirm Hair Package Received"
+        message="Confirm that you have received the hair package from staff? This action cannot be undone."
+        confirmText="Yes, Hair Received"
         isConfirming={isSubmitting}
       />
     </section>

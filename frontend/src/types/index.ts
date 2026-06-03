@@ -85,12 +85,16 @@ export interface WigProduction {
   targetColor: string;
   status: 'assigned' | 'processing' | 'completed' | 'matched' | 'received' | 'shipped';
   deliveryLink: string | null;
+  materialDeliveryLink?: string | null;
   dueDate: string | null;
   createdAt: string;
   updatedAt: string;
   wigmaker?: User;
   donation?: Donation;
   hairRequest?: HairRequest;
+  statusHistories?: StatusHistory[];
+  childWigs?: WigProduction[];
+  preview_photo?: string | null;
 }
 
 export interface StatusHistory {

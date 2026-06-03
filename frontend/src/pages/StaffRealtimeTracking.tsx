@@ -28,6 +28,7 @@ const StaffRealtimeTracking: React.FC = () => {
   const [selectedDonations, setSelectedDonations] = useState<string[]>([]);
   const [batchWigmakerId, setBatchWigmakerId] = useState('');
   const [batchMaterialLink, setBatchMaterialLink] = useState('');
+  const [batchStaffNote, setBatchStaffNote] = useState('');
   const [showActionConfirm, setShowActionConfirm] = useState(false);
   const [showBatchConfirm, setShowBatchConfirm] = useState(false);
   type PendingAction = { reference: string; _type: 'donor' | 'recipient'; status: string; link?: string; label: string };
@@ -87,6 +88,16 @@ const StaffRealtimeTracking: React.FC = () => {
       toast.error('Please select at least 1 donation to create a batch.');
       return;
     }
+    if (!batchMaterialLink.trim()) {
+      toast.error('Please provide a batch delivery tracking link.');
+      return;
+    }
+    try {
+      new URL(batchMaterialLink);
+    } catch (_) {
+      toast.error('Please enter a valid URL for the batch delivery link.');
+      return;
+    }
     if (!batchWigmakerId) {
       toast.error('Please select a wigmaker.');
       return;
@@ -101,12 +112,14 @@ const StaffRealtimeTracking: React.FC = () => {
       await apiClient.post('/internal-api/staff/assign-batch', {
         wigmaker_id: batchWigmakerId,
         donation_references: selectedDonations,
-        material_delivery_link: batchMaterialLink
+        material_delivery_link: batchMaterialLink,
+        staff_note: batchStaffNote || undefined
       });
       toast.success('Batch assigned successfully!');
       setSelectedDonations([]);
       setBatchWigmakerId('');
       setBatchMaterialLink('');
+      setBatchStaffNote('');
       fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Assignment failed');
@@ -116,7 +129,7 @@ const StaffRealtimeTracking: React.FC = () => {
   };
 
   const toggleSelection = (ref: string) => {
-    setSelectedDonations(prev => 
+    setSelectedDonations(prev =>
       prev.includes(ref) ? prev.filter(r => r !== ref) : [...prev, ref]
     );
   };
@@ -166,14 +179,14 @@ const StaffRealtimeTracking: React.FC = () => {
 
   // Pagination slices — computed after grouping loop
   const batchGroupsArray = Array.from(batchGroups.entries());
-  const batchTotalPages  = Math.ceil(batchGroupsArray.length / PAGE_SIZE);
+  const batchTotalPages = Math.ceil(batchGroupsArray.length / PAGE_SIZE);
   const pagedBatchGroups = batchGroupsArray.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const donationTotalPages = Math.ceil(soloDonations.length / PAGE_SIZE);
   const pagedSoloDonations = soloDonations.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const requestTotalPages = Math.ceil(filteredRequests.length / PAGE_SIZE);
-  const pagedRequests     = filteredRequests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pagedRequests = filteredRequests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const triggerBatchAction = (refs: string[], status: string, link?: string) => {
     setPendingBatchRefs(refs);
@@ -235,6 +248,19 @@ const StaffRealtimeTracking: React.FC = () => {
     }
   };
 
+  const handleReceiveWig = async (wigId: number) => {
+    setIsSubmitting(true);
+    try {
+      await apiClient.post(`/internal-api/staff/wigs/${wigId}/receive`);
+      toast.success('Wig marked as received and added to stock!');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update wig status');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) return <div className="section-wrap">Loading tracking data...</div>;
 
   return (
@@ -248,8 +274,8 @@ const StaffRealtimeTracking: React.FC = () => {
             {isWigmaker
               ? 'Monitor wig production batches assigned to wigmakers.'
               : isDonation
-              ? 'Monitor received hair donations and batch assignment.'
-              : 'Monitor real-time status and manage workflow for wig requests.'}
+                ? 'Monitor received hair donations and batch assignment.'
+                : 'Monitor real-time status and manage workflow for wig requests.'}
           </p>
         </div>
         <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)' }}>
@@ -259,17 +285,17 @@ const StaffRealtimeTracking: React.FC = () => {
       </div>
 
       {(isDonation || isWigmaker) && selectedDonations.length > 0 && (
-        <div className="batch-action-bar" style={{ 
-          position: 'sticky', 
-          top: '20px', 
-          zIndex: 100, 
-          background: '#ad246d', 
-          padding: '1rem 1.5rem', 
-          borderRadius: '16px', 
-          marginBottom: '1.5rem', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
+        <div className="batch-action-bar" style={{
+          position: 'sticky',
+          top: '20px',
+          zIndex: 100,
+          background: '#ad246d',
+          padding: '1rem 1.5rem',
+          borderRadius: '16px',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           gap: '1rem',
           color: '#fff',
           boxShadow: '0 10px 30px rgba(173, 36, 109, 0.3)',
@@ -285,16 +311,23 @@ const StaffRealtimeTracking: React.FC = () => {
                 : 'Select donations to create a batch'}
             </div>
           </div>
-          
+
           <div className="batch-action-right">
-            <input 
-              type="text" 
-              placeholder="Batch delivery link (optional)..." 
+            <input
+              type="text"
+              placeholder="Batch delivery link"
               value={batchMaterialLink}
               onChange={(e) => setBatchMaterialLink(e.target.value)}
               className="batch-input"
             />
-            <select 
+            <input
+              type="text"
+              placeholder="Note to wigmaker (optional)..."
+              value={batchStaffNote}
+              onChange={(e) => setBatchStaffNote(e.target.value)}
+              className="batch-input"
+            />
+            <select
               value={batchWigmakerId}
               onChange={(e) => setBatchWigmakerId(e.target.value)}
               className="batch-select custom-select"
@@ -302,7 +335,7 @@ const StaffRealtimeTracking: React.FC = () => {
               <option value="">Select Wigmaker...</option>
               {data.wigmakers.map(wm => <option key={wm.id} value={wm.id}>{wm.firstName} {wm.lastName}</option>)}
             </select>
-            <button 
+            <button
               onClick={handleAssignBatch}
               disabled={selectedDonations.length === 0 || !batchWigmakerId || isSubmitting}
               style={{
@@ -355,7 +388,7 @@ const StaffRealtimeTracking: React.FC = () => {
                 </th>
                 <th className="tracking-th">Photo</th>
                 <th className="tracking-th">Reference</th>
-                <th className="tracking-th">Donor/User</th>
+                <th className="tracking-th">{isWigmaker ? 'Wig Specification' : 'Donor/User'}</th>
                 <th className="tracking-th">Status</th>
                 <th className="tracking-th">Current Stage</th>
                 <th className="tracking-th tracking-th-center">Action</th>
@@ -369,9 +402,9 @@ const StaffRealtimeTracking: React.FC = () => {
                     const isOpen = !!batchOpen[wpId];
                     const stageLabel =
                       wp.status === 'assigned' ? `Assigned to ${wp.wigmaker?.firstName || 'Wigmaker'}` :
-                      wp.status === 'processing' ? `Crafting by ${wp.wigmaker?.firstName || 'Wigmaker'}` :
-                      wp.status === 'completed' ? `Finished by ${wp.wigmaker?.firstName || 'Wigmaker'}` :
-                      wp.status === 'shipped' ? 'Awaiting Wig Delivery' : 'Completed';
+                        wp.status === 'processing' ? `Crafting by ${wp.wigmaker?.firstName || 'Wigmaker'}` :
+                          wp.status === 'completed' ? `Finished by ${wp.wigmaker?.firstName || 'Wigmaker'}` :
+                            wp.status === 'shipped' ? 'Awaiting Wig Delivery' : 'Completed';
                     return (
                       <React.Fragment key={`batch-${wpId}`}>
                         <tr className="tracking-row tracking-batch-main-row">
@@ -379,30 +412,104 @@ const StaffRealtimeTracking: React.FC = () => {
                             <div className="tracking-batch-layer-icon"><i className="bx bx-layer"></i></div>
                           </td>
                           <td className="tracking-cell">
-                            <div className="tracking-batch-pkg-cell"><i className="bx bx-package"></i></div>
+                            {(() => {
+                              const latestPhoto = (wp.statusHistories || [])
+                                .find((h: any) => h.metadata?.preview_photo);
+                              const photoUrl = latestPhoto ? getPublicUrl('hairlink', latestPhoto.metadata.preview_photo) : null;
+                              return photoUrl ? (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <a href={photoUrl} target="_blank" rel="noreferrer"
+                                    style={{
+                                      display: 'block',
+                                      borderRadius: '8px',
+                                      overflow: 'hidden',
+                                      width: '42px',
+                                      height: '42px',
+                                      border: wp.status === 'completed' ? '2px solid #10b981' : '2px solid #f1a8cf',
+                                      boxShadow: wp.status === 'completed' ? '0 2px 6px rgba(16,185,129,0.15)' : '0 2px 6px rgba(173,36,109,0.15)',
+                                      flexShrink: 0
+                                    }}
+                                  >
+                                    <img src={photoUrl} alt="Progress" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  </a>
+                                </div>
+                              ) : (
+                                <div className="tracking-batch-pkg-cell"><i className="bx bx-package"></i></div>
+                              );
+                            })()}
                           </td>
                           <td className="tracking-cell">
                             <div className="tracking-ref-col">
                               <span className="tracking-ref-prefix tracking-batch-ref-label">Batch Ref</span>
-                              <strong className="tracking-ref-value">{wp.taskCode}</strong>
-                              <div className="tracking-batch-count">{bd.length} donations merged</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <strong className="tracking-ref-value">{wp.taskCode}</strong>
+                                <button
+                                  type="button"
+                                  onClick={() => setBatchOpen(prev => ({ ...prev, [wpId]: !isOpen }))}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#ad246d',
+                                    cursor: 'pointer',
+                                    padding: '0 2px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    fontSize: '0.85rem'
+                                  }}
+                                  title={`${isOpen ? 'Hide' : 'View'} compiled donors`}
+                                >
+                                  <i className={`bx ${isOpen ? 'bx-chevron-up-circle' : 'bx-chevron-down-circle'}`}></i>
+                                </button>
+                              </div>
+
                             </div>
                           </td>
                           <td className="tracking-cell">
-                            <button
-                              className="tracking-batch-toggle-btn"
-                              onClick={() => setBatchOpen(prev => ({ ...prev, [wpId]: !isOpen }))}
-                            >
-                              <i className={`bx ${isOpen ? 'bx-chevron-up' : 'bx-chevron-down'}`}></i>
-                              {isOpen ? 'Hide' : 'View'} {bd.length} Donors
-                            </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <span className="tracking-ref-prefix" style={{ color: '#8c7895', fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase' }}>Spec</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                                <span style={{
+                                  background: '#fdf2f8',
+                                  color: '#ad246d',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '50px',
+                                  border: '1px solid #fbcfe8',
+                                  textTransform: 'capitalize'
+                                }}>
+                                  {wp.targetLength || 'N/A'}
+                                </span>
+                                <span style={{
+                                  background: '#f3f4f6',
+                                  color: '#374151',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '50px',
+                                  border: '1px solid #e5e7eb',
+                                  textTransform: 'capitalize',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  {wp.targetColor && (() => {
+                                    const dotColor = wp.targetColor.toLowerCase() === 'black' ? '#000' :
+                                      wp.targetColor.toLowerCase() === 'brown' ? '#7B4F2A' :
+                                        wp.targetColor.toLowerCase() === 'light' ? '#C9A96E' : '#8c7895';
+                                    return <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, display: 'inline-block' }}></span>;
+                                  })()}
+                                  {wp.targetColor || 'N/A'}
+                                </span>
+                              </div>
+                            </div>
                           </td>
                           <td className="tracking-cell"><StatusPill status={wp.status} /></td>
                           <td className="tracking-cell">
                             <div className="tracking-progress-col">
                               <div className="tracking-progress-status">
                                 <i className={`bx ${wp.status === 'received' ? 'bx-check-circle' : 'bx-sync bx-spin'}`}
-                                   style={{ color: wp.status === 'received' ? '#10b981' : '#ad246d' }}></i>
+                                  style={{ color: wp.status === 'received' ? '#10b981' : '#ad246d' }}></i>
                                 {stageLabel}
                               </div>
                             </div>
@@ -430,12 +537,24 @@ const StaffRealtimeTracking: React.FC = () => {
                                 {wp.materialDeliveryLink ? (
                                   <>
                                     <a href={wp.materialDeliveryLink} target="_blank" rel="noreferrer" className="tracking-link-btn" style={{ justifyContent: 'center', width: '100%' }}>
-                                      <i className='bx bx-link-external'></i> Material Tracking
+                                      <i className='bx bx-link-external'></i> Hair Tracking
                                     </a>
                                     <button
-                                      className="soft-btn"
                                       onClick={() => handleOpenDeliveryLinkModal(wp.taskCode, wp.materialDeliveryLink || '')}
-                                      style={{ padding: '0.25rem 0.6rem', fontSize: '0.65rem', background: '#fdf7fb', border: '1px solid #f1a8cf', color: '#ad246d', borderRadius: '50px', cursor: 'pointer', fontWeight: 700 }}
+                                      style={{
+                                        padding: '0.35rem 0.8rem',
+                                        fontSize: '0.7rem',
+                                        background: '#fff',
+                                        border: '1.5px solid #ead7e8',
+                                        color: '#ad246d',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontWeight: 800,
+                                        transition: 'all 0.2s ease',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                      }}
                                     >
                                       Update Link
                                     </button>
@@ -448,50 +567,242 @@ const StaffRealtimeTracking: React.FC = () => {
                                       onClick={() => handleOpenDeliveryLinkModal(wp.taskCode, '')}
                                       style={{ padding: '0.35rem 0.8rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
                                     >
-                                      <i className='bx bxs-ship'></i> Ship Materials
+                                      <i className='bx bxs-ship'></i> Ship Hair
                                     </button>
                                   </>
                                 )}
                               </div>
                             )}
-                            {wp.status === 'processing' && <span className="tracking-awaiting-text">Production in Progress...</span>}
-                            {wp.status === 'completed' && <span className="tracking-awaiting-text">Wig Quality Checking...</span>}
+                            {wp.status === 'processing' && (() => {
+                              const latestPhoto = (wp.statusHistories || [])
+                                .find((h: any) => h.metadata?.preview_photo);
+                              const photoUrl = latestPhoto ? getPublicUrl('hairlink', latestPhoto.metadata.preview_photo) : null;
+                              return photoUrl ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                                  <a href={photoUrl} target="_blank" rel="noreferrer"
+                                    style={{ display: 'block', borderRadius: '10px', overflow: 'hidden', width: '52px', height: '52px', border: '2px solid #f1a8cf', boxShadow: '0 2px 8px rgba(173,36,109,0.15)', flexShrink: 0 }}>
+                                    <img src={photoUrl} alt="Progress" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  </a>
+                                  <span style={{ fontSize: '0.6rem', color: '#ad246d', fontWeight: 700 }}>View Photo</span>
+                                </div>
+                              ) : (
+                                <span className="tracking-awaiting-text">Production in Progress...</span>
+                              );
+                            })()}
+                            {wp.status === 'completed' && (() => {
+                              const latestPhoto = (wp.statusHistories || [])
+                                .find((h: any) => h.metadata?.preview_photo);
+                              const photoUrl = latestPhoto ? getPublicUrl('hairlink', latestPhoto.metadata.preview_photo) : null;
+                              return photoUrl ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                                  <a href={photoUrl} target="_blank" rel="noreferrer"
+                                    style={{ display: 'block', borderRadius: '10px', overflow: 'hidden', width: '52px', height: '52px', border: '2px solid #10b981', boxShadow: '0 2px 8px rgba(16,185,129,0.15)', flexShrink: 0 }}>
+                                    <img src={photoUrl} alt="Completed" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  </a>
+                                  <span style={{ fontSize: '0.6rem', color: '#10b981', fontWeight: 700 }}>View Photo</span>
+                                </div>
+                              ) : (
+                                <span className="tracking-awaiting-text">Wig Quality Checking...</span>
+                              );
+                            })()}
                           </td>
                         </tr>
-                        {isOpen && (
-                          <tr className="tracking-batch-expanded-row">
-                            <td colSpan={7} className="tracking-batch-expanded-cell">
-                              <div className="tracking-batch-expanded-inner">
-                                <div className="tracking-batch-expanded-header">
-                                  <i className="bx bx-group"></i> Batch Donors — {wp.taskCode}
+                        {isOpen && (() => {
+                          const assignmentHistory = (wp.statusHistories || []).find((h: any) => h.status === 'assigned');
+                          let staffNote = '';
+                          if (assignmentHistory?.notes) {
+                            const match = assignmentHistory.notes.match(/Staff note:\s*(.*)/i);
+                            if (match) staffNote = match[1];
+                          }
+                          return (
+                            <tr className="tracking-batch-expanded-row">
+                              <td colSpan={7} className="tracking-batch-expanded-cell">
+                                <div className="tracking-batch-expanded-inner" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.5rem' }}>
+                                  {staffNote && (
+                                    <div style={{ marginBottom: '1.25rem', padding: '0.85rem 1.25rem', background: '#fdf7fb', border: '1px solid #ead7e8', borderRadius: '12px' }}>
+                                      <strong style={{ fontSize: '0.75rem', color: '#ad246d', textTransform: 'uppercase', display: 'block', marginBottom: '0.25rem' }}>Note to Wigmaker</strong>
+                                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#5d4d62', lineHeight: '1.4' }}>{staffNote}</p>
+                                    </div>
+                                  )}
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                                    {/* Left Column: Batch Donors */}
+                                    <div style={{ minWidth: 0 }}>
+                                      <div className="tracking-batch-expanded-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, color: '#ad246d', marginBottom: '1rem', textTransform: 'uppercase', fontSize: '0.85rem' }}>
+                                        <i className="bx bx-group" style={{ fontSize: '1.2rem' }}></i> Batch Donors — {wp.taskCode}
+                                      </div>
+                                      <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #f2ebf4', borderRadius: '12px' }}>
+                                        <table className="tracking-batch-inner-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                          <thead>
+                                            <tr>
+                                              <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Ref #</th>
+                                              <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Donor Name</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {bd.map(d => (
+                                              <tr key={d.id}>
+                                                <td style={{ padding: '0.9rem 1rem', fontSize: '0.85rem', color: '#5d4d62', borderBottom: '1px dashed #f2ebf4' }}><code className="tracking-inner-ref">{d.reference}</code></td>
+                                                <td style={{ padding: '0.9rem 1rem', fontSize: '0.85rem', color: '#5d4d62', borderBottom: '1px dashed #f2ebf4' }}>
+                                                  <div className="tracking-inner-donor" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800, color: '#3b2e43' }}>
+                                                    <div className="tracking-inner-avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #ad246d, #cf2f84)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.78rem' }}>
+                                                      {(d.user?.firstName?.[0] || '') + (d.user?.lastName?.[0] || '')}
+                                                    </div>
+                                                    {d.user?.firstName} {d.user?.lastName}
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+
+                                    {/* Right Column: Wigs Produced */}
+                                    <div style={{ minWidth: 0 }}>
+                                      <div className="tracking-batch-expanded-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, color: '#ad246d', marginBottom: '1rem', textTransform: 'uppercase', fontSize: '0.85rem' }}>
+                                        <i className="bx bxs-crown" style={{ fontSize: '1.2rem' }}></i> Wigs Produced ({(wp.childWigs || []).length})
+                                      </div>
+                                      <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #f2ebf4', borderRadius: '12px' }}>
+                                        <table className="tracking-batch-inner-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                          <thead>
+                                            <tr>
+                                              <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Photo</th>
+                                              <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Wig Code</th>
+                                              <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Specs</th>
+                                              <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Status</th>
+                                              <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'center' }}>Action</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {(!wp.childWigs || wp.childWigs.length === 0) ? (
+                                              <tr>
+                                                <td colSpan={5} style={{ padding: '2rem 1rem', textAlign: 'center', color: '#8c7895', fontSize: '0.85rem' }}>
+                                                  <i className="bx bxs-crown" style={{ fontSize: '1.5rem', display: 'block', marginBottom: '0.5rem', color: '#ead7e8' }}></i>
+                                                  No wigs produced for this batch yet.
+                                                </td>
+                                              </tr>
+                                            ) : (
+                                              wp.childWigs.map((w: any) => {
+                                                const photoUrl = w.preview_photo ? getPublicUrl('hairlink', w.preview_photo) : null;
+                                                return (
+                                                  <tr key={w.id}>
+                                                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px dashed #f2ebf4', verticalAlign: 'middle' }}>
+                                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        {photoUrl ? (
+                                                          <a href={photoUrl} target="_blank" rel="noreferrer"
+                                                            style={{
+                                                              display: 'block',
+                                                              borderRadius: '6px',
+                                                              overflow: 'hidden',
+                                                              width: '32px',
+                                                              height: '32px',
+                                                              border: w.status === 'received' ? '2px solid #10b981' : '2px solid #f1a8cf',
+                                                              boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                                              flexShrink: 0
+                                                            }}
+                                                          >
+                                                            <img src={photoUrl} alt="Wig" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                          </a>
+                                                        ) : (
+                                                          <div style={{
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            borderRadius: '6px',
+                                                            background: '#fdf7fb',
+                                                            border: '1px solid #ead7e8',
+                                                            display: 'grid',
+                                                            placeItems: 'center',
+                                                            color: '#ad246d',
+                                                            fontSize: '0.9rem'
+                                                          }}>
+                                                            <i className="bx bxs-crown"></i>
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                    </td>
+                                                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px dashed #f2ebf4', verticalAlign: 'middle' }}>
+                                                      <code className="tracking-inner-ref" style={{ fontSize: '0.7rem' }}>{w.taskCode}</code>
+                                                    </td>
+                                                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px dashed #f2ebf4', verticalAlign: 'middle' }}>
+                                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.75rem' }}>
+                                                        <span style={{ fontWeight: 700, color: '#ad246d' }}>{w.targetLength || 'N/A'}</span>
+                                                        <span style={{ color: '#5d4d62', fontSize: '0.7rem' }}>{w.targetColor || 'N/A'}</span>
+                                                      </div>
+                                                    </td>
+                                                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px dashed #f2ebf4', verticalAlign: 'middle' }}>
+                                                      <StatusPill status={w.status} />
+                                                    </td>
+                                                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px dashed #f2ebf4', verticalAlign: 'middle', textAlign: 'center' }}>
+                                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
+                                                        {w.deliveryLink && (
+                                                          <a
+                                                            href={w.deliveryLink}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            style={{
+                                                              display: 'inline-flex',
+                                                              alignItems: 'center',
+                                                              gap: '4px',
+                                                              fontSize: '0.68rem',
+                                                              color: '#ad246d',
+                                                              textDecoration: 'none',
+                                                              fontWeight: 700,
+                                                              padding: '0.15rem 0.4rem',
+                                                              borderRadius: '4px',
+                                                              background: '#fdf2f8',
+                                                              border: '1px solid #f9cde8'
+                                                            }}
+                                                          >
+                                                            <i className='bx bx-link-external'></i> Tracking
+                                                          </a>
+                                                        )}
+                                                        {w.status === 'shipped' && (
+                                                          <button
+                                                            className="soft-btn"
+                                                            onClick={() => handleReceiveWig(w.id)}
+                                                            disabled={isSubmitting}
+                                                            style={{
+                                                              padding: '0.3rem 0.6rem',
+                                                              fontSize: '0.7rem',
+                                                              background: 'linear-gradient(135deg, #ad246d, #8c1e58)',
+                                                              color: '#fff',
+                                                              border: 'none',
+                                                              borderRadius: '50px',
+                                                              cursor: 'pointer',
+                                                              fontWeight: 800,
+                                                              boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)',
+                                                              whiteSpace: 'nowrap'
+                                                            }}
+                                                          >
+                                                            Confirm Received
+                                                          </button>
+                                                        )}
+                                                        {w.status === 'received' && (
+                                                          <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                            <i className='bx bx-check-circle'></i> Received
+                                                          </span>
+                                                        )}
+                                                        {w.status === 'completed' && (
+                                                          <span style={{ fontSize: '0.7rem', color: '#8c7895', fontWeight: 700 }}>
+                                                            Ready for Shipping
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                    </td>
+                                                  </tr>
+                                                );
+                                              })
+                                            )}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                                <table className="tracking-batch-inner-table">
-                                  <thead>
-                                    <tr>
-                                      <th>Ref #</th>
-                                      <th>Donor Name</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {bd.map(d => (
-                                      <tr key={d.id}>
-                                        <td><code className="tracking-inner-ref">{d.reference}</code></td>
-                                        <td>
-                                          <div className="tracking-inner-donor">
-                                            <div className="tracking-inner-avatar">
-                                              {(d.user?.firstName?.[0] || '') + (d.user?.lastName?.[0] || '')}
-                                            </div>
-                                            {d.user?.firstName} {d.user?.lastName}
-                                          </div>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
+                              </td>
+                            </tr>
+                          );
+                        })()}
                       </React.Fragment>
                     );
                   })}
@@ -501,152 +812,152 @@ const StaffRealtimeTracking: React.FC = () => {
                 <>
                   {/* ── Donation view: Solo (un-batched) Rows ONLY (HD-XXXXXX) ── */}
                   {pagedSoloDonations.map((donation) => {
-                  const wigProd = data.wigProductions[donation.id];
-                  const isWigmakerControlled = !!wigProd || ['In Queue', 'In Progress', 'Processing'].includes(donation.status);
-                  const stageIndex = ['Verified', 'Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].indexOf(donation.status);
-                  const photoUrl = donation.photoFront ? getPublicUrl('hairlink', donation.photoFront) : null;
+                    const wigProd = data.wigProductions[donation.id];
+                    const isWigmakerControlled = !!wigProd || ['In Queue', 'In Progress', 'Processing'].includes(donation.status);
+                    const stageIndex = ['Verified', 'Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].indexOf(donation.status);
+                    const photoUrl = donation.photoFront ? getPublicUrl('hairlink', donation.photoFront) : null;
 
-                  return (
-                    <tr key={donation.id} className="tracking-row tracking-row">
-                      <td className="tracking-cell-center">
-                        {donation.status === 'Received Hair' && (
-                          <div 
-                            onClick={() => toggleSelection(donation.reference)}
-                            className={selectedDonations.includes(donation.reference) ? 'tracking-checkbox checked' : 'tracking-checkbox'}
-                          >
-                            {selectedDonations.includes(donation.reference) && <i className="bx bx-check tracking-checkbox-icon"></i>}
-                          </div>
-                        )}
-                      </td>
-                      <td className="tracking-cell">
-                        <div className="avatar-preview" style={{ width: '56px', height: '56px', borderRadius: '14px', overflow: 'hidden', border: '2px solid #fff', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.08)', background: '#fdf7fb', position: 'relative' }}>
-                          {photoUrl ? (
-                            <img src={photoUrl} alt="Donation" className="tracking-avatar-img" />
-                          ) : (
-                            <div className="tracking-avatar-placeholder">
-                              <i className="bx bx-image-alt tracking-avatar-icon"></i>
+                    return (
+                      <tr key={donation.id} className="tracking-row tracking-row">
+                        <td className="tracking-cell-center">
+                          {donation.status === 'Received Hair' && (
+                            <div
+                              onClick={() => toggleSelection(donation.reference)}
+                              className={selectedDonations.includes(donation.reference) ? 'tracking-checkbox checked' : 'tracking-checkbox'}
+                            >
+                              {selectedDonations.includes(donation.reference) && <i className="bx bx-check tracking-checkbox-icon"></i>}
                             </div>
                           )}
-                          <div className="tracking-status-dot green"></div>
-                        </div>
-                      </td>
-                      <td className="tracking-cell">
-                        <div className="tracking-ref-col">
-                          <span className="tracking-ref-prefix">Ref: {(donation.reference || '').split('-')[0]}</span>
-                          <strong className="tracking-ref-value">{donation.reference || 'N/A'}</strong>
-                          <div className="tracking-ref-date">
-                            <i className='bx bx-time-five' style={{ marginRight: '4px', verticalAlign: 'middle' }}></i>
-                            {donation.createdAt ? new Date(donation.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="tracking-cell">
-                        <div className="tracking-user-col">
-                          <div className="tracking-user-avatar tracking-user-avatar-donor">
-                            {donation.user?.profile_photo_url ? (
-                              <img
-                                src={getProfilePhotoUrl(donation.user.profile_photo_url) || ''}
-                                alt="User"
-                                className="tracking-avatar-img"
-                              />
+                        </td>
+                        <td className="tracking-cell">
+                          <div className="avatar-preview" style={{ width: '56px', height: '56px', borderRadius: '14px', overflow: 'hidden', border: '2px solid #fff', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.08)', background: '#fdf7fb', position: 'relative' }}>
+                            {photoUrl ? (
+                              <img src={photoUrl} alt="Donation" className="tracking-avatar-img" />
                             ) : (
-                              `${donation.user?.firstName?.[0] || ''}${donation.user?.lastName?.[0] || ''}`
+                              <div className="tracking-avatar-placeholder">
+                                <i className="bx bx-image-alt tracking-avatar-icon"></i>
+                              </div>
                             )}
+                            <div className="tracking-status-dot green"></div>
                           </div>
-                          <div>
-                            <div className="tracking-user-name">{donation.user?.firstName} {donation.user?.lastName}</div>
-                            <div className="tracking-user-role-donor">Donor</div>
+                        </td>
+                        <td className="tracking-cell">
+                          <div className="tracking-ref-col">
+                            <span className="tracking-ref-prefix">Ref: {(donation.reference || '').split('-')[0]}</span>
+                            <strong className="tracking-ref-value">{donation.reference || 'N/A'}</strong>
+                            <div className="tracking-ref-date">
+                              <i className='bx bx-time-five' style={{ marginRight: '4px', verticalAlign: 'middle' }}></i>
+                              {donation.createdAt ? new Date(donation.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="tracking-cell">
-                        <StatusPill status={donation.status} />
-                      </td>
-                      <td className="tracking-cell">
-                        <div className="tracking-progress-col">
-                          <div className="tracking-progress-head">
-                            <span className="tracking-progress-label">Workflow</span>
-                            <span className="tracking-progress-percent">{Math.round(((stageIndex + 1) / 6) * 100)}%</span>
+                        </td>
+                        <td className="tracking-cell">
+                          <div className="tracking-user-col">
+                            <div className="tracking-user-avatar tracking-user-avatar-donor">
+                              {donation.user?.profile_photo_url ? (
+                                <img
+                                  src={getProfilePhotoUrl(donation.user.profile_photo_url) || ''}
+                                  alt="User"
+                                  className="tracking-avatar-img"
+                                />
+                              ) : (
+                                `${donation.user?.firstName?.[0] || ''}${donation.user?.lastName?.[0] || ''}`
+                              )}
+                            </div>
+                            <div>
+                              <div className="tracking-user-name">{donation.user?.firstName} {donation.user?.lastName}</div>
+                              <div className="tracking-user-role-donor">Donor</div>
+                            </div>
                           </div>
-                          <div className="tracking-progress-bar-bg">
-                            <div style={{
-                              position: 'absolute', left: 0, top: 0, bottom: 0,
-                              width: `${((stageIndex + 1) / 6) * 100}%`,
-                              background: 'linear-gradient(90deg, #ad246d, #ff6bb5)',
-                              borderRadius: '10px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-                              boxShadow: '0 0 8px rgba(173, 36, 109, 0.3)'
-                            }}></div>
+                        </td>
+                        <td className="tracking-cell">
+                          <StatusPill status={donation.status} />
+                        </td>
+                        <td className="tracking-cell">
+                          <div className="tracking-progress-col">
+                            <div className="tracking-progress-head">
+                              <span className="tracking-progress-label">Workflow</span>
+                              <span className="tracking-progress-percent">{Math.round(((stageIndex + 1) / 6) * 100)}%</span>
+                            </div>
+                            <div className="tracking-progress-bar-bg">
+                              <div style={{
+                                position: 'absolute', left: 0, top: 0, bottom: 0,
+                                width: `${((stageIndex + 1) / 6) * 100}%`,
+                                background: 'linear-gradient(90deg, #ad246d, #ff6bb5)',
+                                borderRadius: '10px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                                boxShadow: '0 0 8px rgba(173, 36, 109, 0.3)'
+                              }}></div>
+                            </div>
+                            <div className="tracking-progress-status">
+                              <i className={`bx ${wigProd?.status === 'received' ? 'bx-check-circle' : (isWigmakerControlled ? 'bx-sync bx-spin' : 'bx-map-pin')}`} style={{ color: wigProd?.status === 'received' ? '#10b981' : '#ad246d' }}></i>
+                              {isWigmakerControlled ? (
+                                wigProd?.status === 'assigned' ? `Assigned to ${wigProd?.wigmaker?.firstName}` :
+                                  wigProd?.status === 'processing' ? `Crafting by ${wigProd?.wigmaker?.firstName}` :
+                                    wigProd?.status === 'completed' ? `Wig Finished by ${wigProd?.wigmaker?.firstName}` :
+                                      wigProd?.status === 'shipped' ? 'Awaiting Wig Delivery' :
+                                        'Completed'
+                              ) : donation.status}
+                            </div>
                           </div>
-                          <div className="tracking-progress-status">
-                            <i className={`bx ${wigProd?.status === 'received' ? 'bx-check-circle' : (isWigmakerControlled ? 'bx-sync bx-spin' : 'bx-map-pin')}`} style={{ color: wigProd?.status === 'received' ? '#10b981' : '#ad246d' }}></i>
-                            {isWigmakerControlled ? (
-                              wigProd?.status === 'assigned' ? `Assigned to ${wigProd?.wigmaker?.firstName}` : 
-                              wigProd?.status === 'processing' ? `Crafting by ${wigProd?.wigmaker?.firstName}` :
-                              wigProd?.status === 'completed' ? `Wig Finished by ${wigProd?.wigmaker?.firstName}` :
-                              wigProd?.status === 'shipped' ? 'Awaiting Wig Delivery' :
-                              'Completed'
-                            ) : donation.status}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="tracking-action-cell">
-                        {donation.status === 'Verified' && (
-                          <div className="tracking-action-col">
-                            {donation.donorDeliveryLink ? (
-                              <>
+                        </td>
+                        <td className="tracking-action-cell">
+                          {donation.status === 'Verified' && (
+                            <div className="tracking-action-col">
+                              {donation.donorDeliveryLink ? (
+                                <>
+                                  <a
+                                    href={donation.donorDeliveryLink}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="tracking-link-btn"
+                                  >
+                                    <i className='bx bx-link-external'></i> View Tracking
+                                  </a>
+                                  <button className="soft-btn" onClick={() => triggerAction(donation.reference, 'donor', 'Received Hair', 'Confirm Received')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Received</button>
+                                </>
+                              ) : (
+                                <span className="tracking-awaiting-text">Awaiting Delivery Link...</span>
+                              )}
+                            </div>
+                          )}
+                          {donation.status === 'Received Hair' && (
+                            <div className="tracking-batch-ready-col">
+                              <span className="tracking-batch-ready-title">Ready for Batching</span>
+
+                            </div>
+                          )}
+                          {donation.status === 'Completed' && !isWigmakerControlled && (
+                            <button className="soft-btn" onClick={() => triggerAction(donation.reference, 'donor', 'Wig Received', 'Confirm Receipt')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Receipt</button>
+                          )}
+                          {wigProd?.status === 'shipped' && (
+                            <div className="tracking-action-col">
+                              {wigProd.deliveryLink && (
                                 <a
-                                  href={donation.donorDeliveryLink}
+                                  href={wigProd.deliveryLink}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="tracking-link-btn"
                                 >
-                                  <i className='bx bx-link-external'></i> View Tracking
+                                  <i className='bx bx-link-external'></i> Wig Tracking
                                 </a>
-                                <button className="soft-btn" onClick={() => triggerAction(donation.reference, 'donor', 'Received Hair', 'Confirm Received')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Received</button>
-                              </>
-                            ) : (
-                              <span className="tracking-awaiting-text">Awaiting Delivery Link...</span>
-                            )}
-                          </div>
-                        )}
-                        {donation.status === 'Received Hair' && (
-                          <div className="tracking-batch-ready-col">
-                             <span className="tracking-batch-ready-title">Ready for Batching</span>
-                             <span className="tracking-batch-ready-sub">Select 6 items above</span>
-                          </div>
-                        )}
-                        {donation.status === 'Completed' && !isWigmakerControlled && (
-                          <button className="soft-btn" onClick={() => triggerAction(donation.reference, 'donor', 'Wig Received', 'Confirm Receipt')} disabled={isSubmitting} style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}>Confirm Receipt</button>
-                        )}
-                        {wigProd?.status === 'shipped' && (
-                          <div className="tracking-action-col">
-                            {wigProd.deliveryLink && (
-                              <a 
-                                href={wigProd.deliveryLink} 
-                                target="_blank" 
-                                rel="noreferrer" 
-                                className="tracking-link-btn"
+                              )}
+                              <button
+                                className="soft-btn"
+                                onClick={() => triggerAction(donation.reference, 'donor', 'Wig Received', 'Confirm Wig Received', wigProd.deliveryLink || undefined)}
+                                disabled={isSubmitting}
+                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}
                               >
-                                <i className='bx bx-link-external'></i> Wig Tracking
-                              </a>
-                            )}
-                            <button 
-                              className="soft-btn" 
-                              onClick={() => triggerAction(donation.reference, 'donor', 'Wig Received', 'Confirm Wig Received', wigProd.deliveryLink || undefined)} 
-                              disabled={isSubmitting} 
-                              style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)' }}
-                            >
-                              Confirm Wig Received
-                            </button>
-                          </div>
-                        )}
-                        {isWigmakerControlled && wigProd?.status === 'assigned' && <span className="tracking-awaiting-text">Waiting to be received...</span>}
-                        {isWigmakerControlled && wigProd?.status === 'processing' && <span className="tracking-awaiting-text">Production in Progress...</span>}
-                        {isWigmakerControlled && wigProd?.status === 'completed' && <span className="tracking-awaiting-text">Wig Quality Checking...</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
+                                Confirm Wig Received
+                              </button>
+                            </div>
+                          )}
+                          {isWigmakerControlled && wigProd?.status === 'assigned' && <span className="tracking-awaiting-text">Waiting to be received...</span>}
+                          {isWigmakerControlled && wigProd?.status === 'processing' && <span className="tracking-awaiting-text">Production in Progress...</span>}
+                          {isWigmakerControlled && wigProd?.status === 'completed' && <span className="tracking-awaiting-text">Wig Quality Checking...</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </>
               ) : (
                 pagedRequests.map((request) => {
@@ -832,13 +1143,12 @@ const StaffRealtimeTracking: React.FC = () => {
           setPendingAction(null);
         }}
         title={pendingAction?.label || 'Confirm Action'}
-        message={`Are you sure you want to ${
-          pendingAction?.status === 'In Transit' ? 'mark this wig as shipped and notify the recipient' :
+        message={`Are you sure you want to ${pendingAction?.status === 'In Transit' ? 'mark this wig as shipped and notify the recipient' :
           pendingAction?.status === 'Received Hair' ? 'confirm receipt of this hair donation' :
-          pendingAction?.status === 'Ready for Pickup' ? 'mark this wig as Ready for Pick-up? The recipient will be notified to collect it at the Binondo office.' :
-          pendingAction?.status === 'Completed' ? 'mark this transaction as Complete? This will close the hair request.' :
-          'confirm receipt of this finished wig'
-        }?`}
+            pendingAction?.status === 'Ready for Pickup' ? 'mark this wig as Ready for Pick-up? The recipient will be notified to collect it at the Binondo office.' :
+              pendingAction?.status === 'Completed' ? 'mark this transaction as Complete? This will close the hair request.' :
+                'confirm receipt of this finished wig'
+          }?`}
         confirmText={`Yes, ${pendingAction?.label || 'Confirm'}`}
         isConfirming={isSubmitting}
       />
@@ -909,7 +1219,7 @@ const StaffRealtimeTracking: React.FC = () => {
               textAlign: 'center', margin: '0 0 1.25rem 0',
               fontSize: '0.875rem', color: '#8c7895', lineHeight: 1.5,
             }}>
-              Enter the tracking URL for the hair materials package (Batch <strong>{deliveryLinkTaskCode}</strong>) being shipped to the wigmaker.
+              Enter the tracking URL for the hair package (Batch <strong>{deliveryLinkTaskCode}</strong>) being shipped to the wigmaker.
             </p>
 
             <div style={{ marginBottom: '1.75rem' }}>

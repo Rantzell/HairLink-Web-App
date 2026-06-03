@@ -32,6 +32,7 @@ import StaffHairStock from './pages/StaffHairStock';
 
 import WigmakerDashboard from './pages/WigmakerDashboard';
 import WigmakerTaskDetail from './pages/WigmakerTaskDetail';
+import WigmakerWigInventory from './pages/WigmakerWigInventory';
 import CommunityFeed from './pages/CommunityFeed';
 
 import AdminDashboard from './pages/AdminDashboard';
@@ -126,6 +127,7 @@ function App() {
                   <Route path="dashboard" element={<WigmakerDashboard />} />
                   <Route path="production-tasks" element={<WigmakerDashboard />} />
                   <Route path="task/:taskCode" element={<WigmakerTaskDetail />} />
+                  <Route path="wig-inventory" element={<WigmakerWigInventory />} />
                   <Route path="profile" element={<DonorProfile />} />
                   <Route path="community" element={<CommunityFeed />} />
                   <Route path="*" element={<Navigate to="/wigmaker/dashboard" replace />} />

@@ -207,7 +207,7 @@ const DonorTrackingDetail: React.FC = () => {
 
           <div className="action-row" style={{ marginTop: '1rem', borderTop: '1px dashed #f2ebf4', paddingTop: '1rem' }}>
             {['Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].includes(donation.status) && (
-              <Link className="soft-btn" to="/donor/certificate" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'fit-content', padding: '0.6rem 1.5rem', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', border: 'none' }}>
+              <Link className="soft-btn" to={`/donor/certificate?ref=${donation.reference}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'fit-content', padding: '0.6rem 1.5rem', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', border: 'none' }}>
                 <i className='bx bx-award'></i> Download Certificate
               </Link>
             )}

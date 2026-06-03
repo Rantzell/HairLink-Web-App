@@ -26,13 +26,41 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
       include: { user: true },
       orderBy: { createdAt: 'desc' },
     });
-    // Attach status histories for each donation
-    const result = await Promise.all(donations.map(async (d) => {
-      const statusHistories = await getStatusHistories(DONATION_TYPE, d.id);
+
+    const donationIds = donations.map((d) => d.id);
+
+    // Fetch all status histories for these donations in one query
+    const allStatusHistories = donationIds.length > 0
+      ? await prisma.statusHistory.findMany({
+          where: {
+            trackableType: DONATION_TYPE,
+            trackableId: { in: donationIds },
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [];
+
+    // Group status histories by trackableId
+    const historiesByDonationId = allStatusHistories.reduce((acc: any, history) => {
+      const id = history.trackableId;
+      if (!acc[id]) acc[id] = [];
+      acc[id].push(history);
+      return acc;
+    }, {});
+
+    const result = donations.map((d) => {
+      const statusHistories = historiesByDonationId[d.id] || [];
       return { ...serializeDonation(d), statusHistories };
-    }));
+    });
+
     res.json(result);
-  } catch (err) { res.status(500).json({ error: 'Failed to fetch donations' }); }
+  } catch (err) {
+    console.error('[Donation] Get error:', err);
+    res.status(500).json({ 
+      error: 'Failed to fetch donations',
+      message: err instanceof Error ? err.message : String(err)
+    });
+  }
 });
 
 // POST /internal-api/donations

@@ -93,7 +93,7 @@ const DonorTracking: React.FC = () => {
                     <td style={{ fontSize: '0.85rem' }}>{d.hairLength}</td>
                     <td style={{ fontSize: '0.85rem' }}>
                       {['Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].includes(d.status) ? (
-                        <Link to="/donor/certificate" style={{ color: '#ad246d', fontWeight: 700, textDecoration: 'none' }}>View Certificate</Link>
+                        <Link to={`/donor/certificate?ref=${d.reference}`} style={{ color: '#ad246d', fontWeight: 700, textDecoration: 'none' }}>View Certificate</Link>
                       ) : (
                         <span style={{ color: '#ada9b0' }}>N/A</span>
                       )}

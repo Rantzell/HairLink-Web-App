@@ -87,7 +87,7 @@
     display: flex;
     gap: 1rem;
     flex: 1;
-    max-width: 600px;
+    max-width: 850px;
 }
 
 .batch-input {
