@@ -25,6 +25,8 @@ const VerifyOtp: React.FC = () => {
   const [error, setError] = useState('');
   const [resendMsg, setResendMsg] = useState('');
   const [countdown, setCountdown] = useState(60);
+  // After resend, Supabase sends a 'email' type OTP (not 'signup'), so we track the active type
+  const [activeOtpType, setActiveOtpType] = useState<'signup' | 'email'>(otpType === 'signup' ? 'signup' : 'email');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -63,7 +65,7 @@ const VerifyOtp: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({ email, token, type: otpType });
+      const { error: verifyError } = await supabase.auth.verifyOtp({ email, token, type: activeOtpType });
       if (verifyError) throw verifyError;
       await apiClient.post('/auth/mark-verified');
       const profile = await apiClient.get('/auth/me');
@@ -83,6 +85,8 @@ const VerifyOtp: React.FC = () => {
     try {
       const { error: otpError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
       if (otpError) throw otpError;
+      // signInWithOtp sends type 'email', not 'signup' — update so verifyOtp uses the right type
+      setActiveOtpType('email');
       setResendMsg('A new code has been sent to your email.');
       setCountdown(60);
     } catch (err: any) {

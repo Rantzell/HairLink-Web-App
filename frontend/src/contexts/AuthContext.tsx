@@ -225,6 +225,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) throw { response: { data: { error: error.message } } };
     if (!authData.user) throw { response: { data: { error: 'Registration failed. Please try again.' } } };
 
+    // Supabase returns identities: [] when the email already exists in auth.users
+    // (silent fake-success to prevent user enumeration). No email is sent in this case.
+    if (!authData.session && authData.user.identities?.length === 0) {
+      throw {
+        response: {
+          data: {
+            error: 'An account with this email already exists. Please log in, or use "Forgot password" to reset your password.',
+          },
+        },
+      };
+    }
+
     // If email confirmation is enabled, Supabase won't return a session yet —
     // redirect to OTP verification page.
     if (!authData.session) {
