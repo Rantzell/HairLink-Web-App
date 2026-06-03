@@ -295,11 +295,20 @@ router.post('/tracking/:reference/status', ...staffOnly, validate(trackingStatus
     }
     if (ns === 'Received Hair' && isDon && record.reference && !record.certificateNo) ud.certificateNo = `CERT-${new Date().getFullYear()}-${(record.reference as string).slice(-6)}`;
     if (isDon) {
+      const wasReceived = record.status === 'Received Hair';
       await prisma.donation.update({ where: { id: record.id }, data: ud });
       await createStatusHistory(tt, record.id, ns, notes);
-      
+
       const { notifyDonationStatus } = await import('../services/notification.service');
       if (record.userId) await notifyDonationStatus(record.userId, ns, reference as string);
+
+      // Milestone: only award on a genuine transition INTO "Received Hair".
+      // `wasReceived` short-circuits if staff edits other fields on an already-
+      // received donation, preventing double credit.
+      if (ns === 'Received Hair' && !wasReceived && record.userId) {
+        const { addMilestonePoints, POINTS } = await import('../services/milestone.service');
+        await addMilestonePoints(record.userId, POINTS.HAIR_RECEIVED);
+      }
 
       if (ns === 'Wig Received') {
         const completedWigs = await prisma.wigProduction.findMany({

@@ -21,6 +21,7 @@ import notificationRoutes from './routes/notification.routes';
 import eventsRoutes from './routes/events.routes';
 import calendarRoutes from './routes/calendar.routes';
 import demoRoutes from './routes/demo.routes';
+import rewardsRoutes from './routes/rewards.routes';
 
 const app = express();
 
@@ -74,6 +75,7 @@ app.use('/internal-api/monetary', monetaryRoutes);
 app.use('/internal-api/referral', referralRoutes);
 app.use('/internal-api/partnerships', partnershipRoutes);
 app.use('/internal-api/notifications', notificationRoutes);
+app.use('/internal-api/rewards', rewardsRoutes);
 app.use('/api/public', publicRoutes);
 
 // Mobile API routes (React Native — same controllers, /api prefix)
@@ -87,6 +89,7 @@ app.use('/api/monetary', monetaryRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/referral', referralRoutes);
+app.use('/api/rewards', rewardsRoutes);
 
 // Dev-only demo auth helper
 app.use('/auth', demoRoutes);

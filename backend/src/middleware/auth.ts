@@ -84,6 +84,9 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
         firstName: true,
         lastName: true,
         isActive: true,
+        age: true,
+        gender: true,
+        phone: true,
       },
     });
 
@@ -121,6 +124,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
           select: {
             id: true, email: true, role: true, name: true,
             firstName: true, lastName: true, isActive: true,
+            age: true, gender: true, phone: true,
           },
         });
         console.log(`[Auth] Auto-provisioned public.users row for ${email} (${userId})`);
@@ -131,6 +135,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
           select: {
             id: true, email: true, role: true, name: true,
             firstName: true, lastName: true, isActive: true,
+            age: true, gender: true, phone: true,
           },
         });
         if (!user) {
@@ -144,6 +149,42 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     if (!user.isActive) {
       res.status(403).json({ error: 'Account is deactivated. Please contact support.' });
       return;
+    }
+
+    // Backfill profile fields from JWT metadata for legacy users whose
+    // public.users row was created before the auto-provision path persisted
+    // age/gender/phone (signup screen submits them as Supabase metadata).
+    // Runs at most once per field per account — once stored, the check
+    // short-circuits on future requests.
+    if (user.age == null || user.gender == null || (!user.phone && (payload.user_metadata as any)?.phone)) {
+      const meta = (payload.user_metadata || payload.raw_user_meta_data || {}) as any;
+      const patch: any = {};
+      if (user.age == null && meta.age) {
+        const parsed = parseInt(String(meta.age), 10);
+        if (!Number.isNaN(parsed)) patch.age = parsed;
+      }
+      if (user.gender == null && meta.gender) {
+        patch.gender = String(meta.gender).toLowerCase();
+      }
+      if (!user.phone && meta.phone) {
+        patch.phone = String(meta.phone);
+      }
+      if (Object.keys(patch).length) {
+        try {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: patch,
+            select: {
+              id: true, email: true, role: true, name: true,
+              firstName: true, lastName: true, isActive: true,
+              age: true, gender: true, phone: true,
+            },
+          });
+          console.log(`[Auth] Backfilled profile fields for ${user.email}:`, Object.keys(patch));
+        } catch (backfillErr) {
+          console.warn('[Auth] Backfill update failed (non-fatal):', backfillErr);
+        }
+      }
     }
 
     const userData: AuthUser = {
@@ -161,6 +202,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     req.user = userData;
     next();
   } catch (err: any) {
-    res.status(401).json({ error: 'Authentication failed' });
+    console.error('[Auth] Unexpected error in authenticate middleware:', err);
+    res.status(500).json({ error: 'Authentication processing failed', detail: err?.message });
   }
 }

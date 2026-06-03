@@ -8,7 +8,13 @@
       "tsconfigPaths": true
     },
     "plugins": [
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "HairLink uses your camera to let you preview wig styles on yourself in AR Try-On."
+        }
+      ]
     ],
     "orientation": "portrait",
     "userInterfaceStyle": "light",

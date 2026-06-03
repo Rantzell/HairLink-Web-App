@@ -15,7 +15,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import api from '../../lib/api';
@@ -23,12 +23,14 @@ import RecipientTrackingDetailScreen from './RecipientTrackingDetailScreen';
 
 interface RequestRecord {
   id: string;
+  type: 'request' | 'monetary';
   reference: string;
   status: string;
   createdAt: string;
   wigLength: string | null;
   wigColor: string | null;
   trackingLink: string | null;
+  amount?: number;
 }
 
 const ScaleButton = ({ children, onPress, style }: any) => {
@@ -65,11 +67,17 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
   const fetchHistory = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/requests');
-      // Backend returns Prisma camelCase; normalize defensively in case any
-      // older snake_case data is around.
-      const rows: RequestRecord[] = (response.data || []).map((r: any) => ({
-        id: String(r.id),
+      // Pull recipient's hair requests AND any monetary donations they've made
+      // so the history is a single timeline of every transaction (mirrors
+      // donor history's hair + monetary merge).
+      const [reqRes, moneyRes] = await Promise.all([
+        api.get('/requests').catch(() => ({ data: [] as any[] })),
+        api.get('/monetary').catch(() => ({ data: [] as any[] })),
+      ]);
+
+      const reqRows: RequestRecord[] = (reqRes.data || []).map((r: any) => ({
+        id: `request-${r.id}`,
+        type: 'request',
         reference: r.reference,
         status: r.status,
         createdAt: r.createdAt || r.created_at,
@@ -77,7 +85,25 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
         wigColor: r.wigColor || r.wig_color || null,
         trackingLink: r.trackingLink || null,
       }));
-      setRequests(rows);
+
+      const monetaryRows: RequestRecord[] = (moneyRes.data || []).map((m: any) => ({
+        id: m.id || `monetary-${m.reference || Date.now()}`,
+        type: 'monetary',
+        reference: m.reference || '',
+        status: m.status || 'Submitted',
+        createdAt: m.createdAt || m.created_at,
+        wigLength: null,
+        wigColor: null,
+        trackingLink: null,
+        amount: Number(m.amount || 0),
+      }));
+
+      const merged = [...reqRows, ...monetaryRows].sort((a, b) => {
+        const ta = new Date(a.createdAt || 0).getTime();
+        const tb = new Date(b.createdAt || 0).getTime();
+        return tb - ta;
+      });
+      setRequests(merged);
     } catch (err) {
       console.error('Error fetching history:', err);
     } finally {
@@ -143,7 +169,8 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
       r.reference.toLowerCase().includes(q) ||
       r.status.toLowerCase().includes(q) ||
       (r.wigColor || '').toLowerCase().includes(q) ||
-      (r.wigLength || '').toLowerCase().includes(q)
+      (r.wigLength || '').toLowerCase().includes(q) ||
+      (r.type === 'monetary' ? 'monetary' : 'request').includes(q)
     );
   });
 
@@ -160,20 +187,24 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
     );
   }
 
-  const getStatusStyle = (status: string) => {
+  const getStatusStyle = (status: string, type: 'request' | 'monetary' = 'request') => {
     const s = status.toLowerCase();
+    // Monetary donations are always Completed (no verify step) — show as such.
+    if (type === 'monetary') {
+      return { bg: '#E8F5E9', text: '#2E7D32', label: 'Completed' };
+    }
     switch (s) {
-      case 'approved': 
+      case 'approved':
       case 'validated':
       case 'matched':
       case 'ready':
       case 'completed':
         return { bg: '#E8F5E9', text: '#2E7D32', label: (status === 'Validated' || status === 'Approved') ? 'Application Approved' : status };
-      case 'pending': 
+      case 'pending':
       case 'submitted':
       case 'under review':
         return { bg: '#FFF3E0', text: '#EF6C00', label: (status === 'Submitted' || status === 'Pending') ? 'Application Pending' : status };
-      case 'rejected': 
+      case 'rejected':
       case 'cancelled':
         return { bg: '#FFEBEE', text: '#C62828', label: status };
       default: return { bg: '#F5F5F5', text: '#757575', label: status };
@@ -230,20 +261,27 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
             <Text style={styles.emptyDesc}>Your hair requests will appear here once submitted.</Text>
           </View>
         ) : (
-          requests.map((item, index) => {
-            const statusStyle = getStatusStyle(item.status);
+          filteredRequests.map((item, index) => {
+            const statusStyle = getStatusStyle(item.status, item.type);
+            const isMonetary = item.type === 'monetary';
             return (
-              <Animated.View 
-                key={item.id} 
+              <Animated.View
+                key={item.id}
                 entering={FadeInUp.delay(index * 100).springify()}
                 style={styles.card}
               >
                 <View style={styles.cardHeader}>
-                  <View style={styles.typeIconBg}>
-                    <MaterialCommunityIcons name="ribbon" size={ms(24)} color="#B084CC" />
+                  <View style={[styles.typeIconBg, isMonetary && { backgroundColor: '#E3F2FD' }]}>
+                    {isMonetary ? (
+                      <FontAwesome5 name="wallet" size={ms(20)} color="#1976D2" />
+                    ) : (
+                      <MaterialCommunityIcons name="ribbon" size={ms(24)} color="#B084CC" />
+                    )}
                   </View>
                   <View style={styles.headerText}>
-                    <Text style={styles.referenceText}>{item.reference}</Text>
+                    <Text style={styles.referenceText}>
+                      {isMonetary ? 'Monetary Support' : item.reference}
+                    </Text>
                     <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
                   </View>
                   <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
@@ -252,19 +290,32 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
                 </View>
 
                 <View style={styles.cardBody}>
-                  <View style={styles.detailRow}>
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Wig Length</Text>
-                      <Text style={styles.detailValue}>{item.wigLength}</Text>
+                  {isMonetary ? (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Amount</Text>
+                        <Text style={styles.detailValue}>₱{(item.amount ?? 0).toLocaleString()}</Text>
+                      </View>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Reference</Text>
+                        <Text style={styles.detailValue} numberOfLines={1}>{item.reference || '—'}</Text>
+                      </View>
                     </View>
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Wig Color</Text>
-                      <Text style={styles.detailValue}>{item.wigColor}</Text>
+                  ) : (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Wig Length</Text>
+                        <Text style={styles.detailValue}>{item.wigLength}</Text>
+                      </View>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Wig Color</Text>
+                        <Text style={styles.detailValue}>{item.wigColor}</Text>
+                      </View>
                     </View>
-                  </View>
+                  )}
                 </View>
 
-                {!['cancelled', 'rejected'].includes(item.status.toLowerCase()) && (
+                {!isMonetary && !['cancelled', 'rejected'].includes(item.status.toLowerCase()) && (
                   <View style={styles.cardFooter}>
                     <TouchableOpacity
                       style={styles.trackBtn}

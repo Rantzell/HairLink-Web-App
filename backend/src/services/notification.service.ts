@@ -20,7 +20,68 @@ export const createNotification = async (userId: string, title: string, message:
   }
 };
 
+// ── Notification audience filters ────────────────────────────────
+//
+// Centralized rules so every call site (donation.routes, staff.routes,
+// request.routes, ...) automatically follows them. Both functions return
+// `null` when a notification is intentionally suppressed.
+//
+// Donor rule
+//   The donor's certificate is generated at the moment staff sets a donation
+//   to "Received Hair" (see donation.routes.ts + staff.routes.ts — both set
+//   `certificateNo` in the same write). After that, the donor's involvement
+//   is effectively finished — downstream wigmaker statuses are internal
+//   production noise and shouldn't reach the donor's inbox. We detect the
+//   certificate by reading the donation row, so the rule self-heals even if
+//   future statuses are renamed.
+//
+// Recipient rule
+//   The recipient should only see their milestone events: pending → approval
+//   → matched → ready/in-transit. Internal statuses ("In Production",
+//   "Verified") and the post-confirmation "Completed" (which the recipient
+//   triggers themselves via the Confirm Wig Received button) are suppressed
+//   to keep the inbox focused. Rejection is always allowed.
+
+const DONOR_POST_CERT_SUPPRESSED = new Set([
+  'In Queue',
+  'In Progress',
+  'Completed',
+  'Wig Received',
+]);
+
+const RECIPIENT_ALLOWED_STATUSES = new Set([
+  // pending
+  'Submitted', 'Pending',
+  // approval
+  'Approved', 'Validated',
+  // matched
+  'Matched',
+  // ready / on its way / arrived for pickup
+  'In Transit', 'Arrived', 'Ready', 'Ready for Pickup',
+  // critical — always notify rejections
+  'Rejected',
+]);
+
 export const notifyDonationStatus = async (userId: string, status: string, reference: string) => {
+  // Suppress post-certificate updates. We confirm the cert is actually issued
+  // before suppressing so an unusual ordering (e.g. status set without a cert)
+  // still notifies — fail-open on the user's behalf.
+  if (DONOR_POST_CERT_SUPPRESSED.has(status)) {
+    try {
+      const donation = await prisma.donation.findFirst({
+        where: { reference },
+        select: { certificateNo: true },
+      });
+      if (donation?.certificateNo) {
+        console.log(`[Notif] Suppressed donor "${status}" for ${reference} — certificate already issued.`);
+        return null;
+      }
+    } catch (err) {
+      // DB hiccup → fall through and notify rather than silently drop.
+      console.warn('[Notif] Donor cert lookup failed; sending notification anyway:', err);
+    }
+  }
+
   const titles: Record<string, string> = {
     'Approved': 'Donation Approved! 🌸',
     'Verified': 'Donation Verified! ✅',
@@ -42,6 +103,11 @@ export const notifyDonationStatus = async (userId: string, status: string, refer
 };
 
 export const notifyRequestStatus = async (userId: string, status: string, reference: string) => {
+  if (!RECIPIENT_ALLOWED_STATUSES.has(status)) {
+    console.log(`[Notif] Suppressed recipient "${status}" for ${reference} — not a milestone event.`);
+    return null;
+  }
+
   const titles: Record<string, string> = {
     'Approved': 'Request Approved! 💖',
     'Verified': 'Request Verified! ✅',

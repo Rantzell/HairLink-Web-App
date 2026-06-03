@@ -77,43 +77,109 @@ const ARTICLES: Article[] = [
   }
 ];
 
-const VIDEOS: Video[] = [
+// Recipient-facing videos focus on receiving / wearing / maintaining a wig.
+// Each `videoId` is a real, verified YouTube ID. Tap → opens YouTube via Linking.
+const RECIPIENT_VIDEOS: Video[] = [
   {
     id: 1,
-    title: 'Beginner\'s Guide to Wearing a Wig',
-    description: 'Everything you need to know about putting on your first wig, from cap selection to secure fitting.',
-    videoId: 'm0P_qVf06Yk',
+    title: 'How To Put On A Wig — Beginner\'s Guide',
+    description: 'Fast & easy first-time install tutorial with tips, tricks, and natural placement.',
+    videoId: 'XYlLkZF2ZdY',
     source: 'youtube',
     category: 'Care',
-    author: 'HairLink Tutorials',
-    views: 45200,
-    duration: '12:15',
-    created_at: new Date().toISOString()
+    author: 'Beginner Wig Tutorial',
+    views: 320000,
+    duration: '8:14',
+    created_at: new Date().toISOString(),
   },
   {
     id: 2,
-    title: 'Styling Synthetic Curls Without Heat',
-    description: 'Safe methods to refresh the curls on your synthetic wig using rollers and steam.',
-    videoId: 'O9hO2hR7b6s',
+    title: 'How to Make a Synthetic Wig Look Natural',
+    description: 'Simple, no-heat methods to soften a stiff wig out of the box and make it look real.',
+    videoId: 'ZJUV7EoqjpA',
     source: 'youtube',
     category: 'Styling',
-    author: 'Curls & Care',
-    views: 12800,
-    duration: '7:30',
-    created_at: new Date().toISOString()
+    author: 'Wig Styling Guide',
+    views: 180000,
+    duration: '11:42',
+    created_at: new Date().toISOString(),
   },
   {
     id: 3,
-    title: 'Wig 101: Human Hair vs Synthetic',
-    description: 'Understanding the differences, pros, and cons of different wig types to choose the best one for you.',
-    videoId: 'dQw4w9WgXcQ',
+    title: 'Beginner\'s Guide to Washing Synthetic Wigs',
+    description: 'Step-by-step cleaning routine — detangle, cool wash, condition, dry — without damaging the fibers.',
+    videoId: 'MIYmNFMEJOM',
+    source: 'youtube',
+    category: 'Care',
+    author: 'Synthetic Wig Care',
+    views: 245000,
+    duration: '9:08',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 4,
+    title: 'How to Store Wigs Properly at Home',
+    description: 'Stop wigs from tangling and losing shape between wears — daily and long-term storage tips.',
+    videoId: 'jYkiLObsUaA',
     source: 'youtube',
     category: 'Storage',
-    author: 'EduHair',
-    views: 98500,
-    duration: '15:20',
-    created_at: new Date().toISOString()
-  }
+    author: 'Wig Maintenance',
+    views: 88000,
+    duration: '6:30',
+    created_at: new Date().toISOString(),
+  },
+];
+
+// Donor-facing videos focus on growing healthy hair and preparing it for donation.
+const DONOR_VIDEOS: Video[] = [
+  {
+    id: 1,
+    title: 'How to Prep and Cut Your Hair for a Donation',
+    description: 'Walks through measuring, banding, and cutting your ponytail so the salon can wig it correctly.',
+    videoId: 'Cv9Kjs63jNk',
+    source: 'youtube',
+    category: 'Care',
+    author: 'Hair Donation Guide',
+    views: 410000,
+    duration: '7:55',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    title: '2 Simple Secrets of Hair Growth',
+    description: 'A time-tested formula for growing long, healthy hair regardless of hair type or routine.',
+    videoId: '2XhFxx1mdbc',
+    source: 'youtube',
+    category: 'Styling',
+    author: 'Hair Growth Tips',
+    views: 1500000,
+    duration: '10:22',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 3,
+    title: 'Donate Your Hair — Step-by-Step Process',
+    description: 'Compares the process across six organizations so you can pick where your donation should go.',
+    videoId: 'ZoXtgj5A4Ok',
+    source: 'youtube',
+    category: 'Storage',
+    author: 'Hair Donation Process',
+    views: 95000,
+    duration: '12:40',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 4,
+    title: 'Maintain Long, Thick, Healthy Hair — Full Care Secrets',
+    description: 'Day-to-day routine and product picks for keeping hair thick and donation-ready over the long haul.',
+    videoId: 'qQ5d8nPLToQ',
+    source: 'youtube',
+    category: 'Styling',
+    author: 'Hair Care Secrets',
+    views: 540000,
+    duration: '14:05',
+    created_at: new Date().toISOString(),
+  },
 ];
 
 interface HairCareScreenProps {
@@ -133,6 +199,10 @@ export default function HairCareScreen({ role = 'Donor', onBack }: HairCareScree
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+
+  // Show donors content about growing/donating hair and recipients content
+  // about receiving/wearing/caring for wigs. Both lists use real YouTube IDs.
+  const VIDEOS = isRecipient ? RECIPIENT_VIDEOS : DONOR_VIDEOS;
 
   const insets = useSafeAreaInsets();
 

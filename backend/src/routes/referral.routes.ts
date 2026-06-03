@@ -27,6 +27,17 @@ router.post('/', authenticate, validate(referralCodeSchema), async (req, res) =>
     }
 
     await prisma.user.update({ where: { id: user.id }, data: { referredBy: referrer.id } });
+
+    // Milestone: credit the *referrer* with referral points. We only reach
+    // this line after the earlier guard ensured the redeemer had no prior
+    // `referredBy` — so this fires at most once per (redeemer, referrer) pair.
+    try {
+      const { addMilestonePoints, POINTS } = await import('../services/milestone.service');
+      await addMilestonePoints(referrer.id, POINTS.REFERRAL);
+    } catch (err) {
+      console.warn('[Referral] Milestone credit failed (non-fatal):', err);
+    }
+
     res.json({ success: true, message: 'Referral code applied successfully!' });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });

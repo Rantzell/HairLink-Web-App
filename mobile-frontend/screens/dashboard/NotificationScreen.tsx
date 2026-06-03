@@ -318,7 +318,7 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
                           <Text style={styles.notifTime}>{getRelativeTime(n.created_at)}</Text>
                         </View>
                         
-                        {['donation', 'hair_donation', 'monetary_donation', 'wig', 'request', 'monetary'].includes(n.type) && onTrack && (
+                        {['donation', 'hair_donation', 'wig', 'request'].includes(n.type) && onTrack && (
                           <TouchableOpacity
                             style={[styles.trackBtn, { backgroundColor: themeBg, borderColor: themeLight }]}
                             onPress={(e) => {

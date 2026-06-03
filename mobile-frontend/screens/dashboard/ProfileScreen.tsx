@@ -46,6 +46,8 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const [email, setEmail] = useState('');
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
+    const [age, setAge] = useState('');
+    const [bio, setBio] = useState('');
     const [role, setRole] = useState<'Donor' | 'Recipient'>('Donor');
     const [points, setPoints] = useState(0);
     const [referralCode, setReferralCode] = useState('');
@@ -85,6 +87,8 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 const last = data.lastName || data.last_name || '';
                 setFullName(`${first} ${last}`.trim());
                 setPhone(data.phone || '');
+                setAge(data.age != null ? String(data.age) : '');
+                setBio(data.bio || '');
                 const fetchedRole = data.role ? (data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase()) : 'Donor';
                 setRole(fetchedRole as 'Donor' | 'Recipient');
                 const computedPoints = statsRes?.data?.totalPoints ?? data.starPoints ?? data.star_points ?? 0;
@@ -128,6 +132,8 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 first_name: firstName,
                 last_name: lastName,
                 phone: phone,
+                age: age ? parseInt(age, 10) : null,
+                bio: bio || null,
             });
 
             Alert.alert('Success', 'Profile updated successfully! ✨');
@@ -294,6 +300,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                                 isEdit={editMode}
                                 onChange={setEmail}
                                 keyboardType="email-address"
+                                readOnly
                             />
                             <View style={styles.divider} />
                             <InfoRow
@@ -312,6 +319,24 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                                 isEdit={editMode}
                                 onChange={setPhone}
                                 keyboardType="phone-pad"
+                            />
+                            <View style={styles.divider} />
+                            <InfoRow
+                                icon="calendar"
+                                label="Age"
+                                value={age}
+                                isEdit={editMode}
+                                onChange={setAge}
+                                keyboardType="number-pad"
+                            />
+                            <View style={styles.divider} />
+                            <InfoRow
+                                icon="edit-2"
+                                label="Quick Bio"
+                                value={bio}
+                                isEdit={editMode}
+                                onChange={setBio}
+                                multiline
                             />
                         </View>
                     </View>
@@ -414,7 +439,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     );
 }
 
-function InfoRow({ icon, label, value, isEdit, onChange, keyboardType, readOnly }: any) {
+function InfoRow({ icon, label, value, isEdit, onChange, keyboardType, readOnly, multiline }: any) {
     // `readOnly` forces the row to render as a static value even in edit mode —
     // used for the full name so users can’t rename their identity post-signup.
     const editable = isEdit && !readOnly;
@@ -432,12 +457,15 @@ function InfoRow({ icon, label, value, isEdit, onChange, keyboardType, readOnly 
                 </View>
                 {editable ? (
                     <TextInput
-                        style={styles.rowInput}
+                        style={[styles.rowInput, multiline && styles.rowInputMultiline]}
                         value={value}
                         onChangeText={onChange}
                         placeholder={`Enter ${label}`}
                         keyboardType={keyboardType}
                         autoCapitalize={label === 'Email Address' ? 'none' : 'words'}
+                        multiline={multiline}
+                        numberOfLines={multiline ? 3 : 1}
+                        textAlignVertical={multiline ? 'top' : 'center'}
                     />
                 ) : (
                     <Text style={[styles.rowValue, readOnly && { color: '#1C1917' }]}>
@@ -617,6 +645,7 @@ const styles = StyleSheet.create({
     rowLabel: { fontSize: ms(12), fontWeight: '800', color: '#bbb', marginBottom: vs(4), textTransform: 'uppercase', letterSpacing: 0.5 },
     rowValue: { fontSize: ms(14), fontWeight: '900', color: '#1a1a1a' },
     rowInput: { fontSize: ms(16), fontWeight: '900', color: '#FF1493', padding: 0 },
+    rowInputMultiline: { minHeight: vs(60), fontWeight: '700', textAlignVertical: 'top' },
     divider: { height: 1, backgroundColor: '#f5f5f5', marginLeft: ms(80) },
 
     // Premium Card

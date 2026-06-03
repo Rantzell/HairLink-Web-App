@@ -39,6 +39,7 @@ import ProfileScreen from './ProfileScreen';
 import ARScreen from '../ar/ARScreen';
 import CommunityScreen from './CommunityScreen';
 import HairCareScreen from './HairCareScreen';
+import RewardsScreen from './RewardsScreen';
 
 interface DonorDashboardProps {
   onLogout?: () => void;
@@ -119,6 +120,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
   const [showAR, setShowAR] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
   const [showHairCare, setShowHairCare] = useState(false);
+  const [showRewards, setShowRewards] = useState(false);
   const [starPoints, setStarPoints] = useState(0);
   const [referralCode, setReferralCode] = useState('---');
   const [unreadCount, setUnreadCount] = useState(0);
@@ -182,13 +184,13 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
 
   useEffect(() => {
     // Only re-fetch unread count when returning from other screens, not notifications
-    if (!showMonetary && !showHairDonation && !showCalendar && !showNotifications && !showHistory && !showProfile && !showCommunity && !showHairCare) {
+    if (!showMonetary && !showHairDonation && !showCalendar && !showNotifications && !showHistory && !showProfile && !showCommunity && !showHairCare && !showRewards) {
       fetchPoints();
       if (!notificationsViewedRef.current) {
         fetchUnreadCount();
       }
     }
-  }, [showMonetary, showHairDonation, showCalendar, showNotifications, showHistory, showProfile, showCommunity, showHairCare, fetchPoints, fetchUnreadCount]);
+  }, [showMonetary, showHairDonation, showCalendar, showNotifications, showHistory, showProfile, showCommunity, showHairCare, showRewards, fetchPoints, fetchUnreadCount]);
 
   const navPlaceholder = (screen: string) =>
     Alert.alert('Coming Soon', `${screen} is coming soon!`);
@@ -333,6 +335,24 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
     );
   }
 
+  if (showRewards) {
+    return (
+      <Animated.View
+        style={{ flex: 1 }}
+        entering={FadeInUp.springify().damping(15).stiffness(120)}
+        exiting={FadeOut.duration(200)}
+      >
+        <RewardsScreen
+          onBack={() => {
+            setShowRewards(false);
+            // Refresh star points display in case a voucher was just redeemed.
+            fetchPoints();
+          }}
+        />
+      </Animated.View>
+    );
+  }
+
   const insets = useSafeAreaInsets();
 
   return (
@@ -421,6 +441,16 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
               <Text key={i} style={styles.star}>⭐</Text>
             ))}
           </View>
+
+          <TouchableOpacity
+            style={styles.viewRewardsBtn}
+            activeOpacity={0.85}
+            onPress={() => setShowRewards(true)}
+          >
+            <MaterialCommunityIcons name="trophy" size={ms(14)} color="#fff" />
+            <Text style={styles.viewRewardsBtnText}>View Rewards & Vouchers</Text>
+            <Ionicons name="chevron-forward" size={ms(14)} color="#fff" />
+          </TouchableOpacity>
         </Animated.View>
 
         {/* ── Referral ──────────────────────────────── */}
@@ -739,6 +769,23 @@ const styles = StyleSheet.create({
   progressBg: { backgroundColor: '#F0F0F0', height: vs(8), borderRadius: ms(8), marginBottom: vs(6) },
   progressFill: { backgroundColor: '#FF66CC', height: vs(8), borderRadius: ms(8) },
   progressLabel: { fontSize: ms(11), color: '#999', fontWeight: '600', marginBottom: vs(12) },
+  viewRewardsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: ms(6),
+    backgroundColor: '#FF1493',
+    borderRadius: ms(14),
+    paddingVertical: vs(10),
+    paddingHorizontal: ms(14),
+    marginTop: vs(14),
+    shadowColor: '#FF1493',
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  viewRewardsBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(13), letterSpacing: 0.3 },
 
   starsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   star: { fontSize: ms(16) },
