@@ -27,12 +27,25 @@ const app = express();
 
 // ── Security ──
 app.use(helmet());
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  ...(process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+    : []),
+];
+
 app.use(cors({
-  origin: [
-    process.env.CORS_ORIGIN || 'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175'
-  ],
+  origin: (origin, callback) => {
+    // Allow server-to-server requests (no origin) and listed origins
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    }
+  },
   credentials: true,
 }));
 
