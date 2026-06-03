@@ -215,34 +215,6 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                 contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(vs(40), insets.bottom + vs(20)) }]}
                 showsVerticalScrollIndicator={false}
             >
-                {/* ── Personal Details (read-only — same pattern as recipient form) ── */}
-                <Animated.View entering={FadeInDown.delay(50)} style={styles.card}>
-                    <Text style={styles.cardTitle}>Personal Details</Text>
-                    <Text style={styles.hint}>
-                        Pulled from your profile. Update your profile to change these.
-                    </Text>
-
-                    {[
-                        { icon: 'person-outline' as const, label: 'Full Name', value: profile.name || '—' },
-                        { icon: 'call-outline' as const, label: 'Contact Number', value: profile.phone || '—' },
-                        { icon: 'transgender-outline' as const, label: 'Gender', value: profile.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : '—' },
-                        { icon: 'mail-outline' as const, label: 'Email', value: profile.email || '—' },
-                    ].map((row, i, arr) => (
-                        <View key={row.label}>
-                            <View style={styles.profileRow}>
-                                <View style={styles.profileIcon}>
-                                    <Ionicons name={row.icon} size={ms(14)} color="#D63B8A" />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.profileLabel}>{row.label}</Text>
-                                    <Text style={styles.profileValue} numberOfLines={1}>{row.value}</Text>
-                                </View>
-                            </View>
-                            {i < arr.length - 1 && <View style={styles.profileDivider} />}
-                        </View>
-                    ))}
-                </Animated.View>
-
                 {/* ── Donation Story (same bullet-list + textarea as recipient) ── */}
                 <Animated.View entering={FadeInDown.delay(100)} style={styles.card}>
                     <Text style={styles.cardTitle}>Donation Story</Text>

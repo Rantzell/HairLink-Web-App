@@ -253,6 +253,14 @@ router.post('/:reference/status', authenticate, validate(donationStatusSchema), 
 
       const { notifyDonationStatus } = await import('../services/notification.service');
       if (donation.userId) await notifyDonationStatus(donation.userId, newStatus, donation.reference!);
+
+      // Milestone: the donor earns points the moment staff confirms the hair
+      // was physically received. Award here so a re-PUT of an already-received
+      // donation does NOT double-credit (guarded by `donation.status !== newStatus`).
+      if (newStatus === 'Received Hair' && donation.userId) {
+        const { addMilestonePoints, POINTS } = await import('../services/milestone.service');
+        await addMilestonePoints(donation.userId, POINTS.HAIR_RECEIVED);
+      }
     }
 
     const updated = await prisma.donation.findUnique({ where: { id: donation.id }, include: { user: true } });

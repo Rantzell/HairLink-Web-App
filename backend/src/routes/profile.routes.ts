@@ -41,9 +41,12 @@ router.post('/', authenticate, upload.single('profile_photo'), validate(profileU
     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
     if (!user) { res.status(404).json({ error: 'Not found' }); return; }
 
+    // Donors and recipients cannot change their own name — preserve existing values
+    // regardless of what the client submits.
+    const nameLocked = user.role === 'donor' || user.role === 'recipient';
     const updateData: any = {
-      firstName: req.body.first_name,
-      lastName: req.body.last_name,
+      firstName: nameLocked ? user.firstName : req.body.first_name,
+      lastName: nameLocked ? user.lastName : req.body.last_name,
       phone: req.body.phone || null,
       bio: req.body.bio || null,
       age: req.body.age || null,

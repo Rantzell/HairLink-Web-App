@@ -40,9 +40,14 @@ interface RequestDetail {
   story: string | null;
   createdAt: string;
   trackingLink: string | null;
+  deliveryMethod?: string | null;
   user?: { firstName?: string; lastName?: string; name?: string } | null;
   statusHistories?: StatusHistory[];
 }
+
+// Org pickup / origin address — kept in one place so it's easy to update.
+const ORG_NAME = 'Manila Downtown YMCA';
+const ORG_ADDRESS = '945 Sabino Padilla St., Sta. Cruz, Manila';
 
 const statusTint = (status: string) => {
   const s = (status || '').toLowerCase();
@@ -174,6 +179,53 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
             <Text style={styles.summaryValue} numberOfLines={1}>{fullName}</Text>
           </View>
         </Animated.View>
+
+        {/* Delivery method — surface the recipient's choice so they always know
+            whether to wait for shipping or visit the org for pickup. */}
+        {(() => {
+          const method = (data.deliveryMethod || 'delivery').toLowerCase();
+          const isPickup = method === 'pickup';
+          return (
+            <Animated.View entering={FadeInUp.delay(80).springify()} style={styles.methodCard}>
+              <View style={styles.methodHeader}>
+                <View style={[styles.methodIconWrap, isPickup ? styles.methodIconPickup : styles.methodIconDelivery]}>
+                  <Ionicons
+                    name={isPickup ? 'storefront' : 'rocket'}
+                    size={ms(18)}
+                    color="#fff"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.methodLabel}>Fulfillment Method</Text>
+                  <Text style={styles.methodValue}>
+                    {isPickup ? 'Pickup at Organization' : 'Delivery to Recipient'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.methodAddressBox}>
+                <View style={styles.methodAddressHeader}>
+                  <Ionicons name="location" size={ms(14)} color="#B084CC" />
+                  <Text style={styles.methodAddressTitle}>
+                    {isPickup ? 'Pickup Location' : 'Shipping From'}
+                  </Text>
+                </View>
+                <Text style={styles.methodOrgName}>{ORG_NAME}</Text>
+                <Text style={styles.methodOrgAddr}>{ORG_ADDRESS}</Text>
+                {isPickup && (
+                  <Text style={styles.methodHint}>
+                    Once your wig is ready, please visit the address above to collect it.
+                  </Text>
+                )}
+                {!isPickup && (
+                  <Text style={styles.methodHint}>
+                    Your wig will be shipped to your registered address. Track the courier link below once it ships.
+                  </Text>
+                )}
+              </View>
+            </Animated.View>
+          );
+        })()}
 
         {/* Action row — Track + Confirm */}
         {(canTrack || canConfirm) && (
@@ -315,6 +367,40 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: ms(14), color: '#1a1a1a', fontWeight: '800', marginTop: vs(2) },
   statusPill: { alignSelf: 'flex-start', paddingHorizontal: ms(10), paddingVertical: vs(4), borderRadius: ms(10), marginTop: vs(4) },
   statusPillText: { fontSize: ms(10), fontWeight: '900', letterSpacing: 0.5 },
+
+  // ── Fulfillment method card ───────────────────────────────────────
+  methodCard: {
+    backgroundColor: '#fff',
+    borderRadius: ms(20),
+    padding: ms(16),
+    marginBottom: vs(14),
+    borderWidth: 1,
+    borderColor: '#EFE6F5',
+  },
+  methodHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: vs(12), gap: ms(12) },
+  methodIconWrap: {
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  methodIconDelivery: { backgroundColor: '#1565C0' },
+  methodIconPickup: { backgroundColor: '#B084CC' },
+  methodLabel: { fontSize: ms(10), color: '#8C7895', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  methodValue: { fontSize: ms(15), color: '#1a1a1a', fontWeight: '900', marginTop: vs(2) },
+  methodAddressBox: {
+    backgroundColor: '#FDF7FB',
+    borderRadius: ms(12),
+    padding: ms(12),
+    borderLeftWidth: 3,
+    borderLeftColor: '#B084CC',
+  },
+  methodAddressHeader: { flexDirection: 'row', alignItems: 'center', gap: ms(6), marginBottom: vs(6) },
+  methodAddressTitle: { fontSize: ms(11), color: '#B084CC', fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
+  methodOrgName: { fontSize: ms(14), color: '#1a1a1a', fontWeight: '900' },
+  methodOrgAddr: { fontSize: ms(12), color: '#4D3F56', fontWeight: '600', marginTop: vs(2), lineHeight: ms(17) },
+  methodHint: { fontSize: ms(11), color: '#8C7895', fontWeight: '600', fontStyle: 'italic', marginTop: vs(8), lineHeight: ms(16) },
 
   actionRow: { flexDirection: 'row', gap: ms(10), marginBottom: vs(14) },
   actionBtn: {

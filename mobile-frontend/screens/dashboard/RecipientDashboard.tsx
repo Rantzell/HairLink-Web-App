@@ -74,7 +74,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           onPress={onPress}
           onPressIn={() => (scale.value = withSpring(0.96, { damping: 10, stiffness: 200 }))}
           onPressOut={() => (scale.value = withSpring(1))}
-          style={{ width: '100%' }}
+          style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}
         >
           {children}
         </TouchableOpacity>
@@ -136,10 +136,16 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
 
   const fetchLatestRequest = React.useCallback(async () => {
     try {
-      const response = await api.get('/auth/me');
-      if (response.data && (response.data.latest_hair_request || response.data.latestHairRequest)) {
-        setLatestRequest(response.data.latest_hair_request || response.data.latestHairRequest);
-      }
+      // The backend returns hair requests newest-first; pick the latest
+      // non-terminal one so the stepper reflects the user's current journey
+      // (a completed/rejected request shouldn't keep the card "active").
+      const response = await api.get('/requests');
+      const rows: any[] = Array.isArray(response.data) ? response.data : [];
+      const active = rows.find((r: any) => {
+        const s = (r.status || '').toLowerCase();
+        return !['completed', 'rejected', 'cancelled'].includes(s);
+      });
+      setLatestRequest(active || null);
     } catch (err) {
       console.log('Error fetching latest request:', err);
     }
@@ -400,87 +406,104 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
             </TouchableOpacity>
           </View>
 
-          {/* Steps */}
-          {!latestRequest ? (
-            <View style={styles.statusContent}>
-              <View style={{ alignItems: 'center', paddingVertical: vs(12), marginBottom: vs(12) }}>
-                <Text style={{ color: '#aaa', fontStyle: 'italic', fontSize: ms(13) }}>
-                  No active requests. Start your journey below! ✨
-                </Text>
-              </View>
-              
-              {/* Visual Roadmap Preview */}
-              <View style={{ borderTopWidth: 1, borderTopColor: '#F4ECF7', paddingTop: vs(14) }}>
-                <Text style={{ fontSize: ms(12), fontWeight: '800', color: '#B084CC', marginBottom: vs(14), letterSpacing: 0.5 }}>
-                  WIG REQUEST JOURNEY MAP
-                </Text>
-                {[
-                  { label: '1. Application Pending', desc: 'Submit request with medical diagnosis & story.' },
-                  { label: '2. Application Approved', desc: 'Medical review & document verification complete.' },
-                  { label: '3. Wig in Production', desc: 'Assigned wigmaker builds your custom hairpiece.' },
-                  { label: '4. Wig Ready for Pickup', desc: 'Wig transit updates & pick-up details unlocked.' },
-                ].map((step, i) => (
-                  <View key={i} style={styles.stepRow}>
-                    <View style={[styles.stepDot, { backgroundColor: '#F4ECF7' }]}>
-                      <Ionicons name="ellipse" size={8} color="#B084CC" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.stepLabel, { color: '#555', fontWeight: '700' }]}>
-                        {step.label}
-                      </Text>
-                      <Text style={{ fontSize: ms(11), color: '#888', marginTop: vs(2), fontWeight: '500' }}>
-                        {step.desc}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : (
-            <View style={styles.statusContent}>
-               <View style={styles.progressBg}>
-                <View style={[styles.progressFill, { 
-                  width: latestRequest.status === 'ready' ? '100%' : 
-                         (['matched', 'ready'].includes(latestRequest.status) ? '75%' : 
-                         (latestRequest.status !== 'pending' ? '50%' : '25%'))
-                }]} />
-              </View>
-              <Text style={styles.progressLabel}>Status: {latestRequest.status.toUpperCase()}</Text>
+          {/* Horizontal 3-step progress tracker (shared empty / active states) */}
+          {(() => {
+            const status = latestRequest?.status?.toLowerCase() || '';
+            // currentStep: -1 = no request, 0 = pending, 1 = approved/production, 2 = ready, 3 = completed
+            let currentStep = -1;
+            if (latestRequest) {
+              currentStep = 0;
+              if (!['pending', 'submitted'].includes(status)) currentStep = 1;
+              if (['matched', 'in transit', 'arrived', 'ready'].includes(status)) currentStep = 2;
+              if (status === 'completed') currentStep = 3;
+            }
 
-              { [
-                  { label: 'Application Pending', done: true },
-                  { label: 'Application Approved', done: !['pending', 'submitted'].includes(latestRequest.status.toLowerCase()) },
-                  { label: 'Wig in Production', done: ['matched', 'ready', 'completed'].includes(latestRequest.status.toLowerCase()) },
-                  { label: 'Wig Ready for Pickup', done: ['ready', 'completed'].includes(latestRequest.status.toLowerCase()) },
-                ].map((step, i) => (
-                <View key={i} style={styles.stepRow}>
-                  <View style={[styles.stepDot, step.done && styles.stepDotDone]}>
-                    {step.done && <Ionicons name="checkmark" size={12} color="#fff" />}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.stepLabel, step.done && styles.stepLabelDone]}>
-                      {step.label}
+            const steps = [
+              { title: 'Request Pending', desc: 'Your request has been submitted and is currently undergoing review.' },
+              { title: 'Request Approved', desc: 'Application approved! Your custom wig is now being crafted. We will notify you as soon as it is ready.' },
+              { title: 'Ready for Delivery or Pickup', desc: 'Your custom wig is ready! Check your dashboard to confirm your preferred delivery or pickup option.' },
+            ];
+
+            const activeIdx = Math.min(Math.max(currentStep, 0), 2);
+
+            return (
+              <View style={styles.statusContent}>
+                {!latestRequest && (
+                  <View style={{ alignItems: 'center', paddingVertical: vs(10), marginBottom: vs(4) }}>
+                    <Text style={{ color: '#aaa', fontStyle: 'italic', fontSize: ms(13) }}>
+                      No active requests. Start your journey below! ✨
                     </Text>
-                    {step.label === 'Wig Ready for Pickup' && step.done && (
-                      <Animated.View entering={FadeIn.delay(300)} style={styles.locationInfo}>
-                        <Ionicons name="location" size={12} color="#B084CC" />
-                        <Text style={styles.locationText}>Pick up: Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)</Text>
-                      </Animated.View>
-                    )}
                   </View>
+                )}
+
+                {/* Stepper bar — a step is CHECKED (purple + checkmark) the
+                    moment the user reaches it. No "active" empty state — once
+                    pending/approved/matched lands, the corresponding node
+                    flips straight to done. */}
+                <View style={styles.stepperWrap}>
+                  {steps.map((step, i) => {
+                    const isDone = currentStep >= i && currentStep >= 0;
+                    return (
+                      <React.Fragment key={i}>
+                        <View style={styles.stepperItem}>
+                          <View style={[
+                            styles.stepperNode,
+                            isDone && styles.stepperNodeDone,
+                          ]}>
+                            {isDone ? (
+                              <Ionicons name="checkmark" size={ms(14)} color="#fff" />
+                            ) : (
+                              <Text style={styles.stepperNodeNum}>{i + 1}</Text>
+                            )}
+                          </View>
+                          <Text
+                            style={[
+                              styles.stepperLabel,
+                              isDone && styles.stepperLabelActive,
+                            ]}
+                            numberOfLines={3}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.85}
+                          >
+                            {step.title}
+                          </Text>
+                        </View>
+                        {i < steps.length - 1 && (
+                          <View style={[
+                            styles.stepperConnector,
+                            // Connector after step i lights up once step i+1
+                            // is also done — i.e. the *next* node is reached.
+                            currentStep >= i + 1 && styles.stepperConnectorDone,
+                          ]} />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </View>
-              ))}
-              {['in transit', 'ready'].includes(latestRequest.status.toLowerCase()) && (
-                <TouchableOpacity
-                  style={styles.dashboardConfirmBtn}
-                  onPress={() => confirmWigReceived(latestRequest.reference)}
-                >
-                  <Ionicons name="checkmark-circle-outline" size={ms(16)} color="#fff" style={{ marginRight: ms(6) }} />
-                  <Text style={styles.dashboardConfirmBtnText}>Confirm Wig Received</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
+
+                {/* Current-step description card — only when there's a real request */}
+                {latestRequest && (
+                  <View style={styles.stepperDescBox}>
+                    <Text style={styles.stepperDescText}>
+                      {currentStep === 3
+                        ? 'All set — your request is complete. Thank you for trusting HairLink. 💜'
+                        : steps[activeIdx].desc}
+                    </Text>
+                  </View>
+                )}
+
+                {latestRequest && ['in transit', 'ready'].includes(status) && (
+                  <TouchableOpacity
+                    style={styles.dashboardConfirmBtn}
+                    onPress={() => confirmWigReceived(latestRequest.reference)}
+                  >
+                    <Ionicons name="checkmark-circle-outline" size={ms(16)} color="#fff" style={{ marginRight: ms(6) }} />
+                    <Text style={styles.dashboardConfirmBtnText}>Confirm Wig Received</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            );
+          })()}
         </Animated.View>
 
         {/* ── How It Works ──────────────────────────── */}
@@ -776,6 +799,78 @@ const styles = StyleSheet.create({
   stepDotDone: { backgroundColor: '#B084CC' },
   stepLabel: { fontSize: ms(14), color: '#aaa', fontWeight: '600' },
   stepLabelDone: { color: '#1a1a1a', fontWeight: '700' },
+
+  // ── Horizontal Stepper (new 3-step progress tracker) ──
+  stepperWrap: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: ms(4),
+    paddingTop: vs(6),
+  },
+  stepperItem: {
+    width: ms(92),
+    alignItems: 'center',
+  },
+  stepperNode: {
+    width: ms(34),
+    height: ms(34),
+    borderRadius: ms(17),
+    backgroundColor: '#F4ECF7',
+    borderWidth: 2,
+    borderColor: '#E8DAEF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperNodeActive: {
+    backgroundColor: '#FFF',
+    borderColor: '#B084CC',
+    shadowColor: '#B084CC',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  stepperNodeDone: {
+    backgroundColor: '#B084CC',
+    borderColor: '#B084CC',
+  },
+  stepperNodeNum: { fontSize: ms(13), fontWeight: '800', color: '#C4A8D9' },
+  stepperNodeNumActive: { color: '#B084CC', fontWeight: '900' },
+  stepperLabel: {
+    fontSize: ms(10),
+    fontWeight: '700',
+    color: '#999',
+    textAlign: 'center',
+    marginTop: vs(6),
+    lineHeight: ms(13),
+    paddingHorizontal: ms(2),
+  },
+  stepperLabelActive: { color: '#5C3A75', fontWeight: '800' },
+  stepperConnector: {
+    flex: 1,
+    height: 2,
+    backgroundColor: '#E8DAEF',
+    marginTop: ms(17),
+    marginHorizontal: ms(2),
+    borderRadius: 1,
+  },
+  stepperConnectorDone: { backgroundColor: '#B084CC' },
+  stepperDescBox: {
+    marginTop: vs(14),
+    backgroundColor: '#FAF5FE',
+    borderRadius: ms(12),
+    paddingVertical: vs(10),
+    paddingHorizontal: ms(14),
+    borderWidth: 1,
+    borderColor: '#F0E4FA',
+  },
+  stepperDescText: {
+    fontSize: ms(12),
+    color: '#5C3A75',
+    fontWeight: '600',
+    lineHeight: ms(17),
+    textAlign: 'center',
+  },
 
   sectionTitle: { fontSize: ms(18), fontWeight: '900', color: '#1a1a1a', textAlign: 'center', marginBottom: vs(4) },
   sectionSubtitle: { fontSize: ms(12), color: '#888', textAlign: 'center', marginBottom: vs(18), lineHeight: vs(18) },
