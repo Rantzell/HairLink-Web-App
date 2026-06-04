@@ -9,6 +9,7 @@ interface StaffStats {
   totalStock: number;
   productionCount: number;
   wigStockCount: number;
+  monetaryDonations: number;
 }
 
 const StaffDashboard: React.FC = () => {
@@ -18,6 +19,7 @@ const StaffDashboard: React.FC = () => {
     totalStock: 0,
     productionCount: 0,
     wigStockCount: 0,
+    monetaryDonations: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -77,7 +79,7 @@ const StaffDashboard: React.FC = () => {
       icon: 'bx bx-money',
       color: 'green',
       label: 'Monetary Donations',
-      value: 0,
+      value: stats.monetaryDonations,
       sub: 'Pending review',
     },
   ];

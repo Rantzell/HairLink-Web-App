@@ -17,6 +17,13 @@ const DONATION_TYPE = 'App\\Models\\Donation' as const;
 const REQUEST_TYPE = 'App\\Models\\HairRequest' as const;
 const WIG_TYPE = 'App\\Models\\WigProduction' as const;
 
+function formatBatchHairReference(task: { id: number; createdAt?: Date | null }): string {
+  const createdAt = task.createdAt ? new Date(task.createdAt) : new Date();
+  const month = String(createdAt.getMonth() + 1).padStart(2, '0');
+  const year = createdAt.getFullYear();
+  return `B${task.id}-${month}-${year}`;
+}
+
 // BigInt serializer
 function s(o: any): any {
   if (o === null || o === undefined) return o;
@@ -35,14 +42,15 @@ function s(o: any): any {
 // GET /internal-api/staff/dashboard
 router.get('/dashboard', ...staffOnly, async (_req, res) => {
   try {
-    const [pd, pr, ts, pc, ws] = await Promise.all([
+    const [pd, pr, ts, pc, ws, md] = await Promise.all([
       prisma.donation.count({ where: { status: 'Submitted' } }),
       prisma.hairRequest.count({ where: { status: 'Submitted' } }),
       prisma.donation.count({ where: { status: 'Received Hair' } }),
       prisma.wigProduction.count({ where: { status: { in: ['assigned', 'processing'] } } }),
       prisma.wigProduction.count({ where: { status: 'completed' } }),
+      prisma.monetaryDonation.count({ where: { status: 'Submitted' } }),
     ]);
-    res.json({ pendingDonations: pd, pendingRequests: pr, totalStock: ts, productionCount: pc, wigStockCount: ws });
+    res.json({ pendingDonations: pd, pendingRequests: pr, totalStock: ts, productionCount: pc, wigStockCount: ws, monetaryDonations: md });
   } catch (err: any) {
     console.error('Operations Error:', err);
     res.status(500).json({ error: 'Failed', message: err.message });
@@ -154,15 +162,17 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
       });
     }
 
-    // Fetch all child wigs associated with these parent tasks
+    // Fetch all child wigs associated with these parent tasks.
+    // Parent may be "WB YYYY-XXXX" but children are "WIG YYYY-XXXX-W{n}",
+    // so match on the shared sequence part (e.g. "2026-0001").
     const activeTaskCodes = wps.map(w => w.taskCode);
-    const childWigs = activeTaskCodes.length > 0 
+    const activeSeqs = activeTaskCodes.map(c => c.replace(/^(WB|WIG)\s+/i, '')); // ["2026-0001", ...]
+    const childWigs = activeSeqs.length > 0
       ? await prisma.wigProduction.findMany({
           where: {
-            OR: activeTaskCodes.map(code => ({
-              taskCode: { contains: code }
+            OR: activeSeqs.map(seq => ({
+              taskCode: { contains: `WIG ${seq}-W` }
             })),
-            taskCode: { contains: '-W' }
           },
           orderBy: { updatedAt: 'desc' }
         })
@@ -170,8 +180,16 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
 
     const childWigsMap: Record<string, any[]> = {};
     for (const cw of childWigs) {
-      const parentCode = activeTaskCodes.find(code => cw.taskCode.includes(code));
-      if (parentCode) {
+      const cwSeq = cw.taskCode.replace(/^(WB|WIG)\s+/i, '').replace(/-W\d+$/, '');
+      // Among parents with the same sequence, pick the one created just before this child
+      // (highest parent id that is still <= child id). This correctly assigns wigs created
+      // under a WB parent even if an older WIG parent shares the same sequence number.
+      const candidateParents = wps
+        .filter(wp => wp.taskCode.replace(/^(WB|WIG)\s+/i, '') === cwSeq && wp.id <= cw.id)
+        .sort((a, b) => b.id - a.id);
+      const matchedWp = candidateParents[0];
+      if (matchedWp) {
+        const parentCode = matchedWp.taskCode;
         if (!childWigsMap[parentCode]) childWigsMap[parentCode] = [];
         childWigsMap[parentCode].push(cw);
       }
@@ -201,6 +219,7 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
         if (wp) {
           wpMap[d.id] = s({
             ...wp,
+            batchHairReference: formatBatchHairReference(wp),
             statusHistories: wpHistoriesMap[wp.id] || [],
             childWigs: childWigsMap[wp.taskCode] || [],
           });
@@ -208,11 +227,32 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
       }
     }
 
+    // Fetch per-donation wigmaker receive/missing states from status history
+    const donationIds = donations.map(d => d.id);
+    const donationHistories = donationIds.length > 0
+      ? await prisma.statusHistory.findMany({
+          where: {
+            trackableType: DONATION_TYPE,
+            trackableId: { in: donationIds },
+            status: { in: ['wigmaker_received', 'missing'] }
+          },
+          orderBy: { createdAt: 'desc' }
+        })
+      : [];
+
+    const donationStateMap: Record<number, { wigmakerReceived: boolean; isMissing: boolean }> = {};
+    for (const h of donationHistories) {
+      const id = h.trackableId as number;
+      if (!donationStateMap[id]) donationStateMap[id] = { wigmakerReceived: false, isMissing: false };
+      if (h.status === 'wigmaker_received') donationStateMap[id].wigmakerReceived = true;
+      if (h.status === 'missing') donationStateMap[id].isMissing = true;
+    }
+
     const requests = await prisma.hairRequest.findMany({
       where: { status: { in: ['Validated', 'In Production', 'Matched', 'In Transit', 'Arrived', 'Completed', 'Ready for Pickup', 'Pickup Confirmed'] } },
       include: { user: true }, orderBy: { updatedAt: 'desc' },
     });
-    res.json({ donations: s(donations), requests: s(requests), wigmakers: s(wigmakers), wigProductions: wpMap });
+    res.json({ donations: s(donations), requests: s(requests), wigmakers: s(wigmakers), wigProductions: wpMap, donationStateMap });
   } catch (err: any) { res.status(500).json({ error: 'Failed', message: err.message }); }
 });
 
@@ -233,7 +273,6 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
     const wm = await prisma.user.findUnique({ where: { id: wigmaker_id } });
     if (!wm) { res.status(404).json({ message: 'Wigmaker not found' }); return; }
 
-    const tc = await generateSequentialReference('WIG');
     const due = new Date();
     due.setDate(due.getDate() + 30); // 30 days default
 
@@ -241,17 +280,34 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
     const targetLength = firstDonation?.hairLength || 'Medium';
     const targetColor = firstDonation?.hairColor || 'Black';
 
-    const task = await prisma.wigProduction.create({
-      data: {
-        taskCode: tc,
-        wigmakerId: wm.id,
-        status: 'assigned',
-        dueDate: due,
-        materialDeliveryLink: material_delivery_link || null,
-        targetLength,
-        targetColor
+    let task: any = null;
+    let tc = '';
+    for (let attempt = 0; attempt < 5; attempt++) {
+      tc = await generateSequentialReference('WB');
+      try {
+        task = await prisma.wigProduction.create({
+          data: {
+            taskCode: tc,
+            wigmakerId: wm.id,
+            status: 'assigned',
+            dueDate: due,
+            materialDeliveryLink: material_delivery_link || null,
+            targetLength,
+            targetColor
+          }
+        });
+        break;
+      } catch (createErr: any) {
+        if (createErr?.code !== 'P2002' || !String(createErr?.meta?.target || '').includes('task_code')) {
+          throw createErr;
+        }
       }
-    });
+    }
+    if (!task) {
+      res.status(409).json({ message: 'Unable to generate a unique batch task code. Please try again.' });
+      return;
+    }
+    const batchHairReference = formatBatchHairReference(task);
 
     const { notifyDonationStatus, notifyWigmakerAssignment, notifyWigmakerMaterialDelivery } = await import('../services/notification.service');
 
@@ -263,7 +319,7 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
           wigProductionId: task.id
         } as any
       });
-      await createStatusHistory(DONATION_TYPE, don.id, 'In Queue', `Batched for production. Wigmaker: ${wm.firstName || 'Staff'} ${wm.lastName || ''}${staff_note ? ` — Note: ${staff_note}` : ''}`);
+      await createStatusHistory(DONATION_TYPE, don.id, 'In Queue', `Batched for production (${batchHairReference}). Wigmaker: ${wm.firstName || 'Staff'} ${wm.lastName || ''}${staff_note ? ` — Note: ${staff_note}` : ''}`);
       
       if (don.userId) {
         await notifyDonationStatus(don.userId, 'In Queue', don.reference!);
@@ -271,7 +327,7 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
     }
 
     // Log staff note on the task itself
-    const assignmentNote = `Batch assigned by staff.${staff_note ? ` Staff note: ${staff_note}` : ''}`;
+    const assignmentNote = `Batch ${batchHairReference} assigned by staff.${staff_note ? ` Staff note: ${staff_note}` : ''}`;
     await createStatusHistory(WIG_TYPE, task.id, 'assigned', assignmentNote);
 
     // Notify wigmaker
@@ -280,7 +336,7 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
       await notifyWigmakerMaterialDelivery(wm.id, tc, material_delivery_link);
     }
 
-    res.json({ message: `Batch assigned to ${wm.firstName || 'Wigmaker'}.`, success: true, task_code: tc });
+    res.json({ message: `Batch ${batchHairReference} assigned to ${wm.firstName || 'Wigmaker'}.`, success: true, task_code: tc, batch_hair_reference: batchHairReference });
   } catch (err: any) { 
     res.status(500).json({ error: 'Failed', message: err.message }); 
   }
@@ -427,11 +483,11 @@ router.get('/hair-stock', ...staffOnly, async (_req, res) => {
 // GET /internal-api/staff/wig-stock
 router.get('/wig-stock', ...staffOnly, async (_req, res) => {
   try {
-    const wigs = await prisma.wigProduction.findMany({ 
-      where: { status: { in: ['completed', 'received'] } }, 
-      include: { donations: true } as any, 
-      orderBy: { updatedAt: 'desc' }, 
-      take: 50 
+    const wigs = await prisma.wigProduction.findMany({
+      where: { status: { in: ['completed', 'received'] } },
+      include: { donations: true } as any,
+      orderBy: { updatedAt: 'desc' },
+      take: 50
     });
 
     const allWpIds = wigs.map(w => w.id);
@@ -451,21 +507,20 @@ router.get('/wig-stock', ...staffOnly, async (_req, res) => {
 
     const { getPublicUrl } = await import('../services/storage.service');
 
-    const getParentTaskCode = (childWigCode: string): string | null => {
+    // Returns both possible parent codes: "WB YYYY-XXXX" and "WIG YYYY-XXXX"
+    const getParentTaskCodes = (childWigCode: string): string[] => {
       const wIdx = childWigCode.lastIndexOf('-W');
-      if (wIdx === -1) return null;
-      const parentWithYear = childWigCode.substring(0, wIdx);
-      const hyphenIdx = parentWithYear.indexOf('-');
-      if (hyphenIdx === -1) return parentWithYear;
-      return parentWithYear.substring(hyphenIdx + 1);
+      if (wIdx === -1) return [];
+      const seq = childWigCode.substring(0, wIdx).replace(/^(WB|WIG)\s+/i, '');
+      return [`WB ${seq}`, `WIG ${seq}`];
     };
 
     const childWigs = wigs.filter(w => w.taskCode.includes('-W'));
-    const parentCodes = childWigs.map(w => getParentTaskCode(w.taskCode)).filter(Boolean) as string[];
+    const allParentCodes = [...new Set(childWigs.flatMap(w => getParentTaskCodes(w.taskCode)))];
 
-    const parentTasks = parentCodes.length > 0
+    const parentTasks = allParentCodes.length > 0
       ? await prisma.wigProduction.findMany({
-          where: { taskCode: { in: parentCodes } },
+          where: { taskCode: { in: allParentCodes } },
           include: { donations: true }
         })
       : [];
@@ -482,8 +537,8 @@ router.get('/wig-stock', ...staffOnly, async (_req, res) => {
 
       let donations = w.donations || [];
       if (w.taskCode.includes('-W')) {
-        const parentCode = getParentTaskCode(w.taskCode);
-        const parentTask = parentTasks.find(pt => pt.taskCode === parentCode);
+        const possibleParents = getParentTaskCodes(w.taskCode);
+        const parentTask = parentTasks.find(pt => possibleParents.includes(pt.taskCode));
         if (parentTask) {
           donations = parentTask.donations;
         }
@@ -513,7 +568,7 @@ router.get('/matching-list', ...staffOnly, async (_req, res) => {
   try {
     const reqs = await prisma.hairRequest.findMany({ where: { status: { in: ['Validated', 'Matched', 'In Transit', 'Arrived', 'Ready for Pickup', 'Pickup Confirmed'] } }, include: { user: true }, orderBy: { updatedAt: 'desc' } });
     const avail = await prisma.wigProduction.findMany({ 
-      where: { status: { in: ['completed', 'received'] }, hairRequestId: null } 
+      where: { status: { in: ['completed', 'received'] }, hairRequestId: null }
     });
     const result = reqs.map(r => {
       if (r.status !== 'Validated') return { ...s(r), best_match: null, match_score: 0 };
@@ -588,9 +643,9 @@ router.post('/requests/:reference/ready-for-pickup', ...staffOnly, async (req, r
 router.get('/rule-matching', ...staffOnly, async (_req, res) => {
   try {
     const recipients = await prisma.hairRequest.findMany({ where: { status: { in: ['Validated', 'Submitted'] } }, include: { user: true } });
-    const wigs = await prisma.wigProduction.findMany({ 
-      where: { status: { in: ['completed', 'received'] } }, 
-      include: { donations: true } as any 
+    const wigs = await prisma.wigProduction.findMany({
+      where: { status: { in: ['completed', 'received'] } },
+      include: { donations: true } as any
     });
     res.json({ recipients: s(recipients), wigs: s(wigs) });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
@@ -617,35 +672,30 @@ router.post('/wigs/:id/receive', ...staffOnly, async (req, res) => {
     await createStatusHistory('App\\Models\\WigProduction', wigId, 'received', 'Staff confirmed receipt of the finished wig.');
 
     // Check if all sibling wigs for the parent batch are now received
-    const getParentTaskCode = (childWigCode: string): string | null => {
+    // Returns both possible parent codes: "WB YYYY-XXXX" and "WIG YYYY-XXXX"
+    const getParentTaskCodes = (childWigCode: string): string[] => {
       const wIdx = childWigCode.lastIndexOf('-W');
-      if (wIdx === -1) return null;
-      const parentWithYear = childWigCode.substring(0, wIdx);
-      const hyphenIdx = parentWithYear.indexOf('-');
-      if (hyphenIdx === -1) return parentWithYear;
-      return parentWithYear.substring(hyphenIdx + 1);
+      if (wIdx === -1) return [];
+      const seq = childWigCode.substring(0, wIdx).replace(/^(WB|WIG)\s+/i, '');
+      return [`WB ${seq}`, `WIG ${seq}`];
     };
 
-    const parentCode = getParentTaskCode(wig.taskCode);
-    if (parentCode) {
+    const possibleParentCodes = getParentTaskCodes(wig.taskCode);
+    const parentTask = possibleParentCodes.length > 0
+      ? await prisma.wigProduction.findFirst({ where: { taskCode: { in: possibleParentCodes } } })
+      : null;
+    if (parentTask) {
+      const seq = parentTask.taskCode.replace(/^(WB|WIG)\s+/i, '');
       const siblingWigs = await prisma.wigProduction.findMany({
         where: {
-          taskCode: { contains: parentCode },
+          taskCode: { contains: `-W`, startsWith: `WIG ${seq}` },
           id: { not: wigId }
         }
       });
       const allReceived = siblingWigs.every(s => s.status === 'received');
       if (allReceived) {
-        const parentTask = await prisma.wigProduction.findFirst({
-          where: { taskCode: parentCode }
-        });
-        if (parentTask) {
-          await prisma.wigProduction.update({
-            where: { id: parentTask.id },
-            data: { status: 'received' }
-          });
-          await createStatusHistory('App\\Models\\WigProduction', parentTask.id, 'received', 'All finished wigs in this batch have been received.');
-        }
+        await prisma.wigProduction.update({ where: { id: parentTask.id }, data: { status: 'received' } });
+        await createStatusHistory('App\\Models\\WigProduction', parentTask.id, 'received', 'All finished wigs in this batch have been received.');
       }
     }
 
@@ -657,6 +707,24 @@ router.post('/wigs/:id/receive', ...staffOnly, async (req, res) => {
   } catch (err) {
     console.error('[Staff API] Receive wig error:', err);
     res.status(500).json({ error: 'Failed to receive wig' });
+  }
+});
+
+// POST /internal-api/staff/wigs/:id/missing
+router.post('/wigs/:id/missing', ...staffOnly, async (req, res) => {
+  try {
+    const wigId = parseInt(req.params.id as string);
+    const wig = await prisma.wigProduction.findUnique({ where: { id: wigId } });
+    if (!wig || !wig.taskCode.includes('-W')) {
+      res.status(404).json({ message: 'Wig not found' });
+      return;
+    }
+    await prisma.wigProduction.update({ where: { id: wigId }, data: { status: 'missing' } });
+    await createStatusHistory(WIG_TYPE, wigId, 'missing', 'Staff reported this wig as missing from the shipment.');
+    res.json({ message: 'Wig reported as missing.', success: true });
+  } catch (err) {
+    console.error('[Staff API] Missing wig error:', err);
+    res.status(500).json({ error: 'Failed to report wig as missing' });
   }
 });
 

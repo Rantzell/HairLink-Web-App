@@ -1,8 +1,5 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-
-
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 
@@ -15,7 +12,7 @@ import '../styles/WigmakerTaskDetail.css';
 const WigmakerTaskDetail: React.FC = () => {
   const { taskCode } = useParams<{ taskCode: string }>();
   const [data, setData] = useState<{ task: any; histories: any[] } | null>(null);
-  const [childWigs, setChildWigs] = useState<any[]>([]);
+  const [donationStateMap, setDonationStateMap] = useState<Record<number, { wigmakerReceived: boolean; isMissing: boolean }>>({});
   const [showCreateAnotherModal, setShowCreateAnotherModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
@@ -32,7 +29,6 @@ const WigmakerTaskDetail: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showMaterialConfirm, setShowMaterialConfirm] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
-  const [donorOpen, setDonorOpen] = useState(false);
   const [wigLength, setWigLength] = useState<'short' | 'long' | ''>('');
   const [wigColor, setWigColor] = useState<'black' | 'brown' | 'light' | ''>('');
 
@@ -42,7 +38,7 @@ const WigmakerTaskDetail: React.FC = () => {
         const res = await apiClient.get(`/internal-api/wigmaker/tasks/${taskCode}`);
         if (res.data.task) {
           setData(res.data);
-          setChildWigs(res.data.childWigs || []);
+          setDonationStateMap(res.data.donationStateMap || {});
         }
       } catch (err) {
         console.error('Failed to fetch task detail', err);
@@ -80,37 +76,47 @@ const WigmakerTaskDetail: React.FC = () => {
 
   const submitWigCreation = async (createAnother: boolean) => {
     setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append('wigLength', wigLength);
-    formData.append('wigColor', wigColor);
-    formData.append('progressNotes', notes.trim());
-    formData.append('updatedAt', new Date(customDate).toISOString());
-    if (file) formData.append('previewPhoto', file);
-
-    const url = createAnother 
-      ? `/internal-api/wigmaker/tasks/${taskCode}/create-wig` 
-      : `/internal-api/wigmaker/tasks/${taskCode}/complete-task`;
 
     try {
+      // Auto-start production if task is still assigned
+      if (task.status === 'assigned') {
+        const startForm = new FormData();
+        startForm.append('status', 'processing');
+        startForm.append('progressNotes', 'Production started — adding wigs to inventory.');
+        startForm.append('updatedAt', new Date().toISOString());
+        await apiClient.post(`/internal-api/wigmaker/tasks/${encodeURIComponent(taskCode!)}`, startForm, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
+      const formData = new FormData();
+      formData.append('wigLength', wigLength);
+      formData.append('wigColor', wigColor);
+      formData.append('progressNotes', notes.trim());
+      formData.append('updatedAt', new Date(customDate).toISOString());
+      if (file) formData.append('previewPhoto', file);
+
+      const url = createAnother
+        ? `/internal-api/wigmaker/tasks/${encodeURIComponent(taskCode!)}/create-wig`
+        : `/internal-api/wigmaker/tasks/${encodeURIComponent(taskCode!)}/complete-task`;
+
       const res = await apiClient.post(url, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success(res.data.message);
       setShowCreateAnotherModal(false);
-      
+
       if (createAnother) {
-        // Reset form inputs
         setWigLength('');
         setWigColor('');
         setNotes('');
         setFile(null);
         setPreviewUrl(null);
-        
-        // Reload details
-        const detailRes = await apiClient.get(`/internal-api/wigmaker/tasks/${taskCode}`);
+
+        const detailRes = await apiClient.get(`/internal-api/wigmaker/tasks/${encodeURIComponent(taskCode!)}`);
         if (detailRes.data.task) {
           setData({ task: detailRes.data.task, histories: detailRes.data.histories });
-          setChildWigs(detailRes.data.childWigs || []);
+          setDonationStateMap(detailRes.data.donationStateMap || {});
         }
       } else {
         window.location.reload();
@@ -127,9 +133,29 @@ const WigmakerTaskDetail: React.FC = () => {
     setShowConfirm(false);
     if (!data) return;
     setIsSubmitting(true);
+
+    // "finalize" = Complete Task button — marks the entire task as completed
+    if (pendingStatus === 'finalize') {
+      try {
+        const fd = new FormData();
+        fd.append('status', 'completed');
+        fd.append('progressNotes', 'Production task finalized by wigmaker.');
+        fd.append('updatedAt', new Date().toISOString());
+        await apiClient.post(`/internal-api/wigmaker/tasks/${encodeURIComponent(taskCode!)}`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        window.location.reload();
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to complete task');
+      } finally {
+        setIsSubmitting(false);
+        setPendingStatus(null);
+      }
+      return;
+    }
+
     const formData = new FormData();
     const finalStatus = pendingStatus || targetStatus || nextStatus;
-
     formData.append('status', finalStatus);
     formData.append('progressNotes', notes.trim() || 'Progress update posted.');
     formData.append('updatedAt', new Date(customDate).toISOString());
@@ -155,10 +181,6 @@ const WigmakerTaskDetail: React.FC = () => {
     }
   };
 
-  const handleConfirmMaterial = () => {
-    setShowMaterialConfirm(true);
-  };
-
   const doConfirmMaterial = async () => {
     setShowMaterialConfirm(false);
     setIsSubmitting(true);
@@ -177,6 +199,11 @@ const WigmakerTaskDetail: React.FC = () => {
 
   const { task, histories } = data;
   const nextStatus = task.status === 'processing' ? 'completed' : 'shipped';
+  const anyHairReceived = Object.values(donationStateMap).some(s => s.wigmakerReceived);
+  const batchRef = task.batchHairReference || (() => {
+    const d = new Date(task.createdAt);
+    return `B${task.id}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+  })();
 
   const assignedHistory = (histories || []).find((h: any) => h.status === 'assigned');
   let staffNote = '';
@@ -196,8 +223,8 @@ const WigmakerTaskDetail: React.FC = () => {
             <i className="bx bx-task task-detail-header-icon"></i>
           </div>
           <div>
-            <h1 className="task-detail-header-title">Task: {task.taskCode}</h1>
-            <p className="task-detail-header-sub">Batch Production &middot; <span className="task-detail-header-sub-ref">{(task.donations || []).length} Donors</span></p>
+            <h1 className="task-detail-header-title">Batch: {batchRef}</h1>
+            <p className="task-detail-header-sub">{task.taskCode} &middot; <span className="task-detail-header-sub-ref">{(task.donations || []).length} Donors</span></p>
           </div>
         </div>
         <Link to="/wigmaker/dashboard" className="task-detail-back-btn">
@@ -228,6 +255,33 @@ const WigmakerTaskDetail: React.FC = () => {
                 <div className="task-detail-roadmap-step-content">
                   <div className={`task-detail-roadmap-step-title ${isDone ? 'done' : ''}`}>{step.stage}</div>
                   <div className="task-detail-roadmap-step-desc">{step.desc}</div>
+                  {/* Complete Task button — only on the Completed step, only when still processing */}
+                  {step.status === 'completed' && task.status === 'processing' && (
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => {
+                        setPendingStatus('finalize');
+                        setShowConfirm(true);
+                      }}
+                      style={{
+                        marginTop: '0.6rem',
+                        padding: '0.35rem 0.9rem',
+                        borderRadius: '50px',
+                        border: '1.5px solid #ad246d',
+                        background: '#fff',
+                        color: '#ad246d',
+                        fontWeight: 800,
+                        fontSize: '0.72rem',
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                      }}
+                    >
+                      <i className="bx bx-check-double"></i> Complete Task
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -270,110 +324,20 @@ const WigmakerTaskDetail: React.FC = () => {
               )}
             </div>
 
-            {/* Donor Dropdown Accordion */}
-            {(task.donations || []).length > 0 && (
-              <div className="task-detail-donor-accordion">
-                <button
-                  className="task-detail-donor-accordion-btn"
-                  onClick={() => setDonorOpen(o => !o)}
-                >
-                  <i className="bx bx-group"></i>
-                  <span>Compiled Donors &amp; References ({(task.donations || []).length})</span>
-                  <i className={`bx ${donorOpen ? 'bx-chevron-up' : 'bx-chevron-down'} task-detail-donor-accordion-chevron`}></i>
-                </button>
-                {donorOpen && (
-                  <div className="task-detail-donor-list">
-                    {(task.donations as any[]).map((d: any, idx: number) => (
-                      <div key={d.id || idx} className="task-detail-donor-item">
-                        <div className="task-detail-donor-avatar">
-                          {(d.user?.firstName?.[0] || '?')}{(d.user?.lastName?.[0] || '')}
-                        </div>
-                        <div className="task-detail-donor-info">
-                          <span className="task-detail-donor-name">
-                            {d.user?.firstName || 'Unknown'} {d.user?.lastName || ''}
-                          </span>
-                          <code className="task-detail-donor-ref">{d.reference}</code>
-                        </div>
-                        <div className="task-detail-donor-specs">
-                          {d.hairLength && <span className="task-detail-donor-spec-pill">{d.hairLength}</span>}
-                          {d.hairColor && <span className="task-detail-donor-spec-pill">{d.hairColor}</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </article>
 
-          {/* List of Wigs Produced */}
-          {childWigs.length > 0 && (
-            <article className="task-detail-assignment-card" style={{ marginTop: '1.25rem' }}>
-              <div className="task-detail-card-title-row">
-                <i className="bx bxs-crown task-detail-card-title-icon" style={{ color: '#ad246d' }}></i>
-                <h2 className="task-detail-card-title">Wigs Produced ({childWigs.length})</h2>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem' }}>
-                {childWigs.map(w => (
-                  <div key={w.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: '#fdf7fb', borderRadius: '12px', border: '1px solid #f8dceb' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #ead7e8', background: '#fff' }}>
-                        {w.preview_photo ? (
-                          <img src={getPublicUrl('hairlink', w.preview_photo) || undefined} alt="Wig" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: '#ecd8e8' }}>
-                            <i className="bx bxs-crown"></i>
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <strong style={{ fontSize: '0.85rem', color: '#3b2e43' }}>{w.taskCode}</strong>
-                        <div style={{ fontSize: '0.72rem', color: '#8c7895', marginTop: '2px' }}>
-                          Specs: {w.targetLength} &middot; {w.targetColor}
-                        </div>
-                      </div>
-                    </div>
-                    <StatusPill status={w.status} />
-                  </div>
-                ))}
-              </div>
-            </article>
-          )}
 
-          {/* Hair Tracking Card (Staff -> Wigmaker) */}
-          {task.status === 'assigned' && !task.isReceived && (
-            <div className="task-detail-status-banner-blue">
-              <div className="task-detail-status-banner-icon-box">
-                <i className="bx bx-package task-detail-status-banner-icon-blue"></i>
-              </div>
-              <div className="task-detail-status-banner-content">
-                <small className="task-detail-status-banner-label">Staff Sent Hair Package</small>
-                {task.materialDeliveryLink ? (
-                  <a href={task.materialDeliveryLink} target="_blank" rel="noreferrer" className="task-detail-status-banner-link">Track Incoming Hair Package</a>
-                ) : (
-                  <span className="task-detail-status-banner-link" style={{ textDecoration: 'none', cursor: 'default' }}>Hair ready for production</span>
-                )}
-              </div>
-              <button
-                onClick={handleConfirmMaterial}
-                disabled={isSubmitting}
-                className="task-detail-status-banner-btn-blue"
-              >
-                {isSubmitting ? '...' : 'Confirm Hair Received'}
-              </button>
-            </div>
-          )}
 
-          {/* Stage 2: Start Production / In Progress Updates */}
-          {(task.status === 'processing' || (task.status === 'assigned' && task.isReceived)) && (
+          {/* Stage 2: Start Production / In Progress Updates — visible once any hair received */}
+          {(task.status === 'processing' || (task.status === 'assigned' && anyHairReceived)) && (
             <article className="task-detail-update-card">
               <div className="task-detail-card-title-row">
                 <i className="bx bx-edit-alt task-detail-card-title-icon"></i>
-                <h2 className="task-detail-card-title">Production Status Update</h2>
+                <h2 className="task-detail-card-title">Wig Progress</h2>
               </div>
               <form onSubmit={handleSubmit} className="task-detail-update-form">
                 {/* Wig Specification selectors — only shown when status is processing (prior to completion) */}
-                {task.status === 'processing' && (
+                {(task.status === 'processing' || (task.status === 'assigned' && anyHairReceived)) && (
                   <div className="task-detail-spec-selectors">
                     <div className="task-detail-spec-group">
                       <label className="task-detail-form-label">Wig Length <span className="task-detail-form-label-required">*</span></label>
@@ -414,7 +378,7 @@ const WigmakerTaskDetail: React.FC = () => {
                   <div>
                     <label className="task-detail-form-label">Next Status</label>
                     <div className="task-detail-form-select-display">
-                      <i className="bx bx-check-double task-detail-form-select-icon"></i> {task.status === 'assigned' ? 'In Progress' : 'Production Finished'}
+                      <i className="bx bx-check-double task-detail-form-select-icon"></i> {task.status === 'assigned' ? 'Add to Inventory' : 'Production Finished'}
                     </div>
                   </div>
                   <div>
@@ -467,26 +431,28 @@ const WigmakerTaskDetail: React.FC = () => {
                   </div>
                 </div>
                 <div className="task-detail-form-submit-container">
-                  {task.status === 'assigned' ? (
-                    <button
-                      type="button"
-                      onClick={() => requestStatusUpdate('processing')}
-                      disabled={isSubmitting}
-                      className="task-detail-form-submit-btn"
-                    >
-                      {isSubmitting && pendingStatus === 'processing' ? '...' : 'Start Production'}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => requestStatusUpdate('completed')}
-                      disabled={isSubmitting}
-                      className="task-detail-form-submit-btn"
-                      style={{ width: '100%' }}
-                    >
-                      {isSubmitting && pendingStatus === 'completed' ? '...' : 'Production Finished'}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => requestStatusUpdate('completed')}
+                    disabled={isSubmitting}
+                    style={{
+                      padding: '0.55rem 1.5rem',
+                      borderRadius: '50px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)',
+                      color: '#fff',
+                      fontWeight: 800,
+                      fontSize: '0.875rem',
+                      cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                      opacity: isSubmitting ? 0.7 : 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      boxShadow: '0 4px 14px rgba(173,36,109,0.28)',
+                    }}
+                  >
+                    {isSubmitting ? '…' : <><i className="bx bx-plus-circle"></i> Add Wig</>}
+                  </button>
                 </div>
               </form>
             </article>
@@ -509,158 +475,15 @@ const WigmakerTaskDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Wig Finished — 3-action prompt (Yes/No/Cancel).
-          Rendered via portal as a fixed full-screen overlay so it actually
-          sits above the page, with the same backdrop/animation language as
-          the shared <ConfirmModal>. */}
-      {showCreateAnotherModal && createPortal(
-        <div
-          onClick={(e) => { if (e.target === e.currentTarget && !isSubmitting) setShowCreateAnotherModal(false); }}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 999999,
-            background: 'rgba(30, 18, 36, 0.55)',
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '1rem',
-            animation: 'wfFadeIn 0.18s ease',
-          }}
-        >
-          <style>{`
-            @keyframes wfFadeIn { from { opacity: 0; } to { opacity: 1; } }
-            @keyframes wfSlideUp { from { opacity: 0; transform: translateY(20px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-            @keyframes wfSpin { to { transform: rotate(360deg); } }
-            .wf-card { animation: wfSlideUp 0.22s cubic-bezier(0.34, 1.56, 0.64, 1); }
-            .wf-btn-primary:not(:disabled):hover { opacity: 0.9; transform: translateY(-1px); }
-            .wf-btn-secondary:not(:disabled):hover { background: #fdf2f8; }
-            .wf-btn-cancel:not(:disabled):hover { background: #f3e8f0; color: #5d4d62; }
-          `}</style>
-
-          <div
-            className="wf-card"
-            style={{
-              background: '#fff',
-              borderRadius: '24px',
-              boxShadow: '0 32px 80px rgba(173, 36, 109, 0.18), 0 8px 24px rgba(0,0,0,0.12)',
-              padding: '2rem',
-              maxWidth: '440px',
-              width: '100%',
-              border: '1px solid #ead7e8',
-            }}
-          >
-            {/* Icon */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-              <div style={{
-                width: '64px', height: '64px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, #fdf2f8 0%, #fff0f8 100%)',
-                display: 'grid', placeItems: 'center',
-                border: '2px solid #f9cde8',
-                boxShadow: '0 8px 20px rgba(173, 36, 109, 0.12)',
-              }}>
-                <i className="bx bxs-check-circle" style={{ fontSize: '2rem', color: '#ad246d' }} />
-              </div>
-            </div>
-
-            {/* Title */}
-            <h2 style={{
-              textAlign: 'center', margin: '0 0 0.5rem 0',
-              fontSize: '1.25rem', fontWeight: 800, color: '#3b2e43',
-              fontFamily: 'Outfit',
-            }}>
-              Wig Finished! 🎉
-            </h2>
-
-            {/* Message */}
-            <p style={{
-              textAlign: 'center', margin: '0 0 1.75rem 0',
-              fontSize: '0.875rem', color: '#8c7895', lineHeight: 1.6,
-            }}>
-              Would you like to produce another wig for this batch?
-              <br />
-              <span style={{ fontSize: '0.8rem', color: '#a89bb0' }}>
-                <strong>Yes</strong> keeps the task in progress.
-                <strong> No</strong> finalizes this production task.
-              </span>
-            </p>
-
-            {/* Actions */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-              <button
-                type="button"
-                className="wf-btn-primary"
-                disabled={isSubmitting}
-                onClick={() => submitWigCreation(true)}
-                style={{
-                  height: '46px',
-                  borderRadius: '50px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)',
-                  color: '#fff',
-                  fontWeight: 800, fontSize: '0.9rem',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  opacity: isSubmitting ? 0.7 : 1,
-                  transition: 'opacity 0.15s, transform 0.15s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                  boxShadow: '0 6px 16px rgba(173, 36, 109, 0.28)',
-                }}
-              >
-                {isSubmitting ? (
-                  <>
-                    <i className="bx bx-loader-alt" style={{ animation: 'wfSpin 0.8s linear infinite' }} />
-                    Processing…
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-plus-circle" /> Yes, Create Another Wig
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                className="wf-btn-secondary"
-                disabled={isSubmitting}
-                onClick={() => submitWigCreation(false)}
-                style={{
-                  height: '46px',
-                  borderRadius: '50px',
-                  border: '1.5px solid #ad246d',
-                  background: '#fff',
-                  color: '#ad246d',
-                  fontWeight: 800, fontSize: '0.9rem',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  opacity: isSubmitting ? 0.7 : 1,
-                  transition: 'background 0.15s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                }}
-              >
-                <i className="bx bx-check-double" /> No, Finalize Task
-              </button>
-
-              <button
-                type="button"
-                className="wf-btn-cancel"
-                disabled={isSubmitting}
-                onClick={() => setShowCreateAnotherModal(false)}
-                style={{
-                  height: '38px',
-                  borderRadius: '50px',
-                  border: 'none',
-                  background: 'transparent',
-                  color: '#8c7895',
-                  fontWeight: 700, fontSize: '0.8rem',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  marginTop: '0.25rem',
-                  transition: 'background 0.15s, color 0.15s',
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+      <ConfirmModal
+        isOpen={showCreateAnotherModal}
+        onClose={() => setShowCreateAnotherModal(false)}
+        onConfirm={() => submitWigCreation(true)}
+        title="Confirm Add Wig"
+        message="Are you sure you want to add this wig to your inventory?"
+        confirmText="Yes, Add Wig"
+        isConfirming={isSubmitting}
+      />
 
       {/* History Table - Full Width */}
       <article className="task-detail-history-card">
@@ -715,22 +538,26 @@ const WigmakerTaskDetail: React.FC = () => {
         onClose={() => { setShowConfirm(false); setPendingStatus(null); }}
         onConfirm={doSubmit}
         title={
-          pendingStatus === 'completed'
-            ? 'Production Finished?'
-            : pendingStatus === 'processing'
-              ? task.status === 'processing'
-                ? 'Post Progress Update?'
-                : 'Start Production?'
-              : 'Submit Update?'
+          pendingStatus === 'finalize'
+            ? 'Complete Task?'
+            : pendingStatus === 'completed'
+              ? 'Production Finished?'
+              : pendingStatus === 'processing'
+                ? task.status === 'processing'
+                  ? 'Post Progress Update?'
+                  : 'Start Production?'
+                : 'Submit Update?'
         }
         message={
-          pendingStatus === 'completed'
-            ? 'Mark this task as production finished and ready for the next stage?'
-            : pendingStatus === 'processing'
-              ? task.status === 'processing'
-                ? 'Submit this progress update and photo? This will log your current progress without finishing production.'
-                : 'Start production on this task? This will update the status for linked donors.'
-              : 'Submit this tracking update and mark the wig as shipped?'
+          pendingStatus === 'finalize'
+            ? 'Mark this production task as completed? You will no longer be able to add wigs after this.'
+            : pendingStatus === 'completed'
+              ? 'Mark this task as production finished and ready for the next stage?'
+              : pendingStatus === 'processing'
+                ? task.status === 'processing'
+                  ? 'Submit this progress update and photo? This will log your current progress without finishing production.'
+                  : 'Start production on this task? This will update the status for linked donors.'
+                : 'Submit this tracking update and mark the wig as shipped?'
         }
         confirmText="Yes, Confirm"
         isConfirming={isSubmitting}

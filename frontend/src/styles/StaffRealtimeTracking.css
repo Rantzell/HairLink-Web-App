@@ -100,6 +100,50 @@
     outline: none;
 }
 
+.batch-note-btn {
+    flex: 1;
+    height: 36px;
+    padding: 0 1rem;
+    border-radius: 8px;
+    border: none;
+    background: #fff;
+    color: #5d4d62;
+    font-size: 0.8rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.batch-note-btn:hover,
+.batch-note-btn.has-note {
+    color: #ad246d;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+}
+
+.batch-note-textarea {
+    width: 100%;
+    min-height: 150px;
+    resize: vertical;
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    border: 1.5px solid #ead7e8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #3b2e43;
+    outline: none;
+    background: #fdfbfe;
+}
+
+.batch-note-textarea:focus {
+    border-color: #ad246d;
+    box-shadow: 0 0 0 3px rgba(173, 36, 109, 0.12);
+}
+
 .batch-select {
     flex: 1;
     height: 36px;

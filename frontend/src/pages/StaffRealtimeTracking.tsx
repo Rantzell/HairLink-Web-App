@@ -10,17 +10,19 @@ import StatusPill from '../components/StatusPill';
 import ConfirmModal from '../components/ConfirmModal';
 
 const StaffRealtimeTracking: React.FC = () => {
-  const { type } = useParams<{ type: 'donation' | 'recipient' | 'wigmaker' }>();
+  const { type } = useParams<{ type: 'donation' | 'recipient' | 'wigmaker' | 'batch-donation' }>();
   const [data, setData] = useState<{
     donations: Donation[];
     requests: HairRequest[];
     wigmakers: User[];
     wigProductions: Record<string, WigProduction>;
+    donationStateMap: Record<number, { wigmakerReceived: boolean; isMissing: boolean }>;
   }>({
     donations: [],
     requests: [],
     wigmakers: [],
     wigProductions: {},
+    donationStateMap: {},
   });
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +31,7 @@ const StaffRealtimeTracking: React.FC = () => {
   const [batchWigmakerId, setBatchWigmakerId] = useState('');
   const [batchMaterialLink, setBatchMaterialLink] = useState('');
   const [batchStaffNote, setBatchStaffNote] = useState('');
+  const [showNoteModal, setShowNoteModal] = useState(false);
   const [showActionConfirm, setShowActionConfirm] = useState(false);
   const [showBatchConfirm, setShowBatchConfirm] = useState(false);
   type PendingAction = { reference: string; _type: 'donor' | 'recipient'; status: string; link?: string; label: string };
@@ -138,6 +141,13 @@ const StaffRealtimeTracking: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const PAGE_SIZE = 10;
+  const getBatchHairReference = (wp: any) => {
+    if (wp?.batchHairReference) return wp.batchHairReference;
+    const createdAt = wp?.createdAt ? new Date(wp.createdAt) : new Date();
+    const month = String(createdAt.getMonth() + 1).padStart(2, '0');
+    const year = createdAt.getFullYear();
+    return `B${wp?.id || '0'}-${month}-${year}`;
+  };
 
   // Reset page when view or search changes
   useEffect(() => { setCurrentPage(1); }, [type, searchTerm]);
@@ -145,8 +155,11 @@ const StaffRealtimeTracking: React.FC = () => {
   const filteredDonations = (data.donations || []).filter(d => {
     const ref = d.reference || '';
     const name = `${d.user?.firstName || ''} ${d.user?.lastName || ''}`;
+    const wp = data.wigProductions[d.id];
+    const batchRef = wp ? `${getBatchHairReference(wp)} ${wp.taskCode || ''} ${wp.wigmaker?.firstName || ''} ${wp.wigmaker?.lastName || ''}` : '';
     return ref.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      name.toLowerCase().includes(searchTerm.toLowerCase());
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      batchRef.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const filteredRequests = (data.requests || []).filter(r => {
@@ -158,6 +171,7 @@ const StaffRealtimeTracking: React.FC = () => {
 
   const isWigmaker = type === 'wigmaker';  // WIG-XXXXXX batch rows only
   const isDonation = type === 'donation';  // solo HD- donation rows only
+  const isBatchDonation = type === 'batch-donation';  // assigned hair batch rows only
 
   // Group batched donations by wigProductionId
   const batchGroups = new Map<number, { wp: any; donations: typeof filteredDonations }>();
@@ -177,13 +191,25 @@ const StaffRealtimeTracking: React.FC = () => {
     }
   }
 
-  // Pagination slices — computed after grouping loop
-  const batchGroupsArray = Array.from(batchGroups.entries());
+  // All batches — used for Hair Batch Donation Tracking (shows all assigned batches)
+  const allBatchGroupsArray = Array.from(batchGroups.entries());
+
+  // Wigmaker tracking only shows batches once wigs have been shipped back to staff
+  const batchGroupsArray = allBatchGroupsArray.filter(([, { wp }]) =>
+    (wp.childWigs || []).some((w: any) => ['shipped', 'received', 'missing'].includes(w.status))
+  );
   const batchTotalPages = Math.ceil(batchGroupsArray.length / PAGE_SIZE);
   const pagedBatchGroups = batchGroupsArray.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const donationTotalPages = Math.ceil(soloDonations.length / PAGE_SIZE);
-  const pagedSoloDonations = soloDonations.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  type DonationTrackingRow =
+    | { kind: 'batch'; wpId: number; wp: any; donations: typeof filteredDonations }
+    | { kind: 'donation'; donation: Donation };
+  // Hair Batch Donation Tracking uses all batches (monitoring all assigned batches)
+  const batchDonationRows: DonationTrackingRow[] = allBatchGroupsArray.map(([wpId, group]) => ({ kind: 'batch', wpId, ...group }));
+  const donationRows: DonationTrackingRow[] = soloDonations.map(donation => ({ kind: 'donation', donation }));
+  const visibleDonationRows = isBatchDonation ? batchDonationRows : donationRows;
+  const donationTotalPages = Math.ceil(visibleDonationRows.length / PAGE_SIZE);
+  const pagedDonationRows = visibleDonationRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const requestTotalPages = Math.ceil(filteredRequests.length / PAGE_SIZE);
   const pagedRequests = filteredRequests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -261,6 +287,19 @@ const StaffRealtimeTracking: React.FC = () => {
     }
   };
 
+  const handleMissingWig = async (wigId: number) => {
+    setIsSubmitting(true);
+    try {
+      await apiClient.post(`/internal-api/staff/wigs/${wigId}/missing`);
+      toast.success('Wig reported as missing.');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to report wig as missing');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) return <div className="section-wrap">Loading tracking data...</div>;
 
   return (
@@ -268,23 +307,25 @@ const StaffRealtimeTracking: React.FC = () => {
       <div className="section-title-block tracking-title-block">
         <div>
           <h1 className="tracking-page-title">
-            {isWigmaker ? 'Wigmaker Tracking' : isDonation ? 'Donation Trackers' : 'Request Trackers'}
+            {isWigmaker ? 'Wigmaker Tracking' : isBatchDonation ? 'Hair Batch Donation Tracking' : isDonation ? 'Hair Donation Tracking' : 'Request Trackers'}
           </h1>
           <p className="tracking-page-subtitle">
             {isWigmaker
               ? 'Monitor wig production batches assigned to wigmakers.'
-              : isDonation
-                ? 'Monitor received hair donations and batch assignment.'
-                : 'Monitor real-time status and manage workflow for wig requests.'}
+              : isBatchDonation
+                ? 'Monitor assigned hair batches and wigmaker receipt status.'
+                : isDonation
+                  ? 'Monitor received hair donations and batch assignment.'
+                  : 'Monitor real-time status and manage workflow for wig requests.'}
           </p>
         </div>
         <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)' }}>
           <span className="tracking-active-dot"></span>
-          {isWigmaker ? batchGroups.size : isDonation ? soloDonations.length : filteredRequests.length} Active {isWigmaker ? 'Batches' : isDonation ? 'Donations' : 'Requests'}
+          {isWigmaker ? batchGroupsArray.length : (isDonation || isBatchDonation) ? visibleDonationRows.length : filteredRequests.length} Active {isWigmaker ? 'Batches' : isBatchDonation ? 'Hair Batches' : isDonation ? 'Donations' : 'Requests'}
         </div>
       </div>
 
-      {(isDonation || isWigmaker) && selectedDonations.length > 0 && (
+      {isDonation && selectedDonations.length > 0 && (
         <div className="batch-action-bar" style={{
           position: 'sticky',
           top: '20px',
@@ -320,13 +361,14 @@ const StaffRealtimeTracking: React.FC = () => {
               onChange={(e) => setBatchMaterialLink(e.target.value)}
               className="batch-input"
             />
-            <input
-              type="text"
-              placeholder="Note to wigmaker (optional)..."
-              value={batchStaffNote}
-              onChange={(e) => setBatchStaffNote(e.target.value)}
-              className="batch-input"
-            />
+            <button
+              type="button"
+              onClick={() => setShowNoteModal(true)}
+              className={`batch-note-btn ${batchStaffNote.trim() ? 'has-note' : ''}`}
+            >
+              <i className={`bx ${batchStaffNote.trim() ? 'bx-note' : 'bx-message-square-edit'}`}></i>
+              {batchStaffNote.trim() ? 'Note Added' : 'Note to Wigmaker'}
+            </button>
             <select
               value={batchWigmakerId}
               onChange={(e) => setBatchWigmakerId(e.target.value)}
@@ -362,7 +404,7 @@ const StaffRealtimeTracking: React.FC = () => {
           <i className='bx bx-search tracking-search-icon'></i>
           <input
             type="text"
-            placeholder={`Search ${isWigmaker ? 'batch/wigmaker' : isDonation ? 'donors' : 'recipients'} or reference #...`}
+            placeholder={`Search ${isWigmaker || isBatchDonation ? 'batch/wigmaker' : isDonation ? 'donors' : 'recipients'} or reference #...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="tracking-search-input"
@@ -388,7 +430,7 @@ const StaffRealtimeTracking: React.FC = () => {
                 </th>
                 <th className="tracking-th">Photo</th>
                 <th className="tracking-th">Reference</th>
-                <th className="tracking-th">{isWigmaker ? 'Wig Specification' : 'Donor/User'}</th>
+                <th className="tracking-th">{isWigmaker ? 'Wig Specification' : isBatchDonation ? 'Wigmaker/Donations' : 'Donor/User'}</th>
                 <th className="tracking-th">Status</th>
                 <th className="tracking-th">Current Stage</th>
                 <th className="tracking-th tracking-th-center">Action</th>
@@ -725,29 +767,33 @@ const StaffRealtimeTracking: React.FC = () => {
                                                           </a>
                                                         )}
                                                         {w.status === 'shipped' && (
-                                                          <button
-                                                            className="soft-btn"
-                                                            onClick={() => handleReceiveWig(w.id)}
-                                                            disabled={isSubmitting}
-                                                            style={{
-                                                              padding: '0.3rem 0.6rem',
-                                                              fontSize: '0.7rem',
-                                                              background: 'linear-gradient(135deg, #ad246d, #8c1e58)',
-                                                              color: '#fff',
-                                                              border: 'none',
-                                                              borderRadius: '50px',
-                                                              cursor: 'pointer',
-                                                              fontWeight: 800,
-                                                              boxShadow: '0 4px 10px rgba(173, 36, 109, 0.15)',
-                                                              whiteSpace: 'nowrap'
-                                                            }}
-                                                          >
-                                                            Confirm Received
-                                                          </button>
+                                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                                                            <button
+                                                              className="soft-btn"
+                                                              onClick={() => handleReceiveWig(w.id)}
+                                                              disabled={isSubmitting}
+                                                              style={{ padding: '0.3rem 0.7rem', fontSize: '0.7rem', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                                            >
+                                                              <i className='bx bx-check'></i> Received
+                                                            </button>
+                                                            <button
+                                                              className="soft-btn"
+                                                              onClick={() => handleMissingWig(w.id)}
+                                                              disabled={isSubmitting}
+                                                              style={{ padding: '0.3rem 0.7rem', fontSize: '0.7rem', background: '#fff', color: '#dc2626', border: '1.5px solid #fecaca', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                                            >
+                                                              <i className='bx bx-error-circle'></i> Missing
+                                                            </button>
+                                                          </div>
                                                         )}
                                                         {w.status === 'received' && (
                                                           <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                                                             <i className='bx bx-check-circle'></i> Received
+                                                          </span>
+                                                        )}
+                                                        {w.status === 'missing' && (
+                                                          <span style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                            <i className='bx bx-error-circle'></i> Missing
                                                           </span>
                                                         )}
                                                         {w.status === 'completed' && (
@@ -776,10 +822,152 @@ const StaffRealtimeTracking: React.FC = () => {
                   })}
 
                 </>
-              ) : isDonation ? (
+              ) : (isDonation || isBatchDonation) ? (
                 <>
-                  {/* ── Donation view: Solo (un-batched) Rows ONLY (HD-XXXXXX) ── */}
-                  {pagedSoloDonations.map((donation) => {
+                  {/* Hair Donation Tracking: assigned batch rows plus unbatched donations */}
+                  {pagedDonationRows.map((row) => {
+                    if (row.kind === 'batch') {
+                      const { wpId, wp, donations: bd } = row;
+                      const isOpen = !!batchOpen[wpId];
+                      const batchRef = getBatchHairReference(wp);
+                      const wigmakerReceivedHair = ['processing', 'completed', 'shipped', 'received'].includes(wp.status);
+                      const wigmakerReceivedCount = wigmakerReceivedHair ? bd.length : 0;
+                      const stageLabel =
+                        wp.status === 'assigned' ? `Waiting for ${wp.wigmaker?.firstName || 'wigmaker'} to receive hair` :
+                          wp.status === 'processing' ? `Hair received by ${wp.wigmaker?.firstName || 'wigmaker'}` :
+                            wp.status === 'completed' ? `Wigs finished by ${wp.wigmaker?.firstName || 'wigmaker'}` :
+                              wp.status === 'shipped' ? 'Finished wigs in transit' :
+                                wp.status === 'received' ? 'Finished wigs received by staff' : 'Batch in progress';
+
+                      return (
+                        <React.Fragment key={`donation-batch-${wpId}`}>
+                          <tr className="tracking-row tracking-batch-main-row">
+                            <td className="tracking-cell-center">
+                              <div className="tracking-batch-layer-icon"><i className="bx bx-layer"></i></div>
+                            </td>
+                            <td className="tracking-cell">
+                              <div className="tracking-batch-pkg-cell"><i className="bx bx-package"></i></div>
+                            </td>
+                            <td className="tracking-cell">
+                              <div className="tracking-ref-col">
+                                <span className="tracking-ref-prefix tracking-batch-ref-label">Batch Hair Ref</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <strong className="tracking-ref-value">{batchRef}</strong>
+                                  <button
+                                    type="button"
+                                    onClick={() => setBatchOpen(prev => ({ ...prev, [wpId]: !isOpen }))}
+                                    style={{ background: 'none', border: 'none', color: '#ad246d', cursor: 'pointer', padding: '0 2px', display: 'inline-flex', alignItems: 'center', fontSize: '0.85rem' }}
+                                    title={`${isOpen ? 'Hide' : 'View'} hair donations`}
+                                  >
+                                    <i className={`bx ${isOpen ? 'bx-chevron-up-circle' : 'bx-chevron-down-circle'}`}></i>
+                                  </button>
+                                </div>
+                                <span className="tracking-ref-date">{wp.taskCode}</span>
+                              </div>
+                            </td>
+                            <td className="tracking-cell">
+                              <div className="tracking-user-col">
+                                <div className="tracking-user-avatar tracking-user-avatar-donor">
+                                  {wp.wigmaker?.firstName?.[0] || 'W'}{wp.wigmaker?.lastName?.[0] || ''}
+                                </div>
+                                <div>
+                                  <div className="tracking-user-name">{wp.wigmaker?.firstName || 'Assigned'} {wp.wigmaker?.lastName || 'Wigmaker'}</div>
+                                  <div className="tracking-user-role-donor">{bd.length} hair donation{bd.length === 1 ? '' : 's'}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="tracking-cell"><StatusPill status={wp.status} /></td>
+                            <td className="tracking-cell">
+                              <div className="tracking-progress-col">
+                                <div className="tracking-progress-head">
+                                  <span className="tracking-progress-label">Wigmaker Received</span>
+                                  <span className="tracking-progress-percent">{wigmakerReceivedCount}/{bd.length}</span>
+                                </div>
+                                <div className="tracking-progress-bar-bg">
+                                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${bd.length ? (wigmakerReceivedCount / bd.length) * 100 : 0}%`, background: 'linear-gradient(90deg, #ad246d, #ff6bb5)', borderRadius: '10px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: '0 0 8px rgba(173, 36, 109, 0.3)' }}></div>
+                                </div>
+                                <div className="tracking-progress-status">
+                                  <i className={`bx ${wp.status === 'received' ? 'bx-check-circle' : 'bx-sync bx-spin'}`} style={{ color: wp.status === 'received' ? '#10b981' : '#ad246d' }}></i>
+                                  {stageLabel}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="tracking-action-cell">
+                              <button
+                                type="button"
+                                className="tracking-batch-toggle-btn"
+                                onClick={() => setBatchOpen(prev => ({ ...prev, [wpId]: !isOpen }))}
+                              >
+                                <i className={`bx ${isOpen ? 'bx-hide' : 'bx-show'}`}></i>
+                                {isOpen ? 'Hide Details' : 'View Details'}
+                              </button>
+                            </td>
+                          </tr>
+                          {isOpen && (
+                            <tr className="tracking-batch-expanded-row">
+                              <td colSpan={7} className="tracking-batch-expanded-cell">
+                                <div className="tracking-batch-expanded-inner">
+                                  <div className="tracking-batch-expanded-header">
+                                    <i className="bx bx-package"></i> Hair Donations in {batchRef}
+                                  </div>
+                                  <table className="tracking-batch-inner-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Reference</th>
+                                        <th>Donor</th>
+                                        <th>Hair Details</th>
+                                        <th>Wigmaker Received</th>
+                                        <th>Status</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {bd.map(d => {
+                                        const dState = (data.donationStateMap as any)[d.id];
+                                        const dReceived = dState?.wigmakerReceived;
+                                        const dMissing  = dState?.isMissing;
+                                        const dPending  = !dReceived && !dMissing;
+                                        return (
+                                          <tr key={d.id} style={{ background: dMissing ? '#fff5f5' : 'transparent' }}>
+                                            <td><code className="tracking-inner-ref">{d.reference}</code></td>
+                                            <td>
+                                              <div className="tracking-inner-donor">
+                                                <span className="tracking-inner-avatar">{d.user?.firstName?.[0] || ''}{d.user?.lastName?.[0] || ''}</span>
+                                                {d.user?.firstName} {d.user?.lastName}
+                                              </div>
+                                            </td>
+                                            <td>{d.hairLength || 'N/A'} / {d.hairColor || 'N/A'}</td>
+                                            <td>
+                                              {dReceived && (
+                                                <span style={{ color: '#10b981', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                  <i className="bx bx-check-circle"></i> Received
+                                                </span>
+                                              )}
+                                              {dMissing && (
+                                                <span style={{ color: '#dc2626', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                  <i className="bx bx-error-circle"></i> Missing
+                                                </span>
+                                              )}
+                                              {dPending && (
+                                                <span style={{ color: '#8c7895', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                  <i className="bx bx-time-five"></i> Pending
+                                                </span>
+                                              )}
+                                            </td>
+                                            <td><StatusPill status={d.status} /></td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    }
+
+                    const donation = row.donation;
                     const wigProd = data.wigProductions[donation.id];
                     const isWigmakerControlled = !!wigProd || ['In Queue', 'In Progress', 'Processing'].includes(donation.status);
                     const stageIndex = ['Verified', 'Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].indexOf(donation.status);
@@ -1083,11 +1271,11 @@ const StaffRealtimeTracking: React.FC = () => {
                   );
                 })
               )}
-              {((isWigmaker && batchGroups.size === 0) || (isDonation && soloDonations.length === 0) || (!isDonation && !isWigmaker && data.requests.length === 0)) && (
+              {((isWigmaker && batchGroupsArray.length === 0) || ((isDonation || isBatchDonation) && visibleDonationRows.length === 0) || (!isDonation && !isBatchDonation && !isWigmaker && data.requests.length === 0)) && (
                 <tr>
-                  <td colSpan={6} className="tracking-empty-col">
+                  <td colSpan={7} className="tracking-empty-col">
                     <i className="bx bx-search tracking-empty-icon"></i>
-                    <p>No active {isWigmaker ? 'wigmaker batch' : isDonation ? 'donation' : 'request'} trackers found.</p>
+                    <p>No active {isWigmaker ? 'wigmaker batch' : isBatchDonation ? 'hair batch donation' : isDonation ? 'donation' : 'request'} trackers found.</p>
                   </td>
                 </tr>
               )}
@@ -1097,7 +1285,7 @@ const StaffRealtimeTracking: React.FC = () => {
       </div>
       <Pagination
         currentPage={currentPage}
-        totalPages={isWigmaker ? batchTotalPages : isDonation ? donationTotalPages : requestTotalPages}
+        totalPages={isWigmaker ? batchTotalPages : (isDonation || isBatchDonation) ? donationTotalPages : requestTotalPages}
         onPageChange={setCurrentPage}
       />
 
@@ -1140,6 +1328,81 @@ const StaffRealtimeTracking: React.FC = () => {
         confirmText="Yes, Confirm All"
         isConfirming={isSubmitting}
       />
+
+      {showNoteModal && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setShowNoteModal(false); }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 999999,
+            background: 'rgba(30, 18, 36, 0.55)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem',
+            animation: 'cmFadeIn 0.18s ease',
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '24px',
+              boxShadow: '0 32px 80px rgba(173, 36, 109, 0.18), 0 8px 24px rgba(0,0,0,0.12)',
+              padding: '2rem',
+              maxWidth: '520px',
+              width: '100%',
+              border: '1px solid #ead7e8',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '50%',
+                background: '#fdf2f8',
+                display: 'grid', placeItems: 'center',
+                border: '2px solid #f9cde8',
+              }}>
+                <i className='bx bx-message-square-edit' style={{ fontSize: '1.75rem', color: '#ad246d' }} />
+              </div>
+            </div>
+            <h2 style={{ textAlign: 'center', margin: '0 0 0.5rem 0', fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43' }}>
+              Note to Wigmaker
+            </h2>
+            <p style={{ textAlign: 'center', margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: '#8c7895', lineHeight: 1.5 }}>
+              Add handling details or special reminders for the selected hair batch.
+            </p>
+            <textarea
+              value={batchStaffNote}
+              onChange={(e) => setBatchStaffNote(e.target.value.slice(0, 500))}
+              className="batch-note-textarea"
+              placeholder="Write a short note for the wigmaker..."
+              autoFocus
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', color: '#8c7895', fontSize: '0.75rem', fontWeight: 700 }}>
+              <button
+                type="button"
+                onClick={() => setBatchStaffNote('')}
+                style={{ background: 'none', border: 'none', color: '#ad246d', cursor: 'pointer', fontWeight: 800, padding: 0 }}
+              >
+                Clear note
+              </button>
+              <span>{batchStaffNote.length}/500</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '1.5rem' }}>
+              <button
+                onClick={() => setShowNoteModal(false)}
+                style={{ height: '44px', borderRadius: '50px', border: '1.5px solid #ead7e8', background: '#fff', color: '#5d4d62', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowNoteModal(false)}
+                style={{ height: '44px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
+              >
+                Save Note
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDeliveryLinkModal && (
         <div

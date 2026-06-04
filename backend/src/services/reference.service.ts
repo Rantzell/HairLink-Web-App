@@ -1,48 +1,56 @@
 import prisma from '../config/database';
 
 export const generateSequentialReference = async (
-  prefixType: 'HD' | 'WR' | 'MD' | 'WIG'
+  prefixType: 'HD' | 'WR' | 'MD' | 'WB'
 ): Promise<string> => {
   const currentYear = new Date().getFullYear();
-  // Format: "HD 2026-0001" — space between type and year, hyphen before sequence
   const prefix = `${prefixType} ${currentYear}-`;
 
-  let lastRecord: any = null;
+  let records: Array<{ reference?: string | null; referenceNumber?: string | null; taskCode?: string | null }> = [];
 
   if (prefixType === 'HD') {
-    lastRecord = await prisma.donation.findFirst({
+    records = await prisma.donation.findMany({
       where: { reference: { startsWith: prefix } },
-      orderBy: { id: 'desc' }
+      select: { reference: true },
     });
   } else if (prefixType === 'WR') {
-    lastRecord = await prisma.hairRequest.findFirst({
+    records = await prisma.hairRequest.findMany({
       where: { reference: { startsWith: prefix } },
-      orderBy: { id: 'desc' }
+      select: { reference: true },
     });
   } else if (prefixType === 'MD') {
-    lastRecord = await prisma.monetaryDonation.findFirst({
+    records = await prisma.monetaryDonation.findMany({
       where: { referenceNumber: { startsWith: prefix } },
-      orderBy: { id: 'desc' }
+      select: { referenceNumber: true },
     });
-  } else if (prefixType === 'WIG') {
-    lastRecord = await prisma.wigProduction.findFirst({
-      where: { taskCode: { startsWith: prefix } },
-      orderBy: { id: 'desc' }
-    });
+  } else if (prefixType === 'WB') {
+    // Count both WB and WIG parent batches (not child wigs) to avoid sequence collisions
+    const [wbRecs, wigRecs] = await Promise.all([
+      prisma.wigProduction.findMany({
+        where: { taskCode: { startsWith: `WB ${currentYear}-` }, NOT: { taskCode: { contains: '-W' } } },
+        select: { taskCode: true },
+      }),
+      prisma.wigProduction.findMany({
+        where: { taskCode: { startsWith: `WIG ${currentYear}-` }, NOT: { taskCode: { contains: '-W' } } },
+        select: { taskCode: true },
+      }),
+    ]);
+    records = [...wbRecs, ...wigRecs];
   }
 
-  let nextSeq = 1;
-  const refString = lastRecord?.reference || lastRecord?.referenceNumber || lastRecord?.taskCode;
-  if (refString) {
-    // "HD 2026-0042" — last segment after the final hyphen is the sequence
+  let maxSeq = 0;
+  for (const record of records) {
+    const refString = record.reference || record.referenceNumber || record.taskCode;
+    if (!refString) continue;
+
     const lastHyphen = refString.lastIndexOf('-');
-    if (lastHyphen !== -1) {
-      const parsedSeq = parseInt(refString.slice(lastHyphen + 1), 10);
-      if (!isNaN(parsedSeq)) {
-        nextSeq = parsedSeq + 1;
-      }
+    if (lastHyphen === -1) continue;
+
+    const seqText = refString.slice(lastHyphen + 1);
+    if (/^\d+$/.test(seqText)) {
+      maxSeq = Math.max(maxSeq, parseInt(seqText, 10));
     }
   }
 
-  return `${prefix}${nextSeq.toString().padStart(4, '0')}`;
+  return `${prefix}${(maxSeq + 1).toString().padStart(4, '0')}`;
 };

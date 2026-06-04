@@ -42,6 +42,7 @@ export interface Donation {
   certificateNo: string | null;
   donorDeliveryLink: string | null;
   receivedWigAt: string | null;
+  wigProductionId?: number | null;
   createdAt: string;
   updatedAt: string;
   user?: User;
@@ -78,6 +79,7 @@ export interface HairRequest {
 export interface WigProduction {
   id: string;
   taskCode: string;
+  batchHairReference?: string;
   wigmakerId: string;
   donationId: string | null;
   hairRequestId: string | null;

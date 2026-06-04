@@ -115,9 +115,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {
         label: 'Production & Stock',
         items: [
-          { icon: 'bx bx-radar',        label: 'Wigmaker Tracking',      to: '/staff/tracking/wigmaker' },
-          { icon: 'bx bx-package',      label: 'Donation Trackers',      to: '/staff/tracking/donation' },
-          { icon: 'bx bx-transfer-alt', label: 'Request Trackers',       to: '/staff/tracking/recipient' },
+          { icon: 'bx bx-radar',        label: 'Wigmaker Tracking',          to: '/staff/tracking/wigmaker' },
+          { icon: 'bx bx-package',      label: 'Donation Trackers',          to: '/staff/tracking/donation' },
+          { icon: 'bx bx-layer',        label: 'Hair Batch Tracking',        to: '/staff/tracking/batch-donation' },
+          { icon: 'bx bx-transfer-alt', label: 'Request Trackers',           to: '/staff/tracking/recipient' },
           { icon: 'bx bx-cut',          label: 'Hair Stock',             to: '/staff/hair-stock' },
           { icon: 'bx bxs-crown',       label: 'Wig Stock',              to: '/staff/wig-stock' },
         ],
@@ -136,6 +137,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       if (location.pathname.startsWith('/staff/verification/recipient')) return 'Request Verification Desk';
       if (location.pathname.startsWith('/staff/verification/monetary')) return 'Monetary Verification Desk';
       if (location.pathname.startsWith('/staff/tracking/wigmaker')) return 'Wigmaker Production Trackers';
+      if (location.pathname.startsWith('/staff/tracking/batch-donation')) return 'Hair Batch Donation Tracking';
       if (location.pathname.startsWith('/staff/tracking/donation')) return 'Donation Trackers';
       if (location.pathname.startsWith('/staff/tracking/recipient')) return 'Request Trackers';
       if (location.pathname.startsWith('/staff/hair-stock')) return 'Hair Stock Inventory';
@@ -456,15 +458,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {
         label: 'Production & Tasks',
         items: [
-          { icon: 'bx bx-wrench',       label: 'Production Tasks',    to: '/wigmaker/production-tasks' },
-          { icon: 'bx bxs-crown',       label: 'Wig Inventory',       to: '/wigmaker/wig-inventory' },
+          { icon: 'bx bx-layer',        label: 'Hair Batch Tracking',   to: '/wigmaker/hair-batch-tracking' },
+          { icon: 'bx bxs-crown',       label: 'Wig Inventory',         to: '/wigmaker/wig-inventory' },
         ],
       },
     ];
 
     const getTopbarTitle = () => {
       if (location.pathname.startsWith('/wigmaker/dashboard')) return 'Wigmaker Workspace';
-      if (location.pathname.startsWith('/wigmaker/production-tasks')) return 'Production Task Inventory';
+      if (location.pathname.startsWith('/wigmaker/hair-batch-tracking')) return 'Hair Batch Tracking';
+
       if (location.pathname.startsWith('/wigmaker/wig-inventory')) return 'Wig Inventory';
       if (location.pathname.startsWith('/wigmaker/task/')) return 'Task Details & Progress';
       if (location.pathname.startsWith('/wigmaker/profile')) return 'My Profile';
@@ -664,7 +667,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               {(role as string) === 'wigmaker' && (
                 <>
                   <Link to="/wigmaker/dashboard" className={isActive('/wigmaker/dashboard') ? 'active' : ''}>Overview</Link>
-                  <Link to="/wigmaker/production-tasks" className={isActive('/wigmaker/production-tasks') ? 'active' : ''}>Production Tasks</Link>
+                  <Link to="/wigmaker/hair-batch-tracking" className={isActive('/wigmaker/hair-batch-tracking') ? 'active' : ''}>Hair Batch Tracking</Link>
                   <Link to="/wigmaker/wig-inventory" className={isActive('/wigmaker/wig-inventory') ? 'active' : ''}>Wig Inventory</Link>
                 </>
               )}
