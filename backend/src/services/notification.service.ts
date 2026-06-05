@@ -378,6 +378,24 @@ export const notifyWigmakerStaffReceivedWig = async (wigmakerId: string, taskCod
   );
 };
 
+export const notifyStaffHairReceived = async (taskCode: string, batchRef: string, donationReference: string, wigmakerName: string) => {
+  try {
+    const staff = await prisma.user.findMany({ where: { role: 'staff', isActive: true }, select: { id: true } });
+    if (staff.length === 0) return;
+    await prisma.notifications.createMany({
+      data: staff.map((s) => ({
+        user_id: s.id,
+        title: '✅ Hair Received by Wigmaker',
+        message: `${wigmakerName} confirmed receipt of hair donation ${donationReference} from batch ${batchRef} (Task #${taskCode}).`,
+        type: 'staff_wig_production',
+        is_read: false,
+      })),
+    });
+  } catch (err) {
+    console.error('[Notify] notifyStaffHairReceived failed:', err);
+  }
+};
+
 export const notifyStaffMissingHair = async (taskCode: string, batchRef: string, donationReference: string, wigmakerName: string) => {
   try {
     const staff = await prisma.user.findMany({ where: { role: 'staff', isActive: true }, select: { id: true } });

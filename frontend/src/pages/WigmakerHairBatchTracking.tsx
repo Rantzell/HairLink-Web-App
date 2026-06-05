@@ -9,8 +9,11 @@ const WigmakerHairBatchTracking: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [donationStateMap, setDonationStateMap] = useState<Record<number, { wigmakerReceived: boolean; isMissing: boolean }>>({});
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'assigned' | 'processing' | 'completed'>('all');
   const [submitting, setSubmitting] = useState<Record<string, boolean>>({});
+  const [openBatches, setOpenBatches] = useState<Record<number, boolean>>({});
+
+  const toggleBatch = (taskId: number) =>
+    setOpenBatches(prev => ({ ...prev, [taskId]: !prev[taskId] }));
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -74,30 +77,21 @@ const WigmakerHairBatchTracking: React.FC = () => {
 
   if (loading) return <LoadingScreen />;
 
-  const filteredTasks = tasks.filter(t => filter === 'all' || t.status === filter);
+  const filteredTasks = tasks;
 
   return (
     <section className="wigmaker-page reveal active staff-page">
-      <div className="section-title-block dashboard-section-title-block">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <div>
           <h1 className="dashboard-title">Hair Batch Tracking</h1>
           <p className="dashboard-subtitle">
             Track incoming hair materials per batch and confirm receipt of each donor's contribution.
           </p>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73,20,52,0.04)' }}>
+        <span style={{ background: '#fdf2f8', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 700, padding: '0.25rem 0.75rem', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', borderRadius: '50px', whiteSpace: 'nowrap', alignSelf: 'center' }}>
           <span className="tracking-active-dot"></span>
           {tasks.length} Batches
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="task-filters dashboard-task-filters" style={{ marginBottom: '1.5rem' }}>
-        {(['all', 'assigned', 'processing', 'completed'] as const).map(f => (
-          <button key={f} className={`filter-btn dashboard-filter-btn ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-            {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
-          </button>
-        ))}
+        </span>
       </div>
 
       {filteredTasks.length === 0 ? (
@@ -116,11 +110,13 @@ const WigmakerHairBatchTracking: React.FC = () => {
 
             const batchRef = task.batchHairReference || `B${task.id}-${String(new Date(task.createdAt).getMonth() + 1).padStart(2, '0')}-${new Date(task.createdAt).getFullYear()}`;
 
+            const isOpen = !!openBatches[task.id]; // default collapsed
+
             return (
               <article key={task.id} style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(73,20,52,0.04)' }}>
 
                 {/* Batch header */}
-                <div style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', borderBottom: donations.length ? '1px solid #f2ebf4' : 'none' }}>
+                <div style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#FFF0F8', color: '#ad246d', display: 'grid', placeItems: 'center', fontSize: '1.1rem' }}>
                       <i className="bx bx-package"></i>
@@ -132,6 +128,13 @@ const WigmakerHairBatchTracking: React.FC = () => {
                       <div style={{ fontSize: '0.75rem', color: '#8c7895', marginTop: '2px' }}>
                         {task.taskCode} · {donations.length} donor{donations.length !== 1 ? 's' : ''} · Started {new Date(task.createdAt).toLocaleDateString()}
                       </div>
+                      {/* Tracking delivery link */}
+                      {task.materialDeliveryLink && (
+                        <a href={task.materialDeliveryLink} target="_blank" rel="noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '0.72rem', fontWeight: 700, color: '#3b82f6', background: '#eff6ff', border: '1px solid #dbeafe', borderRadius: '6px', padding: '0.15rem 0.55rem', textDecoration: 'none' }}>
+                          <i className="bx bx-link-external"></i> Track Incoming Delivery
+                        </a>
+                      )}
                     </div>
                   </div>
 
@@ -151,12 +154,20 @@ const WigmakerHairBatchTracking: React.FC = () => {
                     <Link to={`/wigmaker/task/${task.taskCode}`} style={{ padding: '0.4rem 0.9rem', borderRadius: '50px', border: '1.5px solid #ad246d', color: '#ad246d', fontWeight: 800, fontSize: '0.75rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                       Open Task <i className="bx bx-chevron-right"></i>
                     </Link>
+
+                    {/* Collapse toggle */}
+                    {donations.length > 0 && (
+                      <button onClick={() => toggleBatch(task.id)}
+                        style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #ead7e8', background: '#fff', color: '#ad246d', display: 'grid', placeItems: 'center', cursor: 'pointer', fontSize: '1rem', flexShrink: 0 }}>
+                        <i className={`bx ${isOpen ? 'bx-chevron-up' : 'bx-chevron-down'}`}></i>
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {/* Donor table — matches staff batch donation expanded view */}
-                {donations.length > 0 && (
-                  <div style={{ overflowX: 'auto' }}>
+                {/* Collapsible donor table */}
+                {donations.length > 0 && isOpen && (
+                  <div style={{ borderTop: '1px solid #f2ebf4', overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr>

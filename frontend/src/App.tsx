@@ -35,6 +35,7 @@ import WigmakerTaskDetail from './pages/WigmakerTaskDetail';
 import WigmakerWigInventory from './pages/WigmakerWigInventory';
 import WigmakerHairBatchTracking from './pages/WigmakerHairBatchTracking';
 import CommunityFeed from './pages/CommunityFeed';
+import ResetPassword from './pages/ResetPassword';
 
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUserManagement from './pages/AdminUserManagement';
@@ -61,6 +62,7 @@ function App() {
           <Route path="/login" element={<AuthLayout><AuthPage initialMode="login" /></AuthLayout>} />
           <Route path="/register" element={<AuthLayout><AuthPage initialMode="register" /></AuthLayout>} />
           <Route path="/verify-otp" element={<VerifyOtp />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Donor Routes */}
           <Route path="/donor/*" element={

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import PasswordInput from '../components/PasswordInput';
 
 const isDev = import.meta.env.DEV;
@@ -587,6 +588,55 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
   const [isReg, setIsReg] = useState(location.pathname === '/register');
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [forgotNewPw, setForgotNewPw] = useState('');
+  const [forgotConfirmPw, setForgotConfirmPw] = useState('');
+  const [forgotStep, setForgotStep] = useState<'email' | 'otp' | 'newpw' | 'done'>('email');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+
+  const resetForgot = () => {
+    setForgotStep('email'); setForgotEmail(''); setForgotOtp('');
+    setForgotNewPw(''); setForgotConfirmPw(''); setForgotLoading(false); setForgotError('');
+  };
+
+  const handleSendCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) { setForgotError('Please enter your email address.'); return; }
+    setForgotLoading(true); setForgotError('');
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim());
+    setForgotLoading(false);
+    if (error) { setForgotError(error.message); } else { setForgotStep('otp'); }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotOtp.trim()) { setForgotError('Please enter the code from your email.'); return; }
+    setForgotLoading(true); setForgotError('');
+    const { error } = await supabase.auth.verifyOtp({
+      email: forgotEmail.trim(),
+      token: forgotOtp.trim(),
+      type: 'recovery',
+    });
+    setForgotLoading(false);
+    if (error) { setForgotError('Invalid or expired code. Please try again.'); }
+    else { setForgotStep('newpw'); }
+  };
+
+  const handleSetNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (forgotNewPw.length < 8) { setForgotError('Password must be at least 8 characters.'); return; }
+    if (!/[0-9]/.test(forgotNewPw)) { setForgotError('Password must contain a number.'); return; }
+    if (!/[!@#$%^&*(),.?":{}|<>_]/.test(forgotNewPw)) { setForgotError('Password must contain a symbol.'); return; }
+    if (forgotNewPw !== forgotConfirmPw) { setForgotError('Passwords do not match.'); return; }
+    setForgotLoading(true); setForgotError('');
+    const { error } = await supabase.auth.updateUser({ password: forgotNewPw });
+    setForgotLoading(false);
+    if (error) { setForgotError(error.message); }
+    else { setForgotStep('done'); }
+  };
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -655,6 +705,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
   ];
 
   return (
+    <>
     <main className="hl-auth-root">
       <style>{authStyles}</style>
 
@@ -731,7 +782,13 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 />
               </div>
 
-              <span className="hl-forgot">Forgot password?</span>
+              <span
+                className="hl-forgot"
+                style={{ cursor: 'pointer' }}
+                onClick={() => { setShowForgot(true); resetForgot(); }}
+              >
+                Forgot password?
+              </span>
 
               <button type="submit" className="hl-submit" disabled={loading}>
                 Sign In
@@ -951,6 +1008,129 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
 
       </div>
     </main>
+
+    {/* ── Forgot Password Modal ── */}
+    {showForgot && (
+      <div
+        onClick={e => { if (e.target === e.currentTarget && !forgotLoading) { setShowForgot(false); resetForgot(); } }}
+        style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+      >
+        <div style={{ background: '#fff', borderRadius: '20px', padding: '2rem', maxWidth: '420px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+
+          {/* Step 1 — Email */}
+          {forgotStep === 'email' && (
+            <form onSubmit={handleSendCode}>
+              <h2 style={{ margin: '0 0 0.4rem', fontSize: '1.2rem', fontWeight: 800, color: '#1a1a1a' }}>Reset Password</h2>
+              <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: '#6b7280' }}>Enter your email and we'll send you a verification code.</p>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem' }}>Email Address</label>
+              <input type="email" required placeholder="you@example.com" value={forgotEmail}
+                onChange={e => { setForgotEmail(e.target.value); setForgotError(''); }}
+                style={{ width: '100%', padding: '0.7rem 1rem', borderRadius: '10px', border: `1.5px solid ${forgotError ? '#ef4444' : '#e5e7eb'}`, fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} />
+              {forgotError && <p style={{ margin: '0.4rem 0 0', fontSize: '0.78rem', color: '#ef4444' }}>{forgotError}</p>}
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => { setShowForgot(false); resetForgot(); }}
+                  style={{ flex: 1, padding: '0.7rem', borderRadius: '50px', border: '1.5px solid #e5e7eb', background: '#fff', color: '#374151', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={forgotLoading}
+                  style={{ flex: 2, padding: '0.7rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#D63B8A,#e8559e)', color: '#fff', fontWeight: 800, fontSize: '0.875rem', cursor: forgotLoading ? 'not-allowed' : 'pointer', opacity: forgotLoading ? 0.7 : 1 }}>
+                  {forgotLoading ? 'Sending…' : 'Send Code'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Step 2 — Enter code */}
+          {forgotStep === 'otp' && (
+            <form onSubmit={handleVerifyCode}>
+              <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#fdf2f8', display: 'grid', placeItems: 'center', margin: '0 auto 0.75rem' }}>
+                  <i className="bx bx-envelope-open" style={{ fontSize: '1.6rem', color: '#D63B8A' }}></i>
+                </div>
+                <h2 style={{ margin: '0 0 0.4rem', fontSize: '1.2rem', fontWeight: 800, color: '#1a1a1a' }}>Enter Verification Code</h2>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>We sent a 6-digit code to <strong>{forgotEmail}</strong></p>
+              </div>
+              <input type="text" inputMode="numeric" maxLength={6} required placeholder="000000" value={forgotOtp}
+                onChange={e => { setForgotOtp(e.target.value.replace(/\D/g, '')); setForgotError(''); }}
+                style={{ width: '100%', padding: '0.9rem 1rem', borderRadius: '10px', border: `1.5px solid ${forgotError ? '#ef4444' : '#e5e7eb'}`, fontSize: '1.6rem', fontWeight: 800, textAlign: 'center', letterSpacing: '0.5rem', outline: 'none', boxSizing: 'border-box' }} />
+              {forgotError && <p style={{ margin: '0.4rem 0 0', fontSize: '0.78rem', color: '#ef4444', textAlign: 'center' }}>{forgotError}</p>}
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => { setForgotStep('email'); setForgotError(''); }}
+                  style={{ flex: 1, padding: '0.7rem', borderRadius: '50px', border: '1.5px solid #e5e7eb', background: '#fff', color: '#374151', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>← Back</button>
+                <button type="submit" disabled={forgotLoading}
+                  style={{ flex: 2, padding: '0.7rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#D63B8A,#e8559e)', color: '#fff', fontWeight: 800, fontSize: '0.875rem', cursor: forgotLoading ? 'not-allowed' : 'pointer', opacity: forgotLoading ? 0.7 : 1 }}>
+                  {forgotLoading ? 'Verifying…' : 'Verify Code'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Step 3 — New password */}
+          {forgotStep === 'newpw' && (
+            <form onSubmit={handleSetNewPassword}>
+              <h2 style={{ margin: '0 0 0.4rem', fontSize: '1.2rem', fontWeight: 800, color: '#1a1a1a' }}>Set New Password</h2>
+              <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: '#6b7280' }}>Enter a new password for your account.</p>
+
+              {/* New password */}
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem' }}>New Password</label>
+              <input type="password" required placeholder="New password" value={forgotNewPw}
+                onChange={e => { setForgotNewPw(e.target.value); setForgotError(''); }}
+                style={{ width: '100%', padding: '0.7rem 1rem', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box', marginBottom: '0.5rem' }} />
+
+              {/* Live requirements */}
+              <div className="hl-pw-reqs" style={{ marginBottom: '1rem' }}>
+                {[
+                  { label: 'At least 8 characters', ok: forgotNewPw.length >= 8 },
+                  { label: 'Contains a number',     ok: /[0-9]/.test(forgotNewPw) },
+                  { label: 'Contains a symbol',     ok: /[!@#$%^&*(),.?":{}|<>_]/.test(forgotNewPw) },
+                ].map((r, i) => (
+                  <span key={i} className={`hl-pw-req ${forgotNewPw ? (r.ok ? 'ok' : 'bad') : ''}`}>
+                    <i className={`bx ${r.ok ? 'bx-check-circle' : 'bx-circle'}`} />
+                    {r.label}
+                  </span>
+                ))}
+              </div>
+
+              {/* Confirm password */}
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem' }}>Confirm New Password</label>
+              <input type="password" required placeholder="Re-enter new password" value={forgotConfirmPw}
+                onChange={e => { setForgotConfirmPw(e.target.value); setForgotError(''); }}
+                style={{ width: '100%', padding: '0.7rem 1rem', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box', marginBottom: '0.4rem' }} />
+
+              {/* Match indicator */}
+              {forgotConfirmPw && (
+                <span className={`hl-pw-req ${forgotNewPw === forgotConfirmPw ? 'ok' : 'bad'}`} style={{ marginBottom: '0.5rem', display: 'flex' }}>
+                  <i className={`bx ${forgotNewPw === forgotConfirmPw ? 'bx-check-circle' : 'bx-x-circle'}`} />
+                  {forgotNewPw === forgotConfirmPw ? 'Passwords match' : 'Passwords do not match'}
+                </span>
+              )}
+
+              {forgotError && <p style={{ margin: '0.25rem 0 0', fontSize: '0.78rem', color: '#ef4444' }}>{forgotError}</p>}
+
+              <button type="submit" disabled={forgotLoading}
+                style={{ width: '100%', marginTop: '1rem', padding: '0.75rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#D63B8A,#e8559e)', color: '#fff', fontWeight: 800, fontSize: '0.9rem', cursor: forgotLoading ? 'not-allowed' : 'pointer', opacity: forgotLoading ? 0.7 : 1 }}>
+                {forgotLoading ? 'Saving…' : 'Set New Password'}
+              </button>
+            </form>
+          )}
+
+          {/* Step 4 — Done */}
+          {forgotStep === 'done' && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f0fdf4', display: 'grid', placeItems: 'center', margin: '0 auto 1rem' }}>
+                <i className="bx bx-check-circle" style={{ fontSize: '2rem', color: '#10b981' }}></i>
+              </div>
+              <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', fontWeight: 800, color: '#1a1a1a' }}>Password Updated!</h2>
+              <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: '#6b7280' }}>Your password has been reset. You can now log in.</p>
+              <button onClick={() => { setShowForgot(false); resetForgot(); }}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#D63B8A,#e8559e)', color: '#fff', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer' }}>
+                Back to Login
+              </button>
+            </div>
+          )}
+
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

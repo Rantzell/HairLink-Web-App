@@ -857,6 +857,9 @@ const BackgroundWaves = () => (
 const DonorDashboard: React.FC = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<any>(null);
+  const [milestoneData, setMilestoneData] = useState<{ progress: number; threshold: number; remaining: number } | null>(null);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [milestoneVoucher, setMilestoneVoucher] = useState<any>(null);
   const [referralCode, setReferralCode] = useState('');
   const [referralStatus, setReferralStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
   const [loading, setLoading] = useState(true);
@@ -864,13 +867,35 @@ const DonorDashboard: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const res = await apiClient.get('/internal-api/donations/stats');
-      setStats(res.data);
+      const [statsRes, milestoneRes, vouchersRes] = await Promise.all([
+        apiClient.get('/internal-api/donations/stats'),
+        apiClient.get('/internal-api/rewards/milestone'),
+        apiClient.get('/internal-api/rewards/vouchers'),
+      ]);
+      setStats(statsRes.data);
+      setMilestoneData(milestoneRes.data);
+
+      // Check for new active vouchers not yet acknowledged
+      const activeVouchers = (vouchersRes.data || []).filter((v: any) => v.status === 'active');
+      const newVoucher = activeVouchers.find(
+        (v: any) => !localStorage.getItem(`milestoneModal_${v.id}`)
+      );
+      if (newVoucher) {
+        setMilestoneVoucher(newVoucher);
+        setShowMilestoneModal(true);
+      }
     } catch (err) {
       console.error('Failed to fetch stats', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleMilestoneConfirm = () => {
+    if (milestoneVoucher) {
+      localStorage.setItem(`milestoneModal_${milestoneVoucher.id}`, '1');
+    }
+    setShowMilestoneModal(false);
   };
 
   useEffect(() => {
@@ -892,7 +917,6 @@ const DonorDashboard: React.FC = () => {
     try {
       await apiClient.post('/internal-api/referral', { referral_code: referralCode });
       setReferralStatus('success');
-      // Refresh statistics and reset code field
       await fetchStats();
       setReferralCode('');
       setReferralStatus('idle');
@@ -902,13 +926,14 @@ const DonorDashboard: React.FC = () => {
     }
   };
 
-  const points = stats.totalPoints || 0;
+  // Use milestoneProgress for star display (resets after claiming) — falls back to totalPoints
+  const points = milestoneData?.progress ?? stats.totalPoints ?? 0;
   const hairDonations = stats.breakdown?.hairDonations || 0;
   const referrals = stats.breakdown?.referrals || 0;
   const monetaryAmount = stats.breakdown?.monetaryAmount || 0;
 
   const percent = Math.min((points / goal) * 100, 100);
-  const filledStars = Math.min(Math.floor(points / 10), 10); // 10 stars progress representation
+  const filledStars = Math.min(Math.floor(points / 10), 10);
 
   // SVG Circular progress configurations
   const radius = 28;
@@ -916,6 +941,7 @@ const DonorDashboard: React.FC = () => {
   const strokeDashoffset = circumference - (percent / 100) * circumference;
 
   return (
+    <>
     <div className="hl-dash-root">
       <style>{dashStyles}</style>
 
@@ -1244,6 +1270,74 @@ const DonorDashboard: React.FC = () => {
 
       </div>
     </div>
+
+    {/* ── Free Wig Milestone Modal ── */}
+    {showMilestoneModal && (
+      <div
+        style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+        }}
+      >
+        <div style={{
+          background: '#fff', borderRadius: '24px', padding: '2.5rem',
+          maxWidth: '440px', width: '100%',
+          boxShadow: '0 32px 80px rgba(214,59,138,0.2)',
+          textAlign: 'center', fontFamily: 'Inter, sans-serif',
+        }}>
+          {/* Confetti icon */}
+          <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🎉</div>
+
+          <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.5rem', fontWeight: 800, color: '#1a1a1a' }}>
+            You've Won a Free Wig!
+          </h2>
+          <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: '#6b7280', lineHeight: 1.6 }}>
+            Congratulations! You've reached <strong>100 Star Points</strong> and earned a <strong>free wig reward</strong>.
+          </p>
+
+          {/* Voucher code */}
+          {milestoneVoucher && (
+            <div style={{
+              background: '#fdf2f8', border: '1.5px dashed #D63B8A',
+              borderRadius: '12px', padding: '0.875rem 1.25rem',
+              marginBottom: '1.25rem',
+            }}>
+              <p style={{ margin: '0 0 0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#D63B8A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Your Voucher Code</p>
+              <code style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1a1a1a', letterSpacing: '2px' }}>{milestoneVoucher.code}</code>
+            </div>
+          )}
+
+          {/* Contact info */}
+          <div style={{
+            background: '#f9fafb', borderRadius: '12px', padding: '1rem 1.25rem',
+            marginBottom: '1.5rem', textAlign: 'left',
+          }}>
+            <p style={{ margin: '0 0 0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#374151' }}>
+              📞 How to Claim Your Free Wig
+            </p>
+            <p style={{ margin: 0, fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.6 }}>
+              Contact our partner wigmaker to redeem your reward. Show them your voucher code when you reach out. They will assist you in getting your custom wig.
+            </p>
+          </div>
+
+          <button
+            onClick={handleMilestoneConfirm}
+            style={{
+              width: '100%', padding: '0.85rem',
+              borderRadius: '50px', border: 'none',
+              background: 'linear-gradient(135deg,#D63B8A,#e8559e)',
+              color: '#fff', fontWeight: 800, fontSize: '1rem',
+              cursor: 'pointer',
+              boxShadow: '0 6px 20px rgba(214,59,138,0.35)',
+            }}
+          >
+            Confirm & Claim Reward
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

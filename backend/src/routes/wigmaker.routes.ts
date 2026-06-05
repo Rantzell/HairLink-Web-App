@@ -7,7 +7,7 @@ import { validate } from '../middleware/validate';
 import { taskUpdateSchema, materialConfirmationSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { uploadFile } from '../services/storage.service';
-import { notifyDonationStatus, notifyStaffWigmakerCompletedWig, notifyStaffWigmakerReceivedMaterial, notifyStaffMissingHair } from '../services/notification.service';
+import { notifyDonationStatus, notifyStaffWigmakerCompletedWig, notifyStaffWigmakerReceivedMaterial, notifyStaffMissingHair, notifyStaffHairReceived } from '../services/notification.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -456,6 +456,10 @@ router.post('/tasks/:taskCode/receive-hair/:donationId', ...wmOnly, async (req, 
     if (!donation) { res.status(404).json({ message: 'Donation not found in this batch' }); return; }
 
     await createStatusHistory(DON_TYPE, donationId, 'wigmaker_received', `Wigmaker confirmed receipt of hair ${donation.reference} for batch ${task.taskCode}.`);
+
+    const batchRef = `B${task.id}-${String(new Date(task.createdAt!).getMonth() + 1).padStart(2, '0')}-${new Date(task.createdAt!).getFullYear()}`;
+    const wmUser = await prisma.user.findUnique({ where: { id: req.user!.id } });
+    await notifyStaffHairReceived(task.taskCode, batchRef, donation.reference, wmUser?.name || 'Wigmaker');
 
     res.json({ message: `Hair ${donation.reference} marked as received.`, success: true });
   } catch (err) {

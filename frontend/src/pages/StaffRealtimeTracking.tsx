@@ -6,7 +6,7 @@ import Pagination from '../components/Pagination';
 import apiClient from '../api/client';
 import type { Donation, HairRequest, User, WigProduction } from '../types';
 import { getPublicUrl, getProfilePhotoUrl } from '../lib/storage';
-import StatusPill from '../components/StatusPill';
+
 import ConfirmModal from '../components/ConfirmModal';
 
 const StaffRealtimeTracking: React.FC = () => {
@@ -174,18 +174,19 @@ const StaffRealtimeTracking: React.FC = () => {
   const isBatchDonation = type === 'batch-donation';  // assigned hair batch rows only
 
   // Group batched donations by wigProductionId
+  // Once a donation has a wigProductionId it has been batched and must NOT appear in Donation Trackers.
   const batchGroups = new Map<number, { wp: any; donations: typeof filteredDonations }>();
   const soloDonations: typeof filteredDonations = [];
   for (const d of filteredDonations) {
     const wpId = (d as any).wigProductionId as number | null;
     if (wpId) {
+      // Batched — goes to batchGroups only, never to soloDonations
       const wp = data.wigProductions[d.id];
       if (wp) {
         if (!batchGroups.has(wpId)) batchGroups.set(wpId, { wp, donations: [] });
         batchGroups.get(wpId)!.donations.push(d);
-      } else {
-        soloDonations.push(d);
       }
+      // If wp data isn't available yet, skip entirely (still batched, remove from Donation Trackers)
     } else {
       soloDonations.push(d);
     }
@@ -431,7 +432,6 @@ const StaffRealtimeTracking: React.FC = () => {
                 <th className="tracking-th">Photo</th>
                 <th className="tracking-th">Reference</th>
                 <th className="tracking-th">{isWigmaker ? 'Wig Specification' : isBatchDonation ? 'Wigmaker/Donations' : 'Donor/User'}</th>
-                <th className="tracking-th">Status</th>
                 <th className="tracking-th">Current Stage</th>
                 <th className="tracking-th tracking-th-center">Action</th>
               </tr>
@@ -546,7 +546,6 @@ const StaffRealtimeTracking: React.FC = () => {
                               </div>
                             </div>
                           </td>
-                          <td className="tracking-cell"><StatusPill status={wp.status} /></td>
                           <td className="tracking-cell">
                             <div className="tracking-progress-col">
                               <div className="tracking-progress-status">
@@ -679,7 +678,6 @@ const StaffRealtimeTracking: React.FC = () => {
                                               <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Photo</th>
                                               <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Wig Code</th>
                                               <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Specs</th>
-                                              <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'left' }}>Status</th>
                                               <th style={{ background: '#fdf7fb', color: '#ad246d', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.75rem 1rem', borderBottom: '1px solid #f2ebf4', textAlign: 'center' }}>Action</th>
                                             </tr>
                                           </thead>
@@ -739,69 +737,45 @@ const StaffRealtimeTracking: React.FC = () => {
                                                         <span style={{ color: '#5d4d62', fontSize: '0.7rem' }}>{w.targetColor || 'N/A'}</span>
                                                       </div>
                                                     </td>
-                                                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px dashed #f2ebf4', verticalAlign: 'middle' }}>
-                                                      <StatusPill status={w.status} />
-                                                    </td>
-                                                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px dashed #f2ebf4', verticalAlign: 'middle', textAlign: 'center' }}>
-                                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
-                                                        {w.deliveryLink && (
-                                                          <a
-                                                            href={w.deliveryLink}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            style={{
-                                                              display: 'inline-flex',
-                                                              alignItems: 'center',
-                                                              gap: '4px',
-                                                              fontSize: '0.68rem',
-                                                              color: '#ad246d',
-                                                              textDecoration: 'none',
-                                                              fontWeight: 700,
-                                                              padding: '0.15rem 0.4rem',
-                                                              borderRadius: '4px',
-                                                              background: '#fdf2f8',
-                                                              border: '1px solid #f9cde8'
-                                                            }}
-                                                          >
-                                                            <i className='bx bx-link-external'></i> Tracking
-                                                          </a>
-                                                        )}
-                                                        {w.status === 'shipped' && (
-                                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                                                            <button
-                                                              className="soft-btn"
-                                                              onClick={() => handleReceiveWig(w.id)}
-                                                              disabled={isSubmitting}
-                                                              style={{ padding: '0.3rem 0.7rem', fontSize: '0.7rem', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                                                            >
+                                                    <td style={{ padding: '0.75rem 1rem', borderBottom: '1px dashed #f2ebf4', verticalAlign: 'middle', minWidth: '160px' }}>
+                                                      {w.status === 'shipped' ? (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                          {w.deliveryLink && (
+                                                            <a href={w.deliveryLink} target="_blank" rel="noreferrer"
+                                                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>
+                                                              <i className='bx bx-link-external'></i> Track Shipment
+                                                            </a>
+                                                          )}
+                                                          <div style={{ display: 'flex', gap: '6px' }}>
+                                                            <button onClick={() => handleReceiveWig(w.id)} disabled={isSubmitting}
+                                                              style={{ flex: 1, padding: '0.35rem 0.5rem', fontSize: '0.72rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
                                                               <i className='bx bx-check'></i> Received
                                                             </button>
-                                                            <button
-                                                              className="soft-btn"
-                                                              onClick={() => handleMissingWig(w.id)}
-                                                              disabled={isSubmitting}
-                                                              style={{ padding: '0.3rem 0.7rem', fontSize: '0.7rem', background: '#fff', color: '#dc2626', border: '1.5px solid #fecaca', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                                                            >
-                                                              <i className='bx bx-error-circle'></i> Missing
+                                                            <button onClick={() => handleMissingWig(w.id)} disabled={isSubmitting}
+                                                              style={{ flex: 1, padding: '0.35rem 0.5rem', fontSize: '0.72rem', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                                                              <i className='bx bx-x'></i> Missing
                                                             </button>
                                                           </div>
-                                                        )}
-                                                        {w.status === 'received' && (
-                                                          <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                                            <i className='bx bx-check-circle'></i> Received
-                                                          </span>
-                                                        )}
-                                                        {w.status === 'missing' && (
-                                                          <span style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                                            <i className='bx bx-error-circle'></i> Missing
-                                                          </span>
-                                                        )}
-                                                        {w.status === 'completed' && (
-                                                          <span style={{ fontSize: '0.7rem', color: '#8c7895', fontWeight: 700 }}>
-                                                            Ready for Shipping
-                                                          </span>
-                                                        )}
-                                                      </div>
+                                                        </div>
+                                                      ) : w.status === 'received' ? (
+                                                        <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                          <i className='bx bx-check-circle' style={{ fontSize: '0.9rem' }}></i> Received
+                                                        </span>
+                                                      ) : w.status === 'missing' ? (
+                                                        <span style={{ fontSize: '0.72rem', color: '#dc2626', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                          <i className='bx bx-error-circle' style={{ fontSize: '0.9rem' }}></i> Missing
+                                                        </span>
+                                                      ) : (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                          {w.deliveryLink && (
+                                                            <a href={w.deliveryLink} target="_blank" rel="noreferrer"
+                                                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>
+                                                              <i className='bx bx-link-external'></i> Track Shipment
+                                                            </a>
+                                                          )}
+                                                          <span style={{ fontSize: '0.72rem', color: '#8c7895', fontWeight: 600 }}>Ready for Shipping</span>
+                                                        </div>
+                                                      )}
                                                     </td>
                                                   </tr>
                                                 );
@@ -876,7 +850,6 @@ const StaffRealtimeTracking: React.FC = () => {
                                 </div>
                               </div>
                             </td>
-                            <td className="tracking-cell"><StatusPill status={wp.status} /></td>
                             <td className="tracking-cell">
                               <div className="tracking-progress-col">
                                 <div className="tracking-progress-head">
@@ -917,7 +890,6 @@ const StaffRealtimeTracking: React.FC = () => {
                                         <th>Donor</th>
                                         <th>Hair Details</th>
                                         <th>Wigmaker Received</th>
-                                        <th>Status</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -953,7 +925,6 @@ const StaffRealtimeTracking: React.FC = () => {
                                                 </span>
                                               )}
                                             </td>
-                                            <td><StatusPill status={d.status} /></td>
                                           </tr>
                                         );
                                       })}
@@ -1025,9 +996,6 @@ const StaffRealtimeTracking: React.FC = () => {
                               <div className="tracking-user-role-donor">Donor</div>
                             </div>
                           </div>
-                        </td>
-                        <td className="tracking-cell">
-                          <StatusPill status={donation.status} />
                         </td>
                         <td className="tracking-cell">
                           <div className="tracking-progress-col">
@@ -1183,9 +1151,6 @@ const StaffRealtimeTracking: React.FC = () => {
                             </span>
                           </div>
                         </div>
-                      </td>
-                      <td className="tracking-cell">
-                        <StatusPill status={request.status} />
                       </td>
                       <td className="tracking-cell">
                         <div className="tracking-progress-col">
