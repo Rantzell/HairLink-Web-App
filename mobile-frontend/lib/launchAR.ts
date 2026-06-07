@@ -16,9 +16,25 @@ import { Linking, Platform } from 'react-native';
  */
 export const DEEP_LINK_URL = 'hairlinkar://tryon';
 
-export async function launchNativeAR(): Promise<boolean> {
+export type LaunchARParams = {
+  /** "short" | "long" — chooses which GLB the native app should load */
+  style?: string;
+  /** "black" | "brown" | "light" — tints the wig material */
+  color?: string;
+};
+
+export async function launchNativeAR(params?: LaunchARParams): Promise<boolean> {
+  let url = DEEP_LINK_URL;
+  if (params) {
+    const qs = Object.entries(params)
+      .filter(([, v]) => v !== undefined && v !== null)
+      .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+      .join('&');
+    if (qs) url += `?${qs}`;
+  }
+
   try {
-    await Linking.openURL(DEEP_LINK_URL);
+    await Linking.openURL(url);
     return true;
   } catch (err) {
     // Most common: native app not installed on this device.

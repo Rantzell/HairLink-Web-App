@@ -22,9 +22,12 @@ import { createNotification } from './notification.service';
 const MILESTONE_THRESHOLD = 100;
 
 // Points awarded per source — kept in sync with /donations/stats display.
+// REFERRAL          → awarded to the user who *gave* the code.
+// REFERRAL_REDEEMED → awarded to the user who *used* someone else's code.
 export const POINTS = {
   HAIR_RECEIVED: 10,
   REFERRAL: 5,
+  REFERRAL_REDEEMED: 3,
 } as const;
 
 // One-year voucher validity. Adjustable later via env if needed.

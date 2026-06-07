@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "expo-build-properties": "^56.0.17",
+    "react-native-worklets": "0.8.0"
+  }
+}

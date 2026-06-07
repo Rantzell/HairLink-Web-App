@@ -17,6 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import { supabase } from '../../lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import DonationSuccessModal from '../../components/DonationSuccessModal';
@@ -132,43 +134,54 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
         setLoadingLabel('Preparing submission...');
 
         try {
-            const formData = new FormData();
-            formData.append('reference', `MOB-${Date.now()}`);
-            formData.append('type', 'hair');
-            formData.append('hair_length', hairLength);
-            formData.append('hair_color', hairColor);
-            formData.append('treated_hair', chemicallyTreated ? '1' : '0');
-            formData.append('address', address);
-            formData.append('reason', reason);
-
             const filename = proofImage.split('/').pop() || 'donation.jpg';
             const match = /\.(\w+)$/.exec(filename);
-            let type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
-            if (type === 'image/jpg') type = 'image/jpeg';
-
-            if (Platform.OS === 'web') {
-                const response = await fetch(proofImage);
-                const blob = await response.blob();
-                formData.append('photo_front', blob, filename);
-            } else {
-                formData.append('photo_front', {
-                    uri: Platform.OS === 'ios' ? proofImage.replace('file://', '') : proofImage,
-                    name: filename,
-                    type: type,
-                } as any);
-            }
+            let mime = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
+            if (mime === 'image/jpg') mime = 'image/jpeg';
 
             setLoadingLabel('Uploading to secure server...');
-            const response = await api.post('/donations', formData);
 
-            if (response.status === 201 || response.status === 200) {
+            // Use expo-file-system uploadAsync — handles RN file URIs natively
+            // (axios + FormData chokes on Android scoped-storage URIs).
+            const baseURL = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/$/, '') || 'http://localhost:3001/api';
+            const url = `${baseURL}/donations`;
+
+            // Need a fresh Supabase token for auth (axios interceptor isn't used here)
+            const { data: sessionData } = await supabase.auth.getSession();
+            const token = sessionData?.session?.access_token;
+
+            const result = await FileSystem.uploadAsync(url, proofImage, {
+                httpMethod: 'POST',
+                uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+                fieldName: 'photo_front',
+                mimeType: mime,
+                parameters: {
+                    reference: `MOB-${Date.now()}`,
+                    type: 'hair',
+                    hair_length: hairLength,
+                    hair_color: hairColor,
+                    treated_hair: chemicallyTreated ? '1' : '0',
+                    address,
+                    reason,
+                },
+                headers: {
+                    Accept: 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+
+            if (__DEV__) console.log('[Donate] upload result:', result.status, result.body?.slice(0, 200));
+
+            if (result.status === 201 || result.status === 200) {
                 setShowSuccess(true);
             } else {
-                throw new Error('Unexpected server response.');
+                let serverMsg = '';
+                try { serverMsg = JSON.parse(result.body || '{}')?.message || ''; } catch {}
+                throw new Error(serverMsg || `Server responded with ${result.status}`);
             }
         } catch (err: any) {
-            console.error('Submission error:', err.response?.data || err.message);
-            const errorMsg = err.response?.data?.message || err.message || 'An unexpected error occurred.';
+            console.error('Submission error:', err?.message || err);
+            const errorMsg = err?.message || 'An unexpected error occurred.';
             setSubmitError(errorMsg);
             Alert.alert('Submission Error', errorMsg);
         } finally {

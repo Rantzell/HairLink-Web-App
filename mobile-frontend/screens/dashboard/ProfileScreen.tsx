@@ -379,7 +379,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                                 </TouchableOpacity>
                             </View>
                             <Text style={{ fontSize: ms(11), color: '#888', marginTop: vs(8), fontWeight: '600' }}>
-                                Share your code with friends. You will earn 5 points for every new donor referred!
+                                Share your code with friends. You earn 5 stars per donor referred — and they earn 3 stars too!
                             </Text>
                         </Animated.View>
                     )}
@@ -394,7 +394,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.redeemTitle}>{hasRedeemed ? 'Referral Status' : 'Redeem Referral Code'}</Text>
                                     <Text style={styles.redeemSubtitle}>
-                                        {hasRedeemed ? 'Referral code successfully redeemed!' : 'Enter code from other user referal.'}
+                                        {hasRedeemed ? 'Referral code successfully redeemed!' : 'Enter another donor\'s code — you earn 3 stars and they earn 5.'}
                                     </Text>
                                 </View>
                             </View>

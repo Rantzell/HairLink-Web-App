@@ -154,7 +154,7 @@ export default function DonationSuccessModal({
                 ) : (
                   <>
                     Your <Text style={[styles.bodyHi, { color: tint }]}>₱{amount.toLocaleString()}</Text>{' '}
-                    donation has been received.
+                    gift means the world to us. 💖
                   </>
                 )}
               </Text>
@@ -162,7 +162,7 @@ export default function DonationSuccessModal({
                 {type === 'hair' ? (
                   <>We&apos;ll credit your stars once a reviewer approves it.</>
                 ) : (
-                  <>Thank you — a reviewer will verify your payment shortly.</>
+                  <>Your generosity helps us craft beautiful wigs for those who need them most. You&apos;re truly making a difference!</>
                 )}
               </Text>
 

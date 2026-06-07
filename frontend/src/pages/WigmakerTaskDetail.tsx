@@ -86,7 +86,7 @@ const WigmakerTaskDetail: React.FC = () => {
         startForm.append('updatedAt', new Date().toISOString());
         await apiClient.post(`/internal-api/wigmaker/tasks/${encodeURIComponent(taskCode!)}`, startForm, {
           headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        }); 
       }
 
       const formData = new FormData();

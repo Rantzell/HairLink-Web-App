@@ -69,6 +69,8 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
   const [loading, setLoading] = useState(true);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  // Which confirmation flow is active — delivery (In Transit) or pickup (Ready for Pickup).
+  const [confirmKind, setConfirmKind] = useState<'delivery' | 'pickup'>('delivery');
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -92,14 +94,20 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
     if (!data?.reference) return;
     setConfirming(true);
     try {
-      await api.post(`/requests/${data.reference}/confirm-received`);
+      const endpoint = confirmKind === 'pickup' ? 'confirm-pickup' : 'confirm-received';
+      await api.post(`/requests/${data.reference}/${endpoint}`);
       setConfirmOpen(false);
       // Optimistic — update UI immediately so the user sees the new status.
       setData({ ...data, status: 'Completed' });
-      Alert.alert('Confirmed', 'Thank you! Your wig request has been marked as received.');
+      Alert.alert(
+        'Confirmed',
+        confirmKind === 'pickup'
+          ? 'Thank you! Your wig pickup has been confirmed.'
+          : 'Thank you! Your wig request has been marked as received.',
+      );
       fetchDetail();
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Failed to confirm receipt.';
+      const msg = err.response?.data?.message || 'Failed to confirm.';
       Alert.alert('Error', msg);
     } finally {
       setConfirming(false);
@@ -112,6 +120,8 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
 
   const tint = data ? statusTint(data.status) : null;
   const canConfirm = data?.status === 'In Transit';
+  const canConfirmPickup =
+    data?.status === 'Ready for Pickup' && (data?.deliveryMethod || 'delivery').toLowerCase() === 'pickup';
   const canTrack = !!data?.trackingLink && data?.status === 'In Transit';
 
   if (loading || !data) {
@@ -227,8 +237,8 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
           );
         })()}
 
-        {/* Action row — Track + Confirm */}
-        {(canTrack || canConfirm) && (
+        {/* Action row — Track + Confirm (delivery) + Confirm (pickup) */}
+        {(canTrack || canConfirm || canConfirmPickup) && (
           <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.actionRow}>
             {canTrack && (
               <TouchableOpacity
@@ -243,11 +253,21 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
             {canConfirm && (
               <TouchableOpacity
                 style={[styles.actionBtn, styles.confirmBtn]}
-                onPress={() => setConfirmOpen(true)}
+                onPress={() => { setConfirmKind('delivery'); setConfirmOpen(true); }}
                 activeOpacity={0.85}
               >
                 <Ionicons name="checkmark-circle" size={ms(18)} color="#fff" />
                 <Text style={styles.actionBtnText}>Confirm Wig Received</Text>
+              </TouchableOpacity>
+            )}
+            {canConfirmPickup && (
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.confirmBtn]}
+                onPress={() => { setConfirmKind('pickup'); setConfirmOpen(true); }}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="bag-check" size={ms(18)} color="#fff" />
+                <Text style={styles.actionBtnText}>Confirm Pickup</Text>
               </TouchableOpacity>
             )}
           </Animated.View>
@@ -310,9 +330,13 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
             <View style={styles.modalIconWrap}>
               <Ionicons name="checkmark-circle" size={ms(40)} color="#2E7D32" />
             </View>
-            <Text style={styles.modalTitle}>Confirm Wig Received</Text>
+            <Text style={styles.modalTitle}>
+              {confirmKind === 'pickup' ? 'Confirm Pickup' : 'Confirm Wig Received'}
+            </Text>
             <Text style={styles.modalMsg}>
-              Please confirm that you have received your wig. This action cannot be undone and will finalize your request.
+              {confirmKind === 'pickup'
+                ? 'Please confirm only after you have personally collected your wig from the Binondo office. This will finalize your request.'
+                : 'Please confirm that you have received your wig. This action cannot be undone and will finalize your request.'}
             </Text>
             <View style={styles.modalActions}>
               <TouchableOpacity
@@ -327,7 +351,13 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
                 onPress={doConfirm}
                 disabled={confirming}
               >
-                {confirming ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalConfirmText}>Yes, I Received It</Text>}
+                {confirming ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>
+                    {confirmKind === 'pickup' ? 'Yes, I Collected My Wig' : 'Yes, I Received It'}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>

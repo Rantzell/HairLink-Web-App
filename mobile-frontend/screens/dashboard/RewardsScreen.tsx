@@ -26,7 +26,8 @@ import api from '../../lib/api';
  *   GET /api/rewards/vouchers         → Voucher[]
  *   POST /api/rewards/vouchers/:code/redeem → { success, voucher }
  *
- * Donors earn +10 pts per received hair donation and +5 per referral.
+ * Donors earn +10 pts per received hair donation, +5 per referral given,
+ * and a one-time +3 for using someone else's referral code.
  * Once the milestone counter hits the threshold (100) a saveable free-wig
  * voucher is auto-issued server-side and the counter resets. This screen
  * just visualises that state.
@@ -201,7 +202,11 @@ export default function RewardsScreen({ onBack }: { onBack: () => void }) {
             </View>
             <View style={styles.tipPill}>
               <Ionicons name="people-outline" size={ms(13)} color="#C2185B" />
-              <Text style={styles.tipText}>+5 per referral</Text>
+              <Text style={styles.tipText}>+5 per referral given</Text>
+            </View>
+            <View style={styles.tipPill}>
+              <Ionicons name="gift-outline" size={ms(13)} color="#C2185B" />
+              <Text style={styles.tipText}>+3 for using a code</Text>
             </View>
           </View>
         </Animated.View>

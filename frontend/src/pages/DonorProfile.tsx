@@ -190,7 +190,7 @@ const DonorProfile: React.FC = () => {
               <h3 className="detail-label" style={{marginBottom: '1rem'}}>Referral Reward</h3>
               <div className="referral-code-box">
                 <span className="referral-code-text">{referralCode}</span>
-                <p className="referral-subtext">Share to earn 5 points per donor</p>
+                <p className="referral-subtext">Share to earn 5 stars per donor — they get 3 stars too</p>
               </div>
               <button className="submit-code-btn w-full flex items-center justify-center gap-2" onClick={copyToClipboard}>
                 <i className='bx bx-copy'></i> Copy Code
@@ -204,7 +204,7 @@ const DonorProfile: React.FC = () => {
               <i className='bx bxs-coupon bg-icon' style={{ color: '#ad246d', opacity: 0.08 }}></i>
               <h3 className="detail-label" style={{marginBottom: '0.8rem', color: '#3b2e43'}}>Redeem Referral</h3>
               <p style={{ fontSize: '0.85rem', color: '#6b5b6d', marginBottom: '1rem', lineHeight: '1.4' }}>
-                Were you referred by another user? Enter their code below to help them earn 5 points.
+                Were you referred by another user? Enter their code below — they earn 5 stars and you earn 3.
               </p>
               <form onSubmit={submitOtherReferral} style={{ display: 'flex', gap: '0.5rem' }}>
                 <input

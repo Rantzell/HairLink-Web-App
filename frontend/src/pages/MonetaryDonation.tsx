@@ -14,11 +14,11 @@ const MonetaryDonation: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'bank' | 'instapay'>('bank');
   const [billingName, _setBillingName] = useState(user?.firstName ? `${user.firstName} ${user.lastName}` : user?.name || '');
   const [amountNumber, setAmountNumber] = useState('');
-  const [amountWords, setAmountWords] = useState('');
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [qrZoom, setQrZoom] = useState(false);
 
   const amountPills = [50, 100, 150, 200, 250];
 
@@ -62,7 +62,6 @@ const MonetaryDonation: React.FC = () => {
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append('amount', customAmount || activeAmount?.toString() || '0');
-    formData.append('amount_words', amountWords);
     formData.append('currency', currency);
     formData.append('payment_method', activeTab);
     formData.append('is_anonymous', isAnonymous ? '1' : '0');
@@ -85,7 +84,6 @@ const MonetaryDonation: React.FC = () => {
   const fillDemo = () => {
     setCustomAmount('1000');
     setAmountNumber('1,000.00');
-    setAmountWords('One thousand pesos');
     setCurrency('PHP');
   };
 
@@ -227,7 +225,89 @@ const MonetaryDonation: React.FC = () => {
                 <p className="account-name">Venus Alinsod</p>
                 <p className="account-number">{activeTab === 'bank' ? '004560025684' : '0917-847-4270'}</p>
               </div>
+              {activeTab === 'instapay' && (
+                <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => setQrZoom(true)}
+                    title="Click to enlarge"
+                    style={{
+                      background: '#fff',
+                      border: '2px solid rgba(0,0,0,0.08)',
+                      borderRadius: 14,
+                      padding: 10,
+                      width: 220,
+                      height: 220,
+                      cursor: 'zoom-in',
+                      position: 'relative',
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
+                    }}
+                  >
+                    <img
+                      src="/instapay-qr.png"
+                      alt="InstaPay QR"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                    <span
+                      style={{
+                        position: 'absolute',
+                        bottom: 8,
+                        right: 8,
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        color: '#fff',
+                        background: 'rgba(0,0,0,0.65)',
+                        padding: '3px 8px',
+                        borderRadius: 10,
+                        letterSpacing: '0.3px',
+                      }}
+                    >
+                      ⤢ Zoom
+                    </span>
+                  </button>
+                  <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#8c7895', fontWeight: 600 }}>
+                    Scan to donate via InstaPay
+                  </p>
+                </div>
+              )}
             </div>
+
+            {qrZoom && (
+              <div
+                onClick={() => setQrZoom(false)}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  background: 'rgba(0,0,0,0.9)',
+                  zIndex: 9999,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '2rem',
+                  cursor: 'zoom-out',
+                }}
+              >
+                <div
+                  style={{
+                    width: '100%',
+                    maxWidth: 480,
+                    background: '#fff',
+                    borderRadius: 20,
+                    padding: '1.5rem',
+                    textAlign: 'center',
+                  }}
+                >
+                  <img
+                    src="/instapay-qr.png"
+                    alt="InstaPay QR"
+                    style={{ width: '100%', height: 'auto', maxHeight: '70vh', objectFit: 'contain' }}
+                  />
+                  <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', fontWeight: 700, color: '#444' }}>
+                    InstaPay · Click anywhere to close
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="billing-fields">
               <div className="form-group" style={{ marginBottom: '1rem' }}>
@@ -242,29 +322,16 @@ const MonetaryDonation: React.FC = () => {
                 />
               </div>
 
-              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1rem' }}>
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Amount of Donation (in number) *</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ex. 1,000.00"
-                    value={amountNumber}
-                    readOnly
-                    className="form-input-premium"
-                    style={{ width: '100%', background: '#f5f3f7', border: '2px solid #ead7e8', borderRadius: '12px', padding: '0.85rem 1rem' }}
-                  />
-                </div>
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Amount of Donation (in words) *</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ex. One thousand pesos"
-                    value={amountWords}
-                    onChange={e => setAmountWords(e.target.value)}
-                    className="form-input-premium"
-                    style={{ width: '100%', border: '2px solid #ead7e8', borderRadius: '12px', padding: '0.85rem 1rem' }}
-                  />
-                </div>
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Amount of Donation *</label>
+                <input
+                  type="text"
+                  placeholder="Ex. 1,000.00"
+                  value={amountNumber}
+                  readOnly
+                  className="form-input-premium"
+                  style={{ width: '100%', background: '#f5f3f7', border: '2px solid #ead7e8', borderRadius: '12px', padding: '0.85rem 1rem' }}
+                />
               </div>
 
               <div className="form-group" style={{ marginBottom: '1rem' }}>

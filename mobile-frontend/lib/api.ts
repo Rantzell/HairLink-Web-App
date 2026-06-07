@@ -22,6 +22,11 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
+if (__DEV__) {
+  // eslint-disable-next-line no-console
+  console.log('[api] baseURL =', API_URL);
+}
+
 const api = axios.create({
   baseURL: API_URL,
   timeout: 60000,

@@ -11,8 +11,12 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
+    Modal,
+    Pressable,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import { supabase } from '../../lib/supabase';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
@@ -42,11 +46,11 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
     const [paymentMethod, setPaymentMethod] = useState<'Bank' | 'InstaPay'>('Bank');
     const [fullName, setFullName] = useState('');
     const [numAmount, setNumAmount] = useState('');
-    const [wordsAmount, setWordsAmount] = useState('');
     const [proofImage, setProofImage] = useState<string | null>(null);
     const [anonymous, setAnonymous] = useState(false);
     const [loading, setLoading] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [qrZoomOpen, setQrZoomOpen] = useState(false);
 
     // ── Success Modal State ──────────────────────────────────────
     const [showSuccess, setShowSuccess] = useState(false);
@@ -75,36 +79,52 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
 
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('amount', numAmount);
-      formData.append('name', fullName);
-      formData.append('payment_method', paymentMethod);
-      formData.append('currency', 'PHP');
-      formData.append('is_anonymous', anonymous ? '1' : '0');
-
       const filename = proofImage.split('/').pop() || 'proof.jpg';
       const match = /\.(\w+)$/.exec(filename);
-      let type = match ? `image/${match[1].toLowerCase()}` : `image/jpeg`;
-      if (type === 'image/jpg') type = 'image/jpeg';
+      let mime = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
+      if (mime === 'image/jpg') mime = 'image/jpeg';
 
-      formData.append('proof', {
-        uri: Platform.OS === 'ios' ? proofImage.replace('file://', '') : proofImage,
-        name: filename,
-        type: type,
-      } as any);
+      const baseURL = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/$/, '') || 'http://localhost:3001/api';
+      const url = `${baseURL}/monetary/donate`;
 
-      const response = await api.post('/monetary/donate', formData);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
 
-      if (response.status === 201 || response.status === 200) {
+      const result = await FileSystem.uploadAsync(url, proofImage, {
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'proof',
+        mimeType: mime,
+        parameters: {
+          amount: numAmount,
+          name: fullName,
+          payment_method: paymentMethod,
+          currency: 'PHP',
+          is_anonymous: anonymous ? '1' : '0',
+        },
+        headers: {
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (__DEV__) console.log('[Monetary] upload result:', result.status, result.body?.slice(0, 200));
+
+      if (result.status === 201 || result.status === 200) {
         const donationAmount = parseFloat(numAmount);
         setLastAmount(donationAmount);
         setShowSuccess(true);
       } else {
-        throw new Error('Unexpected server response.');
+        let serverMsg = '';
+        try {
+          const parsed = JSON.parse(result.body || '{}');
+          serverMsg = parsed?.error || parsed?.message || '';
+        } catch {}
+        throw new Error(serverMsg || `Server responded with ${result.status}`);
       }
     } catch (err: any) {
-      console.error('Donation error:', err.response?.data || err.message);
-      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to submit donation.';
+      console.error('Donation error:', err?.message || err);
+      const errorMsg = err?.message || 'Failed to submit donation.';
       setSubmitError(errorMsg);
       Alert.alert('Donation Error', errorMsg);
     } finally {
@@ -227,10 +247,21 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
                             </View>
                         ) : (
                             <View style={styles.billingCenter}>
-                                <View style={styles.qrMock}>
-                                    <Ionicons name="qr-code-outline" size={ms(100)} color="#1a1a1a" />
-                                    <Text style={styles.qrLogo}>Insta<Text style={{ color: '#0033a0' }}>Pay</Text></Text>
-                                </View>
+                                <TouchableOpacity
+                                    activeOpacity={0.85}
+                                    onPress={() => setQrZoomOpen(true)}
+                                    style={styles.qrTouch}
+                                >
+                                    <Image
+                                        source={require('../../assets/instapay-qr.png')}
+                                        style={styles.qrImage}
+                                        resizeMode="contain"
+                                    />
+                                    <View style={styles.qrTapHint}>
+                                        <Ionicons name="expand" size={ms(12)} color="#fff" />
+                                        <Text style={styles.qrTapHintText}>Tap to zoom</Text>
+                                    </View>
+                                </TouchableOpacity>
                                 <Text style={styles.billingName}>InstaPay QR</Text>
                                 <Text style={styles.billingAccount}>Scan to donate</Text>
                             </View>
@@ -244,14 +275,9 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
                         <TextInput style={styles.input} placeholder="Full Name" placeholderTextColor="#aaa" value={fullName} onChangeText={setFullName} />
                     </View>
 
-                    <Text style={styles.formLabel}>Amount of Donation (in number) *</Text>
+                    <Text style={styles.formLabel}>Amount of Donation *</Text>
                     <View style={[styles.inputBox, { borderColor: themeLight }]}>
                         <TextInput style={styles.input} placeholder="Ex. 10,000.00" placeholderTextColor="#aaa" keyboardType="numeric" value={numAmount} onChangeText={setNumAmount} />
-                    </View>
-
-                    <Text style={styles.formLabel}>Amount of Donation (in words) *</Text>
-                    <View style={[styles.inputBox, { borderColor: themeLight }]}>
-                        <TextInput style={styles.input} placeholder="Ex. Ten thousand pesos" placeholderTextColor="#aaa" value={wordsAmount} onChangeText={setWordsAmount} />
                     </View>
 
                     <Text style={styles.formLabel}>Proof of Donation *</Text>
@@ -310,6 +336,26 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
                     else onBack();
                 }}
             />
+
+            {/* QR zoom modal — full-screen tap-to-dismiss */}
+            <Modal
+                visible={qrZoomOpen}
+                transparent
+                animationType="fade"
+                statusBarTranslucent
+                onRequestClose={() => setQrZoomOpen(false)}
+            >
+                <Pressable style={styles.qrZoomBackdrop} onPress={() => setQrZoomOpen(false)}>
+                    <View style={styles.qrZoomBox}>
+                        <Image
+                            source={require('../../assets/instapay-qr.png')}
+                            style={styles.qrZoomImage}
+                            resizeMode="contain"
+                        />
+                        <Text style={styles.qrZoomCaption}>InstaPay · Tap anywhere to close</Text>
+                    </View>
+                </Pressable>
+            </Modal>
         </KeyboardAvoidingView>
     );
 }
@@ -386,12 +432,65 @@ const styles = StyleSheet.create({
         justifyContent: 'center', alignItems: 'center', marginBottom: vs(16)
     },
     bdoText: { color: '#f7c800', fontSize: ms(40), fontWeight: '900', fontStyle: 'italic' },
-    qrMock: {
-        width: ms(140), height: ms(140), backgroundColor: '#fff',
-        justifyContent: 'center', alignItems: 'center', marginBottom: vs(16),
-        borderWidth: 4, borderColor: '#1a1a1a'
+    qrTouch: {
+        width: ms(180),
+        height: ms(180),
+        backgroundColor: '#fff',
+        padding: ms(8),
+        borderRadius: ms(12),
+        borderWidth: 2,
+        borderColor: 'rgba(0,0,0,0.08)',
+        marginBottom: vs(14),
+        position: 'relative',
+        shadowColor: '#000',
+        shadowOpacity: 0.12,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 3,
     },
-    qrLogo: { position: 'absolute', backgroundColor: '#fff', paddingHorizontal: ms(4), fontSize: ms(14), fontWeight: '900' },
+    qrImage: { width: '100%', height: '100%' },
+    qrTapHint: {
+        position: 'absolute',
+        bottom: ms(6),
+        right: ms(6),
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: ms(4),
+        backgroundColor: 'rgba(0,0,0,0.65)',
+        paddingHorizontal: ms(8),
+        paddingVertical: vs(3),
+        borderRadius: ms(10),
+    },
+    qrTapHintText: {
+        color: '#fff',
+        fontSize: ms(10),
+        fontWeight: '800',
+        letterSpacing: 0.3,
+    },
+    qrZoomBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.92)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: ms(20),
+    },
+    qrZoomBox: {
+        width: '100%',
+        aspectRatio: 1,
+        maxWidth: ms(380),
+        backgroundColor: '#fff',
+        borderRadius: ms(20),
+        padding: ms(16),
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    qrZoomImage: { width: '100%', height: '85%' },
+    qrZoomCaption: {
+        color: '#444',
+        fontSize: ms(12),
+        fontWeight: '700',
+        marginTop: vs(10),
+    },
     billingName: { fontSize: ms(18), fontWeight: '900', color: '#1a1a1a', marginBottom: vs(4) },
     billingAccount: { fontSize: ms(16), fontWeight: '900', color: '#1a1a1a' },
 

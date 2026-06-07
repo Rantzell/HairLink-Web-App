@@ -163,9 +163,16 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
     const pendingHairDonations = Math.max(0, submittedHairCount - receivedHairCount);
 
     // 2. Referrals — always credited.
+    //    `referralsGiven`   → people who used MY code (I'm the referrer, +5 each)
+    //    `referredByOther`  → I used someone else's code (+3, once)
     const referrals = await prisma.user.count({
       where: { referredBy: userId },
     });
+    const me = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { referredBy: true },
+    });
+    const referredByOther = me?.referredBy ? 1 : 0;
 
     // 3. Monetary — only verified totals count.
     const [verifiedMonetary, allMonetary] = await Promise.all([
@@ -190,9 +197,12 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
     // simply see 0 instead of breaking.
     const monetaryPoints = 0;
 
-    const totalPoints = (receivedHairCount * 10) + (referrals * 5);
+    const totalPoints =
+      (receivedHairCount * 10) +
+      (referrals * 5) +
+      (referredByOther * 3);
 
-    console.log(`[Stats] User ${userId}: ReceivedHair=${receivedHairCount}(pending ${pendingHairDonations}), Ref=${referrals}, MonAmt=${verifiedAmount}(pending ₱${pendingMonetaryAmount}), Total=${totalPoints}`);
+    console.log(`[Stats] User ${userId}: ReceivedHair=${receivedHairCount}(pending ${pendingHairDonations}), Ref=${referrals}, Redeemed=${referredByOther}, MonAmt=${verifiedAmount}(pending ₱${pendingMonetaryAmount}), Total=${totalPoints}`);
 
     res.json({
       totalPoints,
@@ -202,6 +212,7 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
         hairDonations: receivedHairCount,
         pendingHairDonations,
         referrals,
+        referredByOther,
         monetaryAmount: verifiedAmount,
         monetaryCount: verifiedCount,
         monetaryPoints,
