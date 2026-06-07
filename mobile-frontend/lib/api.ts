@@ -3,6 +3,12 @@ import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
 const getApiUrl = () => {
+  // Highest priority — explicit override in .env. Required when running on
+  // a physical device through Expo Go, because `localhost` and `10.0.2.2`
+  // resolve to the *phone*, not the dev machine.
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim()) return envUrl.trim();
+
   if (__DEV__) {
     if (Platform.OS === 'android') {
       // Android emulator can't reach host's localhost — use 10.0.2.2

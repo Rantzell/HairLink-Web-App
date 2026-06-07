@@ -13,6 +13,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
+import { launchNativeAR } from '../../lib/launchAR';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
@@ -628,7 +629,12 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           <Text style={styles.navLabel}>Schedule</Text>
         </ScaleButton>
 
-        <ScaleButton style={[styles.arButton, { width: ms(64), height: ms(64), borderRadius: ms(32) }]} onPress={() => setShowAR(true)}>
+        <ScaleButton style={[styles.arButton, { width: ms(64), height: ms(64), borderRadius: ms(32) }]} onPress={async () => {
+          // Try the native HairLink AR app first (real face tracking + GLB / USDZ wig).
+          // Falls back to the in-Expo camera preview if the native app isn't installed.
+          const opened = await launchNativeAR();
+          if (!opened) setShowAR(true);
+        }}>
           <MaterialCommunityIcons name="augmented-reality" size={ms(30)} color="#fff" />
         </ScaleButton>
 

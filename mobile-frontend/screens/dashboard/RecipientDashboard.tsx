@@ -15,6 +15,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
+import { launchNativeAR } from '../../lib/launchAR';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
@@ -668,7 +669,12 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           <Text style={styles.navLabel} numberOfLines={1}>Schedule</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.arButton, { width: ms(60), height: ms(60), borderRadius: ms(30) }]} onPress={() => setShowAR(true)}>
+        <TouchableOpacity style={[styles.arButton, { width: ms(60), height: ms(60), borderRadius: ms(30) }]} onPress={async () => {
+          // Try the native HairLink AR app first; fall back to the in-Expo
+          // camera preview if it isn't installed on this device.
+          const opened = await launchNativeAR();
+          if (!opened) setShowAR(true);
+        }}>
           <MaterialCommunityIcons name="augmented-reality" size={ms(28)} color="#fff" />
         </TouchableOpacity>
 

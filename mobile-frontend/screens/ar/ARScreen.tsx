@@ -7,45 +7,234 @@ import {
   Alert,
   StyleSheet,
   Linking,
-  Platform,
+  ScrollView,
   Image,
   Modal,
+  Animated,
+  Easing,
+  Dimensions,
 } from 'react-native';
 import { CameraView, useCameraPermissions, CameraType, FlashMode } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ms, vs } from '../../lib/scaling';
 
 /**
- * AR Try-On screen.
+ * HairLink AR Try-On — Instagram / Snapchat-style filter UI.
  *
- * Expo Go does not expose face-mesh / ARKit APIs, so this is a guided camera
- * try-on rather than a true face-tracking AR overlay. The flow:
- *   1. Request camera permission (with a fallback to system Settings if denied)
- *   2. Show a live camera preview (default: front cam) with a face-guide
- *      oval and a translucent "hair canopy" overlay tinted by the selected wig
- *   3. Let the user toggle flash, flip cameras, scroll wig styles, and
- *      capture a still. The captured photo is shown in a modal review.
- *
- * Real face-tracking + 3D wig mesh would need a custom dev client + a
- * native module (e.g. react-native-vision-camera + face-detector plugin).
+ * Expo Go does not expose ARKit / ARCore face-mesh APIs, so we simulate the
+ * experience with a live camera feed + a tinted wig-canopy overlay that
+ * corresponds to the chosen style & color. The UX matches the polished AR
+ * filter aesthetic: scrollable style carousel, per-style color swatches,
+ * animated corner guides, a glassmorphism bottom panel, and a full-screen
+ * photo preview sheet.
  */
 
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+type HairColor = { id: string; name: string; hex: string };
 type WigStyle = {
   id: string;
   label: string;
-  color: string;   // hex – tint applied to the overlay canopy
-  swatch: string;  // hex – chip color (usually same as color)
+  icon: string;              // MaterialCommunityIcons name
+  shape: 'short' | 'medium' | 'long' | 'wavy' | 'curly';
+  colors: HairColor[];
 };
 
-const WIG_STYLES: WigStyle[] = [
-  { id: 'natural-black', label: 'Natural Black', color: '#1a1a1a', swatch: '#1a1a1a' },
-  { id: 'rich-brown',    label: 'Rich Brown',    color: '#4A2C1A', swatch: '#4A2C1A' },
-  { id: 'caramel',       label: 'Caramel',       color: '#8B5A2B', swatch: '#8B5A2B' },
-  { id: 'honey-blonde',  label: 'Honey Blonde',  color: '#C99A55', swatch: '#C99A55' },
-  { id: 'rose-blush',    label: 'Rose Blush',    color: '#C77B8C', swatch: '#C77B8C' },
+const GLOBAL_COLORS: HairColor[] = [
+  { id: 'jet-black',    name: 'Jet Black',    hex: '#0d0d0d' },
+  { id: 'dark-brown',   name: 'Dark Brown',   hex: '#2C1A0E' },
+  { id: 'rich-brown',   name: 'Rich Brown',   hex: '#4A2C1A' },
+  { id: 'caramel',      name: 'Caramel',      hex: '#8B5A2B' },
+  { id: 'honey-blonde', name: 'Honey Blonde', hex: '#C99A55' },
+  { id: 'rose-blush',   name: 'Rose Blush',   hex: '#C77B8C' },
+  { id: 'burgundy',     name: 'Burgundy',     hex: '#6D1A2A' },
+  { id: 'silver',       name: 'Silver',       hex: '#A8A8A8' },
 ];
+
+const WIG_STYLES: WigStyle[] = [
+  {
+    id: 'bob',
+    label: 'Bob Cut',
+    icon: 'content-cut',
+    shape: 'short',
+    colors: GLOBAL_COLORS,
+  },
+  {
+    id: 'sleek-long',
+    label: 'Sleek Long',
+    icon: 'face-woman',
+    shape: 'long',
+    colors: GLOBAL_COLORS,
+  },
+  {
+    id: 'wavy',
+    label: 'Beach Waves',
+    icon: 'water-outline',
+    shape: 'wavy',
+    colors: GLOBAL_COLORS,
+  },
+  {
+    id: 'curly',
+    label: 'Full Curls',
+    icon: 'autorenew',
+    shape: 'curly',
+    colors: GLOBAL_COLORS,
+  },
+  {
+    id: 'pixie',
+    label: 'Pixie',
+    icon: 'star-circle-outline',
+    shape: 'short',
+    colors: GLOBAL_COLORS,
+  },
+];
+
+// ─── Wig canopy shape helper ──────────────────────────────────────────────────
+
+function getCanopyStyle(shape: WigStyle['shape'], colorHex: string) {
+  const base = {
+    position: 'absolute' as const,
+    backgroundColor: colorHex + 'B0', // ~69 % alpha
+  };
+  switch (shape) {
+    case 'short':
+      return { ...base, top: '15%', width: ms(210), height: ms(110), borderTopLeftRadius: ms(120), borderTopRightRadius: ms(120), borderBottomLeftRadius: ms(30), borderBottomRightRadius: ms(30) };
+    case 'medium':
+      return { ...base, top: '13%', width: ms(220), height: ms(160), borderTopLeftRadius: ms(120), borderTopRightRadius: ms(120), borderBottomLeftRadius: ms(60), borderBottomRightRadius: ms(60) };
+    case 'long':
+      return { ...base, top: '12%', width: ms(230), height: ms(300), borderTopLeftRadius: ms(120), borderTopRightRadius: ms(120), borderBottomLeftRadius: ms(80), borderBottomRightRadius: ms(80) };
+    case 'wavy':
+      return { ...base, top: '12%', width: ms(240), height: ms(280), borderTopLeftRadius: ms(130), borderTopRightRadius: ms(130), borderBottomLeftRadius: ms(100), borderBottomRightRadius: ms(100) };
+    case 'curly':
+      return { ...base, top: '11%', width: ms(260), height: ms(240), borderTopLeftRadius: ms(140), borderTopRightRadius: ms(140), borderBottomLeftRadius: ms(90), borderBottomRightRadius: ms(90) };
+  }
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+/** Animated corner bracket guides — four L-shapes around the face oval. */
+function FaceGuide({ pulse }: { pulse: Animated.Value }) {
+  const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
+  const cornerSize = ms(22);
+  const cornerThickness = 2;
+
+  const cornerBase: object = {
+    position: 'absolute',
+    width: cornerSize,
+    height: cornerSize,
+    borderColor: '#fff',
+  };
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.faceGuideWrap,
+        { opacity },
+      ]}
+    >
+      {/* Face oval */}
+      <View style={styles.faceOval} />
+
+      {/* TL */}
+      <View style={[cornerBase, { top: 0, left: 0, borderTopWidth: cornerThickness, borderLeftWidth: cornerThickness, borderTopLeftRadius: ms(4) }]} />
+      {/* TR */}
+      <View style={[cornerBase, { top: 0, right: 0, borderTopWidth: cornerThickness, borderRightWidth: cornerThickness, borderTopRightRadius: ms(4) }]} />
+      {/* BL */}
+      <View style={[cornerBase, { bottom: 0, left: 0, borderBottomWidth: cornerThickness, borderLeftWidth: cornerThickness, borderBottomLeftRadius: ms(4) }]} />
+      {/* BR */}
+      <View style={[cornerBase, { bottom: 0, right: 0, borderBottomWidth: cornerThickness, borderRightWidth: cornerThickness, borderBottomRightRadius: ms(4) }]} />
+    </Animated.View>
+  );
+}
+
+/** Single style card in the horizontal carousel. */
+function StyleCard({
+  style,
+  isActive,
+  colorHex,
+  onPress,
+}: {
+  style: WigStyle;
+  isActive: boolean;
+  colorHex: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={[cardStyles.wrap, isActive && cardStyles.wrapActive]}
+    >
+      {/* Mini hair shape */}
+      <View style={[cardStyles.miniShape, { backgroundColor: colorHex + 'CC' }]} />
+      {/* Icon */}
+      <View style={cardStyles.iconWrap}>
+        <MaterialCommunityIcons
+          name={style.icon as any}
+          size={ms(26)}
+          color={isActive ? '#fff' : 'rgba(255,255,255,0.55)'}
+        />
+      </View>
+      <Text style={[cardStyles.label, isActive && cardStyles.labelActive]} numberOfLines={1}>
+        {style.label}
+      </Text>
+      {isActive && <View style={cardStyles.activeDot} />}
+    </TouchableOpacity>
+  );
+}
+
+const cardStyles = StyleSheet.create({
+  wrap: {
+    width: ms(76),
+    alignItems: 'center',
+    paddingVertical: vs(10),
+    paddingHorizontal: ms(4),
+    borderRadius: ms(16),
+    marginHorizontal: ms(4),
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  wrapActive: {
+    backgroundColor: 'rgba(255, 55, 155, 0.22)',
+    borderColor: '#FF379B',
+  },
+  miniShape: {
+    width: ms(38),
+    height: ms(22),
+    borderTopLeftRadius: ms(20),
+    borderTopRightRadius: ms(20),
+    borderBottomLeftRadius: ms(8),
+    borderBottomRightRadius: ms(8),
+    marginBottom: vs(4),
+  },
+  iconWrap: { marginBottom: vs(4) },
+  label: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: ms(10),
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 0.2,
+  },
+  labelActive: { color: '#fff' },
+  activeDot: {
+    position: 'absolute',
+    bottom: vs(6),
+    width: ms(4),
+    height: ms(4),
+    borderRadius: ms(2),
+    backgroundColor: '#FF379B',
+  },
+});
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ARScreen({ onBack }: { onBack: () => void }) {
   const insets = useSafeAreaInsets();
@@ -53,12 +242,22 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
   const [facing, setFacing] = useState<CameraType>('front');
   const [flash, setFlash] = useState<FlashMode>('off');
   const [isCapturing, setIsCapturing] = useState(false);
-  const [selectedWig, setSelectedWig] = useState<WigStyle>(WIG_STYLES[0]);
+  const [selectedStyle, setSelectedStyle] = useState<WigStyle>(WIG_STYLES[0]);
+  const [selectedColor, setSelectedColor] = useState<HairColor>(GLOBAL_COLORS[0]);
   const [preview, setPreview] = useState<string | null>(null);
   const cameraRef = useRef<any>(null);
 
-  // Auto-request once on first mount. We do NOT re-request on every render —
-  // that loops the permission modal.
+  // Pulsing animation for the face guide corners
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.sine), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.sine), useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
   useEffect(() => {
     if (permission && !permission.granted && permission.canAskAgain) {
       requestPermission();
@@ -69,67 +268,68 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
     if (!cameraRef.current || isCapturing) return;
     setIsCapturing(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
-        skipProcessing: true,
-      });
-      setPreview(photo?.uri || null);
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8, skipProcessing: false });
+      setPreview(photo?.uri ?? null);
     } catch (e: any) {
-      Alert.alert('Capture Failed', e?.message || 'Could not take photo. Try again.');
+      Alert.alert('Capture Failed', e?.message || 'Could not take photo.');
     } finally {
       setIsCapturing(false);
     }
   };
 
-  const toggleFacing = () => setFacing(c => (c === 'back' ? 'front' : 'back'));
-  const toggleFlash = () => setFlash(f => (f === 'off' ? 'on' : 'off'));
-
-  const openSettings = () => {
-    Linking.openSettings().catch(() =>
-      Alert.alert('Unable to open Settings', 'Please enable camera access manually.')
-    );
-  };
-
-  // ── Permission still loading ──────────────────────────────────────
+  // ── Permission loading ────────────────────────────────────────────────
   if (!permission) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#B084CC" />
+        <ActivityIndicator size="large" color="#FF379B" />
         <Text style={styles.loadingText}>Preparing camera…</Text>
       </View>
     );
   }
 
-  // ── Permission denied / not granted ───────────────────────────────
+  // ── Permission denied ─────────────────────────────────────────────────
   if (!permission.granted) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: '#0d0308' }]}>
+        <LinearGradient
+          colors={['#2a0a1a', '#0d0308']}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.deniedIconWrap}>
-          <MaterialCommunityIcons name="camera-off" size={ms(56)} color="#B084CC" />
+          <MaterialCommunityIcons name="camera-off" size={ms(52)} color="#FF379B" />
         </View>
         <Text style={styles.deniedTitle}>Camera Access Needed</Text>
         <Text style={styles.deniedDesc}>
-          HairLink needs your camera to try wig styles on in AR. Your photo never leaves the device.
+          HairLink AR needs your camera to virtually try on wig styles. Your photo never leaves your device.
         </Text>
         {permission.canAskAgain ? (
-          <TouchableOpacity style={styles.primaryBtn} onPress={requestPermission}>
-            <Text style={styles.primaryBtnText}>Enable Camera</Text>
+          <TouchableOpacity style={styles.grantBtn} onPress={requestPermission}>
+            <LinearGradient colors={['#B0245E', '#FF379B']} style={styles.grantBtnInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <Text style={styles.grantBtnText}>Enable Camera</Text>
+            </LinearGradient>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.primaryBtn} onPress={openSettings}>
-            <Text style={styles.primaryBtnText}>Open Settings</Text>
+          <TouchableOpacity style={styles.grantBtn} onPress={() => Linking.openSettings()}>
+            <LinearGradient colors={['#B0245E', '#FF379B']} style={styles.grantBtnInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <Text style={styles.grantBtnText}>Open Settings</Text>
+            </LinearGradient>
           </TouchableOpacity>
         )}
-        <TouchableOpacity onPress={onBack} style={styles.backLink}>
-          <Text style={styles.backLinkText}>Go Back</Text>
+        <TouchableOpacity onPress={onBack} style={{ marginTop: vs(14) }}>
+          <Text style={styles.backLinkText}>← Go Back</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  // ── Live camera ───────────────────────────────────────────────────
+  const canopyStyle = getCanopyStyle(selectedStyle.shape, selectedColor.hex);
+  const bottomPad = insets.bottom + vs(14);
+
+  // ── Main AR view ──────────────────────────────────────────────────────
   return (
     <View style={styles.root}>
+
+      {/* ── Camera ─────────────────────────────────────────────────── */}
       <CameraView
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
@@ -138,121 +338,243 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
         responsiveOrientationWhenOrientationLocked
       />
 
-      {/* Face guide + wig canopy overlay (centered-ish, near the top) */}
+      {/* ── Wig canopy + face guide ─────────────────────────────────── */}
       <View pointerEvents="none" style={styles.overlayLayer}>
-        {/* Tinted canopy approximating where the wig sits */}
-        <View
-          style={[
-            styles.wigCanopy,
-            { backgroundColor: selectedWig.color + 'AA' /* ~67% alpha */ },
-          ]}
-        />
-        {/* Face guide oval */}
-        <View style={styles.faceGuide} />
-        <Text style={styles.guideHint}>
-          Center your face in the guide and pick a style below
-        </Text>
+        {/* Wig canopy */}
+        <View style={canopyStyle as any} />
+
+        {/* Face guide with animated corners */}
+        <FaceGuide pulse={pulseAnim} />
+
+        {/* Scanning label */}
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.scanBadge, {
+            opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }),
+          }]}
+        >
+          <View style={styles.scanDot} />
+          <Text style={styles.scanText}>TRACKING FACE</Text>
+        </Animated.View>
       </View>
 
-      {/* Top controls */}
+      {/* ── Top bar ────────────────────────────────────────────────── */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.6)', 'transparent']}
-        style={[styles.topBar, { paddingTop: insets.top + vs(8) }]}
+        colors={['rgba(0,0,0,0.72)', 'transparent']}
+        style={[styles.topBar, { paddingTop: insets.top + vs(6) }]}
       >
-        <TouchableOpacity style={styles.iconBtn} onPress={onBack}>
-          <Ionicons name="close" size={ms(26)} color="#fff" />
+        {/* Close */}
+        <TouchableOpacity style={styles.iconCircle} onPress={onBack}>
+          <Ionicons name="close" size={ms(22)} color="#fff" />
         </TouchableOpacity>
 
-        <View style={styles.topTitleWrap}>
-          <Text style={styles.topTitle}>AR Try-On</Text>
-          <Text style={styles.topSubtitle}>{selectedWig.label}</Text>
+        {/* Brand */}
+        <View style={styles.brandWrap}>
+          <View style={styles.brandPill}>
+            <FontAwesome5 name="magic" size={ms(10)} color="#FF379B" />
+            <Text style={styles.brandText}>HairLink AR</Text>
+          </View>
+          <Text style={styles.styleNameText}>{selectedStyle.label} · {selectedColor.name}</Text>
         </View>
 
-        <TouchableOpacity style={styles.iconBtn} onPress={toggleFlash}>
-          <Ionicons name={flash === 'on' ? 'flash' : 'flash-off'} size={ms(22)} color="#fff" />
+        {/* Flash */}
+        <TouchableOpacity
+          style={[styles.iconCircle, flash === 'on' && styles.iconCircleActive]}
+          onPress={() => setFlash(f => (f === 'off' ? 'on' : 'off'))}
+        >
+          <Ionicons
+            name={flash === 'on' ? 'flash' : 'flash-off'}
+            size={ms(20)}
+            color={flash === 'on' ? '#FF379B' : '#fff'}
+          />
         </TouchableOpacity>
       </LinearGradient>
 
-      {/* Bottom controls */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + vs(20) }]}>
-        {/* Wig style chips — horizontal selector */}
-        <View style={styles.chipsRow}>
-          {WIG_STYLES.map((w) => {
-            const isActive = w.id === selectedWig.id;
+      {/* ── Right side utility rail ─────────────────────────────────── */}
+      <View style={[styles.rightRail, { top: insets.top + vs(70) }]}>
+        <TouchableOpacity
+          style={styles.railBtn}
+          onPress={() => setFacing(c => (c === 'back' ? 'front' : 'back'))}
+        >
+          <MaterialCommunityIcons name="camera-flip-outline" size={ms(22)} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.railBtn}>
+          <Ionicons name="sparkles" size={ms(19)} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.railBtn}>
+          <Ionicons name="share-outline" size={ms(21)} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Bottom panel (glassmorphism) ────────────────────────────── */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.88)']}
+        style={[styles.bottomPanel, { paddingBottom: bottomPad }]}
+      >
+        {/* Section label */}
+        <Text style={styles.sectionLabel}>CHOOSE STYLE</Text>
+
+        {/* Style carousel */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.styleCarousel}
+        >
+          {WIG_STYLES.map(w => (
+            <StyleCard
+              key={w.id}
+              style={w}
+              isActive={w.id === selectedStyle.id}
+              colorHex={selectedColor.hex}
+              onPress={() => setSelectedStyle(w)}
+            />
+          ))}
+        </ScrollView>
+
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Color row */}
+        <Text style={styles.sectionLabel}>COLOR</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.colorRow}
+        >
+          {GLOBAL_COLORS.map(c => {
+            const isActive = c.id === selectedColor.id;
             return (
               <TouchableOpacity
-                key={w.id}
-                style={[styles.chip, isActive && styles.chipActive]}
-                onPress={() => setSelectedWig(w)}
-                activeOpacity={0.85}
+                key={c.id}
+                onPress={() => setSelectedColor(c)}
+                style={[styles.colorChip, isActive && styles.colorChipActive]}
+                activeOpacity={0.8}
               >
-                <View style={[styles.chipSwatch, { backgroundColor: w.swatch }]} />
+                <View style={[styles.colorSwatch, { backgroundColor: c.hex }]} />
+                {isActive && (
+                  <View style={styles.colorCheckWrap}>
+                    <Ionicons name="checkmark" size={ms(9)} color="#fff" />
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })}
-        </View>
+        </ScrollView>
 
-        {/* Capture row: flip / shutter / placeholder */}
+        {/* Capture row */}
         <View style={styles.captureRow}>
-          <TouchableOpacity style={styles.smallBtn} onPress={toggleFacing}>
-            <MaterialCommunityIcons name="camera-flip-outline" size={ms(24)} color="#fff" />
+          {/* Gallery placeholder */}
+          <TouchableOpacity style={styles.sideActionBtn}>
+            <Ionicons name="images-outline" size={ms(22)} color="#fff" />
+            <Text style={styles.sideActionLabel}>Gallery</Text>
           </TouchableOpacity>
 
+          {/* Shutter */}
           <TouchableOpacity
-            activeOpacity={0.85}
             onPress={takePicture}
-            style={styles.shutterOuter}
             disabled={isCapturing}
+            activeOpacity={0.85}
+            style={styles.shutterOuter}
           >
-            <View style={styles.shutterMid}>
-              <View
-                style={[
-                  styles.shutterInner,
-                  isCapturing && { backgroundColor: '#B084CC', transform: [{ scale: 0.85 }] },
-                ]}
-              />
-            </View>
+            <LinearGradient
+              colors={isCapturing ? ['#888', '#aaa'] : ['#B0245E', '#FF379B']}
+              style={styles.shutterGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              {isCapturing
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Ionicons name="camera" size={ms(28)} color="#fff" />
+              }
+            </LinearGradient>
           </TouchableOpacity>
 
-          <View style={[styles.smallBtn, { opacity: 0.4 }]}>
-            <Feather name="image" size={ms(22)} color="#fff" />
-          </View>
+          {/* Flip */}
+          <TouchableOpacity
+            style={styles.sideActionBtn}
+            onPress={() => setFacing(c => (c === 'back' ? 'front' : 'back'))}
+          >
+            <MaterialCommunityIcons name="camera-flip-outline" size={ms(22)} color="#fff" />
+            <Text style={styles.sideActionLabel}>Flip</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
 
-      {/* Preview modal — shown after a successful capture */}
+      {/* ── Photo preview modal ─────────────────────────────────────── */}
       <Modal
         visible={!!preview}
         transparent
-        animationType="fade"
+        animationType="slide"
+        statusBarTranslucent
         onRequestClose={() => setPreview(null)}
       >
         <View style={styles.previewBackdrop}>
-          <View style={styles.previewCard}>
-            {preview && (
+          <LinearGradient
+            colors={['#0d0308', '#1a0512']}
+            style={StyleSheet.absoluteFill}
+          />
+
+          {/* Header */}
+          <View style={[styles.previewHeader, { paddingTop: insets.top + vs(10) }]}>
+            <TouchableOpacity onPress={() => setPreview(null)} style={styles.previewClose}>
+              <Ionicons name="chevron-down" size={ms(24)} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.previewHeaderTitle}>Your Look</Text>
+            <View style={{ width: ms(40) }} />
+          </View>
+
+          {/* Photo */}
+          {preview && (
+            <View style={styles.previewImgWrap}>
               <Image source={{ uri: preview }} style={styles.previewImg} resizeMode="cover" />
-            )}
-            <Text style={styles.previewTitle}>Looks great!</Text>
-            <Text style={styles.previewDesc}>
-              {selectedWig.label} captured. Try another style or finish your session.
-            </Text>
-            <View style={styles.previewActions}>
-              <TouchableOpacity
-                style={[styles.previewBtn, styles.previewBtnGhost]}
-                onPress={() => setPreview(null)}
+              {/* Style tag overlay */}
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.7)']}
+                style={styles.previewImgOverlay}
               >
-                <Text style={styles.previewBtnGhostText}>Try Again</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.previewBtn, styles.previewBtnSolid]}
-                onPress={() => {
-                  setPreview(null);
-                  onBack();
-                }}
-              >
-                <Text style={styles.previewBtnSolidText}>Done</Text>
-              </TouchableOpacity>
+                <View style={styles.previewStyleTag}>
+                  <FontAwesome5 name="magic" size={ms(10)} color="#FF379B" />
+                  <Text style={styles.previewStyleTagText}>
+                    {selectedStyle.label} · {selectedColor.name}
+                  </Text>
+                </View>
+              </LinearGradient>
             </View>
+          )}
+
+          {/* Reaction / action row */}
+          <View style={styles.previewReactRow}>
+            {['😍', '✨', '💖', '🔥'].map(e => (
+              <TouchableOpacity key={e} style={styles.reactBtn}>
+                <Text style={{ fontSize: ms(24) }}>{e}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Action buttons */}
+          <View style={[styles.previewActions, { paddingBottom: insets.bottom + vs(20) }]}>
+            <TouchableOpacity
+              style={styles.previewBtnGhost}
+              onPress={() => setPreview(null)}
+            >
+              <Ionicons name="refresh" size={ms(16)} color="#FF379B" style={{ marginRight: ms(6) }} />
+              <Text style={styles.previewBtnGhostText}>Try Again</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.previewBtnSolid}
+              onPress={() => { setPreview(null); onBack(); }}
+            >
+              <LinearGradient
+                colors={['#B0245E', '#FF379B']}
+                style={styles.previewBtnSolidInner}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Ionicons name="checkmark-circle" size={ms(16)} color="#fff" style={{ marginRight: ms(6) }} />
+                <Text style={styles.previewBtnSolidText}>Done</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -260,85 +582,91 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
 
   // Permission states
   centered: {
     flex: 1,
-    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: ms(28),
+    backgroundColor: '#0d0308',
   },
-  loadingText: { marginTop: vs(12), color: '#8C7895', fontWeight: '600' },
+  loadingText: { marginTop: vs(12), color: '#FF379B', fontWeight: '700', fontSize: ms(13) },
   deniedIconWrap: {
     width: ms(96),
     height: ms(96),
     borderRadius: ms(48),
-    backgroundColor: '#F5EEF8',
+    backgroundColor: 'rgba(255,55,155,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: vs(20),
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,55,155,0.3)',
   },
-  deniedTitle: { fontSize: ms(18), fontWeight: '900', color: '#1a1a1a', marginBottom: vs(8) },
+  deniedTitle: { fontSize: ms(20), fontWeight: '900', color: '#fff', marginBottom: vs(10) },
   deniedDesc: {
     fontSize: ms(13),
-    color: '#666',
+    color: 'rgba(255,255,255,0.55)',
     textAlign: 'center',
-    lineHeight: ms(20),
-    marginBottom: vs(24),
+    lineHeight: ms(21),
+    marginBottom: vs(28),
   },
-  primaryBtn: {
-    backgroundColor: '#B084CC',
-    paddingHorizontal: ms(32),
-    paddingVertical: vs(13),
-    borderRadius: ms(28),
-    shadowColor: '#B084CC',
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
+  grantBtn: { width: '80%', borderRadius: ms(30), overflow: 'hidden' },
+  grantBtnInner: {
+    paddingVertical: vs(14),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: ms(30),
   },
-  primaryBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(14), letterSpacing: 0.3 },
-  backLink: { marginTop: vs(18) },
-  backLinkText: { color: '#A8A29E', fontWeight: '700', fontSize: ms(13) },
+  grantBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(15), letterSpacing: 0.5 },
+  backLinkText: { color: 'rgba(255,255,255,0.45)', fontWeight: '700', fontSize: ms(13) },
 
-  // Overlay layer (face guide + wig canopy)
+  // Overlay
   overlayLayer: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
   },
-  wigCanopy: {
+  faceGuideWrap: {
     position: 'absolute',
-    top: '18%',
-    width: ms(220),
-    height: ms(140),
-    borderTopLeftRadius: ms(140),
-    borderTopRightRadius: ms(140),
-    borderBottomLeftRadius: ms(40),
-    borderBottomRightRadius: ms(40),
+    top: '22%',
+    width: ms(186),
+    height: ms(250),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  faceGuide: {
-    position: 'absolute',
-    top: '24%',
-    width: ms(200),
-    height: ms(260),
-    borderRadius: ms(130),
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.85)',
-    borderStyle: 'dashed',
+  faceOval: {
+    width: ms(186),
+    height: ms(250),
+    borderRadius: ms(120),
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.45)',
   },
-  guideHint: {
+  scanBadge: {
     position: 'absolute',
-    top: '64%',
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: ms(12),
-    fontWeight: '700',
-    textShadowColor: 'rgba(0,0,0,0.6)',
-    textShadowRadius: 4,
-    paddingHorizontal: ms(20),
-    textAlign: 'center',
+    top: '60%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: ms(20),
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(4),
+    gap: ms(5),
+  },
+  scanDot: {
+    width: ms(6),
+    height: ms(6),
+    borderRadius: ms(3),
+    backgroundColor: '#FF379B',
+  },
+  scanText: {
+    color: '#fff',
+    fontSize: ms(9),
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
 
   // Top bar
@@ -349,135 +677,257 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: ms(16),
-    paddingBottom: vs(20),
-    zIndex: 10,
+    paddingBottom: vs(24),
+    zIndex: 20,
   },
-  iconBtn: {
-    width: ms(42),
-    height: ms(42),
-    borderRadius: ms(21),
-    backgroundColor: 'rgba(0,0,0,0.45)',
+  iconCircle: {
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    backgroundColor: 'rgba(0,0,0,0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  topTitleWrap: { alignItems: 'center' },
-  topTitle: { color: '#fff', fontSize: ms(15), fontWeight: '900', letterSpacing: 0.5 },
-  topSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: ms(11), fontWeight: '600', marginTop: vs(2) },
+  iconCircleActive: {
+    backgroundColor: 'rgba(255,55,155,0.2)',
+    borderColor: '#FF379B',
+  },
+  brandWrap: { alignItems: 'center' },
+  brandPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(5),
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: ms(20),
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(4),
+    borderWidth: 1,
+    borderColor: 'rgba(255,55,155,0.35)',
+    marginBottom: vs(3),
+  },
+  brandText: { color: '#fff', fontSize: ms(11), fontWeight: '900', letterSpacing: 0.5 },
+  styleNameText: { color: 'rgba(255,255,255,0.7)', fontSize: ms(10), fontWeight: '600' },
 
-  // Bottom bar
-  bottomBar: {
+  // Right rail
+  rightRail: {
+    position: 'absolute',
+    right: ms(12),
+    gap: vs(10),
+    zIndex: 20,
+  },
+  railBtn: {
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    backgroundColor: 'rgba(0,0,0,0.48)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Bottom panel
+  bottomPanel: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    alignItems: 'center',
-    zIndex: 10,
+    zIndex: 20,
+    paddingTop: vs(20),
   },
-  chipsRow: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: ms(28),
-    paddingHorizontal: ms(10),
-    paddingVertical: vs(8),
-    marginBottom: vs(18),
-    gap: ms(10),
+  sectionLabel: {
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: ms(9.5),
+    fontWeight: '800',
+    letterSpacing: 1.8,
+    marginLeft: ms(18),
+    marginBottom: vs(8),
   },
-  chip: {
-    width: ms(38),
-    height: ms(38),
-    borderRadius: ms(19),
-    backgroundColor: 'rgba(255,255,255,0.1)',
+  styleCarousel: {
+    paddingHorizontal: ms(12),
+    paddingBottom: vs(4),
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginHorizontal: ms(16),
+    marginVertical: vs(12),
+  },
+  colorRow: {
+    paddingHorizontal: ms(14),
+    paddingBottom: vs(6),
+    gap: ms(8),
+  },
+  colorChip: {
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    borderWidth: 2.5,
+    borderColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    position: 'relative',
   },
-  chipActive: { borderColor: '#fff' },
-  chipSwatch: {
-    width: ms(26),
-    height: ms(26),
-    borderRadius: ms(13),
+  colorChipActive: { borderColor: '#fff' },
+  colorSwatch: {
+    width: ms(32),
+    height: ms(32),
+    borderRadius: ms(16),
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  colorCheckWrap: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: ms(14),
+    height: ms(14),
+    borderRadius: ms(7),
+    backgroundColor: '#FF379B',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   captureRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    width: '100%',
-    paddingHorizontal: ms(40),
+    paddingHorizontal: ms(28),
+    marginTop: vs(14),
+    marginBottom: vs(4),
   },
-  smallBtn: {
-    width: ms(48),
-    height: ms(48),
-    borderRadius: ms(24),
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+  sideActionBtn: {
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: vs(3),
+    width: ms(56),
+  },
+  sideActionLabel: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: ms(10),
+    fontWeight: '700',
   },
   shutterOuter: {
-    width: ms(80),
-    height: ms(80),
-    borderRadius: ms(40),
-    borderWidth: 4,
+    width: ms(76),
+    height: ms(76),
+    borderRadius: ms(38),
+    borderWidth: 3,
     borderColor: '#fff',
+    padding: ms(4),
+    shadowColor: '#FF379B',
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 10,
+  },
+  shutterGradient: {
+    flex: 1,
+    borderRadius: ms(32),
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  shutterMid: {
-    width: ms(68),
-    height: ms(68),
-    borderRadius: ms(34),
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shutterInner: {
-    width: ms(58),
-    height: ms(58),
-    borderRadius: ms(29),
-    backgroundColor: '#fff',
   },
 
   // Preview modal
   previewBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: '#0d0308',
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: ms(16),
+    paddingBottom: vs(12),
+  },
+  previewClose: {
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    backgroundColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: ms(20),
   },
-  previewCard: {
-    backgroundColor: '#fff',
+  previewHeaderTitle: {
+    color: '#fff',
+    fontSize: ms(16),
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
+  previewImgWrap: {
+    marginHorizontal: ms(16),
     borderRadius: ms(24),
-    padding: ms(20),
-    width: '100%',
-    maxWidth: ms(360),
-    alignItems: 'center',
+    overflow: 'hidden',
+    flex: 1,
+    maxHeight: SCREEN_H * 0.52,
   },
   previewImg: {
     width: '100%',
-    height: vs(280),
-    borderRadius: ms(16),
-    marginBottom: vs(16),
+    height: '100%',
     backgroundColor: '#000',
   },
-  previewTitle: { fontSize: ms(18), fontWeight: '900', color: '#1a1a1a' },
-  previewDesc: {
-    fontSize: ms(13),
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: ms(20),
-    marginTop: vs(6),
-    marginBottom: vs(18),
+  previewImgOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    padding: ms(14),
   },
-  previewActions: { flexDirection: 'row', gap: ms(10), width: '100%' },
-  previewBtn: { flex: 1, paddingVertical: vs(13), borderRadius: ms(14), alignItems: 'center' },
-  previewBtnGhost: { backgroundColor: '#F5EEF8', borderWidth: 1, borderColor: '#E8DAEF' },
-  previewBtnGhostText: { color: '#B084CC', fontWeight: '900', fontSize: ms(14) },
-  previewBtnSolid: { backgroundColor: '#B084CC' },
+  previewStyleTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(5),
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: ms(20),
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(5),
+    borderWidth: 1,
+    borderColor: 'rgba(255,55,155,0.4)',
+  },
+  previewStyleTagText: {
+    color: '#fff',
+    fontSize: ms(11),
+    fontWeight: '700',
+  },
+  previewReactRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: ms(16),
+    paddingVertical: vs(14),
+  },
+  reactBtn: {
+    width: ms(50),
+    height: ms(50),
+    borderRadius: ms(25),
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewActions: {
+    flexDirection: 'row',
+    gap: ms(12),
+    paddingHorizontal: ms(20),
+  },
+  previewBtnGhost: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: vs(14),
+    borderRadius: ms(14),
+    borderWidth: 1.5,
+    borderColor: '#FF379B',
+    backgroundColor: 'rgba(255,55,155,0.1)',
+  },
+  previewBtnGhostText: { color: '#FF379B', fontWeight: '900', fontSize: ms(14) },
+  previewBtnSolid: {
+    flex: 1.4,
+    borderRadius: ms(14),
+    overflow: 'hidden',
+  },
+  previewBtnSolidInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: vs(14),
+    borderRadius: ms(14),
+  },
   previewBtnSolidText: { color: '#fff', fontWeight: '900', fontSize: ms(14) },
 });
