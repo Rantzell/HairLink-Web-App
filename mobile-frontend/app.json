@@ -14,23 +14,6 @@
         {
           "cameraPermission": "HairLink uses your camera to let you preview wig styles on yourself in AR Try-On."
         }
-      ],
-      [
-        "react-native-vision-camera",
-        {
-          "cameraPermissionText": "HairLink uses your camera for real-time AR face tracking in the wig try-on.",
-          "enableFrameProcessors": true
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "minSdkVersion": 26,
-            "compileSdkVersion": 36,
-            "targetSdkVersion": 36
-          }
-        }
       ]
     ],
     "orientation": "portrait",
