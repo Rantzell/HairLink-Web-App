@@ -446,7 +446,8 @@ const StaffRealtimeTracking: React.FC = () => {
                       wp.status === 'assigned' ? `Assigned to ${wp.wigmaker?.firstName || 'Wigmaker'}` :
                         wp.status === 'processing' ? `Crafting by ${wp.wigmaker?.firstName || 'Wigmaker'}` :
                           wp.status === 'completed' ? `Finished by ${wp.wigmaker?.firstName || 'Wigmaker'}` :
-                            wp.status === 'shipped' ? 'Awaiting Wig Delivery' : 'Completed';
+                            wp.status === 'shipped' ? 'Awaiting Wig Delivery' :
+                              wp.status === 'received' ? 'Wig Received' : 'Completed';
                     return (
                       <React.Fragment key={`batch-${wpId}`}>
                         <tr className="tracking-row tracking-batch-main-row">
@@ -507,44 +508,72 @@ const StaffRealtimeTracking: React.FC = () => {
                             </div>
                           </td>
                           <td className="tracking-cell">
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                              <span className="tracking-ref-prefix" style={{ color: '#8c7895', fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase' }}>Spec</span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-                                <span style={{
-                                  background: '#fdf2f8',
-                                  color: '#ad246d',
-                                  fontSize: '0.72rem',
-                                  fontWeight: 800,
-                                  padding: '0.15rem 0.5rem',
-                                  borderRadius: '50px',
-                                  border: '1px solid #fbcfe8',
-                                  textTransform: 'capitalize'
-                                }}>
-                                  {wp.targetLength || 'N/A'}
-                                </span>
-                                <span style={{
-                                  background: '#f3f4f6',
-                                  color: '#374151',
-                                  fontSize: '0.72rem',
-                                  fontWeight: 800,
-                                  padding: '0.15rem 0.5rem',
-                                  borderRadius: '50px',
-                                  border: '1px solid #e5e7eb',
-                                  textTransform: 'capitalize',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}>
-                                  {wp.targetColor && (() => {
-                                    const dotColor = wp.targetColor.toLowerCase() === 'black' ? '#000' :
-                                      wp.targetColor.toLowerCase() === 'brown' ? '#7B4F2A' :
-                                        wp.targetColor.toLowerCase() === 'light' ? '#C9A96E' : '#8c7895';
-                                    return <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, display: 'inline-block' }}></span>;
-                                  })()}
-                                  {wp.targetColor || 'N/A'}
-                                </span>
-                              </div>
-                            </div>
+                            {(() => {
+                              // Prefer the actual produced wigs' specs over the batch's
+                              // original target, since wigmakers sometimes adjust during
+                              // production. Fall back to the target when no wigs exist yet.
+                              const childSpecs: { length: string; color: string }[] = (wp.childWigs || [])
+                                .filter((w: any) => w.targetLength || w.targetColor)
+                                .map((w: any) => ({ length: w.targetLength || '', color: w.targetColor || '' }));
+                              const uniqueKeys = new Set<string>();
+                              const uniqueSpecs = childSpecs.filter((s) => {
+                                const k = `${s.length}|${s.color}`.toLowerCase();
+                                if (uniqueKeys.has(k)) return false;
+                                uniqueKeys.add(k);
+                                return true;
+                              });
+                              const displaySpecs = uniqueSpecs.length > 0
+                                ? uniqueSpecs
+                                : [{ length: wp.targetLength || '', color: wp.targetColor || '' }];
+                              const isFromProduced = uniqueSpecs.length > 0;
+                              return (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <span className="tracking-ref-prefix" style={{ color: '#8c7895', fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase' }}>
+                                    {isFromProduced ? (uniqueSpecs.length > 1 ? 'Produced Specs' : 'Produced Spec') : 'Target Spec'}
+                                  </span>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    {displaySpecs.map((spec, idx) => {
+                                      const lc = (spec.color || '').toLowerCase();
+                                      const dotColor = lc === 'black' ? '#000' : lc === 'brown' ? '#7B4F2A' : lc === 'light' ? '#C9A96E' : '#8c7895';
+                                      return (
+                                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                                          <span style={{
+                                            background: '#fdf2f8',
+                                            color: '#ad246d',
+                                            fontSize: '0.72rem',
+                                            fontWeight: 800,
+                                            padding: '0.15rem 0.5rem',
+                                            borderRadius: '50px',
+                                            border: '1px solid #fbcfe8',
+                                            textTransform: 'capitalize'
+                                          }}>
+                                            {spec.length || 'N/A'}
+                                          </span>
+                                          <span style={{
+                                            background: '#f3f4f6',
+                                            color: '#374151',
+                                            fontSize: '0.72rem',
+                                            fontWeight: 800,
+                                            padding: '0.15rem 0.5rem',
+                                            borderRadius: '50px',
+                                            border: '1px solid #e5e7eb',
+                                            textTransform: 'capitalize',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                          }}>
+                                            {spec.color && (
+                                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, display: 'inline-block' }}></span>
+                                            )}
+                                            {spec.color || 'N/A'}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="tracking-cell">
                             <div className="tracking-progress-col">
@@ -553,6 +582,12 @@ const StaffRealtimeTracking: React.FC = () => {
                                   style={{ color: wp.status === 'received' ? '#10b981' : '#ad246d' }}></i>
                                 {stageLabel}
                               </div>
+                              {wp.updatedAt && (
+                                <div style={{ fontSize: '0.68rem', color: '#8c7895', marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <i className='bx bx-time-five'></i>
+                                  Updated {new Date(wp.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="tracking-action-cell">
@@ -851,19 +886,42 @@ const StaffRealtimeTracking: React.FC = () => {
                               </div>
                             </td>
                             <td className="tracking-cell">
-                              <div className="tracking-progress-col">
-                                <div className="tracking-progress-head">
-                                  <span className="tracking-progress-label">Wigmaker Received</span>
-                                  <span className="tracking-progress-percent">{wigmakerReceivedCount}/{bd.length}</span>
-                                </div>
-                                <div className="tracking-progress-bar-bg">
-                                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${bd.length ? (wigmakerReceivedCount / bd.length) * 100 : 0}%`, background: 'linear-gradient(90deg, #ad246d, #ff6bb5)', borderRadius: '10px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: '0 0 8px rgba(173, 36, 109, 0.3)' }}></div>
-                                </div>
-                                <div className="tracking-progress-status">
-                                  <i className={`bx ${wp.status === 'received' ? 'bx-check-circle' : 'bx-sync bx-spin'}`} style={{ color: wp.status === 'received' ? '#10b981' : '#ad246d' }}></i>
-                                  {stageLabel}
-                                </div>
-                              </div>
+                              {(() => {
+                                const allReceived = bd.length > 0 && wigmakerReceivedCount === bd.length;
+                                const noneReceived = wigmakerReceivedCount === 0;
+                                const isDone = wp.status === 'received';
+                                const pillBg = isDone ? '#dcfce7' : allReceived ? '#dcfce7' : noneReceived ? '#fef9c3' : '#fdf2f8';
+                                const pillColor = isDone ? '#15803d' : allReceived ? '#15803d' : noneReceived ? '#a16207' : '#ad246d';
+                                const pillBorder = isDone ? '#bbf7d0' : allReceived ? '#bbf7d0' : noneReceived ? '#fde68a' : '#fbcfe8';
+                                const iconName = isDone || allReceived ? 'bx-check-circle' : noneReceived ? 'bx-time-five' : 'bx-sync bx-spin';
+                                return (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '180px' }}>
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        background: pillBg,
+                                        color: pillColor,
+                                        border: `1px solid ${pillBorder}`,
+                                        padding: '0.3rem 0.65rem',
+                                        borderRadius: '999px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 800,
+                                        width: 'fit-content',
+                                        maxWidth: '100%'
+                                      }}
+                                    >
+                                      <i className={`bx ${iconName}`} style={{ fontSize: '0.95rem' }}></i>
+                                      {stageLabel}
+                                    </span>
+                                    <span style={{ fontSize: '0.7rem', color: '#5d4d62', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                      <i className='bx bx-package' style={{ color: '#ad246d' }}></i>
+                                      Hair received: <strong style={{ color: '#ad246d' }}>{wigmakerReceivedCount}</strong> / {bd.length}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
                             </td>
                             <td className="tracking-action-cell">
                               <button
@@ -941,7 +999,6 @@ const StaffRealtimeTracking: React.FC = () => {
                     const donation = row.donation;
                     const wigProd = data.wigProductions[donation.id];
                     const isWigmakerControlled = !!wigProd || ['In Queue', 'In Progress', 'Processing'].includes(donation.status);
-                    const stageIndex = ['Verified', 'Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].indexOf(donation.status);
                     const photoUrl = donation.photoFront ? getPublicUrl('hairlink', donation.photoFront) : null;
 
                     return (
@@ -998,31 +1055,51 @@ const StaffRealtimeTracking: React.FC = () => {
                           </div>
                         </td>
                         <td className="tracking-cell">
-                          <div className="tracking-progress-col">
-                            <div className="tracking-progress-head">
-                              <span className="tracking-progress-label">Workflow</span>
-                              <span className="tracking-progress-percent">{Math.round(((stageIndex + 1) / 6) * 100)}%</span>
-                            </div>
-                            <div className="tracking-progress-bar-bg">
-                              <div style={{
-                                position: 'absolute', left: 0, top: 0, bottom: 0,
-                                width: `${((stageIndex + 1) / 6) * 100}%`,
-                                background: 'linear-gradient(90deg, #ad246d, #ff6bb5)',
-                                borderRadius: '10px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-                                boxShadow: '0 0 8px rgba(173, 36, 109, 0.3)'
-                              }}></div>
-                            </div>
-                            <div className="tracking-progress-status">
-                              <i className={`bx ${wigProd?.status === 'received' ? 'bx-check-circle' : (isWigmakerControlled ? 'bx-sync bx-spin' : 'bx-map-pin')}`} style={{ color: wigProd?.status === 'received' ? '#10b981' : '#ad246d' }}></i>
-                              {isWigmakerControlled ? (
-                                wigProd?.status === 'assigned' ? `Assigned to ${wigProd?.wigmaker?.firstName}` :
-                                  wigProd?.status === 'processing' ? `Crafting by ${wigProd?.wigmaker?.firstName}` :
-                                    wigProd?.status === 'completed' ? `Wig Finished by ${wigProd?.wigmaker?.firstName}` :
-                                      wigProd?.status === 'shipped' ? 'Awaiting Wig Delivery' :
+                          {(() => {
+                            const stageLabel = isWigmakerControlled ? (
+                              wigProd?.status === 'assigned' ? `Assigned to ${wigProd?.wigmaker?.firstName || 'Wigmaker'}` :
+                                wigProd?.status === 'processing' ? `Crafting by ${wigProd?.wigmaker?.firstName || 'Wigmaker'}` :
+                                  wigProd?.status === 'completed' ? `Finished by ${wigProd?.wigmaker?.firstName || 'Wigmaker'}` :
+                                    wigProd?.status === 'shipped' ? 'Awaiting Wig Delivery' :
+                                      wigProd?.status === 'received' ? 'Wig Received' :
                                         'Completed'
-                              ) : donation.status}
-                            </div>
-                          </div>
+                            ) : donation.status;
+                            const isDone = wigProd?.status === 'received';
+                            const isInFlight = isWigmakerControlled && !isDone;
+                            const pillBg = isDone ? '#dcfce7' : isInFlight ? '#fdf2f8' : '#fef9c3';
+                            const pillColor = isDone ? '#15803d' : isInFlight ? '#ad246d' : '#a16207';
+                            const pillBorder = isDone ? '#bbf7d0' : isInFlight ? '#fbcfe8' : '#fde68a';
+                            const iconName = isDone ? 'bx-check-circle' : isInFlight ? 'bx-sync bx-spin' : 'bx-time-five';
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '160px' }}>
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    background: pillBg,
+                                    color: pillColor,
+                                    border: `1px solid ${pillBorder}`,
+                                    padding: '0.3rem 0.65rem',
+                                    borderRadius: '999px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
+                                    width: 'fit-content',
+                                    maxWidth: '100%'
+                                  }}
+                                >
+                                  <i className={`bx ${iconName}`} style={{ fontSize: '0.95rem' }}></i>
+                                  {stageLabel}
+                                </span>
+                                {(wigProd?.updatedAt || donation.updatedAt) && (
+                                  <div style={{ fontSize: '0.68rem', color: '#8c7895', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                    <i className='bx bx-time-five'></i>
+                                    Updated {new Date(wigProd?.updatedAt || donation.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="tracking-action-cell">
                           {donation.status === 'Verified' && (
@@ -1085,11 +1162,6 @@ const StaffRealtimeTracking: React.FC = () => {
                 </>
               ) : (
                 pagedRequests.map((request) => {
-                  const isPickup = (request as any).deliveryMethod === 'pickup';
-                  const pickupStages = ['Validated', 'Matched', 'Ready for Pickup', 'Pickup Confirmed', 'Completed'];
-                  const deliveryStages = ['Validated', 'Matched', 'In Transit', 'Completed'];
-                  const stages = isPickup ? pickupStages : deliveryStages;
-                  const stageIndex = stages.indexOf(request.status);
                   const photoUrl = request.additionalPhoto ? getPublicUrl('hairlink', request.additionalPhoto) : null;
 
                   return (
@@ -1153,25 +1225,47 @@ const StaffRealtimeTracking: React.FC = () => {
                         </div>
                       </td>
                       <td className="tracking-cell">
-                        <div className="tracking-progress-col">
-                          <div className="tracking-progress-head">
-                            <span className="tracking-progress-label">Progress</span>
-                            <span className="tracking-progress-percent">{Math.round(((stageIndex + 1) / stages.length) * 100)}%</span>
-                          </div>
-                          <div className="tracking-progress-bar-bg">
-                            <div style={{
-                              position: 'absolute', left: 0, top: 0, bottom: 0,
-                              width: `${((stageIndex + 1) / stages.length) * 100}%`,
-                              background: request.status === 'Completed' ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #ad246d, #ff6bb5)',
-                              borderRadius: '10px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-                              boxShadow: '0 0 8px rgba(173, 36, 109, 0.3)'
-                            }}></div>
-                          </div>
-                          <div className="tracking-progress-status">
-                            <i className={`bx ${request.status === 'Completed' ? 'bx-check-circle' : request.status === 'Pickup Confirmed' ? 'bx-store' : 'bx-map-pin'}`} style={{ color: request.status === 'Completed' ? '#10b981' : '#ad246d' }}></i>
-                            {request.status}
-                          </div>
-                        </div>
+                        {(() => {
+                          const isDone = request.status === 'Completed';
+                          const isReadyForPickup = request.status === 'Ready for Pickup' || request.status === 'Pickup Confirmed';
+                          const isInTransit = request.status === 'In Transit';
+                          const isEarly = request.status === 'Validated' || request.status === 'Matched';
+
+                          const pillBg = isDone ? '#dcfce7' : isReadyForPickup ? '#dbeafe' : isInTransit ? '#fdf2f8' : isEarly ? '#fef9c3' : '#fdf2f8';
+                          const pillColor = isDone ? '#15803d' : isReadyForPickup ? '#1d4ed8' : isInTransit ? '#ad246d' : isEarly ? '#a16207' : '#ad246d';
+                          const pillBorder = isDone ? '#bbf7d0' : isReadyForPickup ? '#bfdbfe' : isInTransit ? '#fbcfe8' : isEarly ? '#fde68a' : '#fbcfe8';
+                          const iconName = isDone ? 'bx-check-circle' : isReadyForPickup ? 'bx-store' : isInTransit ? 'bx-package bx-tada' : isEarly ? 'bx-time-five' : 'bx-map-pin';
+
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '160px' }}>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  background: pillBg,
+                                  color: pillColor,
+                                  border: `1px solid ${pillBorder}`,
+                                  padding: '0.3rem 0.65rem',
+                                  borderRadius: '999px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 800,
+                                  width: 'fit-content',
+                                  maxWidth: '100%'
+                                }}
+                              >
+                                <i className={`bx ${iconName}`} style={{ fontSize: '0.95rem' }}></i>
+                                {request.status}
+                              </span>
+                              {request.updatedAt && (
+                                <div style={{ fontSize: '0.68rem', color: '#8c7895', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <i className='bx bx-time-five'></i>
+                                  Updated {new Date(request.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="tracking-action-cell">
                         {request.status === 'Validated' && (

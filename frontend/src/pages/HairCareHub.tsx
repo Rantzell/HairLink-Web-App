@@ -89,41 +89,43 @@ const HairCareHub: React.FC = () => {
             created_at: new Date().toISOString()
           }
         ]);
+        // Updated fallback videos — used only when /internal-api/haircare/videos
+        // returns no records. Admins can replace these through the CMS.
         setVideos([
           {
             id: 1,
-            title: 'Beginner\'s Guide to Wearing a Wig',
-            description: 'Everything you need to know about putting on your first wig, from cap selection to secure fitting.',
-            videoId: 'm0P_qVf06Yk',
+            title: 'Caring for Your Wig: A Recipient\'s Guide',
+            description: 'Step-by-step guidance on wearing, washing, and storing your HairLink wig so it stays comfortable and long-lasting.',
+            videoId: 'WMzZ-rL2-ZE',
             source: 'youtube',
             category: 'Care',
             author: 'HairLink Tutorials',
-            views: 45200,
-            duration: '12:15',
+            views: 0,
+            duration: '8:42',
             created_at: new Date().toISOString()
           },
           {
             id: 2,
-            title: 'Styling Synthetic Curls Without Heat',
-            description: 'Safe methods to refresh the curls on your synthetic wig using rollers and steam.',
-            videoId: 'O9hO2hR7b6s',
+            title: 'Gentle Styling Techniques for Daily Wear',
+            description: 'Heat-free styling tips and routines to keep your wig looking natural and feeling soft each day.',
+            videoId: 'fE532eN0fdo',
             source: 'youtube',
             category: 'Styling',
-            author: 'Curls & Care',
-            views: 12800,
-            duration: '7:30',
+            author: 'HairLink Tutorials',
+            views: 0,
+            duration: '6:18',
             created_at: new Date().toISOString()
           },
           {
             id: 3,
-            title: 'Wig 101: Human Hair vs Synthetic',
-            description: 'Understanding the differences, pros, and cons of different wig types to choose the best one for you.',
-            videoId: 'dQw4w9WgXcQ',
+            title: 'Emotional Support &amp; Confidence During Treatment',
+            description: 'Stories and encouragement from recipients of the Strand Up for Cancer community.',
+            videoId: 'rGaTOh_a-c4',
             source: 'youtube',
-            category: 'Storage',
-            author: 'EduHair',
-            views: 98500,
-            duration: '15:20',
+            category: 'Wellness',
+            author: 'Strand Up for Cancer',
+            views: 0,
+            duration: '10:05',
             created_at: new Date().toISOString()
           }
         ]);

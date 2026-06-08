@@ -670,8 +670,50 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
     } finally { setLoading(false); }
   };
 
+  const validateRegistration = (): Record<string, string[]> => {
+    const errs: Record<string, string[]> = {};
+    const emailRe = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+    const phoneDigits = (reg.phone || '').replace('+63', '').replace(/\D/g, '');
+    const ageNum = parseInt(reg.age, 10);
+
+    if (!reg.userType) errs.userType = ['Please choose Donor or Recipient.'];
+    if (!reg.first_name.trim()) errs.first_name = ['First name is required.'];
+    else if (reg.first_name.trim().length < 2) errs.first_name = ['First name is too short.'];
+    if (!reg.last_name.trim()) errs.last_name = ['Last name is required.'];
+    else if (reg.last_name.trim().length < 2) errs.last_name = ['Last name is too short.'];
+    if (!reg.region.trim()) errs.region = ['Region / province is required.'];
+    if (!reg.postal_code.trim()) errs.postal_code = ['Postal code is required.'];
+    else if (!/^\d{4}$/.test(reg.postal_code.trim())) errs.postal_code = ['Postal code must be 4 digits.'];
+    if (!reg.age) errs.age = ['Age is required.'];
+    else if (Number.isNaN(ageNum) || ageNum < 13 || ageNum > 120) errs.age = ['Enter a valid age (13–120).'];
+    if (!reg.gender) errs.gender = ['Please select a gender.'];
+    if (!reg.email.trim()) errs.email = ['Email is required.'];
+    else if (!emailRe.test(reg.email.trim())) errs.email = ['Enter a valid email address.'];
+    if (!phoneDigits) errs.phone = ['Mobile number is required.'];
+    else if (phoneDigits.length !== 10) errs.phone = ['Mobile number must be 10 digits after +63.'];
+    else if (!phoneDigits.startsWith('9')) errs.phone = ['PH mobile numbers start with 9 (e.g. 9171234567).'];
+
+    if (!reg.password) errs.password = ['Password is required.'];
+    else {
+      const issues: string[] = [];
+      if (reg.password.length < 8) issues.push('At least 8 characters.');
+      if (!/[0-9]/.test(reg.password)) issues.push('Must include a number.');
+      if (!/[!@#$%^&*(),.?":{}|<>_]/.test(reg.password)) issues.push('Must include a symbol.');
+      if (issues.length) errs.password = issues;
+    }
+    if (!reg.password_confirmation) errs.password_confirmation = ['Please confirm your password.'];
+    else if (reg.password && reg.password !== reg.password_confirmation) errs.password_confirmation = ['Passwords do not match.'];
+
+    return errs;
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    const clientErrors = validateRegistration();
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
     setLoading(true); setErrors({});
     try {
       const res = await register(reg);
@@ -945,6 +987,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                     onChange={e => setReg({ ...reg, password_confirmation: e.target.value })}
                     required
                   />
+                  {errors.password_confirmation && <span className="hl-field-err">⚠ {errors.password_confirmation[0]}</span>}
                   {reg.password_confirmation && (
                     <div className="hl-pw-reqs">
                       <span className={`hl-pw-req ${reg.password === reg.password_confirmation ? 'ok' : 'bad'}`}>

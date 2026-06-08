@@ -57,8 +57,8 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="admin-hero-summary admin-hero-summary">
             <div className="admin-hero-info">
-              <strong className="admin-hero-activity-label">RECENT STAFF ACTIVITY</strong>
-              <span className="admin-hero-activity-value">{data.pendingVerifications} entries verified today</span>
+              <strong className="admin-hero-activity-label">PENDING VERIFICATIONS</strong>
+              <span className="admin-hero-activity-value">{data.pendingVerifications} entries awaiting review</span>
             </div>
             <Link to="/admin/reports" className="admin-focus-link">
               View Full Logs
@@ -69,24 +69,24 @@ const AdminDashboard: React.FC = () => {
 
       <section className="admin-stat-grid admin-stat-grid-auto">
         <article className="quick-stat admin-page-pad">
-          <small className="admin-stat-sm-label">Global Submissions</small>
+          <small className="admin-stat-sm-label">Total Hair Donations</small>
           <h2 className="admin-stat-number">{data.donationsCount}</h2>
-          <p className="admin-stat-desc">System-wide total</p>
+          <p className="admin-stat-desc">All submissions to date</p>
         </article>
         <article className="quick-stat admin-page-pad">
-          <small className="admin-stat-sm-label">Total System Users</small>
+          <small className="admin-stat-sm-label">Registered Users</small>
           <h2 className="admin-stat-number">{data.usersCount}</h2>
-          <p className="admin-stat-desc">Across all categories</p>
+          <p className="admin-stat-desc">All roles combined</p>
         </article>
         <article className="quick-stat admin-page-pad">
-          <small className="admin-stat-sm-label">Recipient Fulfillment</small>
+          <small className="admin-stat-sm-label">Recipient Requests</small>
           <h2 className="admin-stat-number">{data.requestsCount}</h2>
-          <p className="admin-stat-desc">Requests processed</p>
+          <p className="admin-stat-desc">All wig requests to date</p>
         </article>
         <article className="quick-stat admin-page-pad">
-          <small className="admin-stat-sm-label">Staff Output</small>
+          <small className="admin-stat-sm-label">Pending Verifications</small>
           <h2 className="admin-stat-number">{data.pendingVerifications}</h2>
-          <p className="admin-stat-desc">Approvals this week</p>
+          <p className="admin-stat-desc">Awaiting staff review</p>
         </article>
       </section>
 

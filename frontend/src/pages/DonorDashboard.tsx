@@ -1020,7 +1020,7 @@ const DonorDashboard: React.FC = () => {
           
           {/* LEFT SECTION */}
           <div className="hl-dash-left-col">
-            
+
             {/* Rewards Progress card */}
             <section className="hl-dash-card">
               <div className="hl-dash-rewards-header">
@@ -1031,7 +1031,7 @@ const DonorDashboard: React.FC = () => {
                   <div className="hl-dash-rewards-title-text">
                     <h2 className="hl-dash-rewards-h2">Your Rewards Progress</h2>
                     <p className="hl-dash-rewards-desc">
-                      10 stars for hair donation, 5 stars for referral and 1 star for every 100 pesos donated monetary. Star Points
+                      Earn 10 Star Points for every accepted hair donation and 5 Star Points for each successful referral. Reach 100 points to unlock a free wig reward.
                     </p>
                   </div>
                 </div>
@@ -1043,8 +1043,8 @@ const DonorDashboard: React.FC = () => {
               {/* Progress Bar with Sliding Badge */}
               <div className="hl-dash-progress-wrap" aria-label="Reward progress bar">
                 <div className="hl-dash-progress-track">
-                  <span 
-                    className="hl-dash-progress-fill" 
+                  <span
+                    className="hl-dash-progress-fill"
                     style={{ width: `${percent}%` }}
                   ></span>
                   <span
@@ -1059,8 +1059,8 @@ const DonorDashboard: React.FC = () => {
               {/* Row of 10 Stars */}
               <div className="hl-dash-stars-row" aria-hidden="true">
                 {[...Array(10)].map((_, i) => (
-                  <i 
-                    key={i} 
+                  <i
+                    key={i}
                     className={`bx ${i < filledStars ? 'bxs-star' : 'bx-star'} ${i < filledStars ? 'filled' : ''}`}
                   ></i>
                 ))}
@@ -1286,38 +1286,47 @@ const DonorDashboard: React.FC = () => {
           boxShadow: '0 32px 80px rgba(214,59,138,0.2)',
           textAlign: 'center', fontFamily: 'Inter, sans-serif',
         }}>
-          {/* Confetti icon */}
-          <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🎉</div>
+          {/* Celebration icon */}
+          <div style={{
+            width: '72px', height: '72px', borderRadius: '50%',
+            background: 'linear-gradient(135deg, #fce4ec, #f8bbd9)',
+            display: 'grid', placeItems: 'center', margin: '0 auto 1rem',
+            boxShadow: '0 8px 20px rgba(214,59,138,0.18)',
+          }}>
+            <i className='bx bxs-gift' style={{ fontSize: '2.25rem', color: '#ad246d' }}></i>
+          </div>
 
           <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.5rem', fontWeight: 800, color: '#1a1a1a' }}>
-            You've Won a Free Wig!
+            Wig Reward Unlocked
           </h2>
           <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: '#6b7280', lineHeight: 1.6 }}>
-            Congratulations! You've reached <strong>100 Star Points</strong> and earned a <strong>free wig reward</strong>.
+            Thank you for your generosity. You've reached <strong>100 Star Points</strong> and earned a complimentary HairLink wig as a token of our appreciation.
           </p>
 
           {/* Voucher code */}
           {milestoneVoucher && (
             <div style={{
               background: '#fdf2f8', border: '1.5px dashed #D63B8A',
-              borderRadius: '12px', padding: '0.875rem 1.25rem',
+              borderRadius: '12px', padding: '1rem 1.25rem',
               marginBottom: '1.25rem',
             }}>
-              <p style={{ margin: '0 0 0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#D63B8A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Your Voucher Code</p>
-              <code style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1a1a1a', letterSpacing: '2px' }}>{milestoneVoucher.code}</code>
+              <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', fontWeight: 700, color: '#D63B8A', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Voucher Reference</p>
+              <code style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1a1a1a', letterSpacing: '2px' }}>{milestoneVoucher.code}</code>
+              <p style={{ margin: '0.5rem 0 0', fontSize: '0.72rem', color: '#8c7895' }}>Please keep this reference for verification.</p>
             </div>
           )}
 
-          {/* Contact info */}
+          {/* Redemption info */}
           <div style={{
             background: '#f9fafb', borderRadius: '12px', padding: '1rem 1.25rem',
             marginBottom: '1.5rem', textAlign: 'left',
           }}>
-            <p style={{ margin: '0 0 0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#374151' }}>
-              📞 How to Claim Your Free Wig
+            <p style={{ margin: '0 0 0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <i className='bx bx-info-circle' style={{ color: '#ad246d' }}></i>
+              How to redeem your wig
             </p>
             <p style={{ margin: 0, fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.6 }}>
-              Contact our partner wigmaker to redeem your reward. Show them your voucher code when you reach out. They will assist you in getting your custom wig.
+              Please contact our partner wigmaker and present your voucher reference above. Our team will guide you through fitting and personalisation so your custom wig matches your preferences.
             </p>
           </div>
 
@@ -1332,7 +1341,7 @@ const DonorDashboard: React.FC = () => {
               boxShadow: '0 6px 20px rgba(214,59,138,0.35)',
             }}
           >
-            Confirm & Claim Reward
+            Acknowledge &amp; Save Voucher
           </button>
         </div>
       </div>

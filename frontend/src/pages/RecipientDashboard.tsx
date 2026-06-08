@@ -81,9 +81,10 @@ const RecipientDashboard: React.FC = () => {
   const activeRequest = requests.find(r => r.status !== 'Delivered');
   const completedCount = requests.filter(r => r.status === 'Delivered').length;
 
-  const profileFields = [user?.firstName, user?.lastName, user?.phone, user?.gender, user?.email];
-  const filledCount = profileFields.filter(Boolean).length;
-  const profilePercentage = Math.min(100, Math.round((filledCount / 5) * 100));
+  const totalRequests = requests.length;
+  const memberSince = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+    : '—';
 
   return (
     <div className="rc-dashboard-wrap">
@@ -225,17 +226,21 @@ const RecipientDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 3: Profile Completion */}
+        {/* Card 3: Total Requests Submitted */}
         <div className="rc-stat-card">
           <div className="rc-stat-icon-wrap profile">
-            <i className="bx bx-user"></i>
+            <i className="bx bx-file"></i>
           </div>
           <div className="rc-stat-details">
-            <small>Profile Completion</small>
-            <strong className="rc-stat-value">{profilePercentage}%</strong>
-            <div className="rc-progress-bar-container">
-              <div className="rc-progress-bar" style={{ width: `${profilePercentage}%` }} />
-            </div>
+            <small>Total Requests</small>
+            {loading ? (
+              <span className="rc-stat-value loading" />
+            ) : (
+              <>
+                <strong className="rc-stat-value">{totalRequests}</strong>
+                <span className="rc-stat-sub">Member since {memberSince}</span>
+              </>
+            )}
           </div>
         </div>
       </div>

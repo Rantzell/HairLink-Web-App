@@ -27,14 +27,21 @@ const StaffWigStock: React.FC = () => {
     fetchStock();
   }, []);
 
-  const filteredWigs = (wigs || []).filter(w => {
+  // Show only individual finished wigs (WIG-prefixed) — batch parents
+  // (WB-prefixed) are tracked elsewhere and shouldn't appear in Wig Stock.
+  const onlyWigEntries = (wigs || []).filter(w => {
+    const code = (w.taskCode || w.task_code || '').toString().trim().toUpperCase();
+    return code.startsWith('WIG');
+  });
+
+  const filteredWigs = onlyWigEntries.filter(w => {
     const matchesSearch = (w.taskCode || '').toLowerCase().includes(filter.toLowerCase()) ||
                           (w.targetLength || '').toLowerCase().includes(filter.toLowerCase()) ||
                           (w.targetColor || '').toLowerCase().includes(filter.toLowerCase()) ||
                           (w.donation?.reference || '').toLowerCase().includes(filter.toLowerCase());
-    
+
     const matchesColor = colorFilter === 'All Colors' || (w.targetColor || '').toLowerCase().includes(colorFilter.toLowerCase());
-    
+
     return matchesSearch && matchesColor;
   });
 
@@ -116,7 +123,6 @@ const StaffWigStock: React.FC = () => {
               <tr>
                 <th className="staff-wig-th">Stock ID</th>
                 <th className="staff-wig-th-photo">Photo</th>
-                <th className="staff-wig-th">Batch Number</th>
                 <th className="staff-wig-th">Size</th>
                 <th className="staff-wig-th">Color</th>
                 <th className="staff-wig-th">Date Delivered</th>
@@ -126,7 +132,7 @@ const StaffWigStock: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="staff-wig-loading">
+                  <td colSpan={6} className="staff-wig-loading">
                     <i className="bx bx-loader-alt bx-spin staff-wig-loading-icon"></i>
                     Loading stock...
                   </td>
@@ -146,7 +152,6 @@ const StaffWigStock: React.FC = () => {
                         )}
                       </div>
                     </td>
-                    <td className="staff-wig-td">{wig.donation?.reference || 'N/A'}</td>
                     <td className="staff-wig-td">{wig.targetLength || wig.target_length}</td>
                     <td className="staff-wig-td">{wig.targetColor || wig.target_color}</td>
                     <td className="staff-wig-td">{new Date(wig.updatedAt || wig.updated_at).toLocaleDateString()}</td>
@@ -157,7 +162,7 @@ const StaffWigStock: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="staff-wig-empty">
+                  <td colSpan={6} className="staff-wig-empty">
                     <i className="bx bx-box staff-wig-empty-icon"></i>
                     No wigs currently in stock.
                   </td>

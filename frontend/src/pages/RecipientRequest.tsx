@@ -162,43 +162,112 @@ const RecipientRequest: React.FC = () => {
             </label>
           </div>
 
-          <div className="form-grid two-col upload-grid-gap">
-            {/* Ultra-Compact Multi-File Upload */}
-            <div className="upload-section-mini">
-              <label className="upload-label-main">Supporting Documents <span>*</span></label>
-              <div 
-                className={`upload-box-mini ${documents.length > 0 ? 'has-content' : ''}`}
+          {/* Redesigned Supporting Documents section — wider dropzone, clearer hierarchy */}
+          <div className="rr-docs-section" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="rr-doc-block">
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <label className="upload-label-main" style={{ margin: 0 }}>
+                  Supporting Documents <span style={{ color: '#cf2f84' }}>*</span>
+                </label>
+                <span style={{ fontSize: '0.72rem', color: '#8c7895', fontWeight: 600 }}>
+                  PDF, DOC, JPG, PNG · Max 10MB each
+                </span>
+              </div>
+              <p style={{ margin: '0 0 0.75rem', fontSize: '0.78rem', color: '#665772', lineHeight: 1.5 }}>
+                Upload medical certificates, clinical abstracts, or any document supporting your hair-loss diagnosis. You can attach multiple files.
+              </p>
+
+              <div
+                className={`rr-doc-dropzone ${documents.length > 0 ? 'has-files' : ''}`}
                 onClick={() => docsInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }}
+                onDragLeave={(e) => { e.currentTarget.classList.remove('drag-over'); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('drag-over');
+                  const files = Array.from(e.dataTransfer.files);
+                  if (files.length) {
+                    const dt = new DataTransfer();
+                    files.forEach(f => dt.items.add(f));
+                    if (docsInputRef.current) {
+                      docsInputRef.current.files = dt.files;
+                      handleDocsChange({ target: docsInputRef.current } as any);
+                    }
+                  }
+                }}
+                style={{
+                  border: '2px dashed #ead7e8',
+                  borderRadius: '16px',
+                  padding: '1.75rem 1.5rem',
+                  background: documents.length > 0 ? '#fff' : '#fdf7fb',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'all 0.2s ease'
+                }}
               >
                 <input ref={docsInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" hidden onChange={handleDocsChange} />
-                <div className="upload-mini-content">
-                  <i className='bx bx-file-blank'></i>
-                  <span>{documents.length > 0 ? `${documents.length} files added` : 'Upload medical files'}</span>
-                  <button type="button" className="mini-add-btn"><i className='bx bx-plus'></i></button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'linear-gradient(135deg, #fce4ec, #f8bbd9)', display: 'grid', placeItems: 'center', color: '#ad246d', fontSize: '1.5rem' }}>
+                    <i className='bx bx-cloud-upload'></i>
+                  </div>
+                  <p style={{ margin: 0, fontWeight: 800, color: '#4a3452', fontSize: '0.95rem' }}>
+                    {documents.length > 0 ? 'Add more documents' : 'Click to upload or drag &amp; drop'}
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c7895' }}>
+                    Your files are kept private and shared only with verifying staff.
+                  </p>
                 </div>
               </div>
-              <div className="mini-file-list">
-                {documents.map((doc, i) => (
-                  <div key={i} className="mini-file-tag">
-                    <span title={doc.name}>{doc.name}</span>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); removeDoc(i); }}>×</button>
-                  </div>
-                ))}
-              </div>
+
+              {documents.length > 0 && (
+                <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {documents.map((doc, i) => {
+                    const ext = (doc.name.split('.').pop() || '').toLowerCase();
+                    const icon = ['jpg','jpeg','png','webp'].includes(ext) ? 'bx-image' : ext === 'pdf' ? 'bxs-file-pdf' : 'bx-file-blank';
+                    const sizeKb = Math.max(1, Math.round(doc.size / 1024));
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', border: '1px solid #ead7e8', borderRadius: '10px', padding: '0.55rem 0.85rem' }}>
+                        <i className={`bx ${icon}`} style={{ fontSize: '1.25rem', color: '#ad246d', flexShrink: 0 }}></i>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4a3452', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={doc.name}>{doc.name}</div>
+                          <div style={{ fontSize: '0.7rem', color: '#8c7895' }}>{sizeKb} KB</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeDoc(i); }}
+                          aria-label={`Remove ${doc.name}`}
+                          style={{ background: 'transparent', border: 'none', color: '#8c7895', fontSize: '1.1rem', cursor: 'pointer', padding: '0.25rem', borderRadius: '6px' }}
+                        >
+                          <i className='bx bx-x'></i>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* Ultra-Compact Single Photo Upload */}
-            <div className="upload-section-mini">
-              <label className="upload-label-main">Reference Picture <span>*</span></label>
-              <div 
+            {/* Reference photo — kept compact */}
+            <div className="rr-doc-block">
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <label className="upload-label-main" style={{ margin: 0 }}>
+                  Reference Picture <span style={{ color: '#cf2f84' }}>*</span>
+                </label>
+                <span style={{ fontSize: '0.72rem', color: '#8c7895', fontWeight: 600 }}>JPG, PNG, WEBP</span>
+              </div>
+              <p style={{ margin: '0 0 0.75rem', fontSize: '0.78rem', color: '#665772', lineHeight: 1.5 }}>
+                Add a recent photo so our staff can verify your identity and prepare a suitable wig.
+              </p>
+              <div
                 className={`upload-box-mini ${additionalPhoto ? 'has-content' : ''}`}
                 onClick={() => photoInputRef.current?.click()}
+                style={{ borderRadius: '14px' }}
               >
                 <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handlePhotoChange} />
                 {!additionalPhoto ? (
                   <div className="upload-mini-content">
                     <i className='bx bx-image-add'></i>
-                    <span>Upload reference photo</span>
+                    <span>Click to upload reference photo</span>
                     <button type="button" className="mini-add-btn"><i className='bx bx-plus'></i></button>
                   </div>
                 ) : (

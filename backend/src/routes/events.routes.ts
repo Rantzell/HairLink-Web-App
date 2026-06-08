@@ -21,16 +21,40 @@ function requireAdmin(req: Request, res: Response): boolean {
 
 function serializeEvent(e: any) {
   if (!e) return null;
+  const eventDate = e.date instanceof Date ? e.date : new Date(e.date);
+  // Derive status from date so past events always read as Completed even if the
+  // stored status was never updated. Cancelled events keep their stored status.
+  const storedStatus: string = e.status || 'Upcoming';
+  const derivedStatus = storedStatus === 'Cancelled'
+    ? 'Cancelled'
+    : (eventDate.getTime() < Date.now() ? 'Completed' : 'Upcoming');
   return {
     id: e.id,
     title: e.title,
     description: e.description || '',
     location: e.location || '',
-    date: e.date instanceof Date ? e.date.toISOString() : e.date,
-    status: e.status || 'Upcoming',
+    date: eventDate.toISOString(),
+    status: derivedStatus,
     participantsCount: e.participantsCount ?? 0,
     createdAt: e.createdAt instanceof Date ? e.createdAt.toISOString() : e.createdAt,
   };
+}
+
+// Backfill: any non-cancelled event whose date has passed but whose stored
+// status is still 'Upcoming' gets bumped to 'Completed'. Called on read.
+async function backfillCompletedStatus(): Promise<void> {
+  try {
+    await prisma.event.updateMany({
+      where: {
+        date: { lt: new Date() },
+        status: 'Upcoming',
+      },
+      data: { status: 'Completed' },
+    });
+  } catch (err) {
+    // Non-fatal — derived status still does the right thing for the response.
+    console.warn('[Events] backfill failed (non-fatal):', err);
+  }
 }
 
 // ── Routes ───────────────────────────────────────────────────────────────
@@ -43,6 +67,7 @@ function serializeEvent(e: any) {
  */
 router.get('/', authenticate, async (_req: Request, res: Response) => {
   try {
+    await backfillCompletedStatus();
     const now = new Date();
     const [upcoming, past] = await Promise.all([
       prisma.event.findMany({ where: { date: { gte: now } }, orderBy: { date: 'asc' } }),
