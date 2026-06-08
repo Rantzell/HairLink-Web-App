@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
+import gcashQrImg from '../assets/gcash-qr.png';
 
 const MonetaryDonation: React.FC = () => {
   const { user } = useAuth();
@@ -11,14 +12,13 @@ const MonetaryDonation: React.FC = () => {
   const [activeAmount, setActiveAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState('');
   const [currency, setCurrency] = useState('PHP');
-  const [activeTab, setActiveTab] = useState<'bank' | 'instapay'>('bank');
-  const [billingName, _setBillingName] = useState(user?.firstName ? `${user.firstName} ${user.lastName}` : user?.name || '');
   const [amountNumber, setAmountNumber] = useState('');
   const [amountWords, setAmountWords] = useState('');
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'gcash' | 'bank'>('gcash');
 
   const amountPills = [50, 100, 150, 200, 250];
 
@@ -64,7 +64,7 @@ const MonetaryDonation: React.FC = () => {
     formData.append('amount', customAmount || activeAmount?.toString() || '0');
     formData.append('amount_words', amountWords);
     formData.append('currency', currency);
-    formData.append('payment_method', activeTab);
+    formData.append('payment_method', paymentMethod);
     formData.append('is_anonymous', isAnonymous ? '1' : '0');
     formData.append('proof', proofFile!);
 
@@ -80,13 +80,6 @@ const MonetaryDonation: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const fillDemo = () => {
-    setCustomAmount('1000');
-    setAmountNumber('1,000.00');
-    setAmountWords('One thousand pesos');
-    setCurrency('PHP');
   };
 
   return (
@@ -144,7 +137,6 @@ const MonetaryDonation: React.FC = () => {
               </svg>
               <h3 style={{ margin: 0, fontWeight: 800 }}>Donation Details</h3>
             </div>
-            <button type="button" onClick={fillDemo} className="soft-btn" style={{ minWidth: '120px', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Quick Fill Demo</button>
           </div>
 
           <div className="form-group" style={{ marginBottom: '1.5rem' }}>
@@ -192,56 +184,123 @@ const MonetaryDonation: React.FC = () => {
           </div>
         </div>
 
-        {/* Billing Information Section */}
+        {/* Payment Method Section */}
         <div className="form-section module-card" style={{ marginBottom: '2rem' }}>
-          <div className="section-header billing-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ad246d' }}>
                 <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
               </svg>
-              <h3 style={{ margin: 0, fontWeight: 800 }}>Billing Information</h3>
+              <h3 style={{ margin: 0, fontWeight: 800 }}>Payment Method</h3>
             </div>
-            <div className="payment-tabs">
-              <button 
-                type="button" 
-                className={`tab-btn ${activeTab === 'bank' ? 'active' : ''}`}
-                onClick={() => setActiveTab('bank')}
+            <div className="payment-tabs" style={{ display: 'inline-flex', background: '#fdf7fb', border: '1px solid #ead7e8', borderRadius: '50px', padding: '4px' }}>
+              <button
+                type="button"
+                className={`tab-btn ${paymentMethod === 'gcash' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('gcash')}
+                style={{
+                  padding: '0.45rem 1.1rem',
+                  borderRadius: '50px',
+                  border: 'none',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  background: paymentMethod === 'gcash' ? '#ad246d' : 'transparent',
+                  color: paymentMethod === 'gcash' ? '#fff' : '#8c7895',
+                  transition: 'all 0.18s ease'
+                }}
+              >
+                GCash / InstaPay
+              </button>
+              <button
+                type="button"
+                className={`tab-btn ${paymentMethod === 'bank' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('bank')}
+                style={{
+                  padding: '0.45rem 1.1rem',
+                  borderRadius: '50px',
+                  border: 'none',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  background: paymentMethod === 'bank' ? '#ad246d' : 'transparent',
+                  color: paymentMethod === 'bank' ? '#fff' : '#8c7895',
+                  transition: 'all 0.18s ease'
+                }}
               >
                 Bank Transfer
-              </button>
-              <button 
-                type="button" 
-                className={`tab-btn ${activeTab === 'instapay' ? 'active' : ''}`}
-                onClick={() => setActiveTab('instapay')}
-              >
-                InstaPay
               </button>
             </div>
           </div>
 
-          <div className="billing-body">
-            {/* Bank Card */}
-            <div className={`bank-card ${activeTab === 'instapay' ? 'instapay-card' : ''}`}>
-              <div className="bank-logo">{activeTab === 'bank' ? 'BDO' : 'InstaPay'}</div>
-              <div className="bank-info">
-                <p className="account-name">Venus Alinsod</p>
-                <p className="account-number">{activeTab === 'bank' ? '004560025684' : '0917-847-4270'}</p>
+          {paymentMethod === 'gcash' ? (
+            <div className="gcash-payment-body" style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 280px) 1fr', gap: '2rem', alignItems: 'center' }}>
+              <div className="gcash-qr-wrap" style={{
+                background: '#fff',
+                border: '2px solid #ead7e8',
+                borderRadius: '16px',
+                padding: '1rem',
+                textAlign: 'center',
+                boxShadow: '0 6px 18px rgba(73, 20, 52, 0.06)'
+              }}>
+                <img
+                  src={gcashQrImg}
+                  alt="HairLink GCash / InstaPay QR Code"
+                  style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '8px' }}
+                />
+                <p style={{ margin: '0.75rem 0 0', fontSize: '0.72rem', color: '#8c7895', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Scan to Pay</p>
+              </div>
+              <div className="gcash-instructions" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <h4 style={{ margin: 0, color: '#4a3452', fontSize: '1.05rem', fontWeight: 800 }}>How to donate via GCash</h4>
+                <ol style={{ margin: 0, paddingLeft: '1.25rem', color: '#665772', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                  <li>Open your GCash or InstaPay app and tap <strong>Scan QR</strong>.</li>
+                  <li>Scan the QR code on the left and enter the amount you wish to donate.</li>
+                  <li>Complete the payment, then save the receipt or screenshot.</li>
+                  <li>Fill out the form below and upload your proof of payment.</li>
+                </ol>
+                <div style={{ marginTop: '0.5rem', padding: '0.75rem 1rem', background: '#fdf7fb', borderRadius: '10px', border: '1px solid #f5dceb', fontSize: '0.82rem', color: '#8c7895' }}>
+                  <strong style={{ color: '#ad246d' }}>Note:</strong> Transfer fees may apply depending on your provider.
+                </div>
               </div>
             </div>
-
-            <div className="billing-fields">
-              <div className="form-group" style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.25rem' }}>Full Name *</label>
-                <p style={{ margin: '0 0 0.5rem', fontSize: '0.75rem', color: '#8c7895' }}>Full Name matched from your profile</p>
-                <input 
-                  type="text" 
-                  value={billingName}
-                  readOnly 
-                  className="form-input-premium"
-                  style={{ width: '100%', background: '#f5f3f7', cursor: 'not-allowed', border: '2px solid #ead7e8', borderRadius: '12px', padding: '0.85rem 1rem' }}
-                />
+          ) : (
+            <div className="bank-payment-body" style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 320px) 1fr', gap: '2rem', alignItems: 'flex-start' }}>
+              <div className="bank-card" style={{
+                background: 'linear-gradient(135deg, #4a3452 0%, #ad246d 100%)',
+                color: '#fff',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                boxShadow: '0 10px 30px rgba(173, 36, 109, 0.25)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                  <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1.5px', opacity: 0.8, fontWeight: 700 }}>BDO Unibank</span>
+                  <svg width="32" height="22" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.85 }}>
+                    <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
+                  </svg>
+                </div>
+                <p style={{ margin: '0 0 0.5rem', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.75, fontWeight: 700 }}>Account Name</p>
+                <p style={{ margin: '0 0 1.25rem', fontSize: '1rem', fontWeight: 800 }}>Venus Alinsod</p>
+                <p style={{ margin: '0 0 0.5rem', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.75, fontWeight: 700 }}>Account Number</p>
+                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, letterSpacing: '2px' }}>0045 6002 5684</p>
               </div>
+              <div className="bank-instructions" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <h4 style={{ margin: 0, color: '#4a3452', fontSize: '1.05rem', fontWeight: 800 }}>How to donate via Bank Transfer</h4>
+                <ol style={{ margin: 0, paddingLeft: '1.25rem', color: '#665772', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                  <li>Log in to your online or mobile banking app.</li>
+                  <li>Use the account details on the left as the recipient.</li>
+                  <li>Enter the amount you wish to donate and complete the transfer.</li>
+                  <li>Save the confirmation or receipt, then upload it as proof below.</li>
+                </ol>
+                <div style={{ marginTop: '0.5rem', padding: '0.75rem 1rem', background: '#fdf7fb', borderRadius: '10px', border: '1px solid #f5dceb', fontSize: '0.82rem', color: '#8c7895' }}>
+                  <strong style={{ color: '#ad246d' }}>Note:</strong> Inter-bank transfer fees may apply depending on your bank.
+                </div>
+              </div>
+            </div>
+          )}
 
+          <div className="billing-fields" style={{ marginTop: '2rem' }}>
               <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1rem' }}>
                 <div className="form-group">
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Amount of Donation (in number) *</label>
@@ -297,8 +356,8 @@ const MonetaryDonation: React.FC = () => {
 
               <div className="form-group">
                 <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600 }}>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={isAnonymous}
                     onChange={e => setIsAnonymous(e.target.checked)}
                     style={{ width: '18px', height: '18px', accentColor: '#cf2f84' }}
@@ -307,7 +366,6 @@ const MonetaryDonation: React.FC = () => {
                 </label>
               </div>
             </div>
-          </div>
         </div>
 
         {/* Form Actions */}
@@ -333,7 +391,7 @@ const MonetaryDonation: React.FC = () => {
         onClose={() => setShowConfirm(false)}
         onConfirm={doSubmit}
         title="Confirm Monetary Donation"
-        message={`You are about to submit a donation of ${currency} ${amountNumber || customAmount}${isAnonymous ? ' (anonymously)' : ''}. Please ensure your proof of payment is correct before proceeding.`}
+        message={`You are about to submit a ${paymentMethod === 'bank' ? 'Bank Transfer' : 'GCash'} donation of ${currency} ${amountNumber || customAmount}${isAnonymous ? ' (anonymously)' : ''}. Please ensure your proof of payment is correct before proceeding.`}
         confirmText="Yes, Submit Donation"
         isConfirming={isSubmitting}
       />

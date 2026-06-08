@@ -199,8 +199,8 @@ const StaffMatching: React.FC = () => {
                 </div>
 
                 <div className="wig-option-specs">
-                  <span>Wig Size: <strong className="wig-spec-value">{wig.targetLength}</strong></span>
-                  <span>Color: <strong className="wig-spec-value">{wig.targetColor}</strong></span>
+                  <span>Wig Size: <strong className="wig-spec-value" style={{ textTransform: 'capitalize' }}>{wig.targetLength || 'Not specified'}</strong></span>
+                  <span>Color: <strong className="wig-spec-value" style={{ textTransform: 'capitalize' }}>{wig.targetColor || 'Not specified'}</strong></span>
                 </div>
                 
                 <div className="wig-option-score-wrap">

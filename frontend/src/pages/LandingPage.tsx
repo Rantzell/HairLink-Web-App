@@ -1626,42 +1626,32 @@ const hlStyles = `
   color: #57534E;
 }
 
-/* ── Subscribe ── */
-.hl-subscribe {
+/* ── Social Icons ── */
+.hl-social-links {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 
-.hl-subscribe input {
+.hl-social-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   background: rgba(255,255,255,.06);
   border: 1px solid rgba(255,255,255,.12);
-  border-radius: 8px;
-  padding: 0.5rem 0.85rem;
-  font-size: 0.82rem;
-  color: #fff;
-  outline: none;
-  width: 200px;
-  transition: border-color 0.15s;
+  color: #A8A29E;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
-.hl-subscribe input::placeholder { color: #57534E; }
-.hl-subscribe input:focus { border-color: rgba(214,59,138,.5); }
-
-.hl-subscribe button {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+.hl-social-icon:hover {
+  color: #fff;
   background: #D63B8A;
-  color: #fff;
-  font-size: 0.82rem;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
+  border-color: #D63B8A;
+  transform: translateY(-2px);
 }
-
-.hl-subscribe button:hover { background: #B52B72; }
 
 /* ═══════════════════════════════════════════════════════
    RESPONSIVE
@@ -2341,9 +2331,16 @@ const LandingPage: React.FC = () => {
             <p className="hl-footer-tagline">
               {get('footer', 'tagline', 'Empowering cancer patients through hair donation, wig crafting, and community compassion.')}
             </p>
-            <div className="hl-subscribe" style={{ marginTop: '0.25rem' }}>
-              <input type="email" placeholder="your@email.com" />
-              <button type="button">Subscribe</button>
+            <div className="hl-social-links" style={{ marginTop: '0.75rem', display: 'flex', gap: '0.6rem' }}>
+              <a href="https://www.facebook.com/strandupforcancer" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hl-social-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+              </a>
+              <a href="https://www.instagram.com/strandupforcancer" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hl-social-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.465.66.254 1.216.598 1.772 1.153a4.908 4.908 0 011.153 1.772c.247.637.415 1.363.465 2.428.047 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.218 1.79-.465 2.428a4.883 4.883 0 01-1.153 1.772 4.915 4.915 0 01-1.772 1.153c-.637.247-1.363.415-2.428.465-1.066.047-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.218-2.428-.465a4.89 4.89 0 01-1.772-1.153 4.904 4.904 0 01-1.153-1.772c-.248-.637-.415-1.363-.465-2.428C2.013 15.056 2 14.717 2 12c0-2.717.01-3.056.06-4.122.05-1.066.217-1.79.465-2.428a4.88 4.88 0 011.153-1.772A4.897 4.897 0 015.45 2.525c.638-.248 1.362-.415 2.428-.465C8.944 2.013 9.283 2 12 2zm0 5a5 5 0 100 10 5 5 0 000-10zm6.5-.25a1.25 1.25 0 10-2.5 0 1.25 1.25 0 002.5 0zM12 9a3 3 0 110 6 3 3 0 010-6z"/></svg>
+              </a>
+              <a href="https://www.tiktok.com/@strandupforcancer" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="hl-social-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005.8 20.1a6.34 6.34 0 0010.86-4.43V8.86a8.16 8.16 0 004.77 1.52V7a4.85 4.85 0 01-1.84-.31z"/></svg>
+              </a>
             </div>
           </div>
 

@@ -156,10 +156,23 @@ router.patch('/users/:id/toggle-active', ...adminOnly, async (req, res) => {
 // GET /internal-api/admin/events
 router.get('/events', ...adminOnly, async (_req, res) => {
   try {
-    const upcoming = await prisma.event.findMany({ where: { status: 'Upcoming' }, orderBy: { date: 'asc' } });
-    const past = await prisma.event.findMany({ where: { status: 'Completed' }, orderBy: { date: 'desc' } });
+    const now = new Date();
+    // Backfill stored status so other queries (admin listing by status, reports)
+    // also reflect that the event has ended.
+    await prisma.event.updateMany({
+      where: { date: { lt: now }, status: 'Upcoming' },
+      data: { status: 'Completed' },
+    });
+    const upcoming = await prisma.event.findMany({
+      where: { date: { gte: now }, NOT: { status: 'Cancelled' } },
+      orderBy: { date: 'asc' },
+    });
+    const past = await prisma.event.findMany({
+      where: { date: { lt: now } },
+      orderBy: { date: 'desc' },
+    });
     res.json(s({ upcomingEvents: upcoming, pastEvents: past }));
-  } catch (err: any) { console.error('[Admin API] GET /community error:', err); res.status(500).json({ error: 'Failed', message: err?.message || String(err) }); }
+  } catch (err: any) { console.error('[Admin API] GET /events error:', err); res.status(500).json({ error: 'Failed', message: err?.message || String(err) }); }
 });
 
 // POST /internal-api/admin/events
@@ -332,41 +345,46 @@ router.get('/reports/monetary', ...adminOnly, async (_req, res) => {
 router.get('/inventory', ...adminOnly, async (_req, res) => {
   try {
     const dons = await prisma.donation.findMany({ where: { status: 'Received Hair' } });
-    const stock: Record<string, Record<string, number>> = { Short: { Black: 0, Brown: 0, Light: 0, Gray: 0, Other: 0 }, Medium: { Black: 0, Brown: 0, Light: 0, Gray: 0, Other: 0 }, Long: { Black: 0, Brown: 0, Light: 0, Gray: 0, Other: 0 } };
-    
+    // Buckets must align with the donor-facing form (Short 10–14", Long 15+")
+    // and the officially supported wig colors (Black, Brown, Light) so the
+    // admin UI numbers actually reflect the inventory.
+    const stock: Record<string, Record<string, number>> = {
+      Short: { Black: 0, Brown: 0, Light: 0 },
+      Long:  { Black: 0, Brown: 0, Light: 0 },
+    };
+
     for (const d of dons) {
       if (!d.hairLength || !d.hairColor) continue;
-      
-      // Categorize length
-      let l = 'Other';
+
+      // Categorize length — anything < 15 inches is Short, everything else is Long.
+      let l: 'Short' | 'Long' = 'Short';
       const lenStr = d.hairLength.toLowerCase();
-      if (lenStr.includes('short') || (parseInt(lenStr) > 0 && parseInt(lenStr) < 10)) l = 'Short';
-      else if (lenStr.includes('medium') || (parseInt(lenStr) >= 10 && parseInt(lenStr) < 14)) l = 'Medium';
-      else if (lenStr.includes('long') || parseInt(lenStr) >= 14) l = 'Long';
-      else {
-          // Fallback if no keywords, use string capitalizer
-          l = d.hairLength.charAt(0).toUpperCase() + d.hairLength.slice(1).toLowerCase();
-      }
+      const lenNum = parseInt(lenStr, 10);
+      if (lenStr.includes('long') || (!Number.isNaN(lenNum) && lenNum >= 15)) l = 'Long';
+      else l = 'Short';
 
-      // Categorize color
-      let c = d.hairColor.charAt(0).toUpperCase() + d.hairColor.slice(1).toLowerCase();
-      if (c.includes('Black')) c = 'Black'; 
-      else if (c.includes('Brown')) c = 'Brown';
-      else if (c.includes('Light') || c.includes('Blonde')) c = 'Light';
-      else if (c.includes('Gray') || c.includes('Grey') || c.includes('White')) c = 'Gray';
-      else c = 'Other';
+      // Categorize color — collapse all donated shades into the supported set
+      // so historic Gray / Blonde / Other entries are still counted.
+      const raw = (d.hairColor || '').toLowerCase();
+      let c: 'Black' | 'Brown' | 'Light' = 'Black';
+      if (raw.includes('brown')) c = 'Brown';
+      else if (raw.includes('light') || raw.includes('blonde') || raw.includes('gray') || raw.includes('grey') || raw.includes('white')) c = 'Light';
+      else c = 'Black';
 
-      if (stock[l]?.[c] !== undefined) stock[l][c]++;
+      stock[l][c]++;
     }
-    // Avoid including the `donations` relation directly here — some Prisma clients
-    // in certain environments may not expose it. We only need wigmaker and
-    // hairRequest metadata for the inventory view, which keeps the payload small.
-    const wigStock = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { wigmaker: true, hairRequest: true }, orderBy: { updatedAt: 'desc' } });
+
+    // Wigs in stock = completed by wigmaker, not yet shipped to a recipient.
+    const wigStock = await prisma.wigProduction.findMany({
+      where: { status: 'completed' },
+      include: { wigmaker: true, hairRequest: true },
+      orderBy: { updatedAt: 'desc' },
+    });
     const allDons = await prisma.donation.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
     res.json(s({ stock, totalHairRecords: dons.length, wigStock, wigCount: wigStock.length, allDonations: allDons, allDonationsCount: allDons.length }));
-  } catch (err: any) { 
+  } catch (err: any) {
     console.error('Inventory Error:', err);
-    res.status(500).json({ error: 'Failed', message: err.message }); 
+    res.status(500).json({ error: 'Failed', message: err.message });
   }
 });
 
@@ -393,8 +411,10 @@ router.get('/matching', ...adminOnly, async (_req, res) => {
 router.get('/operations', ...adminOnly, async (_req, res) => {
   try {
     const [sc, wt, tc, cc, pd, pr, aw, at] = await Promise.all([
-      prisma.user.count({ where: { role: 'staff' } }), prisma.wigProduction.count(),
-      prisma.wigProduction.count({ where: { status: 'processing' } }),
+      prisma.user.count({ where: { role: 'staff' } }),
+      prisma.wigProduction.count(),
+      // "In Transit" = wigs that have been shipped to recipients but not yet received.
+      prisma.wigProduction.count({ where: { status: 'shipped' } }),
       prisma.wigProduction.count({ where: { status: 'completed' } }),
       prisma.donation.count({ where: { status: 'Received Hair' } }),
       prisma.hairRequest.count({ where: { status: 'Submitted' } }),
@@ -412,16 +432,40 @@ router.get('/operations', ...adminOnly, async (_req, res) => {
 router.get('/reports/export/csv', ...adminOnly, async (_req, res) => {
   try {
     const donations = await prisma.monetaryDonation.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
-    let csv = 'Reference,Donor,Amount,Method,Date,Status\n';
+
+    // RFC 4180-safe CSV escape — wraps in quotes and doubles any inner quotes.
+    const esc = (v: any): string => {
+      const s = v == null ? '' : String(v);
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+
+    let totalAmount = 0;
+    const lines: string[] = ['Reference,Donor,Amount (PHP),Method,Date,Status'];
     for (const d of donations) {
       const name = d.name || `${d.user?.firstName || ''} ${d.user?.lastName || ''}`.trim() || 'Anonymous';
-      const dateStr = d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'N/A';
-      csv += `"${d.referenceNumber}","${name}",${d.amount},"${d.paymentMethod}","${dateStr}","${d.status}"\n`;
+      const dateStr = d.createdAt ? new Date(d.createdAt).toISOString().slice(0, 10) : '';
+      const amountNum = Number(d.amount ?? 0);
+      if (String(d.status).toLowerCase() !== 'rejected') totalAmount += amountNum;
+      lines.push([
+        esc(d.referenceNumber || ''),
+        esc(name),
+        amountNum.toFixed(2),
+        esc(d.paymentMethod || ''),
+        esc(dateStr),
+        esc(d.status || ''),
+      ].join(','));
     }
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=monetary_donations.csv');
+    lines.push('');
+    lines.push(`${esc('TOTAL (excluding rejected)')},,${totalAmount.toFixed(2)},,,`);
+    const csv = lines.join('\n') + '\n';
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=hairlink_monetary_${new Date().toISOString().slice(0, 10)}.csv`);
     res.send(csv);
-  } catch (err) { res.status(500).json({ error: 'Failed to export' }); }
+  } catch (err) {
+    console.error('CSV export failed:', err);
+    res.status(500).json({ error: 'Failed to export' });
+  }
 });
 
 // GET /internal-api/admin/site-settings

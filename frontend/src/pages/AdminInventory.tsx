@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
-import StatusPill from '../components/StatusPill';
 
 const AdminInventory: React.FC = () => {
   const location = useLocation();
@@ -120,7 +119,7 @@ const AdminInventory: React.FC = () => {
             {['Short', 'Long'].map(len => (
               <div key={len} className="hair-stock-col admin-hair-col">
                 <h4 className="admin-hair-col-title-lg">{len} CATEGORY</h4>
-                {['Black', 'Brown', 'Light', 'Gray', 'Other'].map(col => (
+                {['Black', 'Brown', 'Light'].map(col => (
                   <div key={col} className="admin-hair-row-lg">
                     <span>{col} Hair</span>
                     <strong>{data.stock[len]?.[col] || 0}</strong>
@@ -191,20 +190,17 @@ const AdminInventory: React.FC = () => {
                 <tr>
                   <th className="admin-compact-th">Ref</th>
                   <th className="admin-compact-th">Donor</th>
-                  {/* If the records are monetary donations, they will include `amount`/`paymentMethod`/`referenceNumber` fields. Detect and render appropriate columns. */}
                   {filteredDons.length > 0 && (filteredDons[0].amount !== undefined || filteredDons[0].referenceNumber !== undefined) ? (
                     <>
                       <th className="admin-compact-th">Amount</th>
                       <th className="admin-compact-th">Method</th>
                       <th className="admin-compact-th">Submission</th>
-                      <th className="admin-compact-th">Status</th>
                     </>
                   ) : (
                     <>
                       <th className="admin-compact-th">Length</th>
                       <th className="admin-compact-th">Color</th>
                       <th className="admin-compact-th">Submission</th>
-                      <th className="admin-compact-th">Staff Action</th>
                     </>
                   )}
                 </tr>
@@ -219,14 +215,12 @@ const AdminInventory: React.FC = () => {
                         <td className="admin-compact-td">₱{don.amount?.toLocaleString?.() || '—'}</td>
                         <td className="admin-compact-td">{don.paymentMethod || don.method || '—'}</td>
                         <td className="admin-compact-td">{new Date(don.createdAt || don.updatedAt).toLocaleDateString()}</td>
-                        <td className="admin-compact-td"><StatusPill status={don.status} /></td>
                       </>
                     ) : (
                       <>
                         <td className="admin-compact-td">{don.hairLength}</td>
                         <td className="admin-compact-td">{don.hairColor}</td>
                         <td className="admin-compact-td">{new Date(don.createdAt).toLocaleDateString()}</td>
-                        <td className="admin-compact-td"><StatusPill status={don.status} /></td>
                       </>
                     )}
                   </tr>

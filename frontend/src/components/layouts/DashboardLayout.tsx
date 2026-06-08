@@ -281,7 +281,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {
         label: 'Oversight & Inventory',
         items: [
-          { icon: 'bx bx-cog',          label: 'Production Oversight', to: '/admin/operations?view=production' },
           { icon: 'bx bx-map-pin',      label: 'Distribution Oversight', to: '/admin/operations?view=distribution' },
           { icon: 'bx bx-package',      label: 'Global Overview',     to: '/admin/inventory?view=overview' },
           { icon: 'bx bx-cut',          label: 'Hair Stock',          to: '/admin/inventory?view=hair' },
@@ -319,7 +318,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       }
       if (location.pathname.startsWith('/admin/matching')) return 'Recipient Matching Oversight';
       if (location.pathname.startsWith('/admin/operations')) {
-        if (search.includes('view=production')) return 'Production Oversight';
         if (search.includes('view=distribution')) return 'Distribution Oversight';
         return 'Operations Center';
       }
@@ -702,13 +700,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     </div>
                   </div>
                   <Link to="/admin/matching" className={isActive('/admin/matching') ? 'active' : ''}>Matching</Link>
-                  <div className="nav-dropdown">
-                    <span className={`nav-dropdown-trigger ${isActive('/admin/operations') ? 'active' : ''}`}>Ops <i className='bx bx-chevron-down'></i></span>
-                    <div className="nav-dropdown-content">
-                      <Link to="/admin/operations?view=production">Production Oversight</Link>
-                      <Link to="/admin/operations?view=distribution">Distribution Oversight</Link>
-                    </div>
-                  </div>
+                  <Link to="/admin/operations?view=distribution" className={isActive('/admin/operations') ? 'active' : ''}>Distribution</Link>
                   <div className="nav-dropdown">
                     <span className={`nav-dropdown-trigger ${isActive('/admin/inventory') ? 'active' : ''}`}>Inventory <i className='bx bx-chevron-down'></i></span>
                     <div className="nav-dropdown-content">

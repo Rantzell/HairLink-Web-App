@@ -258,15 +258,33 @@ const CommunityFeed: React.FC = () => {
             {/* Modal header */}
             <div className="cf-modal-head">
               <span className="cf-modal-title">Create a Post</span>
-              <button className="cf-modal-close" onClick={() => setModalOpen(false)}>✕</button>
+              <button className="cf-modal-close" onClick={() => setModalOpen(false)} aria-label="Close">✕</button>
             </div>
+
+            {/* Author row at top — shows who is posting before they begin */}
+            {user && (
+              <div className="cf-modal-user-row" style={{ borderTop: 'none', borderBottom: '1px solid #ead7e8', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
+                <div className="cf-avatar" style={{ width: 36, height: 36, fontSize: '0.78rem' }}>{initials}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span className="cf-modal-user-name">{user.firstName} {user.lastName?.[0]}.</span>
+                  <span className="cf-role-badge" style={{ background: roleInfo.bg, color: roleInfo.color, alignSelf: 'flex-start' }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    {roleInfo.label}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleCreatePost}>
               {/* Category dropdown */}
               <div className="cf-modal-field">
-                <div className="cf-custom-select" onClick={() => setCatOpen(v => !v)}>
-                  <span>{newCategory}</span>
-                  <span className="cf-select-arrow">{catOpen ? '⌃' : '⌄'}</span>
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#8c7895', marginBottom: '6px' }}>Category</label>
+                <div className="cf-custom-select" onClick={() => setCatOpen(v => !v)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <i className='bx bx-purchase-tag-alt' style={{ color: '#ad246d' }}></i>
+                    {newCategory}
+                  </span>
+                  <i className={`bx ${catOpen ? 'bx-chevron-up' : 'bx-chevron-down'} cf-select-arrow`} style={{ color: '#8c7895' }}></i>
                 </div>
                 {catOpen && (
                   <div className="cf-select-dropdown">
@@ -286,30 +304,38 @@ const CommunityFeed: React.FC = () => {
 
               {/* Title */}
               <div className="cf-modal-field">
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#8c7895', marginBottom: '6px' }}>Title <span style={{ color: '#ad246d' }}>*</span></label>
                 <input
                   className="cf-modal-input"
-                  placeholder="Post Title.."
+                  placeholder="Give your post a clear title..."
                   value={newTitle}
                   onChange={e => setNewTitle(e.target.value)}
+                  maxLength={120}
+                  required
                 />
+                <span style={{ fontSize: '0.7rem', color: '#a99cae', display: 'block', textAlign: 'right', marginTop: '4px' }}>{newTitle.length}/120</span>
               </div>
 
               {/* Content */}
               <div className="cf-modal-field">
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#8c7895', marginBottom: '6px' }}>Your story <span style={{ color: '#ad246d' }}>*</span></label>
                 <textarea
                   className="cf-modal-textarea"
-                  placeholder="Share your thoughts with this community..."
-                  rows={5}
+                  placeholder="Share your thoughts, journey, or message with this community..."
+                  rows={6}
                   value={newContent}
                   onChange={e => setNewContent(e.target.value)}
+                  maxLength={2000}
+                  required
                 />
+                <span style={{ fontSize: '0.7rem', color: '#a99cae', display: 'block', textAlign: 'right', marginTop: '4px' }}>{newContent.length}/2000</span>
               </div>
 
               {/* Image preview */}
               {newFile && (
                 <div className="cf-modal-preview">
                   <img src={URL.createObjectURL(newFile)} alt="preview" />
-                  <button type="button" className="cf-modal-remove-img" onClick={() => setNewFile(null)}>✕</button>
+                  <button type="button" className="cf-modal-remove-img" onClick={() => setNewFile(null)} aria-label="Remove image">✕</button>
                   <span className="cf-modal-img-name">{newFile.name}</span>
                 </div>
               )}
@@ -326,7 +352,7 @@ const CommunityFeed: React.FC = () => {
                     <circle cx="8.5" cy="8.5" r="1.5"/>
                     <polyline points="21 15 16 10 5 21"/>
                   </svg>
-                  Add Photo
+                  {newFile ? 'Change Photo' : 'Add Photo'}
                 </button>
                 <input
                   ref={fileRef}
@@ -339,7 +365,7 @@ const CommunityFeed: React.FC = () => {
                 <button
                   type="submit"
                   className="cf-publish-btn"
-                  disabled={isSubmitting || !newContent.trim()}
+                  disabled={isSubmitting || !newContent.trim() || !newTitle.trim()}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -348,20 +374,6 @@ const CommunityFeed: React.FC = () => {
                 </button>
               </div>
             </form>
-
-            {/* User row at bottom */}
-            {user && (
-              <div className="cf-modal-user-row">
-                <div className="cf-avatar" style={{ width: 30, height: 30, fontSize: '0.72rem' }}>{initials}</div>
-                <div>
-                  <span className="cf-modal-user-name">{user.firstName} {user.lastName?.[0]}.</span>
-                  <span className="cf-role-badge" style={{ background: roleInfo.bg, color: roleInfo.color }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    {roleInfo.label}
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

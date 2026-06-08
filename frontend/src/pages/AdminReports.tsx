@@ -156,7 +156,7 @@ const AdminReports: React.FC = () => {
                 {['Short', 'Long'].map(len => (
                   <div key={len} className="admin-report-mini-card">
                     <h4 className="admin-report-mini-title">{len} Strands</h4>
-                    {['Black', 'Brown', 'Light', 'Gray', 'Other'].map(col => (
+                    {['Black', 'Brown', 'Light'].map(col => (
                       <div key={col} className="admin-report-mini-row">
                         <span>{col}</span>
                         <strong>{data.inventory.stock[len]?.[col] || 0}</strong>
@@ -177,7 +177,6 @@ const AdminReports: React.FC = () => {
                     <th className="admin-report-th">Length</th>
                     <th className="admin-report-th">Color</th>
                     <th className="admin-report-th">Date</th>
-                    <th className="admin-report-th">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -188,7 +187,6 @@ const AdminReports: React.FC = () => {
                       <td className="admin-report-td">{d.hairLength}</td>
                       <td className="admin-report-td">{d.hairColor}</td>
                       <td className="admin-report-td">{new Date(d.createdAt).toLocaleDateString()}</td>
-                      <td className="admin-report-td">{d.status}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -305,7 +303,6 @@ const AdminReports: React.FC = () => {
                     <th className="admin-report-th">Length</th>
                     <th className="admin-report-th">Color</th>
                     <th className="admin-report-th">Date</th>
-                    <th className="admin-report-th">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -316,11 +313,10 @@ const AdminReports: React.FC = () => {
                       <td className="admin-report-td">{d.hairLength}</td>
                       <td className="admin-report-td">{d.hairColor}</td>
                       <td className="admin-report-td">{new Date(d.createdAt).toLocaleDateString()}</td>
-                      <td className="admin-report-td">{d.status}</td>
                     </tr>
                   ))}
                   {(data.inventory.allDonations || []).length === 0 && (
-                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '1rem', color: '#8c7895', fontSize: '0.75rem' }}>No donation records found.</td></tr>
+                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: '1rem', color: '#8c7895', fontSize: '0.75rem' }}>No donation records found.</td></tr>
                   )}
                 </tbody>
               </table>

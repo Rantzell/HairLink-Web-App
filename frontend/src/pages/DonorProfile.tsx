@@ -7,6 +7,8 @@ import ConfirmModal from '../components/ConfirmModal';
 const DonorProfile: React.FC = () => {
   const { user, updateUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [otherReferral, setOtherReferral] = useState('');
@@ -63,7 +65,36 @@ const DonorProfile: React.FC = () => {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(referralCode);
-    toast.error('Referral code copied to clipboard!');
+    toast.success('Referral code copied to clipboard!');
+  };
+
+  const handleGenerateCode = async () => {
+    if (isGeneratingCode) return;
+    setIsGeneratingCode(true);
+    try {
+      const res = await apiClient.post('/internal-api/referral/generate');
+      const newCode = res.data?.referralCode;
+      if (newCode) {
+        updateUser({ ...user!, referralCode: newCode });
+        toast.success('Referral code generated!');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to generate referral code.');
+    } finally {
+      setIsGeneratingCode(false);
+    }
+  };
+
+  const shareCode = async () => {
+    const text = `Join HairLink with my referral code: ${referralCode}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'HairLink Referral', text });
+      } catch { /* user cancelled */ }
+    } else {
+      navigator.clipboard.writeText(text);
+      toast.success('Share message copied to clipboard!');
+    }
   };
 
   const submitOtherReferral = async (e: React.FormEvent) => {
@@ -192,8 +223,11 @@ const DonorProfile: React.FC = () => {
                 <span className="referral-code-text">{referralCode}</span>
                 <p className="referral-subtext">Share to earn 5 points per donor</p>
               </div>
-              <button className="submit-code-btn w-full flex items-center justify-center gap-2" onClick={copyToClipboard}>
-                <i className='bx bx-copy'></i> Copy Code
+              <button
+                className="submit-code-btn w-full flex items-center justify-center gap-2"
+                onClick={() => setIsReferralModalOpen(true)}
+              >
+                <i className='bx bx-share-alt'></i> View &amp; Share Code
               </button>
             </article>
           )}
@@ -400,6 +434,141 @@ const DonorProfile: React.FC = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Referral Code Modal */}
+      {isReferralModalOpen && (
+        <div
+          className="ep-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) setIsReferralModalOpen(false); }}
+        >
+          <div className="ep-modal" style={{ maxWidth: '480px' }}>
+            <div className="ep-topbar">
+              <h2 className="ep-title">My Referral Code</h2>
+              <button
+                className="ep-close"
+                type="button"
+                onClick={() => setIsReferralModalOpen(false)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="ep-body" style={{ display: 'block', padding: '1.5rem 1.75rem' }}>
+              <p style={{ fontSize: '0.88rem', color: '#6b5b6d', marginTop: 0, marginBottom: '1.25rem', lineHeight: 1.55 }}>
+                Share this code with friends. You'll earn <strong>5 Star Points</strong> each time someone signs up using it.
+              </p>
+
+              <div
+                style={{
+                  background: '#fdf7fb',
+                  border: '1.5px dashed #ad246d',
+                  borderRadius: '14px',
+                  padding: '1.25rem',
+                  textAlign: 'center',
+                  marginBottom: '1.25rem'
+                }}
+              >
+                <p style={{ margin: 0, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#8c7895', fontWeight: 700 }}>
+                  Your code
+                </p>
+                <p
+                  style={{
+                    margin: '0.5rem 0 0',
+                    fontFamily: 'Outfit, sans-serif',
+                    fontSize: '1.8rem',
+                    fontWeight: 800,
+                    color: '#ad246d',
+                    letterSpacing: '0.08em'
+                  }}
+                >
+                  {referralCode === 'NOT-GENERATED' ? '— — — — — —' : referralCode}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={copyToClipboard}
+                  disabled={referralCode === 'NOT-GENERATED'}
+                  style={{
+                    flex: '1 1 120px',
+                    padding: '0.65rem 1rem',
+                    borderRadius: '12px',
+                    border: '1.5px solid #ead7e8',
+                    background: '#fff',
+                    color: '#4a3452',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: referralCode === 'NOT-GENERATED' ? 'not-allowed' : 'pointer',
+                    opacity: referralCode === 'NOT-GENERATED' ? 0.5 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem'
+                  }}
+                >
+                  <i className='bx bx-copy'></i> Copy
+                </button>
+                <button
+                  type="button"
+                  onClick={shareCode}
+                  disabled={referralCode === 'NOT-GENERATED'}
+                  style={{
+                    flex: '1 1 120px',
+                    padding: '0.65rem 1rem',
+                    borderRadius: '12px',
+                    border: '1.5px solid #ead7e8',
+                    background: '#fff',
+                    color: '#4a3452',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: referralCode === 'NOT-GENERATED' ? 'not-allowed' : 'pointer',
+                    opacity: referralCode === 'NOT-GENERATED' ? 0.5 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem'
+                  }}
+                >
+                  <i className='bx bx-share-alt'></i> Share
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGenerateCode}
+                  disabled={isGeneratingCode}
+                  style={{
+                    flex: '1 1 160px',
+                    padding: '0.65rem 1rem',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: '#ad246d',
+                    color: '#fff',
+                    fontWeight: 800,
+                    fontSize: '0.85rem',
+                    cursor: isGeneratingCode ? 'not-allowed' : 'pointer',
+                    opacity: isGeneratingCode ? 0.7 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    boxShadow: '0 4px 12px rgba(173, 36, 109, 0.25)'
+                  }}
+                >
+                  <i className='bx bx-refresh'></i>
+                  {isGeneratingCode ? 'Generating…' : referralCode === 'NOT-GENERATED' ? 'Generate Code' : 'Generate New'}
+                </button>
+              </div>
+
+              {referralCode !== 'NOT-GENERATED' && (
+                <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#8c7895', textAlign: 'center' }}>
+                  Generating a new code replaces your current one. Any previously shared codes will no longer work.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
