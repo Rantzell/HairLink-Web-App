@@ -78,9 +78,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let initialized = false;
+    // Marks that an auth event has begun processing, so the fallback timer
+    // doesn't flip loading to false while fetchProfile is still in flight
+    // (which would briefly show user=null and bounce ProtectedRoute to /login).
+    let eventStarted = false;
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      eventStarted = true;
       if (session?.user) {
         // Pass the token explicitly to avoid any race with the apiClient interceptor
         const profile = await fetchProfile(session.access_token);
@@ -88,16 +93,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setUser(null);
       }
-      
+
       if (!initialized) {
         initialized = true;
         setLoading(false);
       }
     });
 
-    // Fallback: If no event fires quickly, unblock anyway
+    // Fallback: If no auth event fires at all (e.g. Supabase client stalls),
+    // unblock anyway. Once an event has started, let it finish on its own.
     const timer = setTimeout(() => {
-      if (!initialized) {
+      if (!initialized && !eventStarted) {
         setLoading(false);
       }
     }, 1000);
