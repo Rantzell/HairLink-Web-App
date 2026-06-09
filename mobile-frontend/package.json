@@ -26,7 +26,6 @@
     "expo-camera": "~17.0.10",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
-    "expo-face-detector": "^13.0.2",
     "expo-file-system": "~19.0.23",
     "expo-image-picker": "~17.0.10",
     "expo-linear-gradient": "~15.0.8",
