@@ -6,16 +6,18 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  Linking,
 } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { buildArHtml } from './arHtml';
+
+// Fallback AR experience for devices that don't support ARCore Augmented Faces
+// (e.g. Galaxy A24). Uses MediaPipe FaceLandmarker in a WebView — same head
+// tracking quality, just no native depth occlusion or IMU fusion.
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const SHORT_HAIR_MODULE = require('../../assets/ar/ShortHair.glb');
@@ -31,15 +33,13 @@ const COLORS: { id: ColorId; name: string; hex: string }[] = [
   { id: 'light', name: 'Light', hex: '#c9a37a' },
 ];
 
-export default function ARScreen({ onBack }: { onBack: () => void }) {
+export default function WebViewARFallback({ onBack }: { onBack: () => void }) {
   const insets = useSafeAreaInsets();
   const webRef = useRef<WebView>(null);
 
-  const [permission, requestPermission] = useCameraPermissions();
   const [assetsReady, setAssetsReady] = useState(false);
   const [shortB64, setShortB64] = useState<string>('');
   const [longB64, setLongB64] = useState<string>('');
-
   const [style, setStyle] = useState<StyleId>('short');
   const [colorId, setColorId] = useState<ColorId>('black');
   const [webReady, setWebReady] = useState(false);
@@ -49,12 +49,6 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
     () => COLORS.find((c) => c.id === colorId)?.hex ?? COLORS[0].hex,
     [colorId],
   );
-
-  useEffect(() => {
-    if (permission && !permission.granted && permission.canAskAgain) {
-      requestPermission();
-    }
-  }, [permission]);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,8 +98,11 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
     const hex = COLORS.find((c) => c.id === id)?.hex ?? COLORS[0].hex;
     post({ type: 'setColor', value: hex });
   };
+
+  const resetFit    = () => post({ type: 'resetTransform' });
   const flipCamera  = () => post({ type: 'flipCamera' });
   const capture     = () => post({ type: 'capture' });
+  const toggleDebug = () => post({ type: 'toggleDebug' });
 
   const saveCapture = async (dataUri: string) => {
     try {
@@ -133,47 +130,6 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
       else if (msg.type === 'capture' && typeof msg.dataUri === 'string') saveCapture(msg.dataUri);
     } catch {}
   };
-
-  if (!permission) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator color="white" size="large" />
-      </View>
-    );
-  }
-
-  if (!permission.granted) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Ionicons name="camera-outline" size={60} color="white" />
-        <Text style={styles.permTitle}>Camera permission needed</Text>
-        <Text style={styles.permBody}>
-          HairLink AR needs your camera to virtually try on wig styles.
-        </Text>
-        <Pressable
-          style={styles.permButton}
-          onPress={async () => {
-            const res = await requestPermission();
-            if (!res.granted && !res.canAskAgain) {
-              Alert.alert(
-                'Permission blocked',
-                'Enable camera access in system Settings to use AR Try-On.',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Open Settings', onPress: () => Linking.openSettings() },
-                ],
-              );
-            }
-          }}
-        >
-          <Text style={styles.permButtonText}>Allow Camera</Text>
-        </Pressable>
-        <Pressable style={styles.permBack} onPress={onBack}>
-          <Text style={styles.permBackText}>Go Back</Text>
-        </Pressable>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -214,8 +170,14 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
       </Pressable>
 
       <View style={[styles.topRightStack, { top: insets.top + 12 }]}>
+        <Pressable onPress={resetFit} style={styles.iconBtn} hitSlop={10}>
+          <Ionicons name="refresh" size={20} color="white" />
+        </Pressable>
         <Pressable onPress={flipCamera} style={styles.iconBtn} hitSlop={10}>
           <Ionicons name="camera-reverse" size={22} color="white" />
+        </Pressable>
+        <Pressable onPress={toggleDebug} style={styles.iconBtn} hitSlop={10}>
+          <Ionicons name="settings-outline" size={20} color="white" />
         </Pressable>
       </View>
 
@@ -266,7 +228,6 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  center: { alignItems: 'center', justifyContent: 'center', padding: 24 },
   web: { flex: 1, backgroundColor: '#000' },
   loader: {
     ...StyleSheet.absoluteFillObject,
@@ -347,20 +308,4 @@ const styles = StyleSheet.create({
   },
   swatchActive: { borderColor: 'white', borderWidth: 3 },
   swatchLabel: { color: 'white', fontSize: 11, marginTop: 6 },
-  permTitle: { color: 'white', fontSize: 18, fontWeight: '600', marginTop: 18 },
-  permBody: {
-    color: 'rgba(255,255,255,0.75)',
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 22,
-  },
-  permButton: {
-    backgroundColor: '#ff4d8d',
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 24,
-  },
-  permButtonText: { color: 'white', fontWeight: '600' },
-  permBack: { marginTop: 14, padding: 8 },
-  permBackText: { color: 'rgba(255,255,255,0.7)' },
 });

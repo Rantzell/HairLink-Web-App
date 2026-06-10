@@ -102,41 +102,7 @@ html,body{margin:0;padding:0;overflow:hidden;width:100%;height:100%;background:#
 </div>
 <div id="status"></div>
 
-<div id="dbPanel">
-  <div id="dbHandle"></div>
-  <div class="dbTitle">⚙ Head-Fit Calibration</div>
-  <div class="dbCurrentStyle">
-    <span id="dbStyleLabel">Style: —</span>
-    <span id="dbSavedTag" class="dbSavedTag">No saved default</span>
-  </div>
-
-  <div class="dbSection">▸ POSITION (cm — head-local)</div>
-  <div class="dbRow"><span class="dbLabel">X left/right</span><input type="range" id="sl_px" class="dbSlider" min="-25" max="25" step="0.1" value="0"><span class="dbVal" id="v_px">0.0</span></div>
-  <div class="dbRow"><span class="dbLabel">Y up/down</span><input type="range" id="sl_py" class="dbSlider" min="-25" max="25" step="0.1" value="0"><span class="dbVal" id="v_py">0.0</span></div>
-  <div class="dbRow">
-    <span class="dbLabel">Z back/front</span>
-    <input type="range" id="sl_pz" class="dbSlider" min="-30" max="15" step="0.1" value="0">
-    <span class="dbVal" id="v_pz">0.0</span>
-  </div>
-  <div class="dbHint">Z slider: drag LEFT to push hair deeper into skull. Negative = into head.</div>
-
-  <div class="dbSection">▸ ROTATION (degrees)</div>
-  <div class="dbRow"><span class="dbLabel">Rot X pitch</span><input type="range" id="sl_rx" class="dbSlider" min="-90" max="90" step="0.5" value="0"><span class="dbVal" id="v_rx">0°</span></div>
-  <div class="dbRow"><span class="dbLabel">Rot Y yaw</span><input type="range" id="sl_ry" class="dbSlider" min="-90" max="90" step="0.5" value="0"><span class="dbVal" id="v_ry">0°</span></div>
-  <div class="dbRow"><span class="dbLabel">Rot Z roll</span><input type="range" id="sl_rz" class="dbSlider" min="-90" max="90" step="0.5" value="0"><span class="dbVal" id="v_rz">0°</span></div>
-
-  <div class="dbSection">▸ SCALE (head widths)</div>
-  <div class="dbRow"><span class="dbLabel">Scale X</span><input type="range" id="sl_sx" class="dbSlider" min="0.3" max="3" step="0.01" value="1"><span class="dbVal" id="v_sx">1.00</span></div>
-  <div class="dbRow"><span class="dbLabel">Scale Y</span><input type="range" id="sl_sy" class="dbSlider" min="0.3" max="3" step="0.01" value="1"><span class="dbVal" id="v_sy">1.00</span></div>
-  <div class="dbRow"><span class="dbLabel">Scale Z</span><input type="range" id="sl_sz" class="dbSlider" min="0.3" max="3" step="0.01" value="1"><span class="dbVal" id="v_sz">1.00</span></div>
-
-  <div class="dbActions">
-    <button class="dbBtn primary" id="btnSave">💾  SAVE AS DEFAULT FOR THIS STYLE</button>
-    <button class="dbBtn" id="btnReset">↺ Reset to anchor</button>
-    <button class="dbBtn" id="btnCopy">{ } Show JSON</button>
-  </div>
-  <pre id="dbJson"></pre>
-</div>
+<!-- Calibration panel removed — wig transforms are baked factory defaults. -->
 
 <script type="module">
 import * as THREE from 'three';
@@ -157,36 +123,41 @@ const VIRTUAL_CAMERA_FOV_Y = 63;
 
 // Default wig anchor relative to MediaPipe face origin (between eyes).
 // Per-style defaults because the wig's effective PIVOT differs between
-// short (we pivot at bbox center) and long (we pivot near the scalp cap
-// area, ignoring the long strands below).
+// short (we pivot at bbox center → head center) and long (we pivot near
+// the scalp cap → crown of skull).
 // Units: cm in canonical face metric space.
-const DEFAULT_ANCHOR = {
-  short: { x: 0, y: 5.0, z: -2.0 },
-  long:  { x: 0, y: 8.0, z: -2.0 },
+// Baked-in factory defaults per style — calibrated against real
+// user-head sizes and saved here so the wig drops onto the user
+// correctly the moment AR initializes, with no manual calibration.
+// Numbers in cm / radians / scale-factor. d2r(deg) = deg*PI/180.
+const DEG = Math.PI / 180;
+const FACTORY_TRANSFORM = {
+  short: {
+    px: -1.1, py: -0.8, pz: -6.0,
+    rx: 0, ry: 0, rz: 5 * DEG,
+    sx: 2.28, sy: 2.22, sz: 2.16,
+  },
+  long: {
+    px: 2.0, py: 3.8, pz: -2.1,
+    rx: 0, ry: 0, rz: 1 * DEG,
+    sx: 2.83, sy: 2.83, sz: 2.83,
+  },
 };
 
-// Reference head width that MediaPipe's CANONICAL face model has. We auto-
-// scale each GLB to this width as a starting point. After that, the
-// per-frame face-landmark measurement multiplies in a "real head size"
-// correction (see currentHeadSizeMul).
-const HEAD_WIDTH_CM = 14;
+// Wig width — set to FACE width so the wig fits real heads naturally.
+// Was 17 (skull width) before — made the wig too wide and the sides
+// projected forward of the face.
+const WIG_WIDTH_CM = 14;
 
-// Canonical face width at the temples (landmarks 234 ↔ 454) for the
-// MediaPipe canonical face. We compare measured face width against this
-// to scale the wig to the user's actual head.
-const FACE_WIDTH_BASELINE_CM = 13.5;
-
-// Smoothing factor for the per-frame head-size measurement (EMA).
-// Lower = smoother but more lag; higher = snappier but more jitter.
-const HEAD_SIZE_SMOOTH = 0.25;
-
-// Head-shaped invisible occluder dimensions (cm).
-// This is the depth proxy for the user's face/skull. Wig polygons whose
-// camera-space z is *farther* than this ellipsoid's surface get hidden,
-// which is what makes the face naturally appear in front of the wig.
+// Face-shaped depth occluder — STATIC dimensions for reliability.
+// Covers the FACE AREA only (temples → chin) but extends FORWARD toward
+// the camera so any hair geometry sticking out past the face gets clipped
+// by the depth test, letting the camera video (face) show through.
+//
+// Center is in MediaPipe canonical face space (cm). Radius is half-extent.
 const HEAD_OCCLUDER = {
-  center: { x: 0, y: 2.0, z: -3.0 },
-  radius: { x: 7.5, y: 9.5, z: 7.5 },
+  center: { x: 0, y: -1.0, z:  2.5 },  // face center, pushed forward toward camera
+  radius: { x: 7.0, y:  9.5, z:  6.0 },// face-sized, DEEP forward to clip protruding hair
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -225,93 +196,29 @@ const baseTransform = {
   long:  { scale: 1 },
 };
 
-// User-tunable transform in HEAD-LOCAL space (cm, radians, scale factors).
+// Baked transforms per style — no user adjustment.
 function makeOffset(style) {
-  const a = DEFAULT_ANCHOR[style] || DEFAULT_ANCHOR.short;
-  return {
-    px: a.x, py: a.y, pz: a.z,
-    rx: 0, ry: 0, rz: 0,
-    sx: 1, sy: 1, sz: 1,
-  };
+  const f = FACTORY_TRANSFORM[style] || FACTORY_TRANSFORM.short;
+  return { px: f.px, py: f.py, pz: f.pz, rx: f.rx, ry: f.ry, rz: f.rz, sx: f.sx, sy: f.sy, sz: f.sz };
 }
 const userOffset = {
   short: makeOffset('short'),
   long:  makeOffset('long'),
 };
 
-// Per-frame head-size multiplier derived from face-landmark measurement.
-// 1.0 = head matches canonical face size. >1.0 = user has bigger head.
-let currentHeadSizeMul = 1;
-
-// localStorage — bump key namespace each time the default-anchor scheme
-// changes so old saves don't override new sensible defaults.
-const LS_PREFIX = 'hl_mp_v2_';
-function loadSaved(style) {
-  try {
-    const raw = localStorage.getItem(LS_PREFIX + style);
-    if (raw) userOffset[style] = Object.assign(makeOffset(style), JSON.parse(raw));
-  } catch(e){}
-}
-function getSavedRaw(style) {
-  try { return localStorage.getItem(LS_PREFIX + style); } catch(e) { return null; }
-}
-function isCurrentSaved(style) {
-  const raw = getSavedRaw(style);
-  if (!raw) return false;
-  try {
-    const saved = JSON.parse(raw);
-    const u = userOffset[style];
-    const keys = ['px','py','pz','rx','ry','rz','sx','sy','sz'];
-    for (const k of keys) {
-      if (Math.abs((saved[k] ?? 0) - (u[k] ?? 0)) > 1e-4) return false;
-    }
-    return true;
-  } catch(e) { return false; }
-}
-function saveCurrent(style) {
-  try {
-    localStorage.setItem(LS_PREFIX + style, JSON.stringify(userOffset[style]));
-    send({ type: 'transformSaved', style, values: userOffset[style] });
-    showStatus('✓ Default saved for ' + style.toUpperCase() + ' — will auto-load next session', false);
-    updateSavedTag(style);
-  } catch(e) {
-    showStatus('✗ Save failed: ' + (e && e.message ? e.message : 'storage unavailable'), false);
-  }
-}
-function updateSavedTag(style) {
-  const tag = document.getElementById('dbSavedTag');
-  if (!tag) return;
-  const raw = getSavedRaw(style);
-  if (!raw) {
-    tag.textContent = 'No saved default';
-    tag.className = 'dbSavedTag dirty';
-  } else if (isCurrentSaved(style)) {
-    tag.textContent = '✓ Saved';
-    tag.className = 'dbSavedTag';
-  } else {
-    tag.textContent = '● Unsaved changes';
-    tag.className = 'dbSavedTag dirty';
-  }
-}
-loadSaved('short');
-loadSaved('long');
-
 function applyTransform(style) {
   const m = models[style];
   if (!m) return;
   const b = baseTransform[style];
   const u = userOffset[style];
-  const hm = currentHeadSizeMul;
   m.position.set(u.px, u.py, u.pz);
   m.rotation.set(u.rx, u.ry, u.rz);
-  // Final scale = (auto-fit base) × (per-frame head-size match) × (user offset)
-  m.scale.set(b.scale * hm * u.sx, b.scale * hm * u.sy, b.scale * hm * u.sz);
+  m.scale.set(b.scale * u.sx, b.scale * u.sy, b.scale * u.sz);
 }
 
 function resetOffset(style) {
   userOffset[style] = makeOffset(style);
   applyTransform(style);
-  syncPanel(style);
 }
 
 function applyColor(root, hex) {
@@ -333,130 +240,11 @@ function setVisibility(style) {
   Object.keys(models).forEach(k => { if (models[k]) models[k].visible = (k === style); });
 }
 
-// ─── Debug panel ─────────────────────────────────────────────────────────────
-const dbPanel = document.getElementById('dbPanel');
-let dbOpen = false;
-const SL = {}, VL = {};
-['px','py','pz','rx','ry','rz','sx','sy','sz'].forEach(id => {
-  SL[id] = document.getElementById('sl_' + id);
-  VL[id] = document.getElementById('v_' + id);
-});
+// (Calibration panel removed — transforms baked in FACTORY_TRANSFORM.)
+function toggleDebug() { /* no-op — panel removed */ }
 
-function syncPanel(style) {
-  const u = userOffset[style];
-  document.getElementById('dbStyleLabel').textContent = 'Style: ' + style.toUpperCase();
-  SL.px.value = u.px; VL.px.textContent = u.px.toFixed(1);
-  SL.py.value = u.py; VL.py.textContent = u.py.toFixed(1);
-  SL.pz.value = u.pz; VL.pz.textContent = u.pz.toFixed(1);
-  const rxd = r2d(u.rx), ryd = r2d(u.ry), rzd = r2d(u.rz);
-  SL.rx.value = rxd; VL.rx.textContent = rxd.toFixed(0) + '°';
-  SL.ry.value = ryd; VL.ry.textContent = ryd.toFixed(0) + '°';
-  SL.rz.value = rzd; VL.rz.textContent = rzd.toFixed(0) + '°';
-  SL.sx.value = u.sx; VL.sx.textContent = u.sx.toFixed(2);
-  SL.sy.value = u.sy; VL.sy.textContent = u.sy.toFixed(2);
-  SL.sz.value = u.sz; VL.sz.textContent = u.sz.toFixed(2);
-  updateSavedTag(style);
-}
-
-function toggleDebug() {
-  dbOpen = !dbOpen;
-  dbPanel.classList.toggle('open', dbOpen);
-  if (dbOpen) syncPanel(currentStyle);
-}
-
-function wire(id, setter, fmt) {
-  SL[id].addEventListener('input', function() {
-    const v = parseFloat(this.value);
-    setter(v);
-    VL[id].textContent = fmt(v);
-    applyTransform(currentStyle);
-    updateSavedTag(currentStyle);
-  });
-}
-wire('px', v => userOffset[currentStyle].px = v,       v => v.toFixed(1));
-wire('py', v => userOffset[currentStyle].py = v,       v => v.toFixed(1));
-wire('pz', v => userOffset[currentStyle].pz = v,       v => v.toFixed(1));
-wire('rx', v => userOffset[currentStyle].rx = d2r(v),  v => v.toFixed(0) + '°');
-wire('ry', v => userOffset[currentStyle].ry = d2r(v),  v => v.toFixed(0) + '°');
-wire('rz', v => userOffset[currentStyle].rz = d2r(v),  v => v.toFixed(0) + '°');
-wire('sx', v => userOffset[currentStyle].sx = v,       v => v.toFixed(2));
-wire('sy', v => userOffset[currentStyle].sy = v,       v => v.toFixed(2));
-wire('sz', v => userOffset[currentStyle].sz = v,       v => v.toFixed(2));
-
-document.getElementById('btnSave').addEventListener('click',  () => saveCurrent(currentStyle));
-document.getElementById('btnReset').addEventListener('click', () => resetOffset(currentStyle));
-document.getElementById('btnCopy').addEventListener('click',  () => {
-  const u = userOffset[currentStyle];
-  const out = {
-    style: currentStyle,
-    headLocal: {
-      px: +u.px.toFixed(2), py: +u.py.toFixed(2), pz: +u.pz.toFixed(2),
-      rxDeg: +r2d(u.rx).toFixed(1), ryDeg: +r2d(u.ry).toFixed(1), rzDeg: +r2d(u.rz).toFixed(1),
-      sx: +u.sx.toFixed(3), sy: +u.sy.toFixed(3), sz: +u.sz.toFixed(3),
-    },
-    baseScale: baseTransform[currentStyle].scale,
-  };
-  const j = document.getElementById('dbJson');
-  j.textContent = JSON.stringify(out, null, 2);
-  j.classList.toggle('show');
-  send({ type: 'transformJson', data: out });
-});
-
-// ─── Real-world face-width estimation (adaptive, multi-pair fallback) ───────
-// Uses normalized 2D landmarks (faceLandmarks[i] in image space [0..1]) +
-// the head's depth from the transformation matrix to back-compute the
-// user's actual face width in cm. This is what scales the wig to the
-// real head — NOT any guide overlay, NOT any fixed region.
-//
-//   apparentPx ← distance (in image pixels) between two landmarks
-//   tz_cm      ← head distance from camera (matrix translation Z)
-//   focalPx    ← virtual camera focal length: H / (2·tan(fov/2))
-//   realW_cm   = apparentPx · tz_cm / focalPx · pair.faceWidthRatio
-//
-// We try multiple landmark pairs in order of accuracy and only skip a
-// pair if BOTH landmarks are clearly outside the frame. This means the
-// estimate keeps working when the face is partially clipped — e.g. the
-// user is too close to the camera and the temples are off-screen, we
-// fall back to cheekbones; if those are off too, we use eye corners.
-//
-// Each pair has a 'faceWidthRatio' that converts the measured distance
-// into equivalent FULL face width (temple-to-temple equivalent), so the
-// scale stays consistent regardless of which pair won.
-const WIDTH_PAIRS = [
-  { a: 234, b: 454, ratio: 1.00, name: 'temples'    },
-  { a: 127, b: 356, ratio: 1.02, name: 'cheekbones' },
-  { a:  21, b: 251, ratio: 1.05, name: 'uppertemples'},
-  { a:  33, b: 263, ratio: 1.50, name: 'eyecorners' },
-];
-
-function inFrame(lm) {
-  // Allow a little slack outside [0,1] so landmarks right at the edge
-  // still count (MediaPipe extrapolates slightly).
-  return lm && lm.x > -0.05 && lm.x < 1.05 && lm.y > -0.05 && lm.y < 1.05;
-}
-
-function estimateFaceWidthCm(landmarks, mat16, videoW, videoH) {
-  if (!landmarks || !videoW || !videoH) return null;
-  const tz = Math.abs(mat16[14]);
-  if (!isFinite(tz) || tz < 5) return null;
-
-  const fovYRad = VIRTUAL_CAMERA_FOV_Y * Math.PI / 180;
-  const focalPx = videoH / (2 * Math.tan(fovYRad / 2));
-
-  for (const p of WIDTH_PAIRS) {
-    const A = landmarks[p.a], B = landmarks[p.b];
-    if (!inFrame(A) || !inFrame(B)) continue;
-
-    const dxPx = (B.x - A.x) * videoW;
-    const dyPx = (B.y - A.y) * videoH;
-    const px = Math.hypot(dxPx, dyPx);
-    if (px < 4) continue;
-
-    const realCm = (px * tz / focalPx) * p.ratio;
-    if (isFinite(realCm) && realCm >= 5 && realCm <= 30) return realCm;
-  }
-  return null;
-}
+// (Face-width estimation removed — wig scale is now fixed per-GLB.
+//  Dynamic occluder sizing from face-oval landmarks is done inside main().)
 
 // ─── Main AR loop ────────────────────────────────────────────────────────────
 let currentFacing = 'user';
@@ -558,6 +346,11 @@ async function main() {
     occluder.renderOrder = -10;   // depth-prepass before everything else
     headRoot.add(occluder);
 
+    // (Static occluder — sized at geometry creation, no per-frame update.
+    //  The buggy dynamic version was double-scaling, leaving the occluder
+    //  either huge or microscopic. A static face-sized occluder is more
+    //  reliable than chasing landmark-derived sizes every frame.)
+
     // ── Load GLB wigs ──
     const loader = new GLTFLoader();
     // DRACO decoder — some GLBs (especially from Sketchfab / asset libraries)
@@ -635,11 +428,11 @@ async function main() {
         const wrapper = new THREE.Group();
         wrapper.add(model);
 
-        // Auto-scale: width-based. We always want the head's WIDTH to match
-        // HEAD_WIDTH_CM. For long hair the bbox X is still the wig's width
-        // at the temples — depth-based scaling would shrink it incorrectly.
+        // Auto-scale: width-based, targeting the FULL SKULL width (WIG_WIDTH_CM)
+        // not the face width. This makes the wig wrap the whole head instead
+        // of clinging to the face oval.
         const widthBasis = size.x > 1e-3 ? size.x : Math.max(size.z, 1e-3);
-        const scale = HEAD_WIDTH_CM / widthBasis;
+        const scale = WIG_WIDTH_CM / widthBasis;
         baseTransform[style] = { scale };
 
         // Emit pivot+scale info so we can debug per-GLB sizing.
@@ -676,6 +469,10 @@ async function main() {
             }
           }
         });
+
+        // (Long hair shader-clip removed — was preventing AR from initializing
+        //  on some material setups. If you want to crop the long strands, use
+        //  the Y-position slider in the calibration panel to push the wig up.)
 
         wrapper.visible = (style === currentStyle);
         headRoot.add(wrapper);
@@ -727,18 +524,8 @@ async function main() {
             headRoot.visible = true;
             framesSinceDetection = 0;
 
-            // Measure the user's ACTUAL face width from whichever
-            // landmark pair is currently in-frame, and rescale the wig
-            // to match. Source of truth: detected head geometry.
-            const lms = result.faceLandmarks && result.faceLandmarks[0];
-            if (lms) {
-              const realCm = estimateFaceWidthCm(lms, mats[0].data, video.videoWidth, video.videoHeight);
-              if (realCm !== null) {
-                const target = realCm / FACE_WIDTH_BASELINE_CM;
-                currentHeadSizeMul = currentHeadSizeMul * (1 - HEAD_SIZE_SMOOTH) + target * HEAD_SIZE_SMOOTH;
-                applyTransform(currentStyle);
-              }
-            }
+            // (Occluder is static — no per-frame resize. The static face-sized
+            //  occluder reliably hides hair that protrudes in front of the face.)
           } else {
             framesSinceDetection++;
             // Keep last pose for a short grace period; only hide after.
@@ -761,75 +548,8 @@ async function main() {
       camera.updateProjectionMatrix();
     });
 
-    // ── Touch gestures ──
-    // Operate in HEAD-LOCAL cm. 1px ≈ 0.05cm felt about right.
-    const PAN_FACTOR = 0.06;
-    let touch = null;
-    function ptDist(a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); }
-    function ptAng(a, b)  { return Math.atan2(a.clientY - b.clientY, a.clientX - b.clientX); }
-
-    function syncPanelMaybe() {
-      if (dbOpen) syncPanel(currentStyle);
-      else updateSavedTag(currentStyle);
-    }
-
-    document.addEventListener('touchstart', e => {
-      if (dbOpen && dbPanel.contains(e.target)) return;
-      if (e.touches.length === 1) {
-        touch = { mode:'pan', x0:e.touches[0].clientX, y0:e.touches[0].clientY, base: { ...userOffset[currentStyle] } };
-      } else if (e.touches.length === 2) {
-        touch = {
-          mode:'pinch',
-          d0: ptDist(e.touches[0],e.touches[1]),
-          a0: ptAng(e.touches[0],e.touches[1]),
-          cy0: (e.touches[0].clientY + e.touches[1].clientY) / 2,
-          base: { ...userOffset[currentStyle] },
-        };
-      }
-    }, { passive: false });
-
-    document.addEventListener('touchmove', e => {
-      if (!touch) return;
-      if (dbOpen && dbPanel.contains(e.target)) return;
-      e.preventDefault();
-      const u = userOffset[currentStyle];
-      if (touch.mode === 'pan' && e.touches.length === 1) {
-        const dx = e.touches[0].clientX - touch.x0;
-        const dy = e.touches[0].clientY - touch.y0;
-        // Mirror: dragging right in selfie view should move wig viewer-right.
-        // With CSS scaleX(-1), screen-X is flipped, so negate dx.
-        const isMirror = document.getElementById('stage').classList.contains('mirror');
-        u.px = touch.base.px + (isMirror ? -dx : dx) * PAN_FACTOR;
-        u.py = touch.base.py - dy * PAN_FACTOR;
-        applyTransform(currentStyle);
-        syncPanelMaybe();
-      } else if (touch.mode === 'pinch' && e.touches.length === 2) {
-        const d  = ptDist(e.touches[0], e.touches[1]);
-        const a  = ptAng(e.touches[0],  e.touches[1]);
-        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-        const sf = d / (touch.d0 || 1);
-
-        // Pinch → uniform scale
-        const ns = Math.max(0.3, Math.min(3, touch.base.sx * sf));
-        u.sx = ns; u.sy = ns; u.sz = ns;
-
-        // Twist → rot Z
-        u.rz = touch.base.rz + (a - touch.a0);
-
-        // Centroid vertical drag → Pos Z (depth)
-        //   drag UP   = push hair backward, into skull (Z decreases)
-        //   drag DOWN = pull hair forward, away from skull (Z increases)
-        const dyCenter = cy - touch.cy0;
-        const Z_FACTOR = 0.05; // cm per pixel
-        u.pz = Math.max(-30, Math.min(15, touch.base.pz + dyCenter * Z_FACTOR));
-
-        applyTransform(currentStyle);
-        syncPanelMaybe();
-      }
-    }, { passive: false });
-
-    document.addEventListener('touchend',    e => { if (e.touches.length === 0) touch = null; }, { passive: false });
-    document.addEventListener('touchcancel', () => { touch = null; }, { passive: false });
+    // (Touch gestures removed — transforms are baked factory defaults,
+    //  so per-session pan/pinch/twist adjustments are no longer needed.)
 
     // ── Camera flip ──
     window.__flipCamera = async function() {
@@ -925,19 +645,14 @@ function handleMessage(raw) {
   if (msg.type === 'setStyle') {
     currentStyle = msg.value;
     setVisibility(msg.value);
-    if (dbOpen) syncPanel(msg.value);
   } else if (msg.type === 'setColor') {
     currentColor = msg.value;
     const m = models[currentStyle];
     if (m) applyColor(m, msg.value);
-  } else if (msg.type === 'resetTransform') {
-    resetOffset(currentStyle);
   } else if (msg.type === 'flipCamera') {
     if (window.__flipCamera) window.__flipCamera();
   } else if (msg.type === 'capture') {
     if (window.__capture) window.__capture();
-  } else if (msg.type === 'toggleDebug') {
-    toggleDebug();
   }
 }
 window.addEventListener('message',   e => handleMessage(e.data));

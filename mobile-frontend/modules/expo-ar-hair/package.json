@@ -1,0 +1,8 @@
+{
+  "name": "expo-ar-hair",
+  "version": "1.0.0",
+  "description": "Native ARCore Augmented Faces hair try-on view",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "private": true
+}
