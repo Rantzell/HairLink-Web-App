@@ -151,9 +151,7 @@ const WigmakerHairBatchTracking: React.FC = () => {
                       </button>
                     )}
 
-                    <Link to={`/wigmaker/task/${task.taskCode}`} style={{ padding: '0.4rem 0.9rem', borderRadius: '50px', border: '1.5px solid #ad246d', color: '#ad246d', fontWeight: 800, fontSize: '0.75rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                      Open Task <i className="bx bx-chevron-right"></i>
-                    </Link>
+
 
                     {/* Collapse toggle */}
                     {donations.length > 0 && (

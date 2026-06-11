@@ -8,6 +8,7 @@ import { taskUpdateSchema, materialConfirmationSchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { uploadFile } from '../services/storage.service';
 import { notifyDonationStatus, notifyStaffWigmakerCompletedWig, notifyStaffWigmakerReceivedMaterial, notifyStaffMissingHair, notifyStaffHairReceived } from '../services/notification.service';
+import { generateSequentialReference } from '../services/reference.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -367,6 +368,94 @@ router.post('/tasks/:taskCode/complete-task', ...wmOnly, upload.single('previewP
   } catch (err) {
     console.error('[Wigmaker API] Complete task error:', err);
     res.status(500).json({ error: 'Failed to complete task' });
+  }
+});
+
+// POST /internal-api/wigmaker/wigs/create-free
+router.post('/wigs/create-free', ...wmOnly, upload.single('previewPhoto'), async (req, res) => {
+  try {
+    const { wigLength, wigColor, progressNotes, updatedAt } = req.body;
+    if (!wigLength || !wigColor) {
+      res.status(400).json({ message: 'Wig length and color are required.' });
+      return;
+    }
+
+    let parentTask: any = null;
+    let parentWigCode = '';
+    let childWigCode = '';
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const tc = await generateSequentialReference('WB');
+      const seqPart = tc.replace(/^(WB|WIG)\s+/i, '');
+      parentWigCode = `WB ${seqPart}`;
+      childWigCode = `WIG ${seqPart}-W1`;
+      try {
+        parentTask = await prisma.wigProduction.create({
+          data: {
+            taskCode: parentWigCode,
+            wigmakerId: req.user!.id,
+            status: 'completed',
+            isReceived: true,
+            targetLength: wigLength,
+            targetColor: wigColor,
+          }
+        });
+        break;
+      } catch (createErr: any) {
+        if (createErr?.code !== 'P2002' || !String(createErr?.meta?.target || '').includes('task_code')) {
+          throw createErr;
+        }
+      }
+    }
+    if (!parentTask) {
+      res.status(409).json({ message: 'Unable to generate a unique wig task code. Please try again.' });
+      return;
+    }
+
+    let photoPath = null;
+    if (req.file) {
+      photoPath = await uploadFile(req.file, 'hairlink', 'production/previews');
+    }
+
+    const newWig = await prisma.wigProduction.create({
+      data: {
+        taskCode: childWigCode,
+        wigmakerId: req.user!.id,
+        targetLength: wigLength,
+        targetColor: wigColor,
+        preview_photo: photoPath,
+        status: 'completed', // Production Finished
+        isReceived: true,
+      }
+    });
+
+    const historyMetadata = photoPath ? { preview_photo: photoPath } : null;
+    const parentHistory = await createStatusHistory(WIG_TYPE, parentTask.id, 'completed', 'Standalone production task completed by wigmaker.', historyMetadata);
+    const childHistory = await createStatusHistory(WIG_TYPE, newWig.id, 'completed', progressNotes || 'Wig created freely by wigmaker.', historyMetadata);
+
+    if (updatedAt) {
+      const uDate = new Date(updatedAt);
+      await prisma.statusHistory.update({
+        where: { id: parentHistory.id },
+        data: { createdAt: uDate }
+      });
+      await prisma.statusHistory.update({
+        where: { id: childHistory.id },
+        data: { createdAt: uDate }
+      });
+      await prisma.wigProduction.update({
+        where: { id: parentTask.id },
+        data: { createdAt: uDate, updatedAt: uDate }
+      });
+      await prisma.wigProduction.update({
+        where: { id: newWig.id },
+        data: { createdAt: uDate, updatedAt: uDate }
+      });
+    }
+
+    res.json({ message: 'Wig created successfully and added to inventory.', success: true, taskCode: childWigCode });
+  } catch (err) {
+    console.error('[Wigmaker API] Create free wig error:', err);
+    res.status(500).json({ error: 'Failed to create wig' });
   }
 });
 

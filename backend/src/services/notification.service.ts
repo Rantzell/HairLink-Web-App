@@ -396,6 +396,52 @@ export const notifyStaffHairReceived = async (taskCode: string, batchRef: string
   }
 };
 
+export const notifyStaffDeliveryScheduled = async (donorName: string, reference: string, scheduledAt: Date) => {
+  try {
+    const staff = await prisma.user.findMany({ where: { role: 'staff', isActive: true }, select: { id: true } });
+    if (staff.length === 0) return;
+    const when = scheduledAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    await prisma.notifications.createMany({
+      data: staff.map((s) => ({
+        user_id: s.id,
+        title: 'Hair Delivery Scheduled 📅',
+        message: `${donorName} scheduled to send their hair donation (${reference}) on ${when}.`,
+        type: 'staff_donation',
+        is_read: false,
+      })),
+    });
+  } catch (err) {
+    console.error('[Notify] notifyStaffDeliveryScheduled failed:', err);
+  }
+};
+
+export const notifyDonorDeliveryDue = async (userId: string, reference: string) => {
+  return createNotification(
+    userId,
+    'Time to Send Your Hair Donation! 📦',
+    `Today is your scheduled date to send your hair donation (${reference}). Please proceed with the drop-off and submit your delivery tracking link on the tracking page.`,
+    'donation'
+  );
+};
+
+export const notifyStaffDeliveryDue = async (donorName: string, reference: string) => {
+  try {
+    const staff = await prisma.user.findMany({ where: { role: 'staff', isActive: true }, select: { id: true } });
+    if (staff.length === 0) return;
+    await prisma.notifications.createMany({
+      data: staff.map((s) => ({
+        user_id: s.id,
+        title: 'Hair Delivery Due Today 📦',
+        message: `${donorName}'s hair donation (${reference}) is scheduled for delivery today. Watch for their tracking link.`,
+        type: 'staff_donation',
+        is_read: false,
+      })),
+    });
+  } catch (err) {
+    console.error('[Notify] notifyStaffDeliveryDue failed:', err);
+  }
+};
+
 export const notifyStaffMissingHair = async (taskCode: string, batchRef: string, donationReference: string, wigmakerName: string) => {
   try {
     const staff = await prisma.user.findMany({ where: { role: 'staff', isActive: true }, select: { id: true } });

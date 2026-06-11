@@ -41,6 +41,8 @@ export interface Donation {
   status: string;
   certificateNo: string | null;
   donorDeliveryLink: string | null;
+  scheduledDeliveryAt: string | null;
+  deliveryDueNotified?: boolean | null;
   receivedWigAt: string | null;
   wigProductionId?: number | null;
   createdAt: string;

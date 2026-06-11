@@ -872,6 +872,14 @@ const StaffRealtimeTracking: React.FC = () => {
                                   </button>
                                 </div>
                                 <span className="tracking-ref-date">{wp.taskCode}</span>
+                                {wp.createdAt && (
+                                  <span className="tracking-ref-date" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                    <i className='bx bx-calendar'></i>
+                                    {new Date(wp.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    {' · '}
+                                    {new Date(wp.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="tracking-cell">

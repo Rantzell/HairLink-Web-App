@@ -9,6 +9,27 @@ import { getPublicUrl } from '../lib/storage';
 import ConfirmModal from '../components/ConfirmModal';
 import '../styles/WigmakerTaskDetail.css';
 
+/** Returns the current date/time in Philippines Time (UTC+8) formatted for datetime-local (YYYY-MM-DDTHH:mm) */
+function getPhilippinesDateTimeLocal(): string {
+  const d = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  const parts = formatter.formatToParts(d);
+  const year = parts.find(p => p.type === 'year')?.value;
+  const month = parts.find(p => p.type === 'month')?.value;
+  const day = parts.find(p => p.type === 'day')?.value;
+  const hour = parts.find(p => p.type === 'hour')?.value;
+  const minute = parts.find(p => p.type === 'minute')?.value;
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
 const WigmakerTaskDetail: React.FC = () => {
   const { taskCode } = useParams<{ taskCode: string }>();
   const [data, setData] = useState<{ task: any; histories: any[] } | null>(null);
@@ -20,11 +41,9 @@ const WigmakerTaskDetail: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [targetStatus, setTargetStatus] = useState<string | null>(null);
-  const [customDate, setCustomDate] = useState(new Date().toISOString().slice(0, 16));
+  const [customDate, setCustomDate] = useState(() => getPhilippinesDateTimeLocal());
   const todayMin = useMemo(() => {
-    const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    return getPhilippinesDateTimeLocal();
   }, []);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showMaterialConfirm, setShowMaterialConfirm] = useState(false);

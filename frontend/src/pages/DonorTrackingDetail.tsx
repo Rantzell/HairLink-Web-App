@@ -7,6 +7,21 @@ import LoadingScreen from '../components/LoadingScreen';
 import { getPublicUrl } from '../lib/storage';
 import ConfirmModal from '../components/ConfirmModal';
 
+function todayMin(): string {
+  const d = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const parts = formatter.formatToParts(d);
+  const year = parts.find(p => p.type === 'year')?.value;
+  const month = parts.find(p => p.type === 'month')?.value;
+  const day = parts.find(p => p.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
+}
+
 const DonorTrackingDetail: React.FC = () => {
   const { reference } = useParams<{ reference: string }>();
   const [donation, setDonation] = useState<Donation | null>(null);
@@ -16,6 +31,11 @@ const DonorTrackingDetail: React.FC = () => {
   const [linkSuccess, setLinkSuccess] = useState(false);
   const [linkError, setLinkError] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [scheduleError, setScheduleError] = useState('');
+  const [showRescheduleForm, setShowRescheduleForm] = useState(false);
 
   const fetchDetail = async () => {
     try {
@@ -58,8 +78,38 @@ const DonorTrackingDetail: React.FC = () => {
     }
   };
 
+  const handleScheduleDelivery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scheduleDate) return;
+    setIsScheduling(true);
+    setScheduleError('');
+    try {
+      const [y, m, d] = scheduleDate.split('-').map(Number);
+      const localMidnight = new Date(y, m - 1, d); // local timezone midnight
+      await apiClient.post(`/internal-api/donations/${reference}/schedule-delivery`, {
+        scheduled_delivery_at: localMidnight.toISOString(),
+      });
+      setShowRescheduleForm(false);
+      setScheduleDate('');
+      fetchDetail();
+    } catch (err: any) {
+      setScheduleError(err.response?.data?.error || err.response?.data?.message || 'Failed to schedule delivery');
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
   if (loading) return <LoadingScreen />;
   if (!donation) return <div className="section-wrap">Donation not found.</div>;
+
+  const scheduledAt = donation.scheduledDeliveryAt ? new Date(donation.scheduledDeliveryAt) : null;
+  // Compare local date strings (YYYY-MM-DD) so that a date like "2026-06-12" stored as
+  // UTC midnight (= 8 AM PHT) still counts as "due" from 12:00 AM local time onward.
+  const deliveryDue = !!scheduledAt && (() => {
+    const todayStr = new Date().toLocaleDateString('en-CA');          // local YYYY-MM-DD
+    const scheduledStr = scheduledAt.toLocaleDateString('en-CA');     // local YYYY-MM-DD
+    return scheduledStr <= todayStr;
+  })();
 
   return (
     <section className="section-wrap donor-module-page reveal active">
@@ -137,26 +187,96 @@ const DonorTrackingDetail: React.FC = () => {
             ))}
           </ul>
 
-          {donation.status === 'Verified' && (
+          {donation.status === 'Verified' && !deliveryDue && (
+            <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#fdf7fb', border: '1.5px dashed #ad246d', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+                <i className='bx bx-calendar-event' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
+                <h4 style={{ margin: 0, color: '#3b2e43' }}>
+                  {scheduledAt ? 'Delivery Date Scheduled' : 'Schedule Your Hair Delivery'}
+                </h4>
+              </div>
+
+              {scheduledAt && !showRescheduleForm ? (
+                <>
+                  <p style={{ fontSize: '0.85rem', color: '#4d3f56', marginBottom: '0.75rem' }}>
+                    You're scheduled to send your hair donation on{' '}
+                    <strong style={{ color: '#ad246d' }}>
+                      {scheduledAt.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                    </strong>.
+                    On that day, this page will let you submit your delivery tracking link.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setShowRescheduleForm(true); setScheduleDate(''); }}
+                    className="soft-btn"
+                    style={{ background: '#fff', color: '#ad246d', border: '1.5px solid #ead7e8', padding: '0.5rem 1.25rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}
+                  >
+                    Reschedule
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: '0.8rem', color: '#8c7895', marginBottom: '1rem' }}>
+                    Pick the date you plan to send your donated hair to us. We'll notify our staff right away, and on the day you choose, you'll be able to submit your delivery tracking link here.
+                  </p>
+                  <form onSubmit={handleScheduleDelivery} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <input
+                      type="date"
+                      value={scheduleDate}
+                      onChange={e => setScheduleDate(e.target.value)}
+                      min={todayMin()}
+                      required
+                      style={{ flex: 1, minWidth: '160px', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.85rem' }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={isScheduling}
+                      className="soft-btn"
+                      style={{ background: '#ad246d', color: '#fff', border: 'none', padding: '0 1.5rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}
+                    >
+                      {isScheduling ? '...' : 'Confirm Date'}
+                    </button>
+                    {scheduledAt && (
+                      <button
+                        type="button"
+                        onClick={() => setShowRescheduleForm(false)}
+                        className="soft-btn"
+                        style={{ background: '#fff', color: '#8c7895', border: '1.5px solid #ead7e8', padding: '0 1.25rem', borderRadius: '10px', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </form>
+                  {scheduleError && (
+                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: '#e03c3c', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <i className='bx bx-error-circle'></i> {scheduleError}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {donation.status === 'Verified' && deliveryDue && (
             <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#fdf7fb', border: '1.5px dashed #ad246d', borderRadius: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
                 <i className='bx bx-package' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
                 <h4 style={{ margin: 0, color: '#3b2e43' }}>Submit Delivery Tracking Link</h4>
               </div>
               <p style={{ fontSize: '0.8rem', color: '#8c7895', marginBottom: '1rem' }}>
-                Please provide the tracking URL or delivery reference link from your courier (e.g., Grab, Lalamove, J&T) so our staff can monitor the arrival.
+                Today is your scheduled delivery date! Please provide the tracking URL or delivery reference link from your courier (e.g., Grab, Lalamove, J&T) so our staff can monitor the arrival.
               </p>
               <form onSubmit={handleSubmitLink} style={{ display: 'flex', gap: '0.75rem' }}>
-                <input 
-                  type="url" 
-                  placeholder="https://tracking-link.com/..." 
+                <input
+                  type="url"
+                  placeholder="https://tracking-link.com/..."
                   value={deliveryLink}
                   onChange={e => setDeliveryLink(e.target.value)}
                   required
                   style={{ flex: 1, padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.85rem' }}
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={isSubmittingLink}
                   className="soft-btn"
                   style={{ background: '#ad246d', color: '#fff', border: 'none', padding: '0 1.5rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}

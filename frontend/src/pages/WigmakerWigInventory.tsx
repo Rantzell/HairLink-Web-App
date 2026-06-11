@@ -1,8 +1,31 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import { getPublicUrl } from '../lib/storage';
+import '../styles/WigmakerTaskDetail.css';
+
+/** Returns the current date/time in Philippines Time (UTC+8) formatted for datetime-local (YYYY-MM-DDTHH:mm) */
+function getPhilippinesDateTimeLocal(): string {
+  const d = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  const parts = formatter.formatToParts(d);
+  const year = parts.find(p => p.type === 'year')?.value;
+  const month = parts.find(p => p.type === 'month')?.value;
+  const day = parts.find(p => p.type === 'day')?.value;
+  const hour = parts.find(p => p.type === 'hour')?.value;
+  const minute = parts.find(p => p.type === 'minute')?.value;
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
 
 const WigmakerWigInventory: React.FC = () => {
   const [wigs, setWigs] = useState<any[]>([]);
@@ -12,6 +35,17 @@ const WigmakerWigInventory: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filter, setFilter] = useState<'all' | 'completed' | 'shipped' | 'received'>('all');
+
+  // Add Wig Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [wigLength, setWigLength] = useState<'short' | 'long' | ''>('');
+  const [wigColor, setWigColor] = useState<'black' | 'brown' | 'light' | ''>('');
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [customDate, setCustomDate] = useState(() => getPhilippinesDateTimeLocal());
+  const todayMin = React.useMemo(() => {
+    return getPhilippinesDateTimeLocal();
+  }, []);
 
   const fetchWigs = async () => {
     try {
@@ -28,6 +62,20 @@ const WigmakerWigInventory: React.FC = () => {
   useEffect(() => {
     fetchWigs();
   }, []);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isAddModalOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isAddModalOpen]);
+
+  // Set custom date when modal opens
+  useEffect(() => {
+    if (isAddModalOpen) {
+      setCustomDate(getPhilippinesDateTimeLocal());
+    }
+  }, [isAddModalOpen]);
 
   const toggleSelect = (id: number) => {
     setSelectedWigIds(prev =>
@@ -81,6 +129,44 @@ const WigmakerWigInventory: React.FC = () => {
     }
   };
 
+  const handleAddWigSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!wigLength || !wigColor) {
+      toast.error('Please select both length and color.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('wigLength', wigLength);
+      formData.append('wigColor', wigColor);
+      formData.append('updatedAt', new Date(customDate).toISOString());
+      if (file) formData.append('previewPhoto', file);
+
+      await apiClient.post('/internal-api/wigmaker/wigs/create-free', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      toast.success('Wig added to inventory successfully.');
+      setIsAddModalOpen(false);
+      
+      // Reset form
+      setWigLength('');
+      setWigColor('');
+      setFile(null);
+      setPreviewUrl(null);
+      
+      // Reload inventory
+      fetchWigs();
+    } catch (err: any) {
+      console.error('Wig creation failed:', err);
+      toast.error(err.response?.data?.message || 'Failed to add wig.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) {
     return <div className="wigmaker-page staff-page">Loading wig inventory...</div>;
   }
@@ -99,9 +185,33 @@ const WigmakerWigInventory: React.FC = () => {
             Manage your completed wigs, batch ship them to the staff, and track return status.
           </p>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)' }}>
-          <span className="tracking-active-dot"></span>
-          {wigs.length} Total Wigs
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            style={{
+              background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)',
+              color: '#fff',
+              border: 'none',
+              padding: '0.5rem 1.25rem',
+              borderRadius: '10px',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 4px 12px rgba(173, 36, 109, 0.15)',
+              transition: 'all 0.2s ease'
+            }}
+            className="soft-btn"
+          >
+            <i className="bx bx-plus-circle"></i> Add Wig
+          </button>
+          <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)' }}>
+            <span className="tracking-active-dot"></span>
+            {wigs.length} Total Wigs
+          </div>
         </div>
       </div>
 
@@ -380,6 +490,182 @@ const WigmakerWigInventory: React.FC = () => {
           </table>
         </div>
       </article>
+
+      {isAddModalOpen && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setIsAddModalOpen(false); }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 999999,
+            background: 'rgba(30, 18, 36, 0.55)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem',
+            animation: 'cmFadeIn 0.18s ease',
+          }}
+        >
+          <style>{`
+            @keyframes cmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes cmSlideUp { from { opacity: 0; transform: translateY(20px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            #add-wig-modal-card { animation: cmSlideUp 0.22s cubic-bezier(0.34, 1.56, 0.64, 1); }
+          `}</style>
+          <div
+            id="add-wig-modal-card"
+            style={{
+              background: '#fff',
+              borderRadius: '24px',
+              boxShadow: '0 32px 80px rgba(173, 36, 109, 0.18), 0 8px 24px rgba(0,0,0,0.12)',
+              padding: '2rem',
+              maxWidth: '520px',
+              width: '100%',
+              border: '1px solid #ead7e8',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #f2ebf4', paddingBottom: '0.8rem' }}>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <i className="bx bxs-crown" style={{ color: '#ad246d' }}></i> Add Wig to Inventory
+              </h2>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8c7895', fontSize: '1.5rem', fontWeight: 300, lineHeight: 1 }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleAddWigSubmit} style={{ display: 'grid', gap: '1.2rem' }}>
+              <div className="task-detail-spec-selectors" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', display: 'grid' }}>
+                <div className="task-detail-spec-group">
+                  <label className="task-detail-form-label">Wig Length <span className="task-detail-form-label-required">*</span></label>
+                  <div className="task-detail-spec-options" style={{ display: 'flex', gap: '0.5rem' }}>
+                    {[{ val: 'short', label: 'Short', sub: '10–14 in' }, { val: 'long', label: 'Long', sub: '15+ in' }].map(opt => (
+                      <button
+                        key={opt.val}
+                        type="button"
+                        className={`task-detail-spec-option ${wigLength === opt.val ? 'selected' : ''}`}
+                        onClick={() => setWigLength(opt.val as 'short' | 'long')}
+                        style={{ padding: '0.4rem', flex: 1, minWidth: '80px', outline: 'none' }}
+                      >
+                        <strong>{opt.label}</strong>
+                        <small style={{ display: 'block', fontSize: '0.65rem', fontWeight: 400 }}>{opt.sub}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="task-detail-spec-group">
+                  <label className="task-detail-form-label">Wig Color <span className="task-detail-form-label-required">*</span></label>
+                  <div className="task-detail-spec-options" style={{ display: 'flex', gap: '0.5rem' }}>
+                    {[{ val: 'black', label: 'Black', color: '#1a1a1a' }, { val: 'brown', label: 'Brown', color: '#7B4F2A' }, { val: 'light', label: 'Light', color: '#C9A96E' }].map(opt => (
+                      <button
+                        key={opt.val}
+                        type="button"
+                        className={`task-detail-spec-option ${wigColor === opt.val ? 'selected' : ''}`}
+                        onClick={() => setWigColor(opt.val as 'black' | 'brown' | 'light')}
+                        style={{ padding: '0.4rem 0.5rem', flex: 1, minWidth: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', outline: 'none' }}
+                      >
+                        <span className="task-detail-spec-color-dot" style={{ background: opt.color, margin: 0 }}></span>
+                        <strong>{opt.label}</strong>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="task-detail-form-row-2col">
+                <div>
+                  <label className="task-detail-form-label">Upload Photo (Optional)</label>
+                  <div className="task-detail-form-photo-upload-wrapper">
+                    {previewUrl && (
+                      <div className="task-detail-form-photo-preview">
+                        <img src={previewUrl} alt="Preview" className="task-detail-form-photo-preview-img" />
+                        <button
+                          type="button"
+                          onClick={() => { setFile(null); setPreviewUrl(null); }}
+                          className="task-detail-form-photo-preview-remove"
+                        >
+                          <i className="bx bx-x"></i>
+                        </button>
+                      </div>
+                    )}
+                    <label className="task-detail-form-photo-upload-label">
+                      <i className="bx bx-camera task-detail-form-photo-upload-icon"></i>
+                      <span className="task-detail-form-photo-upload-text">{file ? file.name : 'Upload Photo'}</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg, image/png, image/webp"
+                        onChange={e => {
+                          const f = e.target.files?.[0] || null;
+                          setFile(f);
+                          if (f) setPreviewUrl(URL.createObjectURL(f));
+                          else setPreviewUrl(null);
+                        }}
+                        className="task-detail-file-input"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="task-detail-form-label">Timestamp</label>
+                  <input
+                    type="datetime-local"
+                    value={customDate}
+                    onChange={e => setCustomDate(e.target.value)}
+                    min={todayMin}
+                    className="task-detail-form-input-text"
+                  />
+                </div>
+              </div>
+
+
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  disabled={isSubmitting}
+                  style={{
+                    height: '44px', borderRadius: '50px',
+                    border: '1.5px solid #ead7e8', background: '#fff',
+                    color: '#5d4d62', fontWeight: 700, fontSize: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  style={{
+                    height: '44px', borderRadius: '50px',
+                    border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)',
+                    color: '#fff', fontWeight: 700, fontSize: '0.85rem',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    opacity: isSubmitting ? 0.75 : 1,
+                    boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
+                  }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <i className="bx bx-loader-alt bx-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-plus-circle" />
+                      Add Wig
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
     </section>
   );
 };

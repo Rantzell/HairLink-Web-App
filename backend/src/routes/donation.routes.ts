@@ -3,10 +3,10 @@ import multer from 'multer';
 import prisma from '../config/database';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { donationCreateSchema, donationStatusSchema, deliveryLinkSchema } from '../schemas';
+import { donationCreateSchema, donationStatusSchema, deliveryLinkSchema, scheduleDeliverySchema } from '../schemas';
 import { createStatusHistory, getStatusHistories } from '../services/statusHistory.service';
 import { uploadFile, getPublicUrl } from '../services/storage.service';
-import { notifyDonationStatus, notifyStaffNewDonation } from '../services/notification.service';
+import { notifyDonationStatus, notifyStaffNewDonation, notifyStaffDeliveryScheduled } from '../services/notification.service';
 import { generateSequentialReference } from '../services/reference.service';
 
 const router = Router();
@@ -281,6 +281,39 @@ router.post('/:reference/status', authenticate, validate(donationStatusSchema), 
     console.error('[Donation] Status update error:', err);
     res.status(500).json({ error: 'Failed to update status' });
   }
+});
+
+// POST /internal-api/donations/:reference/schedule-delivery
+router.post('/:reference/schedule-delivery', authenticate, validate(scheduleDeliverySchema), async (req: Request, res: Response) => {
+  try {
+    const donation = await prisma.donation.findFirst({
+      where: { reference: req.params.reference as string, userId: req.user!.id },
+    });
+    if (!donation) { res.status(404).json({ message: 'Donation not found' }); return; }
+    if (donation.status !== 'Verified') {
+      res.status(422).json({ error: 'Delivery can only be scheduled for verified donations.' });
+      return;
+    }
+
+    const scheduledAt = new Date(req.body.scheduled_delivery_at);
+    if (scheduledAt < new Date()) {
+      res.status(422).json({ error: 'Scheduled date cannot be in the past.' });
+      return;
+    }
+
+    await prisma.donation.update({
+      where: { id: donation.id },
+      data: { scheduledDeliveryAt: scheduledAt, deliveryDueNotified: false },
+    });
+
+    const when = scheduledAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    await createStatusHistory(DONATION_TYPE, donation.id, donation.status!, `Donor scheduled hair delivery for ${when}.`);
+    await notifyStaffDeliveryScheduled(req.user!.name || 'A donor', donation.reference!, scheduledAt);
+
+    const updated = await prisma.donation.findUnique({ where: { id: donation.id }, include: { user: true } });
+    const statusHistories = await getStatusHistories(DONATION_TYPE, donation.id);
+    res.json({ ...serializeDonation(updated), statusHistories });
+  } catch (err) { res.status(500).json({ error: 'Failed to schedule delivery' }); }
 });
 
 // POST /internal-api/donations/:reference/delivery-link

@@ -86,6 +86,8 @@ model Donation {
   photoFront        String?        @map("photo_front")
   photoSide         String?        @map("photo_side")
   donorDeliveryLink String?        @map("donor_delivery_link")
+  scheduledDeliveryAt DateTime?    @map("scheduled_delivery_at") @db.Timestamptz(6)
+  deliveryDueNotified Boolean?     @default(false) @map("delivery_due_notified")
   createdAt         DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime?      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   wigProductionId   Int?           @map("wig_production_id")

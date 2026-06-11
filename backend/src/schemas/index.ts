@@ -63,6 +63,10 @@ export const deliveryLinkSchema = z.object({
   donor_delivery_link: z.string().min(1),
 });
 
+export const scheduleDeliverySchema = z.object({
+  scheduled_delivery_at: z.string().min(1),
+});
+
 // ── Hair Requests ──
 export const requestCreateSchema = z.object({
   reference: z.string().min(1),
