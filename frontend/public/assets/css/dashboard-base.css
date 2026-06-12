@@ -15,6 +15,10 @@
     padding: 0;
 }
 
+html {
+    overflow-x: hidden;
+}
+
 body {
     min-height: 100vh;
     font-family: 'Inter', sans-serif;
@@ -23,6 +27,8 @@ body {
         radial-gradient(circle at 8% 14%, #f6deef 0, transparent 44%),
         radial-gradient(circle at 92% 86%, #ddd0f4 0, transparent 34%),
         var(--dash-bg);
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 a {
@@ -371,6 +377,24 @@ a {
     .dash-links .logout-btn {
         text-align: center;
         width: 100%;
+    }
+
+    .dash-main {
+        width: 94vw;
+    }
+}
+
+@media (max-width: 480px) {
+    .dash-main {
+        width: 96vw;
+    }
+
+    .section-wrap {
+        padding: 1rem;
+    }
+
+    .form-grid.two-col {
+        grid-template-columns: 1fr;
     }
 }
 

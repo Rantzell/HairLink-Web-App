@@ -741,6 +741,10 @@
         grid-template-columns: 1fr;
     }
 
+    .staff-bar {
+        flex-wrap: wrap;
+    }
+
     .match-left {
         border-right: 0;
         padding-right: 0;

@@ -3,6 +3,23 @@
   grid-template-columns: 280px 1fr;
   gap: 1.5rem;
 }
+
+@media (max-width: 768px) {
+  .match-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .match-left {
+    border-right: none;
+    border-bottom: 1px solid #f2ebf4;
+    padding-right: 0;
+    padding-bottom: 1.5rem;
+  }
+
+  .wig-options {
+    grid-template-columns: 1fr;
+  }
+}
 .match-left {
   border-right: 1px solid #f2ebf4;
   padding-right: 1.5rem;

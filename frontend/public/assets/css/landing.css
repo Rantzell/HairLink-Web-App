@@ -678,7 +678,8 @@ img {
 }
 
 .footer-subscribe {
-    min-width: 320px;
+    min-width: 0;
+    width: 100%;
 }
 
 .footer-subscribe p {

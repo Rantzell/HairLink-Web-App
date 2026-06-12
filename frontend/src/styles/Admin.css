@@ -51,6 +51,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .admin-header-row-end {
@@ -58,6 +60,8 @@
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 /* ── Summary / Stat Grid ── */
@@ -214,6 +218,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .admin-toolbar-title {
@@ -1771,6 +1777,71 @@
   font-size: 0.65rem;
   font-weight: 800;
   display: inline-block;
+}
+
+/* ── Mobile Responsive (Admin) ── */
+@media (max-width: 768px) {
+  .admin-ops-layout,
+  .admin-form-two-col,
+  .admin-form-two-col-sm {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-report-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .admin-report-audit-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-hero-side {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .admin-btn-row,
+  .admin-btn-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-four-col-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sd-content,
+  .rc-content {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-report-audit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-ops-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-modal-box {
+    padding: 1.25rem;
+    width: 95%;
+    max-width: 95vw;
+  }
+
+  .admin-four-col-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-header-row,
+  .admin-header-row-end {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .admin-status-pill-success,

@@ -87,6 +87,9 @@
     color: #2d2531;
     background: #fafafa;
     transition: all 0.2s ease;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .form-grid input:focus,
@@ -204,6 +207,29 @@
 @media (max-width: 900px) {
     .form-grid.two-col {
         grid-template-columns: 1fr;
+    }
+
+    .checkbox-wrap {
+        grid-column: span 1 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .submit-wrap .soft-btn {
+        min-width: unset;
+        width: 100%;
+    }
+
+    .form-shell {
+        padding: 1.25rem;
+    }
+
+    .guidelines-box {
+        padding: 1.25rem;
+    }
+
+    .donate-page {
+        padding-inline: 0;
     }
 }
 

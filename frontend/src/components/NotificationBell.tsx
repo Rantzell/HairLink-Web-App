@@ -245,16 +245,15 @@ const NotificationBell: React.FC = () => {
           border: 2px solid #fff;
         }
         .notif-dropdown {
-          position: absolute;
-          top: 100%;
-          right: 0;
-          width: 320px;
+          position: fixed;
+          top: 70px;
+          right: 12px;
+          width: min(320px, calc(100vw - 24px));
           background: #fff;
           border-radius: 12px;
           box-shadow: 0 10px 25px rgba(173, 36, 109, 0.15);
           border: 1px solid #ead7e8;
           z-index: 1000;
-          margin-top: 12px;
           overflow: hidden;
           animation: slideIn 0.2s ease-out;
         }

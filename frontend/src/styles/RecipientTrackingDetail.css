@@ -154,6 +154,12 @@
   align-items: start;
 }
 
+@media (max-width: 768px) {
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Roadmap timeline */
 .detail-roadmap-card {
   background: #ffffff;
