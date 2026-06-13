@@ -104,7 +104,7 @@ const DonorProfile: React.FC = () => {
     try {
       const res = await apiClient.post('/internal-api/referral', { referral_code: otherReferral });
       toast.error(res.data.message || 'Referral code applied successfully!');
-      
+
       const profileRes = await apiClient.get('/auth/me');
       updateUser(profileRes.data);
       setOtherReferral('');
@@ -127,9 +127,9 @@ const DonorProfile: React.FC = () => {
         <div className="profile-avatar-box">
           <div className="profile-avatar-main">
             {user?.profile_photo_url ? (
-              <img 
-                src={user.profile_photo_url} 
-                alt="Profile" 
+              <img
+                src={user.profile_photo_url}
+                alt="Profile"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                   (e.target as HTMLImageElement).parentElement!.innerText = initials;
@@ -143,26 +143,26 @@ const DonorProfile: React.FC = () => {
             <i className='bx bxs-camera'></i>
           </button>
         </div>
-        
+
         <div className="profile-info-main">
           <h2>{fullName}</h2>
           <span className="role-badge">
             {user?.role?.toUpperCase() || 'DONOR'}
           </span>
         </div>
-        
-        <div className="profile-hero-actions" style={{marginLeft: 'auto'}}>
-          <button 
-            className="flex items-center gap-2" 
+
+        <div className="profile-hero-actions" style={{ marginLeft: 'auto' }}>
+          <button
+            className="flex items-center gap-2"
             onClick={() => setIsModalOpen(true)}
-            style={{ 
-              background: '#ad246d', 
-              color: '#fff', 
-              border: 'none', 
-              padding: '0.6rem 1.2rem', 
-              borderRadius: '25px', 
-              fontSize: '0.8rem', 
-              fontWeight: 800, 
+            style={{
+              background: '#ad246d',
+              color: '#fff',
+              border: 'none',
+              padding: '0.6rem 1.2rem',
+              borderRadius: '25px',
+              fontSize: '0.8rem',
+              fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -218,7 +218,7 @@ const DonorProfile: React.FC = () => {
           {user?.role === 'donor' && (
             <article className="referral-card-new">
               <i className='bx bxs-gift bg-icon'></i>
-              <h3 className="detail-label" style={{marginBottom: '1rem'}}>Referral Reward</h3>
+              <h3 className="detail-label" style={{ marginBottom: '1rem' }}>Referral Reward</h3>
               <div className="referral-code-box">
                 <span className="referral-code-text">{referralCode}</span>
                 <p className="referral-subtext">Share to earn 5 stars per donor — they get 3 stars too</p>
@@ -236,9 +236,9 @@ const DonorProfile: React.FC = () => {
           {user?.role === 'donor' && !user?.referredBy && (
             <article className="referral-card-new" style={{ marginTop: '1.5rem', background: '#fff', border: '1px solid #f2eef2' }}>
               <i className='bx bxs-coupon bg-icon' style={{ color: '#ad246d', opacity: 0.08 }}></i>
-              <h3 className="detail-label" style={{marginBottom: '0.8rem', color: '#3b2e43'}}>Redeem Referral</h3>
+              <h3 className="detail-label" style={{ marginBottom: '0.8rem', color: '#3b2e43' }}>Redeem Referral</h3>
               <p style={{ fontSize: '0.85rem', color: '#6b5b6d', marginBottom: '1rem', lineHeight: '1.4' }}>
-                Were you referred by another user? Enter their code below — they earn 5 stars and you earn 3.
+                Were you referred by another user? Enter their code below — they earn 3 stars and you earn 5.
               </p>
               <form onSubmit={submitOtherReferral} style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
@@ -285,7 +285,7 @@ const DonorProfile: React.FC = () => {
           {user?.role === 'donor' && user?.referredBy && (
             <article className="referral-card-new" style={{ marginTop: '1.5rem', background: '#fdfafd', border: '1.5px dashed #ad246d' }}>
               <i className='bx bxs-check-circle bg-icon' style={{ color: '#ad246d', opacity: 0.12 }}></i>
-              <h3 className="detail-label" style={{marginBottom: '0.5rem', color: '#3b2e43'}}>Referral Status</h3>
+              <h3 className="detail-label" style={{ marginBottom: '0.5rem', color: '#3b2e43' }}>Referral Status</h3>
               <p style={{ fontSize: '0.85rem', color: '#ad246d', fontWeight: 700, margin: 0 }}>
                 ✓ Referral code applied!
               </p>
@@ -376,7 +376,7 @@ const DonorProfile: React.FC = () => {
                   <input
                     type="text"
                     value={editData.phone}
-                    onChange={e => setEditData({...editData, phone: e.target.value})}
+                    onChange={e => setEditData({ ...editData, phone: e.target.value })}
                     className="ep-input"
                     placeholder="e.g. 09171234567"
                   />
@@ -388,7 +388,7 @@ const DonorProfile: React.FC = () => {
                     <input
                       type="number"
                       value={editData.age}
-                      onChange={e => setEditData({...editData, age: e.target.value})}
+                      onChange={e => setEditData({ ...editData, age: e.target.value })}
                       className="ep-input"
                       min="1" max="120"
                       placeholder="Age"
@@ -398,7 +398,7 @@ const DonorProfile: React.FC = () => {
                     <label className="ep-label">Gender</label>
                     <select
                       value={editData.gender}
-                      onChange={e => setEditData({...editData, gender: e.target.value})}
+                      onChange={e => setEditData({ ...editData, gender: e.target.value })}
                       className="ep-input ep-select"
                     >
                       <option value="" disabled>Select gender</option>
@@ -415,7 +415,7 @@ const DonorProfile: React.FC = () => {
                   <textarea
                     rows={3}
                     value={editData.bio}
-                    onChange={e => setEditData({...editData, bio: e.target.value})}
+                    onChange={e => setEditData({ ...editData, bio: e.target.value })}
                     className="ep-input ep-textarea"
                     placeholder="Tell us a bit about yourself..."
                     style={{ resize: 'none' }}
