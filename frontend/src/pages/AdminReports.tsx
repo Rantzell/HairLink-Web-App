@@ -4,25 +4,27 @@ import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import Pagination from '../components/Pagination';
+import { useAuth } from '../contexts/AuthContext';
 
 const PAGE_SIZE = 10;
 
 const AdminReports: React.FC = () => {
+  const { user } = useAuth();
   const location = useLocation();
   const [data, setData] = useState<any>(null);
-  const [monetaryData, setMonetaryData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reportType, setReportType] = useState('full');
+  const [reportType, setReportType] = useState('donations');
+  const [monetaryData, setMonetaryData] = useState<any[]>([]);
   const [donationsPage, setDonationsPage] = useState(1);
   const [wigStockPage, setWigStockPage] = useState(1);
   const [monetaryPage, setMonetaryPage] = useState(1);
-  const [fullLogsPage, setFullLogsPage] = useState(1);
+  const [matchingPage, setMatchingPage] = useState(1);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const type = params.get('type');
     if (type) setReportType(type);
-    setDonationsPage(1); setWigStockPage(1); setMonetaryPage(1); setFullLogsPage(1);
+    setDonationsPage(1); setWigStockPage(1); setMonetaryPage(1); setMatchingPage(1);
   }, [location.search]);
 
   useEffect(() => {
@@ -55,26 +57,67 @@ const AdminReports: React.FC = () => {
     window.print();
   };
 
-  const handleDownloadCSV = async () => {
-    try {
-      const res = await apiClient.get('/internal-api/admin/reports/export/csv', {
-        responseType: 'blob',
+  const handleDownloadCSV = () => {
+    let csv = '';
+    const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+
+    if (reportType === 'donations') {
+      csv = 'Reference,Donor Name,Length,Color,Date\n';
+      data.inventory?.allDonations?.forEach((d: any) => {
+        csv += `${esc(d.reference)},${esc(d.user?.firstName + ' ' + d.user?.lastName)},${esc(d.hairLength)},${esc(d.hairColor)},${esc(new Date(d.createdAt).toLocaleDateString())}\n`;
       });
-      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'hairlink_report.csv';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('CSV download failed', err);
-      toast.error('Failed to download CSV. Please try again.');
+    } else if (reportType === 'hair') {
+      csv = 'Length,Color,Stock Count\n';
+      const stock = data.inventory?.stock;
+      if (stock) {
+        ['Short', 'Long'].forEach(len => {
+          ['Black', 'Brown', 'Light'].forEach(col => {
+            csv += `${esc(len)},${esc(col)},${esc(stock[len]?.[col] || 0)}\n`;
+          });
+        });
+      }
+    } else if (reportType === 'wigs') {
+      csv = 'Task Code,Wigmaker,Target Length,Target Color,Stock Date\n';
+      data.inventory?.wigStock?.forEach((w: any) => {
+        csv += `${esc(w.taskCode)},${esc(w.wigmaker?.firstName + ' ' + w.wigmaker?.lastName)},${esc(w.targetLength)},${esc(w.targetColor)},${esc(new Date(w.updatedAt).toLocaleDateString())}\n`;
+      });
+    } else if (reportType === 'matching') {
+      csv = 'Metric,Value\n';
+      csv += `Fulfillment / Requests,${data.dashboard?.requestsCount || 0}\n`;
+      csv += `Wigs Distributed,${data.summary?.wigsDistributed || 0}\n`;
+      csv += `Recipients Served,${data.summary?.recipientsServed || 0}\n\n`;
+      csv += 'Reference,Recipient,Length,Color,Received Date,Assigned Wig\n';
+      (data.summary?.fulfilledRequests || [])
+        .filter((req: any) => req.wigProductions?.some((w: any) => w.taskCode.includes('-W')))
+        .forEach((req: any) => {
+          const childWig = req.wigProductions?.find((w: any) => w.taskCode.includes('-W'));
+          const assignedWig = childWig?.taskCode || '—';
+          csv += `${esc(req.reference)},${esc(req.user?.firstName + ' ' + req.user?.lastName)},${esc(req.wigLength)},${esc(req.wigColor)},${esc(new Date(req.receivedAt || req.updatedAt).toLocaleDateString())},${esc(assignedWig)}\n`;
+        });
+    } else if (reportType === 'users') {
+      csv = 'Metric,Value\n';
+      csv += `Total Users,${data.summary?.usersCount || 0}\n`;
+      csv += `System Events,${data.summary?.eventsCount || 0}\n`;
+    } else if (reportType === 'monetary') {
+      csv = 'Reference,Contributor Name / Email,Amount,Method,Date,Status\n';
+      monetaryData.forEach((m: any) => {
+        csv += `${esc(m.referenceNumber)},${esc(m.name || m.user?.firstName || 'Anonymous')},${esc(m.amount)},${esc(m.paymentMethod)},${esc(new Date(m.createdAt).toLocaleDateString())},${esc(m.status)}\n`;
+      });
     }
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `hairlink_${reportType}_report.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('CSV downloaded successfully.');
   };
 
-  if (loading) return <div className="section-wrap">Aggregating system and financial records...</div>;
+  if (loading) return <div className="section-wrap">Aggregating system records...</div>;
   if (!data) return <div className="section-wrap">Error: Could not generate system reports. Please check your connection.</div>;
 
   const renderReportContent = () => {
@@ -84,11 +127,11 @@ const AdminReports: React.FC = () => {
           <div className="report-document admin-report-doc">
             <div className="report-header admin-report-doc-header">
               <div>
-                <h2 className="admin-report-doc-title">Financial Oversight Report</h2>
-                <p className="admin-report-doc-subtitle">Complete audit of monetary contributions and financial status.</p>
+                <h2 className="admin-report-doc-title">Monetary Contributions Log</h2>
+                <p className="admin-report-doc-subtitle">Chronological record of incoming financial donations.</p>
               </div>
               <div className="admin-match-score-wrap">
-                <p className="admin-report-id">HL-FIN-AUDIT-{new Date().getFullYear()}</p>
+                <p className="admin-report-id">HL-RPT-MONEY-{new Date().getFullYear()}</p>
                 <p className="admin-report-timestamp">{data.timestamp}</p>
               </div>
             </div>
@@ -96,12 +139,8 @@ const AdminReports: React.FC = () => {
             <section className="admin-report-section">
               <div className="admin-report-two-col">
                 <div className="admin-report-kpi-card">
-                  <small className="admin-report-kpi-label">TOTAL FUNDS RAISED</small>
-                  <strong className="admin-report-kpi-value">₱{data.summary.monetaryTotal?.toLocaleString()}</strong>
-                </div>
-                <div className="admin-report-kpi-card">
-                  <small className="admin-report-kpi-label">TOTAL CONTRIBUTORS</small>
-                  <strong className="admin-report-kpi-value">{monetaryData.length} contributors</strong>
+                  <small className="admin-report-kpi-label">TOTAL MONETARY TRANSACTIONS</small>
+                  <strong className="admin-report-kpi-value">{monetaryData.length}</strong>
                 </div>
               </div>
             </section>
@@ -112,7 +151,7 @@ const AdminReports: React.FC = () => {
                 <thead>
                   <tr className="admin-compact-table-head-row">
                     <th className="admin-report-th">Reference</th>
-                    <th className="admin-report-th">Contributor Name / Email</th>
+                    <th className="admin-report-th">Contributor Name</th>
                     <th className="admin-report-th">Amount</th>
                     <th className="admin-report-th">Method</th>
                     <th className="admin-report-th">Date</th>
@@ -123,13 +162,16 @@ const AdminReports: React.FC = () => {
                   {monetaryData.slice((monetaryPage - 1) * PAGE_SIZE, monetaryPage * PAGE_SIZE).map((m: any) => (
                     <tr key={m.id}>
                       <td className="admin-report-td"><strong>{m.referenceNumber}</strong></td>
-                      <td className="admin-report-td">{m.name || m.user?.firstName || 'Anonymous'} <br/><small>{m.email || m.user?.email}</small></td>
+                      <td className="admin-report-td">{m.name || m.user?.firstName || 'Anonymous'}</td>
                       <td className="admin-report-td">₱{m.amount?.toLocaleString()}</td>
                       <td className="admin-report-td">{m.paymentMethod}</td>
                       <td className="admin-report-td">{new Date(m.createdAt).toLocaleDateString()}</td>
                       <td className="admin-report-td">{m.status}</td>
                     </tr>
                   ))}
+                  {monetaryData.length === 0 && (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '1rem', color: '#8c7895', fontSize: '0.75rem' }}>No monetary records found.</td></tr>
+                  )}
                 </tbody>
               </table>
               <Pagination currentPage={monetaryPage} totalPages={Math.ceil(monetaryData.length / PAGE_SIZE)} onPageChange={setMonetaryPage} />
@@ -141,20 +183,20 @@ const AdminReports: React.FC = () => {
           <div className="report-document admin-report-doc">
             <div className="report-header admin-report-doc-header">
               <div>
-                <h2 className="admin-report-doc-title">Complete Hair Inventory Audit</h2>
-                <p className="admin-report-doc-subtitle">Exhaustive log of hair stock categorization and donation records.</p>
+                <h2 className="admin-report-doc-title">Hair Inventory Levels</h2>
+                <p className="admin-report-doc-subtitle">Categorization of physical hair stock by length and color.</p>
               </div>
               <div className="admin-match-score-wrap">
-                <p className="admin-report-id">HL-AUDIT-HAIR-{new Date().getFullYear()}</p>
+                <p className="admin-report-id">HL-RPT-HAIR-{new Date().getFullYear()}</p>
                 <p className="admin-report-timestamp">{data.timestamp}</p>
               </div>
             </div>
 
             <section className="admin-report-section">
-              <h3 className="admin-report-section-title">1. Stock Categorization</h3>
-              <div className="admin-three-col-no-mb">
+              <h3 className="admin-report-section-title">Stock Categorization</h3>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
                 {['Short', 'Long'].map(len => (
-                  <div key={len} className="admin-report-mini-card">
+                  <div key={len} className="admin-report-mini-card" style={{ flex: '1', minWidth: '250px', maxWidth: '350px' }}>
                     <h4 className="admin-report-mini-title">{len} Strands</h4>
                     {['Black', 'Brown', 'Light'].map(col => (
                       <div key={col} className="admin-report-mini-row">
@@ -166,33 +208,6 @@ const AdminReports: React.FC = () => {
                 ))}
               </div>
             </section>
-
-            <section>
-              <h3 className="admin-report-section-title">2. Full Donation History</h3>
-              <table className="admin-report-table">
-                <thead>
-                  <tr className="admin-compact-table-head-row">
-                    <th className="admin-report-th">Ref No.</th>
-                    <th className="admin-report-th">Donor Name</th>
-                    <th className="admin-report-th">Length</th>
-                    <th className="admin-report-th">Color</th>
-                    <th className="admin-report-th">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.inventory.allDonations.slice((donationsPage - 1) * PAGE_SIZE, donationsPage * PAGE_SIZE).map((d: any) => (
-                    <tr key={d.id}>
-                      <td className="admin-report-td"><strong>{d.reference}</strong></td>
-                      <td className="admin-report-td">{d.user?.firstName} {d.user?.lastName}</td>
-                      <td className="admin-report-td">{d.hairLength}</td>
-                      <td className="admin-report-td">{d.hairColor}</td>
-                      <td className="admin-report-td">{new Date(d.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <Pagination currentPage={donationsPage} totalPages={Math.ceil(data.inventory.allDonations.length / PAGE_SIZE)} onPageChange={setDonationsPage} />
-            </section>
           </div>
         );
       case 'wigs':
@@ -200,11 +215,11 @@ const AdminReports: React.FC = () => {
           <div className="report-document admin-report-doc">
             <div className="report-header admin-report-doc-header">
               <div>
-                <h2 className="admin-report-doc-title">Complete Wig Stock & Production Audit</h2>
-                <p className="admin-report-doc-subtitle">Exhaustive inventory of finished wigs and manufacturing history.</p>
+                <h2 className="admin-report-doc-title">Wig Inventory & Monitoring</h2>
+                <p className="admin-report-doc-subtitle">Current stock of completed wigs and recent production yield.</p>
               </div>
               <div className="admin-match-score-wrap">
-                <p className="admin-report-id">HL-AUDIT-WIG-{new Date().getFullYear()}</p>
+                <p className="admin-report-id">HL-RPT-WIG-{new Date().getFullYear()}</p>
                 <p className="admin-report-timestamp">{data.timestamp}</p>
               </div>
             </div>
@@ -216,12 +231,12 @@ const AdminReports: React.FC = () => {
                   <strong className="admin-action-link-icon">{data.inventory.wigCount} wigs</strong>
                 </div>
                 <div className="admin-report-center-card">
-                  <small className="admin-report-kpi-label">PRODUCTION YIELD</small>
+                  <small className="admin-report-kpi-label">RAW MATERIALS</small>
                   <strong className="admin-action-link-icon">{data.inventory.allDonationsCount} units</strong>
                 </div>
                 <div className="admin-report-center-card">
-                  <small className="admin-report-kpi-label">FULFILLMENT</small>
-                  <strong className="admin-action-link-icon">{data.dashboard.requestsCount} recipients</strong>
+                  <small className="admin-report-kpi-label">PRODUCTION TO DATE</small>
+                  <strong className="admin-action-link-icon">{data.summary.wigsDistributed + data.inventory.wigCount} units</strong>
                 </div>
               </div>
             </section>
@@ -254,41 +269,141 @@ const AdminReports: React.FC = () => {
             </section>
           </div>
         );
-      default: // 'full'
+      case 'matching':
         return (
           <div className="report-document admin-report-doc">
             <div className="report-header admin-report-doc-header">
               <div>
-                <h2 className="admin-report-doc-title">HairLink Comprehensive System Audit</h2>
-                <p className="admin-report-doc-subtitle">Global operational report including all inventory, financial, and participant data.</p>
+                <h2 className="admin-report-doc-title">Wig Matching & Distribution</h2>
+                <p className="admin-report-doc-subtitle">Records of fulfilled requests and recipient distribution.</p>
               </div>
               <div className="admin-match-score-wrap">
-                <p className="admin-report-id">HL-FULL-AUDIT-{new Date().getFullYear()}</p>
+                <p className="admin-report-id">HL-RPT-MATCH-{new Date().getFullYear()}</p>
                 <p className="admin-report-timestamp">{data.timestamp}</p>
               </div>
             </div>
 
             <section className="admin-report-section">
-              <div className="admin-four-col-grid">
-                <div><small className="admin-match-meta">HAIR DONATIONS</small><p className="admin-section-title">{data.dashboard.donationsCount}</p></div>
-                <div><small className="admin-match-meta">MONETARY TOTAL</small><p className="admin-section-title">₱{data.summary.monetaryTotal?.toLocaleString()}</p></div>
-                <div><small className="admin-match-meta">FULFILLMENT</small><p className="admin-section-title">{data.dashboard.requestsCount}</p></div>
-                <div><small className="admin-match-meta">INVENTORY</small><p className="admin-section-title">{data.inventory.wigCount}</p></div>
+              <div className="admin-three-col-no-mb">
+                <div className="admin-report-center-card">
+                  <small className="admin-report-kpi-label">TOTAL REQUESTS</small>
+                  <strong className="admin-action-link-icon">{data.dashboard.requestsCount} requests</strong>
+                </div>
+                <div className="admin-report-center-card">
+                  <small className="admin-report-kpi-label">WIGS DISTRIBUTED</small>
+                  <strong className="admin-action-link-icon">{data.summary.wigsDistributed} units</strong>
+                </div>
+                <div className="admin-report-center-card">
+                  <small className="admin-report-kpi-label">RECIPIENTS SERVED</small>
+                  <strong className="admin-action-link-icon">{data.summary.recipientsServed} recipients</strong>
+                </div>
               </div>
             </section>
 
+            <section>
+              <h3 className="admin-report-section-title">Fulfilled Requests Log</h3>
+              <table className="admin-report-table">
+                <thead>
+                  <tr className="admin-compact-table-head-row">
+                    <th className="admin-report-th">Reference</th>
+                    <th className="admin-report-th">Recipient</th>
+                    <th className="admin-report-th">Length</th>
+                    <th className="admin-report-th">Color</th>
+                    <th className="admin-report-th">Received Date</th>
+                    <th className="admin-report-th">Assigned Wig</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data.summary.fulfilledRequests || [])
+                    .filter((req: any) => req.wigProductions?.some((w: any) => w.taskCode.includes('-W')))
+                    .slice((matchingPage - 1) * PAGE_SIZE, matchingPage * PAGE_SIZE)
+                    .map((req: any) => {
+                      const childWig = req.wigProductions?.find((w: any) => w.taskCode.includes('-W'));
+                      const assignedWig = childWig?.taskCode || '—';
+                      return (
+                        <tr key={req.id}>
+                        <td className="admin-report-td"><strong>{req.reference}</strong></td>
+                        <td className="admin-report-td">{req.user?.firstName} {req.user?.lastName}</td>
+                        <td className="admin-report-td">{req.wigLength}</td>
+                        <td className="admin-report-td">{req.wigColor}</td>
+                        <td className="admin-report-td">{new Date(req.receivedAt || req.updatedAt).toLocaleDateString()}</td>
+                        <td className="admin-report-td">
+                          {assignedWig !== '—' ? (
+                            <span className="admin-chip admin-chip-sm active">{assignedWig}</span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {(data.summary.fulfilledRequests || [])
+                    .filter((req: any) => req.wigProductions?.some((w: any) => w.taskCode.includes('-W')))
+                    .length === 0 && (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '1rem', color: '#8c7895', fontSize: '0.75rem' }}>No fulfilled requests found.</td></tr>
+                  )}
+                </tbody>
+              </table>
+              <Pagination
+                currentPage={matchingPage}
+                totalPages={Math.ceil(((data.summary.fulfilledRequests || []).filter((req: any) => req.wigProductions?.some((w: any) => w.taskCode.includes('-W')))).length / PAGE_SIZE)}
+                onPageChange={setMatchingPage}
+              />
+            </section>
+          </div>
+        );
+      case 'users':
+        return (
+          <div className="report-document admin-report-doc">
+            <div className="report-header admin-report-doc-header">
+              <div>
+                <h2 className="admin-report-doc-title">User Engagement Statistics</h2>
+                <p className="admin-report-doc-subtitle">Platform adoption metrics and event engagement overview.</p>
+              </div>
+              <div className="admin-match-score-wrap">
+                <p className="admin-report-id">HL-RPT-USERS-{new Date().getFullYear()}</p>
+                <p className="admin-report-timestamp">{data.timestamp}</p>
+              </div>
+            </div>
+
             <section className="admin-report-section">
-              <h3 className="admin-report-section-title">Operational Breakdown</h3>
-              <div className="admin-two-col-grid-2rem">
-                <div>
-                  <h4 className="admin-report-mini-title">Stock Inventory</h4>
-                  <div className="admin-report-row"><span>Raw Hair Strands</span><strong>{data.inventory.totalHairRecords} units</strong></div>
-                  <div className="admin-report-row"><span>Finished Wigs</span><strong>{data.inventory.wigCount} wigs</strong></div>
+              <div className="admin-report-two-col">
+                <div className="admin-report-kpi-card">
+                  <small className="admin-report-kpi-label">TOTAL REGISTERED USERS</small>
+                  <strong className="admin-report-kpi-value">{data.summary.usersCount}</strong>
                 </div>
-                <div>
-                  <h4 className="admin-report-mini-title">Financial Summary</h4>
-                  <div className="admin-report-row"><span>Total Contributions</span><strong>₱{data.summary.monetaryTotal?.toLocaleString()}</strong></div>
-                  <div className="admin-report-row"><span>Contributor Base</span><strong>{monetaryData.length} contributors</strong></div>
+                <div className="admin-report-kpi-card">
+                  <small className="admin-report-kpi-label">SYSTEM EVENTS HOSTED</small>
+                  <strong className="admin-report-kpi-value">{data.summary.eventsCount} events</strong>
+                </div>
+              </div>
+            </section>
+          </div>
+        );
+      case 'donations':
+      default:
+        return (
+          <div className="report-document admin-report-doc">
+            <div className="report-header admin-report-doc-header">
+              <div>
+                <h2 className="admin-report-doc-title">Donation Intake Summary</h2>
+                <p className="admin-report-doc-subtitle">Operational summary of all incoming hair donations.</p>
+              </div>
+              <div className="admin-match-score-wrap">
+                <p className="admin-report-id">HL-RPT-INTAKE-{new Date().getFullYear()}</p>
+                <p className="admin-report-timestamp">{data.timestamp}</p>
+              </div>
+            </div>
+
+            <section className="admin-report-section">
+              <div className="admin-report-two-col">
+                <div className="admin-report-kpi-card">
+                  <small className="admin-report-kpi-label">TOTAL DONATIONS INITIATED</small>
+                  <strong className="admin-report-kpi-value">{data.dashboard.donationsCount}</strong>
+                </div>
+                <div className="admin-report-kpi-card">
+                  <small className="admin-report-kpi-label">DONATIONS RECEIVED & VERIFIED</small>
+                  <strong className="admin-report-kpi-value">{data.dashboard.approvedDonations}</strong>
                 </div>
               </div>
             </section>
@@ -306,7 +421,7 @@ const AdminReports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data.inventory.allDonations || []).slice((fullLogsPage - 1) * PAGE_SIZE, fullLogsPage * PAGE_SIZE).map((d: any) => (
+                  {(data.inventory.allDonations || []).slice((donationsPage - 1) * PAGE_SIZE, donationsPage * PAGE_SIZE).map((d: any) => (
                     <tr key={d.id}>
                       <td className="admin-report-td"><strong>{d.reference}</strong></td>
                       <td className="admin-report-td">{d.user?.firstName} {d.user?.lastName}</td>
@@ -321,9 +436,9 @@ const AdminReports: React.FC = () => {
                 </tbody>
               </table>
               <Pagination
-                currentPage={fullLogsPage}
+                currentPage={donationsPage}
                 totalPages={Math.ceil((data.inventory.allDonations || []).length / PAGE_SIZE)}
-                onPageChange={setFullLogsPage}
+                onPageChange={setDonationsPage}
               />
             </section>
           </div>
@@ -335,41 +450,45 @@ const AdminReports: React.FC = () => {
     <section className="section-wrap reveal active admin-page admin-page-pad" id="reportRoot">
       <header className="no-print admin-report-header-row">
         <div>
-          <p className="admin-page-kicker">Admin · Analytics</p>
+          <p className="admin-page-kicker">{user?.role === 'admin' ? 'Admin' : 'Staff'} · Analytics</p>
           <h1 className="admin-page-title">System Reports</h1>
-          <p className="admin-page-subtitle">Generate comprehensive operational audits for inventory and finance.</p>
+          <p className="admin-page-subtitle">View structured system-generated operational reports.</p>
         </div>
 
-        <div className="admin-btn-actions">
-          <button
-            type="button"
-            onClick={handleDownloadCSV}
-            className="admin-btn-icon"
-          >
-            <i className='bx bx-download'></i> Download CSV
-          </button>
-          <button
-            onClick={handlePrint}
-            className="admin-btn-print"
-          >
-            <i className='bx bx-printer'></i> Print Current
-          </button>
-        </div>
+        {user?.role === 'admin' && (
+          <div className="admin-btn-actions">
+            <button
+              type="button"
+              onClick={handleDownloadCSV}
+              className="admin-btn-icon"
+            >
+              <i className='bx bx-download'></i> Download CSV
+            </button>
+            <button
+              onClick={handlePrint}
+              className="admin-btn-print"
+            >
+              <i className='bx bx-printer'></i> Print as PDF
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Report type tab bar */}
       <div className="no-print" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
         {[
-          { key: 'full',     label: '📋 All Donations' },
-          { key: 'hair',     label: '✂️ Hair Inventory' },
-          { key: 'wigs',     label: '🧵 Wig Stock' },
-          { key: 'monetary', label: '💳 Monetary' },
+          { key: 'donations', label: '📥 Intake Summary' },
+          { key: 'hair',      label: '✂️ Hair Inventory' },
+          { key: 'wigs',      label: '🧵 Wig Monitoring' },
+          { key: 'matching',  label: '🤝 Matching & Distribution' },
+          { key: 'monetary',  label: '💳 Monetary' },
+          { key: 'users',     label: '👥 User Engagement' },
         ].map(tab => (
           <button
             key={tab.key}
             onClick={() => {
               setReportType(tab.key);
-              setDonationsPage(1); setWigStockPage(1); setMonetaryPage(1); setFullLogsPage(1);
+              setDonationsPage(1); setWigStockPage(1); setMonetaryPage(1); setMatchingPage(1);
             }}
             style={{
               padding: '0.45rem 1rem',

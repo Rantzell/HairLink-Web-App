@@ -61,7 +61,8 @@ const StaffMatchingList: React.FC = () => {
               className="ghost-btn matching-list-print-btn" 
               onClick={handlePrint}
             >
-              Print List
+              <i className='bx bx-printer'></i>
+              Print as PDF
             </button>
           </div>
         </div>

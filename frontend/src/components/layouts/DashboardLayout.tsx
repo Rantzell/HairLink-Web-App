@@ -129,6 +129,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           { icon: 'bx bx-link',         label: 'Recipient Matching',     to: '/staff/matching' },
         ],
       },
+      {
+        label: 'System',
+        items: [
+          { icon: 'bx bx-bar-chart-alt-2', label: 'System Reports',   to: '/staff/reports?type=donations' },
+        ],
+      },
     ];
 
     const getTopbarTitle = () => {
@@ -143,6 +149,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       if (location.pathname.startsWith('/staff/hair-stock')) return 'Hair Stock Inventory';
       if (location.pathname.startsWith('/staff/wig-stock')) return 'Wig Stock Inventory';
       if (location.pathname.startsWith('/staff/matching')) return 'Recipient Matching Desk';
+      if (location.pathname.startsWith('/staff/reports')) return 'System Reports & Analytics';
       if (location.pathname.startsWith('/staff/profile')) return 'My Staff Profile';
       return 'Staff Workspace';
     };
@@ -303,7 +310,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         items: [
           { icon: 'bx bx-file',         label: 'Content (CMS)',       to: '/admin/cms' },
           { icon: 'bx bx-calendar',     label: 'Events Schedule',     to: '/admin/events' },
-          { icon: 'bx bx-bar-chart-alt-2', label: 'System Reports',   to: '/admin/reports?type=full' },
+          { icon: 'bx bx-bar-chart-alt-2', label: 'System Reports',   to: '/admin/reports?type=donations' },
         ],
       },
     ];
@@ -686,6 +693,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <Link to="/staff/wig-stock" className={isActive('/staff/wig-stock') ? 'active' : ''}>Wigs</Link>
                   <Link to="/staff/hair-stock" className={isActive('/staff/hair-stock') ? 'active' : ''}>Hair</Link>
                   <Link to="/staff/matching" className={isActive('/staff/matching') ? 'active' : ''}>Matching</Link>
+                  <Link to="/staff/reports" className={isActive('/staff/reports') ? 'active' : ''}>Reports</Link>
                 </>
               )}
 
@@ -725,7 +733,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     <div className="nav-dropdown-content">
                       <Link to="/admin/cms">Content (CMS)</Link>
                       <Link to="/admin/events">Events Schedule</Link>
-                      <Link to="/admin/reports?type=full">System Reports</Link>
+                      <Link to="/admin/reports?type=donations">System Reports</Link>
                     </div>
                   </div>
                 </>

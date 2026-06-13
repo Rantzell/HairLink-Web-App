@@ -44,7 +44,8 @@ const StaffHairStock: React.FC = () => {
               className="hair-stock-print-btn" 
               onClick={() => window.print()}
             >
-              Print
+              <i className='bx bx-printer'></i>
+              Print as PDF
             </button>
           </div>
         </div>

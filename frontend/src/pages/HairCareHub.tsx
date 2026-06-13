@@ -96,7 +96,7 @@ const HairCareHub: React.FC = () => {
             id: 1,
             title: 'Caring for Your Wig: A Recipient\'s Guide',
             description: 'Step-by-step guidance on wearing, washing, and storing your HairLink wig so it stays comfortable and long-lasting.',
-            videoId: 'WMzZ-rL2-ZE',
+            videoId: 'WBuhX6DdyYA', // User provided: How to wash synthetic wig
             source: 'youtube',
             category: 'Care',
             author: 'HairLink Tutorials',
@@ -108,7 +108,7 @@ const HairCareHub: React.FC = () => {
             id: 2,
             title: 'Gentle Styling Techniques for Daily Wear',
             description: 'Heat-free styling tips and routines to keep your wig looking natural and feeling soft each day.',
-            videoId: 'fE532eN0fdo',
+            videoId: 'Oby3BZng_Ro', // User provided: Styling
             source: 'youtube',
             category: 'Styling',
             author: 'HairLink Tutorials',
@@ -120,7 +120,7 @@ const HairCareHub: React.FC = () => {
             id: 3,
             title: 'Emotional Support &amp; Confidence During Treatment',
             description: 'Stories and encouragement from recipients of the Strand Up for Cancer community.',
-            videoId: 'rGaTOh_a-c4',
+            videoId: 'BXBXml8asT8', // User provided: Emotional support
             source: 'youtube',
             category: 'Wellness',
             author: 'Strand Up for Cancer',

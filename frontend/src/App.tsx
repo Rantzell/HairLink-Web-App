@@ -116,6 +116,7 @@ function App() {
                   <Route path="hair-stock" element={<StaffHairStock />} />
                   <Route path="profile" element={<DonorProfile />} /> {/* Staff uses same profile UI */}
                   <Route path="community" element={<CommunityFeed />} />
+                  <Route path="reports" element={<AdminReports />} />
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>
               </DashboardLayout>

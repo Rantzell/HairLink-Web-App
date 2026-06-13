@@ -209,44 +209,58 @@ const DonorTrackingDetail: React.FC = () => {
                     type="button"
                     onClick={() => { setShowRescheduleForm(true); setScheduleDate(''); }}
                     className="soft-btn"
-                    style={{ background: '#fff', color: '#ad246d', border: '1.5px solid #ead7e8', padding: '0.5rem 1.25rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}
+                    style={{ background: '#ad246d', color: '#fff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}
                   >
                     Reschedule
                   </button>
                 </>
               ) : (
                 <>
-                  <p style={{ fontSize: '0.8rem', color: '#8c7895', marginBottom: '1rem' }}>
+                  <p style={{ fontSize: '0.8rem', color: '#8c7895', marginBottom: '0.5rem' }}>
                     Pick the date you plan to send your donated hair to us. We'll notify our staff right away, and on the day you choose, you'll be able to submit your delivery tracking link here.
                   </p>
-                  <form onSubmit={handleScheduleDelivery} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <input
-                      type="date"
-                      value={scheduleDate}
-                      onChange={e => setScheduleDate(e.target.value)}
-                      min={todayMin()}
-                      required
-                      style={{ flex: 1, minWidth: '160px', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.85rem' }}
-                    />
-                    <button
-                      type="submit"
-                      disabled={isScheduling}
-                      className="soft-btn"
-                      style={{ background: '#ad246d', color: '#fff', border: 'none', padding: '0 1.5rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}
-                    >
-                      {isScheduling ? '...' : 'Confirm Date'}
-                    </button>
-                    {scheduledAt && (
-                      <button
-                        type="button"
-                        onClick={() => setShowRescheduleForm(false)}
-                        className="soft-btn"
-                        style={{ background: '#fff', color: '#8c7895', border: '1.5px solid #ead7e8', padding: '0 1.25rem', borderRadius: '10px', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </form>
+                  <p style={{ fontSize: '0.72rem', color: '#ad246d', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <i className='bx bx-time-five'></i> Scheduling is available during working hours only (8:00 AM – 4:00 PM).
+                  </p>
+                  {(() => {
+                    const phtNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+                    const h = phtNow.getHours();
+                    const outsideHours = h < 8 || h >= 16;
+                    return outsideHours ? (
+                      <p style={{ fontSize: '0.8rem', color: '#e03c3c', display: 'flex', alignItems: 'center', gap: '4px', background: '#fef2f2', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #fee2e2' }}>
+                        <i className='bx bx-error-circle'></i> Scheduling is currently unavailable. Please come back between 8:00 AM and 4:00 PM.
+                      </p>
+                    ) : (
+                      <form onSubmit={handleScheduleDelivery} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <input
+                          type="date"
+                          value={scheduleDate}
+                          onChange={e => setScheduleDate(e.target.value)}
+                          min={todayMin()}
+                          required
+                          style={{ flex: 1, minWidth: '160px', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.85rem' }}
+                        />
+                        <button
+                          type="submit"
+                          disabled={isScheduling}
+                          className="soft-btn"
+                          style={{ background: '#ad246d', color: '#fff', border: 'none', padding: '0 1.5rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}
+                        >
+                          {isScheduling ? '...' : 'Confirm Date'}
+                        </button>
+                        {scheduledAt && (
+                            <button
+                              type="button"
+                              onClick={() => setShowRescheduleForm(false)}
+                              className="soft-btn"
+                              style={{ background: '#ad246d', color: '#fff', border: 'none', padding: '0 1.5rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}
+                            >
+                              Cancel
+                            </button>
+                        )}
+                      </form>
+                    );
+                  })()}
                   {scheduleError && (
                     <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: '#e03c3c', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <i className='bx bx-error-circle'></i> {scheduleError}

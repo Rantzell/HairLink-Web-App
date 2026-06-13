@@ -36,9 +36,9 @@ const StaffWigStock: React.FC = () => {
 
   const filteredWigs = onlyWigEntries.filter(w => {
     const matchesSearch = (w.taskCode || '').toLowerCase().includes(filter.toLowerCase()) ||
-                          (w.targetLength || '').toLowerCase().includes(filter.toLowerCase()) ||
-                          (w.targetColor || '').toLowerCase().includes(filter.toLowerCase()) ||
-                          (w.donation?.reference || '').toLowerCase().includes(filter.toLowerCase());
+      (w.targetLength || '').toLowerCase().includes(filter.toLowerCase()) ||
+      (w.targetColor || '').toLowerCase().includes(filter.toLowerCase()) ||
+      (w.donation?.reference || '').toLowerCase().includes(filter.toLowerCase());
 
     const matchesColor = colorFilter === 'All Colors' || (w.targetColor || '').toLowerCase().includes(colorFilter.toLowerCase());
 
@@ -47,7 +47,7 @@ const StaffWigStock: React.FC = () => {
 
   useEffect(() => { setCurrentPage(1); }, [filter, colorFilter]);
   const totalPages = Math.ceil(filteredWigs.length / PAGE_SIZE);
-  const pagedWigs  = filteredWigs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pagedWigs = filteredWigs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const handlePrint = () => {
     window.print();
@@ -57,42 +57,42 @@ const StaffWigStock: React.FC = () => {
     <section className="section-wrap reveal active staff-page">
       <article className="staff-block">
         <div className="staff-bar staff-wig-bar">
-          <h2 className="staff-wig-title">Wig Stock</h2>
+          <h2 className="staff-wig-title">Wig Stock Inventory</h2>
           <div className="staff-tools staff-wig-tools">
             <div className="staff-wig-search-wrapper">
               <i className="bx bx-search staff-wig-search-icon"></i>
-              <input 
-                type="text" 
-                placeholder="Search stock" 
+              <input
+                type="text"
+                placeholder="Search stock"
                 value={filter}
                 onChange={e => setFilter(e.target.value)}
                 className="staff-wig-search-input"
               />
             </div>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="soft-btn staff-wig-search-btn"
             >
               Search
             </button>
             <div className="staff-wig-filter-wrapper">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className={`ghost-btn staff-wig-filter-btn ${showFilters ? 'active' : ''}`}
                 onClick={() => setShowFilters(!showFilters)}
               >
                 Filter
               </button>
-              
+
               {showFilters && (
                 <div className="staff-wig-filter-dropdown">
                   <h4 className="staff-wig-filter-dropdown-title">Filter by Color</h4>
                   <div className="staff-wig-filter-options">
                     {['All Colors', 'Black', 'Brown', 'Light'].map(c => (
                       <label key={c} className={`staff-wig-filter-option ${colorFilter === c ? 'selected' : ''}`}>
-                        <input 
-                          type="radio" 
-                          name="colorFilter" 
+                        <input
+                          type="radio"
+                          name="colorFilter"
                           checked={colorFilter === c}
                           onChange={() => {
                             setColorFilter(c);
@@ -107,12 +107,12 @@ const StaffWigStock: React.FC = () => {
                 </div>
               )}
             </div>
-            <button 
-              type="button" 
-              className="ghost-btn staff-wig-print-btn" 
+            <button
+              type="button"
+              className="staff-wig-print-btn"
               onClick={handlePrint}
             >
-              Print
+              <i className='bx bx-printer'></i> Print as PDF
             </button>
           </div>
         </div>
@@ -174,7 +174,8 @@ const StaffWigStock: React.FC = () => {
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </article>
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media print {
           .staff-tools, .dash-header, .dash-nav { display: none !important; }
           .dash-main { padding: 0 !important; margin: 0 !important; }

@@ -712,6 +712,120 @@
 }
 
 /* ── Reports Specific ── */
+.admin-report-doc {
+  background: #fff;
+  border: 1px solid #ead7e8;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.admin-report-doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #fdf7fb;
+  padding-bottom: 1rem;
+}
+
+.admin-report-doc-title {
+  font-size: 1.4rem;
+  color: #261d2b;
+  margin: 0 0 0.2rem 0;
+}
+
+.admin-report-doc-subtitle {
+  font-size: 0.85rem;
+  color: #665772;
+  margin: 0;
+}
+
+.admin-three-col-no-mb {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.admin-report-mini-card {
+  background: #fdf7fb;
+  border: 1px solid #ead7e8;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.admin-report-mini-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ad246d;
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+}
+
+.admin-report-mini-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed #ead7e8;
+  font-size: 0.85rem;
+  color: #261d2b;
+}
+
+.admin-report-mini-row:last-child {
+  border-bottom: none;
+}
+
+.admin-report-center-card {
+  background: #fdf7fb;
+  border: 1px solid #ead7e8;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-report-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.admin-report-kpi-card {
+  background: #fdf7fb;
+  border: 1px solid #ead7e8;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-report-kpi-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #8c7895;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-report-kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ad246d;
+}
+
+@media (max-width: 900px) {
+  .admin-three-col-no-mb,
+  .admin-report-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-report-page {
   padding: 1rem;
 }

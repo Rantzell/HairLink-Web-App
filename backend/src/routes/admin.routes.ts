@@ -11,6 +11,7 @@ import { notifyAllDonorsAndRecipients, notifyAnnouncement } from '../services/no
 
 const router = Router();
 const adminOnly = [authenticate, requireRole('admin')];
+const adminOrStaff = [authenticate, requireRole('admin', 'staff')];
 
 function s(o: any): any {
   if (o === null || o === undefined) return o;
@@ -28,7 +29,7 @@ function s(o: any): any {
 }
 
 // GET /internal-api/admin/dashboard
-router.get('/dashboard', ...adminOnly, async (_req, res) => {
+router.get('/dashboard', ...adminOrStaff, async (_req, res) => {
   try {
     const [uc, dc, rc, pd, pr, sd] = await Promise.all([
       prisma.user.count(), prisma.donation.count(), prisma.hairRequest.count(),
@@ -320,21 +321,42 @@ router.post('/announcements', ...adminOnly, async (req, res) => {
 });
 
 // GET /internal-api/admin/reports
-router.get('/reports', ...adminOnly, async (_req, res) => {
+router.get('/reports', ...adminOrStaff, async (_req, res) => {
   try {
     const [dc, rc, wd, uc, ec] = await Promise.all([
       prisma.donation.count(), prisma.hairRequest.count(),
-      prisma.wigProduction.count({ where: { status: 'completed' } }),
+      // Wigs distributed are those assigned to a request
+      prisma.wigProduction.count({ where: { hairRequestId: { not: null }, taskCode: { contains: '-W' } } }),
       prisma.user.count(), prisma.event.count(),
     ]);
     const mt = await prisma.monetaryDonation.aggregate({ where: { status: { not: 'Rejected' } }, _sum: { amount: true } });
-    const rs = await prisma.hairRequest.count({ where: { status: { in: ['Validated', 'Matched', 'Completed'] } } });
-    res.json(s({ donationsCount: dc, requestsCount: rc, wigsDistributed: wd, usersCount: uc, monetaryTotal: mt._sum.amount || 0, eventsCount: ec, recipientsServed: rs }));
+    
+    // Recipients served and fulfilled requests include all requests that have been matched with a wig or beyond
+    const matchedStatuses = ['Matched', 'Ready for Pickup', 'Pickup Confirmed', 'In Transit', 'Arrived', 'Completed'];
+    const rs = await prisma.hairRequest.count({ where: { status: { in: matchedStatuses } } });
+    const fulfilledRequests = await prisma.hairRequest.findMany({
+      where: { status: { in: matchedStatuses } },
+      include: { user: true, wigProductions: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    res.json(s({
+      donationsCount: dc,
+      requestsCount: rc,
+      wigsDistributed: wd,
+      usersCount: uc,
+      monetaryTotal: mt._sum.amount || 0,
+      eventsCount: ec,
+      recipientsServed: rs,
+      fulfilledRequests,
+    }));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
+
+
 // GET /internal-api/admin/reports/monetary
-router.get('/reports/monetary', ...adminOnly, async (_req, res) => {
+router.get('/reports/monetary', ...adminOrStaff, async (_req, res) => {
   try {
     const donations = await prisma.monetaryDonation.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
     res.json(s(donations));
@@ -342,7 +364,7 @@ router.get('/reports/monetary', ...adminOnly, async (_req, res) => {
 });
 
 // GET /internal-api/admin/inventory
-router.get('/inventory', ...adminOnly, async (_req, res) => {
+router.get('/inventory', ...adminOrStaff, async (_req, res) => {
   try {
     const dons = await prisma.donation.findMany({ where: { status: 'Received Hair' } });
     // Buckets must align with the donor-facing form (Short 10–14", Long 15+")
@@ -374,9 +396,12 @@ router.get('/inventory', ...adminOnly, async (_req, res) => {
       stock[l][c]++;
     }
 
-    // Wigs in stock = completed by wigmaker, not yet shipped to a recipient.
+    // Wigs in stock = completed by wigmaker or received by staff, not yet shipped to a recipient.
     const wigStock = await prisma.wigProduction.findMany({
-      where: { status: 'completed' },
+      where: { 
+        status: { in: ['completed', 'received'] },
+        taskCode: { contains: '-W' } // Exclude parent batches
+      },
       include: { wigmaker: true, hairRequest: true },
       orderBy: { updatedAt: 'desc' },
     });
@@ -403,7 +428,7 @@ router.get('/matching', ...adminOnly, async (_req, res) => {
     const ar = await prisma.hairRequest.findMany({ where: { status: 'Validated' }, include: { user: true } });
     // For matching overview we don't require the full donations relation — omit
     // it to avoid runtime include errors and reduce query cost.
-    const cw = await prisma.wigProduction.findMany({ where: { status: 'completed' }, include: { wigmaker: true, hairRequest: true } });
+    const cw = await prisma.wigProduction.findMany({ where: { status: { in: ['completed', 'received'] }, taskCode: { contains: '-W' } }, include: { wigmaker: true, hairRequest: true } });
     res.json(s({ availableDonations: ad, approvedRequests: ar, completedWigs: cw, readyToMatch: ar.length, allocatedWigs: cw.length }));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
@@ -412,14 +437,14 @@ router.get('/operations', ...adminOnly, async (_req, res) => {
   try {
     const [sc, wt, tc, cc, pd, pr, aw, at] = await Promise.all([
       prisma.user.count({ where: { role: 'staff' } }),
-      prisma.wigProduction.count(),
+      prisma.wigProduction.count({ where: { taskCode: { contains: '-W' } } }),
       // "In Transit" = wigs that have been shipped to recipients but not yet received.
-      prisma.wigProduction.count({ where: { status: 'shipped' } }),
-      prisma.wigProduction.count({ where: { status: 'completed' } }),
+      prisma.wigProduction.count({ where: { status: 'shipped', taskCode: { contains: '-W' } } }),
+      prisma.wigProduction.count({ where: { status: { in: ['completed', 'received'] }, taskCode: { contains: '-W' } } }),
       prisma.donation.count({ where: { status: 'Received Hair' } }),
       prisma.hairRequest.count({ where: { status: 'Submitted' } }),
       prisma.user.count({ where: { role: 'wigmaker' } }),
-      prisma.wigProduction.count({ where: { status: { in: ['assigned', 'processing'] } } }),
+      prisma.wigProduction.count({ where: { status: { in: ['assigned', 'processing'] }, taskCode: { contains: '-W' } } }),
     ]);
     res.json({ staffCount: sc, wigTasksCount: wt, transitCount: tc, completedCount: cc, pendingDonationsCount: pd, pendingRequestsCount: pr, activeWigmakers: aw, activeWigTasks: at });
   } catch (err: any) {
@@ -428,45 +453,7 @@ router.get('/operations', ...adminOnly, async (_req, res) => {
   }
 });
 
-// GET /internal-api/admin/reports/export/csv
-router.get('/reports/export/csv', ...adminOnly, async (_req, res) => {
-  try {
-    const donations = await prisma.monetaryDonation.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
 
-    // RFC 4180-safe CSV escape — wraps in quotes and doubles any inner quotes.
-    const esc = (v: any): string => {
-      const s = v == null ? '' : String(v);
-      return `"${s.replace(/"/g, '""')}"`;
-    };
-
-    let totalAmount = 0;
-    const lines: string[] = ['Reference,Donor,Amount (PHP),Method,Date,Status'];
-    for (const d of donations) {
-      const name = d.name || `${d.user?.firstName || ''} ${d.user?.lastName || ''}`.trim() || 'Anonymous';
-      const dateStr = d.createdAt ? new Date(d.createdAt).toISOString().slice(0, 10) : '';
-      const amountNum = Number(d.amount ?? 0);
-      if (String(d.status).toLowerCase() !== 'rejected') totalAmount += amountNum;
-      lines.push([
-        esc(d.referenceNumber || ''),
-        esc(name),
-        amountNum.toFixed(2),
-        esc(d.paymentMethod || ''),
-        esc(dateStr),
-        esc(d.status || ''),
-      ].join(','));
-    }
-    lines.push('');
-    lines.push(`${esc('TOTAL (excluding rejected)')},,${totalAmount.toFixed(2)},,,`);
-    const csv = lines.join('\n') + '\n';
-
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename=hairlink_monetary_${new Date().toISOString().slice(0, 10)}.csv`);
-    res.send(csv);
-  } catch (err) {
-    console.error('CSV export failed:', err);
-    res.status(500).json({ error: 'Failed to export' });
-  }
-});
 
 // GET /internal-api/admin/site-settings
 router.get('/site-settings', ...adminOnly, async (_req, res) => {

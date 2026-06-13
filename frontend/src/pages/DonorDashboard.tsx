@@ -863,10 +863,12 @@ const DonorDashboard: React.FC = () => {
   const [referralCode, setReferralCode] = useState('');
   const [referralStatus, setReferralStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const goal = 100;
 
   const fetchStats = async () => {
     try {
+      setError(null);
       const [statsRes, milestoneRes, vouchersRes] = await Promise.all([
         apiClient.get('/internal-api/donations/stats'),
         apiClient.get('/internal-api/rewards/milestone'),
@@ -884,8 +886,9 @@ const DonorDashboard: React.FC = () => {
         setMilestoneVoucher(newVoucher);
         setShowMilestoneModal(true);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch stats', err);
+      setError(err?.response?.data?.error || err?.message || 'Failed to load dashboard data.');
     } finally {
       setLoading(false);
     }
@@ -902,7 +905,18 @@ const DonorDashboard: React.FC = () => {
     fetchStats();
   }, []);
 
-  if (loading || !stats) return <LoadingScreen />;
+  if (loading) return <LoadingScreen />;
+  if (error) return (
+    <div style={{ padding: '50px', textAlign: 'center', color: '#D63B8A', fontFamily: 'Inter, sans-serif' }}>
+      <h2>Something went wrong</h2>
+      <p>{error}</p>
+      <p style={{ marginTop: '20px', color: '#666' }}>
+        <strong>Developer tip:</strong> This usually means the backend crashed or the database schema is out of sync.<br/>
+        Please stop the backend terminal, run <code>npx prisma generate</code>, and restart the backend.
+      </p>
+    </div>
+  );
+  if (!stats) return null;
 
   const getGreeting = () => {
     const hour = new Date().getHours();

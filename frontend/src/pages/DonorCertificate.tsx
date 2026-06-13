@@ -100,7 +100,7 @@ const DonorCertificate: React.FC = () => {
                 boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)'
               }}
             >
-              <i className='bx bx-printer'></i> Print / Save as PDF
+              <i className='bx bx-printer'></i> Print as PDF
             </button>
           )}
         </div>
@@ -166,7 +166,7 @@ const DonorCertificate: React.FC = () => {
               gap: '0.5rem'
             }}>
               <i className='bx bx-check-circle' style={{ fontSize: '1rem' }}></i>
-              Certificate is ready. Click "Print / Save as PDF" to download.
+              Certificate is ready. Click "Print as PDF" to download.
               {donations.length > 1 && (
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ fontWeight: 700 }}>Switch:</span>

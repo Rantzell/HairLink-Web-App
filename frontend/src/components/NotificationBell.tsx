@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Notification {
   id: number;
@@ -14,6 +15,8 @@ interface Notification {
 
 const NotificationBell: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const role = user?.role;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -55,7 +58,63 @@ const NotificationBell: React.FC = () => {
     if (n.type === 'announcement' || n.title.includes('Announcement:')) {
       return { label: 'View Announcement', path: '' };
     }
+
+    // Extract reference codes from the notification message
     const match = n.message.match(/\(((?:HD|WR|REQ|MD)[- ][A-Z0-9-]+)\)/i);
+
+    // ── Staff role routing ──
+    if (role === 'staff') {
+      // Staff donation notifications: "New Hair Donation" → verification, delivery-related → tracking
+      if (n.type === 'staff_donation') {
+        if (n.title.includes('New Hair Donation')) return { label: 'View Verification →', path: '/staff/verification/donor' };
+        return { label: 'View Tracking →', path: '/staff/tracking/donation' };
+      }
+      // Staff request notifications: "New Wig Request" → verification, others → tracking
+      if (n.type === 'staff_request') {
+        if (n.title.includes('New Wig Request')) return { label: 'View Verification →', path: '/staff/verification/recipient' };
+        return { label: 'View Tracking →', path: '/staff/tracking/recipient' };
+      }
+      if (n.type === 'staff_monetary') {
+        if (n.title.includes('New Monetary')) return { label: 'View Verification →', path: '/staff/verification/monetary' };
+        return { label: 'View Monetary →', path: '/staff/verification/monetary' };
+      }
+      if (n.type === 'staff_wig_production') return { label: 'View Tracking →', path: '/staff/tracking/wigmaker' };
+      // If a reference is found, route to the appropriate staff page
+      if (match) {
+        const ref = match[1];
+        if (ref.startsWith('HD-') || ref.startsWith('HD ')) return { label: 'View Tracking →', path: '/staff/tracking/donation' };
+        if (ref.startsWith('WR-') || ref.startsWith('WR ') || ref.startsWith('REQ-') || ref.startsWith('REQ ')) return { label: 'View Tracking →', path: '/staff/tracking/recipient' };
+        if (ref.startsWith('MD-') || ref.startsWith('MD ')) return { label: 'View Monetary →', path: '/staff/verification/monetary' };
+      }
+      // Fallback for generic staff notification types
+      if (n.type === 'donation') return { label: 'View Tracking →', path: '/staff/tracking/donation' };
+      if (n.type === 'request') return { label: 'View Tracking →', path: '/staff/tracking/recipient' };
+      if (n.type === 'community') return { label: 'View Post →', path: '/staff/community' };
+      return null;
+    }
+
+    // ── Admin role routing ──
+    if (role === 'admin') {
+      if (n.type === 'staff_donation' || n.type === 'donation') return { label: 'View Verification →', path: '/admin/verification?view=donor' };
+      if (n.type === 'staff_request' || n.type === 'request') return { label: 'View Verification →', path: '/admin/verification?view=recipient' };
+      if (n.type === 'staff_monetary') return { label: 'View Reports →', path: '/admin/reports?type=monetary' };
+      if (n.type === 'staff_wig_production') return { label: 'View Operations →', path: '/admin/operations' };
+      if (match) {
+        const ref = match[1];
+        if (ref.startsWith('HD-') || ref.startsWith('HD ')) return { label: 'View Verification →', path: '/admin/verification?view=donor' };
+        if (ref.startsWith('WR-') || ref.startsWith('WR ') || ref.startsWith('REQ-') || ref.startsWith('REQ ')) return { label: 'View Verification →', path: '/admin/verification?view=recipient' };
+      }
+      if (n.type === 'community') return { label: 'View Community →', path: '/admin/community' };
+      return null;
+    }
+
+    // ── Wigmaker role routing ──
+    if (role === 'wigmaker') {
+      if (n.type === 'wigmaker') return { label: 'View Tasks →', path: '/wigmaker/hair-batch-tracking' };
+      return null;
+    }
+
+    // ── Donor / Recipient routing (default) ──
     if (match) {
       const ref = match[1];
       if (ref.startsWith('HD-') || ref.startsWith('HD ')) return { label: 'View Tracking →', path: `/donor/tracking/${ref}` };
@@ -63,12 +122,9 @@ const NotificationBell: React.FC = () => {
     }
     if (n.type === 'donation') return { label: 'View Donation →', path: '/donor/tracking' };
     if (n.type === 'request') return { label: 'View Request →', path: '/recipient/tracking' };
-    if (n.type === 'community') return { label: 'View Post →', path: '/community' };
-    if (n.type === 'wigmaker') return { label: 'View Tasks →', path: '/wigmaker/tasks' };
-    if (n.type === 'staff_donation') return { label: 'View Donations →', path: '/staff/verification/donor' };
-    if (n.type === 'staff_request') return { label: 'View Requests →', path: '/staff/verification/recipient' };
-    if (n.type === 'staff_monetary') return { label: 'View Monetary →', path: '/staff/verification/monetary' };
-    if (n.type === 'staff_wig_production') return { label: 'View Tracking →', path: '/staff/tracking/donation' };
+    if (n.type === 'community') return { label: 'View Post →', path: `/${role}/community` };
+    if (n.type === 'pickup_ready') return { label: 'View Request →', path: '/recipient/tracking' };
+    if (n.type === 'event') return { label: 'View Events →', path: `/${role}/dashboard` };
     return null;
   };
 
