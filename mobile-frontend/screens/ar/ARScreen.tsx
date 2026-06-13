@@ -196,10 +196,7 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
 
       {!webReady && !errorMsg ? (
         <View style={styles.loader} pointerEvents="none">
-          <ActivityIndicator color="white" size="large" />
-          <Text style={styles.loaderText}>
-            {assetsReady ? 'Initializing AR…' : 'Loading hair models…'}
-          </Text>
+          <ActivityIndicator color="#ff4d8d" size="large" />
         </View>
       ) : null}
 
@@ -219,46 +216,47 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
         </Pressable>
       </View>
 
-      <Pressable
-        onPress={capture}
-        style={[styles.captureBtn, { bottom: insets.bottom + 110 }]}
-        hitSlop={10}
-      >
-        <View style={styles.captureInner} />
-      </Pressable>
+      <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 18 }]} pointerEvents="box-none">
+        {/* Style toggle — sits above the colors */}
+        <View style={styles.styleToggle}>
+          {(['short', 'long'] as const).map((s) => (
+            <Pressable
+              key={s}
+              onPress={() => pickStyle(s)}
+              style={[styles.segment, style === s && styles.segmentActive]}
+            >
+              <Text style={[styles.segmentText, style === s && styles.segmentTextActive]}>
+                {s === 'short' ? 'Short' : 'Long'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
 
-      <View style={[styles.styleRow, { top: insets.top + 12 }]}>
-        {(['short', 'long'] as const).map((s) => (
-          <Pressable
-            key={s}
-            onPress={() => pickStyle(s)}
-            style={[styles.pill, style === s && styles.pillActive]}
-          >
-            <Text style={[styles.pillText, style === s && styles.pillTextActive]}>
-              {s === 'short' ? 'Short' : 'Long'}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+        {/* Pink capture button */}
+        <Pressable onPress={capture} style={styles.captureBtn} hitSlop={10}>
+          <View style={styles.captureInner} />
+        </Pressable>
 
-      <View style={[styles.colorRow, { bottom: insets.bottom + 36 }]}>
-        {COLORS.map((c) => (
-          <Pressable
-            key={c.id}
-            onPress={() => pickColor(c.id)}
-            style={styles.swatchWrap}
-            hitSlop={8}
-          >
-            <View
-              style={[
-                styles.swatch,
-                { backgroundColor: c.hex },
-                colorId === c.id && styles.swatchActive,
-              ]}
-            />
-            <Text style={styles.swatchLabel}>{c.name}</Text>
-          </Pressable>
-        ))}
+        {/* Color choices */}
+        <View style={styles.colorRow}>
+          {COLORS.map((c) => (
+            <Pressable
+              key={c.id}
+              onPress={() => pickColor(c.id)}
+              style={styles.swatchWrap}
+              hitSlop={8}
+            >
+              <View
+                style={[
+                  styles.swatch,
+                  { backgroundColor: c.hex },
+                  colorId === c.id && styles.swatchActive,
+                ]}
+              />
+              <Text style={styles.swatchLabel}>{c.name}</Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -274,7 +272,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  loaderText: { color: 'white', marginTop: 12, fontSize: 14 },
   errorBox: {
     position: 'absolute',
     alignSelf: 'center',
@@ -311,32 +308,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  captureBtn: {
+  bottomPanel: {
     position: 'absolute',
-    alignSelf: 'center',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 3,
-    borderColor: 'white',
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 18,
+    gap: 16,
     zIndex: 5,
   },
-  captureInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: 'white' },
-  styleRow: { position: 'absolute', alignSelf: 'center', flexDirection: 'row', zIndex: 4 },
-  pill: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    marginHorizontal: 4,
+  styleToggle: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(20,20,20,0.55)',
+    borderRadius: 26,
+    padding: 4,
   },
-  pillActive: { backgroundColor: 'rgba(255,255,255,0.95)' },
-  pillText: { color: 'white', fontWeight: '600', fontSize: 13 },
-  pillTextActive: { color: '#111' },
-  colorRow: { position: 'absolute', alignSelf: 'center', flexDirection: 'row', zIndex: 4 },
+  segment: { paddingHorizontal: 28, paddingVertical: 9, borderRadius: 22 },
+  segmentActive: { backgroundColor: '#fff' },
+  segmentText: { color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: 14 },
+  segmentTextActive: { color: '#111' },
+  captureBtn: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: 'rgba(255,77,141,0.22)',
+    borderWidth: 4,
+    borderColor: '#ff4d8d',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: '#ff4d8d' },
+  colorRow: { flexDirection: 'row', alignItems: 'center' },
   swatchWrap: { alignItems: 'center', marginHorizontal: 14 },
   swatch: {
     width: 46,

@@ -32,8 +32,6 @@
     "expo-print": "~15.0.8",
     "expo-sharing": "~14.0.8",
     "expo-status-bar": "~3.0.8",
-    "expo-ar-hair": "file:./modules/expo-ar-hair",
-    "expo-face-tracker": "file:./modules/expo-face-tracker",
     "pg": "^8.20.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",

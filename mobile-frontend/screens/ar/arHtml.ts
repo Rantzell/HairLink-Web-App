@@ -37,7 +37,10 @@ html,body{margin:0;padding:0;overflow:hidden;width:100%;height:100%;background:#
 #stage{position:fixed;inset:0;width:100vw;height:100vh;overflow:hidden;}
 #video,#canvas{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
 #video{z-index:0;}
-#canvas{z-index:1;pointer-events:none;}
+/* Light blur on the 3D hair overlay feathers the hair silhouette so its
+   edges blend into the real photo instead of looking like hard-cut cards.
+   Tune the px value: more = softer/dreamier, less = crisper. */
+#canvas{z-index:1;pointer-events:none;filter:blur(0.8px);}
 #stage.mirror #video,#stage.mirror #canvas{transform:scaleX(-1);}
 
 #status{position:fixed;top:12px;left:12px;right:12px;color:#fff;font-family:monospace;font-size:12px;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:8px;z-index:200;pointer-events:none;opacity:0;transition:opacity .25s;text-align:center;}
@@ -133,32 +136,36 @@ const VIRTUAL_CAMERA_FOV_Y = 63;
 const DEG = Math.PI / 180;
 const FACTORY_TRANSFORM = {
   short: {
-    px: -1.1, py: -0.8, pz: -6.0,
+    px: -1.1, py: -0.2, pz: -6.0,   // py raised to cover the crown / real hairline
     rx: 0, ry: 0, rz: 5 * DEG,
     sx: 2.28, sy: 2.22, sz: 2.16,
   },
   long: {
-    px: 2.0, py: 3.8, pz: -2.1,
+    px: 2.0, py: 4.3, pz: -2.1,     // py raised to cover the crown
     rx: 0, ry: 0, rz: 1 * DEG,
-    sx: 2.83, sy: 2.83, sz: 2.83,
+    sx: 3.12, sy: 3.12, sz: 3.12,   // a bit bigger than before (was 2.83)
   },
 };
 
-// Wig width — set to FACE width so the wig fits real heads naturally.
-// Was 17 (skull width) before — made the wig too wide and the sides
-// projected forward of the face.
-const WIG_WIDTH_CM = 14;
+// Wig width (cm). Widened from 14 → 15 so the wig wraps a bit further down the
+// sides and covers the user's real hair at the temples instead of leaving it
+// peeking out. Raise for more coverage, lower if the sides bow out past the face.
+const WIG_WIDTH_CM = 15;
 
-// Face-shaped depth occluder — STATIC dimensions for reliability.
-// Covers the FACE AREA only (temples → chin) but extends FORWARD toward
-// the camera so any hair geometry sticking out past the face gets clipped
-// by the depth test, letting the camera video (face) show through.
+// Face-shaped depth occluder driven by the LIVE MediaPipe face mesh.
+// The old version was a fixed ellipsoid — it cut a generic OVAL "hole" through
+// the hair regardless of the user's actual face (the "fixed circle"). Instead
+// we now build a depth mask from the detected FACE-OVAL landmarks every frame,
+// so the cutout is the exact shape of THIS face. Hair that sits on/behind the
+// face inside this silhouette is depth-culled (face shows through); bangs in
+// front of the face still render; side/back hair outside the silhouette renders.
 //
-// Center is in MediaPipe canonical face space (cm). Radius is half-extent.
-const HEAD_OCCLUDER = {
-  center: { x: 0, y: -1.0, z:  2.5 },  // face center, pushed forward toward camera
-  radius: { x: 7.0, y:  9.5, z:  6.0 },// face-sized, DEEP forward to clip protruding hair
-};
+// Ordered clockwise loop of the 36 MediaPipe face-oval landmark indices.
+const FACE_OVAL = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+// Push the mask slightly toward the camera (fraction of head depth) so the
+// wig's face-covering polygons fall behind it and get culled, while real
+// bangs (closer to the camera) still render in front.
+const OCCLUDER_FORWARD = 0.06;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function b64ToArrayBuffer(b64) {
@@ -174,6 +181,10 @@ function r2d(r) { return r * 180 / Math.PI; }
 const statusEl = document.getElementById('status');
 let statusTimer;
 function showStatus(msg, persist) {
+  // Keep the AR view clean: only ever surface ERROR text on screen. All the
+  // informational status ("Loading…", instructions, etc.) is suppressed so no
+  // text floats above the camera.
+  if (!/^error/i.test(msg)) return;
   statusEl.textContent = msg;
   statusEl.classList.add('show');
   clearTimeout(statusTimer);
@@ -329,27 +340,30 @@ async function main() {
     headRoot.visible = false;  // hide until first detection
     scene.add(headRoot);
 
-    // ── Invisible head-shaped occluder ──
-    // Renders depth only (colorWrite=false). Sits where the user's actual
-    // skull is, so wig polygons that try to draw in front of the face
-    // fail the depth test → face video shows through.
-    const occGeom = new THREE.SphereGeometry(1, 32, 24);
-    occGeom.scale(HEAD_OCCLUDER.radius.x, HEAD_OCCLUDER.radius.y, HEAD_OCCLUDER.radius.z);
-    const occMat = new THREE.MeshBasicMaterial({
-      colorWrite: false,
-      depthWrite: true,
-      depthTest: true,
-      side: THREE.FrontSide,
+    // ── Live face-mesh depth occluder ──
+    // A triangle fan over the face-oval landmarks (centroid at index 0 + the
+    // 36 rim verts). Positions are rewritten every frame in the render loop
+    // from the detected landmarks; indices are fixed. It writes depth only
+    // (colorWrite=false) so it never draws pixels — it just makes the wig's
+    // face-covering polygons fail the depth test, revealing the camera video.
+    // Lives in WORLD space (not under headRoot): we position its verts by
+    // unprojecting the on-screen landmarks, which already account for pose.
+    const OVAL_N = FACE_OVAL.length;
+    const maskPos = new Float32Array((OVAL_N + 1) * 3); // +1 centroid at index 0
+    const maskGeom = new THREE.BufferGeometry();
+    maskGeom.setAttribute('position', new THREE.BufferAttribute(maskPos, 3));
+    const maskIdx = [];
+    for (let i = 0; i < OVAL_N; i++) maskIdx.push(0, 1 + i, 1 + ((i + 1) % OVAL_N));
+    maskGeom.setIndex(maskIdx);
+    const maskMat = new THREE.MeshBasicMaterial({
+      colorWrite: false, depthWrite: true, depthTest: true, side: THREE.DoubleSide,
     });
-    const occluder = new THREE.Mesh(occGeom, occMat);
-    occluder.position.set(HEAD_OCCLUDER.center.x, HEAD_OCCLUDER.center.y, HEAD_OCCLUDER.center.z);
-    occluder.renderOrder = -10;   // depth-prepass before everything else
-    headRoot.add(occluder);
-
-    // (Static occluder — sized at geometry creation, no per-frame update.
-    //  The buggy dynamic version was double-scaling, leaving the occluder
-    //  either huge or microscopic. A static face-sized occluder is more
-    //  reliable than chasing landmark-derived sizes every frame.)
+    const faceMask = new THREE.Mesh(maskGeom, maskMat);
+    faceMask.frustumCulled = false;
+    faceMask.renderOrder = -10;   // depth prepass before the wig
+    faceMask.visible = false;     // shown on first detection
+    scene.add(faceMask);
+    const maskRay = new THREE.Vector3();
 
     // ── Load GLB wigs ──
     const loader = new GLTFLoader();
@@ -490,12 +504,28 @@ async function main() {
       loadWig('long',  LONG_B64),
     ]);
 
-    showStatus('1-finger: move  •  Pinch: scale  •  Twist: rotate  •  2-finger up/down: depth  •  ⚙: panel', false);
     send({ type: 'ready' });
 
     // ── Render loop ──
     const video = document.getElementById('video');
     const tmpMatrix = new THREE.Matrix4();
+
+    // ── Head-pose smoothing ──
+    // MediaPipe gives a fresh pose only on detection frames, and it's noisy, so
+    // copying it straight to the wig makes it jitter / snap when you turn. We
+    // decompose the latest pose into a TARGET (pos / rotation / scale) and, every
+    // render frame, ease the CURRENT pose toward it. Result: buttery tracking
+    // that keeps moving smoothly even between detections.
+    const tgtPos = new THREE.Vector3();
+    const tgtQuat = new THREE.Quaternion();
+    const tgtScale = new THREE.Vector3(1, 1, 1);
+    const curPos = new THREE.Vector3();
+    const curQuat = new THREE.Quaternion();
+    const curScale = new THREE.Vector3(1, 1, 1);
+    let hasPose = false;
+    // Per-frame easing (0 = frozen, 1 = instant/snappy). ~0.4 ≈ smooth but
+    // still responsive at 60 fps. Lower it for more glide, raise for less lag.
+    const POSE_SMOOTH = 0.4;
 
     // Brief persistence on detection dropouts. MediaPipe will occasionally
     // miss a frame when the user turns fast, blinks, or moves to the edge
@@ -520,22 +550,68 @@ async function main() {
             // MediaPipe gives a 16-float column-major matrix that maps
             // canonical face metric space → camera-space (cm units).
             tmpMatrix.fromArray(mats[0].data);
-            headRoot.matrix.copy(tmpMatrix);
+            // Set the smoothing TARGET (eased toward every render frame below).
+            tmpMatrix.decompose(tgtPos, tgtQuat, tgtScale);
+            if (!hasPose) {
+              // First detection — snap so it doesn't glide in from origin.
+              curPos.copy(tgtPos); curQuat.copy(tgtQuat); curScale.copy(tgtScale);
+              hasPose = true;
+            }
             headRoot.visible = true;
             framesSinceDetection = 0;
 
-            // (Occluder is static — no per-frame resize. The static face-sized
-            //  occluder reliably hides hair that protrudes in front of the face.)
+            // ── Update the live face-mesh depth occluder ──
+            // Map each face-oval landmark through the video's object-fit:cover
+            // transform → screen NDC → unproject to a point at (just in front
+            // of) the head depth. This builds a face-shaped depth mask that
+            // matches the real face, so the cutout follows the face — not a
+            // fixed oval. The CSS mirror on #stage flips mask + video together.
+            const lm = result.faceLandmarks && result.faceLandmarks[0];
+            if (lm && video.videoWidth) {
+              const vw = video.videoWidth, vh = video.videoHeight;
+              const sw = window.innerWidth, sh = window.innerHeight;
+              const cover = Math.max(sw / vw, sh / vh);
+              const oX = (sw - vw * cover) / 2, oY = (sh - vh * cover) / 2;
+              const targetZ = tmpMatrix.elements[14] * (1 - OCCLUDER_FORWARD); // toward camera
+              let cx = 0, cy = 0, cz = 0;
+              for (let i = 0; i < OVAL_N; i++) {
+                const p = lm[FACE_OVAL[i]];
+                const sx = p.x * vw * cover + oX;
+                const sy = p.y * vh * cover + oY;
+                const ndcX = (sx / sw) * 2 - 1;
+                const ndcY = -((sy / sh) * 2 - 1);
+                // camera is at the origin → unproject + normalize gives the ray
+                // direction; scale it to reach the target depth plane.
+                maskRay.set(ndcX, ndcY, 0.5).unproject(camera).normalize();
+                const t = targetZ / maskRay.z;
+                const wx = maskRay.x * t, wy = maskRay.y * t, wz = maskRay.z * t;
+                const vi = (i + 1) * 3;
+                maskPos[vi] = wx; maskPos[vi + 1] = wy; maskPos[vi + 2] = wz;
+                cx += wx; cy += wy; cz += wz;
+              }
+              maskPos[0] = cx / OVAL_N; maskPos[1] = cy / OVAL_N; maskPos[2] = cz / OVAL_N;
+              maskGeom.attributes.position.needsUpdate = true;
+              faceMask.visible = true;
+            }
           } else {
             framesSinceDetection++;
             // Keep last pose for a short grace period; only hide after.
             if (framesSinceDetection > KEEP_VISIBLE_FRAMES) {
               headRoot.visible = false;
+              faceMask.visible = false;
             }
           }
         } catch(e) {
           // Detection can occasionally throw on rapid resizes — ignore
         }
+      }
+      // Ease the wig pose toward the latest target every frame for smooth,
+      // glide-y head tracking (runs even on non-detection frames).
+      if (hasPose) {
+        curPos.lerp(tgtPos, POSE_SMOOTH);
+        curQuat.slerp(tgtQuat, POSE_SMOOTH);
+        curScale.lerp(tgtScale, POSE_SMOOTH);
+        headRoot.matrix.compose(curPos, curQuat, curScale);
       }
       renderer.render(scene, camera);
     }
