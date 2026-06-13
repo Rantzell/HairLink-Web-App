@@ -8,6 +8,10 @@ export type ArHairViewProps = ViewProps & {
   style?: any;
   hairStyle: StyleId;
   color: string;
+  // Local file URIs (file://...) for the GLB hair models.
+  // The JS side resolves these via expo-asset (Asset.fromModule + downloadAsync).
+  shortModelUri: string;
+  longModelUri: string;
   offsetX?: number;
   offsetY?: number;
   offsetZ?: number;
@@ -45,6 +49,8 @@ const ArHairView = React.forwardRef<ArHairViewRef, ArHairViewProps>((props, ref)
       // @ts-ignore — native-only prop registered in ExpoArHairModule
       hairStyle={props.hairStyle}
       color={props.color}
+      shortModelUri={props.shortModelUri}
+      longModelUri={props.longModelUri}
       offsetX={props.offsetX ?? 0}
       offsetY={props.offsetY ?? 0}
       offsetZ={props.offsetZ ?? 0}

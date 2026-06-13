@@ -1,6 +1,6 @@
 {
-  "platforms": [],
+  "platforms": ["android"],
   "android": {
-    "modules": []
+    "modules": ["expo.modules.arhair.ExpoArHairModule"]
   }
 }

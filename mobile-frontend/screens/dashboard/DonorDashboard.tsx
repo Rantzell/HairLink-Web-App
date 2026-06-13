@@ -38,6 +38,7 @@ import NotificationScreen from './NotificationScreen';
 import DonationHistoryScreen from './DonationHistoryScreen';
 import ProfileScreen from './ProfileScreen';
 import ARScreen from '../ar/ARScreen';
+import ARScreenV2 from '../ar/ARScreenV2';
 import CommunityScreen from './CommunityScreen';
 import HairCareScreen from './HairCareScreen';
 import RewardsScreen from './RewardsScreen';
@@ -51,7 +52,7 @@ interface DonorDashboardProps {
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 // Reusable animated button for premium feedback
-const ScaleButton = ({ children, onPress, style }: any) => {
+const ScaleButton = ({ children, onPress, onLongPress, style }: any) => {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -61,6 +62,8 @@ const ScaleButton = ({ children, onPress, style }: any) => {
     <AnimatedTouchable
       activeOpacity={0.8}
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={650}
       onPressIn={() => (scale.value = withSpring(0.96, { damping: 10, stiffness: 200 }))}
       onPressOut={() => (scale.value = withSpring(1))}
       style={[style, animatedStyle]}
@@ -119,6 +122,10 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
   const [showHistory, setShowHistory] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showAR, setShowAR] = useState(false);
+  // BETA: ARScreenV2 (ML Kit native tracker + transparent WebView overlay).
+  // Triggered by long-pressing the central AR button. V1 (WebView+MediaPipe)
+  // stays the default until V2 is verified on-device.
+  const [showARV2, setShowARV2] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
   const [showHairCare, setShowHairCare] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
@@ -308,6 +315,18 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         exiting={FadeOut.duration(200)}
       >
         <ARScreen onBack={() => setShowAR(false)} />
+      </Animated.View>
+    );
+  }
+
+  if (showARV2) {
+    return (
+      <Animated.View
+        style={{ flex: 1 }}
+        entering={FadeInUp.springify().damping(15).stiffness(120)}
+        exiting={FadeOut.duration(200)}
+      >
+        <ARScreenV2 onBack={() => setShowARV2(false)} />
       </Animated.View>
     );
   }
@@ -629,12 +648,19 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           <Text style={styles.navLabel}>Schedule</Text>
         </ScaleButton>
 
-        <ScaleButton style={[styles.arButton, { width: ms(64), height: ms(64), borderRadius: ms(32) }]} onPress={async () => {
-          // Try the native HairLink AR app first (real face tracking + GLB / USDZ wig).
-          // Falls back to the in-Expo camera preview if the native app isn't installed.
-          const opened = await launchNativeAR();
-          if (!opened) setShowAR(true);
-        }}>
+        <ScaleButton
+          style={[styles.arButton, { width: ms(64), height: ms(64), borderRadius: ms(32) }]}
+          onPress={async () => {
+            // Try the native HairLink AR app first (real face tracking + GLB / USDZ wig).
+            // Falls back to the in-Expo camera preview if the native app isn't installed.
+            const opened = await launchNativeAR();
+            if (!opened) setShowAR(true);
+          }}
+          // Long press → open the experimental V2 (ML Kit native + transparent
+          // three.js overlay). Hidden behind a gesture so it doesn't ship to
+          // regular donors until verified.
+          onLongPress={() => setShowARV2(true)}
+        >
           <MaterialCommunityIcons name="augmented-reality" size={ms(30)} color="#fff" />
         </ScaleButton>
 

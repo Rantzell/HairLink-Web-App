@@ -6,16 +6,15 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Image,
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { s, vs, ms } from '../../lib/scaling';
+import { vs, ms } from '../../lib/scaling';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown, FadeIn, Layout, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import api from '../../lib/api';
 
 interface NotificationItem {
@@ -27,7 +26,7 @@ interface NotificationItem {
   created_at: string;
 }
 
-// Reusable animated button for consistency
+// Reusable animated card — gentle scale-down on press for tactile feedback.
 const ScaleButton = ({ children, onPress, style }: any) => {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({
@@ -37,9 +36,9 @@ const ScaleButton = ({ children, onPress, style }: any) => {
   return (
     <Animated.View style={[animatedStyle, style]}>
       <TouchableOpacity
-        activeOpacity={0.9}
+        activeOpacity={0.92}
         onPress={onPress}
-        onPressIn={() => (scale.value = withSpring(0.98, { damping: 15, stiffness: 300 }))}
+        onPressIn={() => (scale.value = withSpring(0.985, { damping: 18, stiffness: 320 }))}
         onPressOut={() => (scale.value = withSpring(1))}
         style={{ width: '100%' }}
       >
@@ -51,11 +50,18 @@ const ScaleButton = ({ children, onPress, style }: any) => {
 
 export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: { onBack?: () => void, onTrack?: () => void, role?: 'Donor' | 'Recipient' }) {
   const isRecipient = role === 'Recipient';
-  const themeColor = isRecipient ? '#9B59B6' : '#FF1493';
-  const themeMedium = isRecipient ? '#8E44AD' : '#FF66B2';
-  const themeLight = isRecipient ? '#E8DAEF' : '#FFB3D9';
-  const themeBg = isRecipient ? '#F9F4FC' : '#F8F0F5';
-  const themePale = isRecipient ? '#FFF0F8' : '#FFF0F5'; // Small adjustment for consistency
+
+  // ── Role-themed palette ──────────────────────────────────────────────
+  // Donor stays pink; Recipient stays light purple. Each role gets a
+  // gradient pair (deep → soft) used for the header AND the icon circles.
+  const theme = {
+    deep: isRecipient ? '#9B6BBF' : '#FF1493',
+    soft: isRecipient ? '#B084CC' : '#FF66B2',
+    pale: isRecipient ? '#F4ECF7' : '#FFE4EE',
+    bg: isRecipient ? '#FAF6FD' : '#FBF4F8',
+    ring: isRecipient ? '#E8DAEF' : '#FFD6EF',
+  };
+
   const [activeTab, setActiveTab] = useState<'All' | 'Unread'>('All');
   const [search, setSearch] = useState('');
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -87,10 +93,11 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
   React.useEffect(() => {
     const init = async () => {
       await fetchNotifications();
-      await markAllAsRead(); // Auto-mark all as read when screen opens
+      await markAllAsRead();
     };
     init();
   }, []);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchNotifications();
@@ -105,7 +112,6 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
     }
   };
 
-
   const filteredNotifications = notifications.filter((n) => {
     const matchesTab = activeTab === 'All' || !n.is_read;
     const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -113,19 +119,22 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
     return matchesTab && matchesSearch;
   });
 
+  // ── Time formatting ──────────────────────────────────────────────────
   const getRelativeTime = (dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    const mins = Math.floor(diff / 60000);
+    const mins = Math.max(1, Math.floor(diff / 60000));
     const hours = Math.floor(mins / 60);
     const days = Math.floor(hours / 24);
 
-    if (mins < 60) return `${mins}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
+    if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  // Full date header — matches reference image style ("Today, June 13 2026").
   const getDateGroup = (dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
@@ -133,9 +142,11 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
 
-    if (date >= today) return 'Today';
-    if (date >= yesterday) return 'Yesterday';
-    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const longFormat = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    if (date >= today) return `Today, ${longFormat}`;
+    if (date >= yesterday) return `Yesterday, ${longFormat}`;
+    return longFormat;
   };
 
   const groupedNotifications = filteredNotifications.reduce((acc: any, n) => {
@@ -145,192 +156,223 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
     return acc;
   }, {});
 
-  const getNotifStyle = (type: string) => {
-    if (isRecipient) {
-      switch (type) {
-        case 'wig':
-        case 'hair_donation':
-        case 'donation':
-        case 'request':
-          return { icon: 'ribbon', color: '#8E44AD', bg: '#F5EEF8' };
-        case 'monetary_donation':
-        case 'monetary':
-          return { icon: 'wallet', color: '#9B59B6', bg: '#FDF7FF' };
-        case 'announcement':
-          return { icon: 'bullhorn', color: '#8E44AD', bg: '#F5EEF8' };
-        case 'community':
-          return { icon: 'comment-text-multiple-outline', color: '#9B59B6', bg: '#F5EEF8' };
-        default:
-          return { icon: 'mail', color: '#9B59B6', bg: '#FDF7FF' };
-      }
+  // ── Per-type styling: icon glyph + accent dot color ────────────────────
+  // The accent dot is the small colored marker on the right side of each card
+  // (success/info/warning/danger semantics). The icon glyph is the symbol
+  // inside the circular badge. Background uses the role's theme gradient.
+  const getNotifStyle = (type: string, title?: string) => {
+    const t = (type || '').toLowerCase();
+    const titleLc = (title || '').toLowerCase();
+
+    // Status-aware icon: titles like "approved", "completed", "rejected",
+    // "canceled" override the type-based icon so success/error states are
+    // visually obvious (matches the reference image's checkmark / X cues).
+    if (titleLc.includes('reject') || titleLc.includes('cancel') || titleLc.includes('missing')) {
+      return { glyph: 'close', dot: '#E74C3C', isMaterial: false };
     }
-    
-    switch (type) {
-      case 'wig': return { icon: 'ribbon', color: '#8E44AD', bg: '#F3E5F5' };
-      case 'hair_donation': return { icon: 'content-cut', color: '#D81B60', bg: '#FCE4EC' };
+    if (titleLc.includes('approv') || titleLc.includes('complet') || titleLc.includes('received') || titleLc.includes('arrived') || titleLc.includes('success')) {
+      return { glyph: 'checkmark', dot: '#3498DB', isMaterial: false };
+    }
+
+    switch (t) {
+      case 'donation':
+      case 'hair_donation':
+        return { glyph: 'heart', dot: '#3498DB', isMaterial: true };
       case 'monetary_donation':
       case 'monetary':
-        return { icon: 'wallet', color: '#1E88E5', bg: '#E3F2FD' };
-      case 'donation': return { icon: 'heart-pulse', color: '#FF1493', bg: '#FFF0F5' };
-      case 'request': return { icon: 'ribbon', color: '#8E44AD', bg: '#F3E5F5' };
-      case 'announcement': return { icon: 'bullhorn', color: '#FB8C00', bg: '#FFF3E0' };
-      case 'community': return { icon: 'comment-text-multiple-outline', color: '#FF1493', bg: '#FFF0F5' };
-      default: return { icon: 'mail', color: themeMedium, bg: themePale };
+        return { glyph: 'wallet-outline', dot: '#3498DB', isMaterial: true };
+      case 'wig':
+      case 'request':
+        return { glyph: 'ribbon', dot: '#9B59B6', isMaterial: true };
+      case 'announcement':
+        return { glyph: 'bullhorn-outline', dot: '#F39C12', isMaterial: true };
+      case 'event':
+        return { glyph: 'calendar', dot: '#F39C12', isMaterial: true };
+      case 'community':
+        return { glyph: 'account-multiple-outline', dot: '#3498DB', isMaterial: true };
+      case 'wigmaker':
+        return { glyph: 'content-cut', dot: '#9B59B6', isMaterial: true };
+      case 'staff_donation':
+        return { glyph: 'inbox-arrow-down', dot: '#3498DB', isMaterial: true };
+      default:
+        return { glyph: 'notifications-outline', dot: theme.deep, isMaterial: false };
     }
   };
 
-  const renderIcon = (type: string) => {
-    const style = getNotifStyle(type);
-    return <MaterialCommunityIcons name={style.icon as any} size={26} color={style.color} />;
+  const renderIcon = (type: string, title?: string) => {
+    const s = getNotifStyle(type, title);
+    if (s.isMaterial) {
+      return <MaterialCommunityIcons name={s.glyph as any} size={ms(22)} color="#fff" />;
+    }
+    return <Ionicons name={s.glyph as any} size={ms(22)} color="#fff" />;
   };
 
   const insets = useSafeAreaInsets();
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <View style={[styles.container, { backgroundColor: themeBg }]}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <StatusBar style="light" />
 
-      {/* ── Premium Gradient Header ────────────────── */}
+      {/* ── Header ───────────────────────────────────────── */}
       <LinearGradient
-        colors={isRecipient ? [themeColor, themeMedium] : ['#FF66B2', '#FF1493']}
+        colors={[theme.deep, theme.soft]}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={[styles.header, { shadowColor: isRecipient ? themeMedium : '#FF1493', paddingTop: insets.top }]}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { shadowColor: theme.deep, paddingTop: insets.top }]}
       >
         <View style={styles.headerContent}>
-          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={ms(28)} color="#fff" />
+          <TouchableOpacity onPress={onBack} style={styles.iconBtn}>
+            <Ionicons name="chevron-back" size={ms(24)} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Notifications</Text>
-          <View style={{ width: ms(44) }} />
+          <Text style={styles.headerTitle}>Notification</Text>
+          <TouchableOpacity style={styles.iconBtn} onPress={markAllAsRead}>
+            <Ionicons name="ellipsis-vertical" size={ms(20)} color="#fff" />
+          </TouchableOpacity>
         </View>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* ── Search Bar ──────────────────────────────── */}
-        <Animated.View entering={FadeInDown.delay(100)} style={styles.searchContainer}>
-          <View style={[styles.searchBar, { borderColor: themeLight }]}>
-            <Ionicons name="search-outline" size={20} color={themeMedium} />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.deep} />
+        }
+      >
+        {/* ── Search Bar ────────────────────────────────── */}
+        <Animated.View entering={FadeInDown.delay(60)} style={styles.searchContainer}>
+          <View style={[styles.searchBar, { borderColor: theme.ring }]}>
+            <Ionicons name="search-outline" size={ms(18)} color={theme.soft} />
             <TextInput
               placeholder="Search notifications..."
-              placeholderTextColor="#999"
+              placeholderTextColor="#A09AAB"
               value={search}
               onChangeText={setSearch}
               style={styles.searchInput}
             />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')} hitSlop={10}>
+                <Ionicons name="close-circle" size={ms(16)} color="#BBB" />
+              </TouchableOpacity>
+            )}
           </View>
         </Animated.View>
 
-        {/* ── Filters ────────────────────────────────── */}
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.tabsRow}>
+        {/* ── Filter Tabs ───────────────────────────────── */}
+        <Animated.View entering={FadeInDown.delay(120)} style={styles.tabsRow}>
           <View style={styles.tabsGroup}>
-            {['All', 'Unread'].map((tab: any) => {
-              // Both tabs show the *unread* count — that's the number the
-              // user actually cares about ("things I haven't dealt with").
-              // Showing a total on the All tab was misleading because the
-              // "Mark all as read" action left it stuck at the same number.
-              const count = notifications.filter(n => !n.is_read).length;
+            {(['All', 'Unread'] as const).map((tab) => {
+              const isActive = activeTab === tab;
               return (
                 <TouchableOpacity
                   key={tab}
-                  style={[styles.tab, activeTab === tab && [styles.activeTab, { borderColor: themeMedium }]]}
+                  style={[
+                    styles.tab,
+                    isActive && { backgroundColor: theme.deep, borderColor: theme.deep },
+                  ]}
                   onPress={() => setActiveTab(tab)}
                 >
-                  <Text style={[styles.tabText, activeTab === tab && { color: themeColor }]}>{tab}</Text>
-                  {/* Hide the badge entirely when there's nothing unread,
-                      so "Mark all as read" visibly clears the chip. */}
-                  {count > 0 && (
-                    <View style={[styles.badge, activeTab === tab && { backgroundColor: themeMedium }]}>
-                      <Text style={[styles.badgeText, activeTab === tab && styles.activeBadgeText]}>{count}</Text>
+                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{tab}</Text>
+                  {unreadCount > 0 && (
+                    <View style={[styles.badge, isActive ? styles.badgeActive : { backgroundColor: theme.pale }]}>
+                      <Text style={[styles.badgeText, isActive ? styles.badgeTextActive : { color: theme.deep }]}>
+                        {unreadCount}
+                      </Text>
                     </View>
                   )}
                 </TouchableOpacity>
               );
             })}
           </View>
-          <TouchableOpacity onPress={markAllAsRead}>
-            <Text style={[styles.markAllText, { color: themeColor }]}>Mark all as read</Text>
-          </TouchableOpacity>
+          {unreadCount > 0 && (
+            <TouchableOpacity onPress={markAllAsRead}>
+              <Text style={[styles.markAllText, { color: theme.deep }]}>Mark all read</Text>
+            </TouchableOpacity>
+          )}
         </Animated.View>
 
+        {/* ── Loading / Empty States ───────────────────── */}
         {loading && !refreshing && (
-          <View style={{ marginTop: 100 }}>
-            <ActivityIndicator size="large" color={themeColor} />
+          <View style={{ marginTop: vs(100) }}>
+            <ActivityIndicator size="large" color={theme.deep} />
           </View>
         )}
 
         {!loading && filteredNotifications.length === 0 && (
           <View style={styles.emptyContainer}>
-            <Ionicons name="notifications-off-outline" size={80} color={themeLight} />
+            <View style={[styles.emptyIconWrap, { backgroundColor: theme.pale }]}>
+              <Ionicons name="notifications-off-outline" size={ms(40)} color={theme.deep} />
+            </View>
             <Text style={styles.emptyTitle}>Nothing here yet</Text>
             <Text style={styles.emptyDesc}>
-              {search ? "No results found for your search." : "You're all caught up! Check back later for updates."}
+              {search ? 'No results found for your search.' : "You're all caught up! Check back later for updates."}
             </Text>
           </View>
         )}
 
+        {/* ── Date-grouped notification list ───────────── */}
         {Object.keys(groupedNotifications).map((group, gIdx) => (
-          <Animated.View key={group} entering={FadeIn.delay(300 + gIdx * 100)}>
+          <Animated.View key={group} entering={FadeIn.delay(180 + gIdx * 80)}>
             <Text style={styles.dateHeader}>{group}</Text>
             {groupedNotifications[group].map((n: NotificationItem) => {
-              const style = getNotifStyle(n.type);
+              const style = getNotifStyle(n.type, n.title);
               const isExpanded = expandedId === n.id;
-              
+              const showTrack = ['donation', 'hair_donation', 'wig', 'request'].includes(n.type) && !!onTrack;
+
               return (
                 <ScaleButton
                   key={n.id}
-                  style={[
-                    styles.notificationCard, 
-                    { borderLeftColor: style.color },
-                    n.is_read && { opacity: 0.8 }
-                  ]}
+                  style={[styles.notificationCard, !n.is_read && styles.notificationCardUnread]}
                   onPress={() => {
                     setExpandedId(isExpanded ? null : n.id);
                     if (!n.is_read) markAsRead(n.id);
                   }}
                 >
                   <View style={styles.cardInner}>
-                    <View style={[styles.iconCircle, { backgroundColor: style.bg }]}>
-                      {renderIcon(n.type)}
-                    </View>
-                    
+                    {/* Themed icon circle — gradient from deep → soft (role color) */}
+                    <LinearGradient
+                      colors={[theme.deep, theme.soft]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.iconCircle}
+                    >
+                      {renderIcon(n.type, n.title)}
+                    </LinearGradient>
+
                     <View style={styles.notifContent}>
-                      <View style={styles.notifHeader}>
-                        <Text style={[styles.notifTitle, n.is_read && styles.readText]}>
-                          {n.title || 'Update Available'}
-                        </Text>
-                        {!n.is_read && <View style={[styles.unreadDot, { backgroundColor: themeMedium }]} />}
-                      </View>
-                      
-                      <Text 
-                        style={[
-                          styles.notifDesc, 
-                          isExpanded && styles.expandedDesc
-                        ]} 
+                      <Text style={[styles.notifTitle, n.is_read && styles.readTitle]} numberOfLines={1}>
+                        {n.title || 'Update Available'}
+                      </Text>
+                      <Text
+                        style={[styles.notifDesc, isExpanded && styles.expandedDesc]}
                         numberOfLines={isExpanded ? undefined : 2}
                       >
                         {n.message || 'Check your dashboard for the latest details on your activity.'}
                       </Text>
 
                       <View style={styles.notifFooter}>
-                        <View style={styles.timeRow}>
-                          <Ionicons name="time-outline" size={12} color="#999" />
-                          <Text style={styles.notifTime}>{getRelativeTime(n.created_at)}</Text>
+                        <View style={styles.timePill}>
+                          <Text style={styles.timePillText}>{getRelativeTime(n.created_at)}</Text>
                         </View>
-                        
-                        {['donation', 'hair_donation', 'wig', 'request'].includes(n.type) && onTrack && (
+                        {showTrack && (
                           <TouchableOpacity
-                            style={[styles.trackBtn, { backgroundColor: themeBg, borderColor: themeLight }]}
+                            style={[styles.trackBtn, { borderColor: theme.ring }]}
                             onPress={(e) => {
                               e.stopPropagation();
-                              onTrack();
+                              onTrack && onTrack();
                             }}
                           >
-                            <Text style={[styles.trackBtnText, { color: themeColor }]}>TRACK</Text>
-                            <Ionicons name="arrow-forward" size={12} color={themeColor} />
+                            <Text style={[styles.trackBtnText, { color: theme.deep }]}>TRACK</Text>
+                            <Ionicons name="arrow-forward" size={ms(12)} color={theme.deep} />
                           </TouchableOpacity>
                         )}
                       </View>
+                    </View>
+
+                    {/* Right-side status accent dot — semantic color from getNotifStyle */}
+                    <View style={styles.rightAccent}>
+                      <View style={[styles.accentDot, { backgroundColor: style.dot }]} />
+                      {!n.is_read && <View style={[styles.unreadPill, { backgroundColor: theme.deep }]} />}
                     </View>
                   </View>
                 </ScaleButton>
@@ -345,36 +387,55 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+
+  // ── Header ──────────────────────────────────────────
   header: {
-    borderBottomLeftRadius: ms(30),
-    borderBottomRightRadius: ms(30),
+    borderBottomLeftRadius: ms(28),
+    borderBottomRightRadius: ms(28),
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 6,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: ms(10),
-    paddingVertical: vs(15),
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(14),
   },
-  headerTitle: { fontSize: ms(20), fontWeight: '900', color: '#fff', letterSpacing: 0.5 },
-  backBtn: { width: ms(44), height: ms(44), alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: ms(20), fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
+  iconBtn: {
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
 
   scrollContent: { paddingBottom: vs(40) },
-  searchContainer: { paddingHorizontal: ms(20), paddingTop: vs(24), marginBottom: vs(20) },
+
+  // ── Search ──────────────────────────────────────────
+  searchContainer: { paddingHorizontal: ms(20), paddingTop: vs(20), marginBottom: vs(14) },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: ms(20),
+    borderRadius: ms(16),
     borderWidth: 1.5,
-    paddingHorizontal: ms(16),
-    paddingVertical: vs(12),
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2,
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(10),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+    gap: ms(8),
   },
-  searchInput: { flex: 1, marginLeft: ms(10), fontSize: ms(16), fontWeight: '600', color: '#333' },
+  searchInput: { flex: 1, fontSize: ms(14), fontWeight: '600', color: '#333', paddingVertical: 0 },
 
+  // ── Tabs row ────────────────────────────────────────
   tabsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -382,74 +443,144 @@ const styles = StyleSheet.create({
     paddingHorizontal: ms(20),
     marginBottom: vs(10),
   },
-  tabsGroup: { flexDirection: 'row' },
+  tabsGroup: { flexDirection: 'row', gap: ms(8) },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,102,178,0.1)',
+    backgroundColor: '#fff',
     paddingHorizontal: ms(14),
-    paddingVertical: vs(8),
-    borderRadius: ms(15),
-    marginRight: ms(10),
-    borderWidth: 1,
-    borderColor: 'transparent',
+    paddingVertical: vs(7),
+    borderRadius: ms(14),
+    borderWidth: 1.5,
+    borderColor: 'rgba(0,0,0,0.06)',
+    gap: ms(6),
   },
-  activeTab: { backgroundColor: '#fff', elevation: 2 },
-  tabText: { fontSize: ms(14), fontWeight: '700', color: '#666', marginRight: ms(6) },
+  tabText: { fontSize: ms(13), fontWeight: '700', color: '#666' },
+  tabTextActive: { color: '#fff' },
   badge: {
-    backgroundColor: 'rgba(255,255,255,0.8)',
     borderRadius: ms(10),
-    paddingHorizontal: ms(6),
-    paddingVertical: vs(2),
+    paddingHorizontal: ms(7),
+    paddingVertical: vs(1),
     minWidth: ms(20),
     alignItems: 'center',
   },
-  badgeText: { fontSize: ms(11), fontWeight: '800', color: '#888' },
-  activeBadgeText: { color: '#fff' },
-  markAllText: { fontSize: ms(13), fontWeight: '700' },
+  badgeActive: { backgroundColor: 'rgba(255,255,255,0.25)' },
+  badgeText: { fontSize: ms(11), fontWeight: '800' },
+  badgeTextActive: { color: '#fff' },
+  markAllText: { fontSize: ms(12), fontWeight: '700' },
 
-  dateHeader: { fontSize: ms(18), fontWeight: '900', color: '#1a1a1a', marginHorizontal: ms(24), marginTop: vs(24), marginBottom: vs(12) },
+  // ── Date headers ────────────────────────────────────
+  dateHeader: {
+    fontSize: ms(13),
+    fontWeight: '700',
+    color: '#8C7895',
+    marginHorizontal: ms(20),
+    marginTop: vs(20),
+    marginBottom: vs(10),
+    letterSpacing: 0.2,
+  },
+
+  // ── Notification cards ──────────────────────────────
   notificationCard: {
     backgroundColor: '#fff',
     marginHorizontal: ms(16),
-    marginBottom: vs(16),
-    borderRadius: ms(20),
+    marginBottom: vs(10),
+    borderRadius: ms(18),
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
-    borderLeftWidth: 6,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
     overflow: 'hidden',
   },
-  cardInner: { flexDirection: 'row', padding: ms(16) },
-  iconCircle: {
-    width: ms(56), height: ms(56), borderRadius: ms(20),
-    justifyContent: 'center', alignItems: 'center',
-    marginRight: ms(16),
+  notificationCardUnread: {
+    shadowOpacity: 0.08,
+    elevation: 3,
   },
-  notifContent: { flex: 1, justifyContent: 'center' },
-  notifHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: vs(4) },
-  notifTitle: { fontSize: ms(17), fontWeight: '800', color: '#1a1a1a', flex: 1, paddingRight: ms(10), lineHeight: vs(22) },
-  readText: { color: '#888', fontWeight: '600' },
-  unreadDot: { width: ms(10), height: ms(10), borderRadius: ms(5), marginTop: vs(6) },
-  notifDesc: { fontSize: ms(14), color: '#555', lineHeight: vs(20), fontWeight: '500' },
-  expandedDesc: { fontSize: ms(16), color: '#222', marginTop: vs(4), marginBottom: vs(12), lineHeight: vs(24) },
-  notifFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: vs(10) },
-  timeRow: { flexDirection: 'row', alignItems: 'center', gap: ms(4) },
-  notifTime: { fontSize: ms(12), color: '#999', fontWeight: '700' },
+  cardInner: {
+    flexDirection: 'row',
+    padding: ms(14),
+    alignItems: 'flex-start',
+  },
+  iconCircle: {
+    width: ms(44),
+    height: ms(44),
+    borderRadius: ms(22),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: ms(12),
+  },
+  notifContent: { flex: 1, justifyContent: 'center', minHeight: ms(44) },
+  notifTitle: {
+    fontSize: ms(14),
+    fontWeight: '800',
+    color: '#1a1a1a',
+    marginBottom: vs(3),
+  },
+  readTitle: { color: '#666', fontWeight: '700' },
+  notifDesc: { fontSize: ms(12), color: '#7C7689', lineHeight: ms(17), fontWeight: '500' },
+  expandedDesc: { color: '#3a3a3a', marginBottom: vs(6) },
+  notifFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: vs(8),
+  },
+  timePill: {
+    backgroundColor: '#F2EEF5',
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(3),
+    borderRadius: ms(10),
+  },
+  timePillText: { fontSize: ms(10), color: '#8C7895', fontWeight: '700' },
   trackBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: ms(14),
-    paddingVertical: vs(6),
-    borderRadius: ms(12),
+    backgroundColor: '#fff',
+    paddingHorizontal: ms(12),
+    paddingVertical: vs(5),
+    borderRadius: ms(10),
     borderWidth: 1.5,
-    gap: ms(6)
+    gap: ms(4),
   },
-  trackBtnText: { fontSize: ms(12), fontWeight: '900', letterSpacing: 1 },
+  trackBtnText: { fontSize: ms(10), fontWeight: '900', letterSpacing: 0.5 },
 
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: vs(80), paddingHorizontal: ms(40) },
-  emptyTitle: { fontSize: ms(20), fontWeight: '900', color: '#1a1a1a', marginTop: vs(20) },
-  emptyDesc: { fontSize: ms(14), color: '#999', textAlign: 'center', marginTop: vs(10), lineHeight: vs(20), fontWeight: '600' },
+  // Right-side accent column — colored dot for type + unread strip indicator
+  rightAccent: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginLeft: ms(8),
+    paddingTop: vs(4),
+    gap: vs(6),
+  },
+  accentDot: {
+    width: ms(8),
+    height: ms(8),
+    borderRadius: ms(4),
+  },
+  unreadPill: {
+    width: ms(4),
+    height: vs(20),
+    borderRadius: ms(2),
+  },
+
+  // ── Empty state ─────────────────────────────────────
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: vs(60),
+    paddingHorizontal: ms(40),
+  },
+  emptyIconWrap: {
+    width: ms(80),
+    height: ms(80),
+    borderRadius: ms(40),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: vs(16),
+  },
+  emptyTitle: { fontSize: ms(17), fontWeight: '800', color: '#1a1a1a', marginBottom: vs(6) },
+  emptyDesc: { fontSize: ms(13), color: '#8C7895', textAlign: 'center', lineHeight: ms(19), fontWeight: '500' },
 });
-
-
