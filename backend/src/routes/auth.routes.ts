@@ -61,15 +61,28 @@ router.post('/logout', authenticate, (_req: Request, res: Response) => {
 
 /**
  * DELETE /auth/account
- * Permanently deletes the user's profile row from public.users.
- * The auth.users row is managed by Supabase (cascade delete via FK).
+ * Permanently deletes the user from both public.users (Prisma) and auth.users (Supabase).
+ * Order: delete public.users first, then auth.users via the admin client.
+ * If Supabase deletion fails, we still succeed (the public row is already gone).
  */
 router.delete('/account', authenticate, async (req: Request, res: Response) => {
+  const userId = req.user!.id;
   try {
-    await prisma.user.delete({ where: { id: req.user!.id } });
+    // 1. Delete from public.users
+    await prisma.user.delete({ where: { id: userId } });
+
+    // 2. Delete from auth.users via Supabase admin client
+    const supabaseAdmin = (await import('../config/supabase')).default;
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (authError) {
+      // Log but don't fail — public row already removed
+      console.error('[Auth] Failed to delete user from Supabase auth:', authError.message);
+    }
+
     res.json({ message: 'Your account has been permanently deleted.' });
-  } catch (err) {
-    res.status(500).json({ error: 'Account deletion failed' });
+  } catch (err: any) {
+    console.error('[Auth] Account deletion error:', err);
+    res.status(500).json({ error: 'Account deletion failed', message: err.message });
   }
 });
 

@@ -9,7 +9,7 @@ import { uploadFile, getPublicUrl } from '../services/storage.service';
 import { notifyCommunityInteraction } from '../services/notification.service';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 function serializePost(p: any) {
   return {

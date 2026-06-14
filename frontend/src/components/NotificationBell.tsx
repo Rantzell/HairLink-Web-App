@@ -111,7 +111,7 @@ const NotificationBell: React.FC = () => {
         if (n.title.includes('New Monetary')) return { label: 'View Verification →', path: '/staff/verification/monetary' };
         return { label: 'View Monetary →', path: '/staff/verification/monetary' };
       }
-      if (n.type === 'staff_wig_production') return { label: 'View Tracking →', path: '/staff/tracking/wigmaker' };
+      if (n.type === 'staff_wig_production') return { label: 'View Tracking →', path: '/staff/tracking/batch-donation' };
       // If a reference is found, route to the appropriate staff page
       if (match) {
         const ref = match[1];

@@ -380,36 +380,59 @@ router.post('/wigs/create-free', ...wmOnly, upload.single('previewPhoto'), async
       return;
     }
 
-    let parentTask: any = null;
-    let parentWigCode = '';
-    let childWigCode = '';
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const tc = await generateSequentialReference('WB');
-      const seqPart = tc.replace(/^(WB|WIG)\s+/i, '');
-      parentWigCode = `WB ${seqPart}`;
-      childWigCode = `WIG ${seqPart}-W1`;
-      try {
-        parentTask = await prisma.wigProduction.create({
-          data: {
-            taskCode: parentWigCode,
-            wigmakerId: req.user!.id,
-            status: 'completed',
-            isReceived: true,
-            targetLength: wigLength,
-            targetColor: wigColor,
+    // ── Find or create a standalone WB parent batch for this wigmaker ──
+    // A "standalone" parent is one whose taskCode matches /^WB \d{4}-\d{4}$/
+    // (no -W suffix) and belongs to this wigmaker. We always append to the
+    // most recent one so that multiple wigs end up as W1, W2, W3... under
+    // the same batch instead of each getting their own batch.
+    let parentTask: any = await prisma.wigProduction.findFirst({
+      where: {
+        wigmakerId: req.user!.id,
+        taskCode: { startsWith: 'WB ' },
+        NOT: { taskCode: { contains: '-W' } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!parentTask) {
+      // No existing standalone batch — create one
+      let created = false;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const tc = await generateSequentialReference('WB');
+        const seqPart = tc.replace(/^(WB|WIG)\s+/i, '');
+        const parentWigCode = `WB ${seqPart}`;
+        try {
+          parentTask = await prisma.wigProduction.create({
+            data: {
+              taskCode: parentWigCode,
+              wigmakerId: req.user!.id,
+              status: 'completed',
+              isReceived: true,
+              targetLength: wigLength,
+              targetColor: wigColor,
+            }
+          });
+          created = true;
+          break;
+        } catch (createErr: any) {
+          if (createErr?.code !== 'P2002' || !String(createErr?.meta?.target || '').includes('task_code')) {
+            throw createErr;
           }
-        });
-        break;
-      } catch (createErr: any) {
-        if (createErr?.code !== 'P2002' || !String(createErr?.meta?.target || '').includes('task_code')) {
-          throw createErr;
         }
       }
+      if (!created) {
+        res.status(409).json({ message: 'Unable to generate a unique wig task code. Please try again.' });
+        return;
+      }
     }
-    if (!parentTask) {
-      res.status(409).json({ message: 'Unable to generate a unique wig task code. Please try again.' });
-      return;
-    }
+
+    // Count existing child wigs under this parent to determine the next W-number
+    const seqPart = parentTask.taskCode.replace(/^(WB|WIG)\s+/i, '');
+    const childPrefix = `WIG ${seqPart}-W`;
+    const existingCount = await prisma.wigProduction.count({
+      where: { taskCode: { startsWith: childPrefix } }
+    });
+    const childWigCode = `${childPrefix}${existingCount + 1}`;
 
     let photoPath = null;
     if (req.file) {
@@ -423,33 +446,20 @@ router.post('/wigs/create-free', ...wmOnly, upload.single('previewPhoto'), async
         targetLength: wigLength,
         targetColor: wigColor,
         preview_photo: photoPath,
-        status: 'completed', // Production Finished
+        status: 'completed',
         isReceived: true,
       }
     });
 
     const historyMetadata = photoPath ? { preview_photo: photoPath } : null;
-    const parentHistory = await createStatusHistory(WIG_TYPE, parentTask.id, 'completed', 'Standalone production task completed by wigmaker.', historyMetadata);
+    const parentHistory = await createStatusHistory(WIG_TYPE, parentTask.id, 'completed', 'Standalone production task updated by wigmaker.', historyMetadata);
     const childHistory = await createStatusHistory(WIG_TYPE, newWig.id, 'completed', progressNotes || 'Wig created freely by wigmaker.', historyMetadata);
 
     if (updatedAt) {
       const uDate = new Date(updatedAt);
-      await prisma.statusHistory.update({
-        where: { id: parentHistory.id },
-        data: { createdAt: uDate }
-      });
-      await prisma.statusHistory.update({
-        where: { id: childHistory.id },
-        data: { createdAt: uDate }
-      });
-      await prisma.wigProduction.update({
-        where: { id: parentTask.id },
-        data: { createdAt: uDate, updatedAt: uDate }
-      });
-      await prisma.wigProduction.update({
-        where: { id: newWig.id },
-        data: { createdAt: uDate, updatedAt: uDate }
-      });
+      await prisma.statusHistory.update({ where: { id: parentHistory.id }, data: { createdAt: uDate } });
+      await prisma.statusHistory.update({ where: { id: childHistory.id }, data: { createdAt: uDate } });
+      await prisma.wigProduction.update({ where: { id: newWig.id }, data: { createdAt: uDate, updatedAt: uDate } });
     }
 
     res.json({ message: 'Wig created successfully and added to inventory.', success: true, taskCode: childWigCode });
@@ -458,6 +468,7 @@ router.post('/wigs/create-free', ...wmOnly, upload.single('previewPhoto'), async
     res.status(500).json({ error: 'Failed to create wig' });
   }
 });
+
 
 // GET /internal-api/wigmaker/wigs
 router.get('/wigs', ...wmOnly, async (req, res) => {

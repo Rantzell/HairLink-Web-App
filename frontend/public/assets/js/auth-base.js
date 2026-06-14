@@ -191,8 +191,17 @@ function setupRegisterFlow() {
             // Strip anything that isn't a digit
             let digits = phoneDisplay.value.replace(/[^0-9]/g, '');
 
-            // If user accidentally typed a leading 0, remove it (e.g. 09171234567 → 9171234567)
-            if (digits.startsWith('0')) digits = digits.slice(1);
+            // Handle pasted/typed country code or leading zero prefixes
+            if (digits.startsWith('639')) {
+                digits = digits.slice(2);
+            } else if (digits.startsWith('09')) {
+                digits = digits.slice(1);
+            }
+
+            // Enforce that the number must start with 9
+            if (digits.length > 0 && !digits.startsWith('9')) {
+                digits = '';
+            }
 
             // Cap at 10 digits (Philippine mobile numbers after +63 are 10 digits)
             digits = digits.slice(0, 10);

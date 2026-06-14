@@ -374,7 +374,19 @@ const CommunityFeed: React.FC = () => {
                   type="file"
                   hidden
                   accept="image/*"
-                  onChange={e => { setNewFile(e.target.files?.[0] || null); if (fileRef.current) fileRef.current.value = ''; }}
+                  onChange={e => {
+                    const selectedFile = e.target.files?.[0];
+                    if (selectedFile) {
+                      if (selectedFile.size > 10 * 1024 * 1024) {
+                        toast.error('Image is too large. Max 10MB.');
+                        return;
+                      }
+                      setNewFile(selectedFile);
+                    } else {
+                      setNewFile(null);
+                    }
+                    if (fileRef.current) fileRef.current.value = '';
+                  }}
                 />
 
                 <button

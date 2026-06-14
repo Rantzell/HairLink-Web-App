@@ -28,7 +28,7 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
 
   // Multer file size errors
   if (err.code === 'LIMIT_FILE_SIZE') {
-    res.status(413).json({ error: 'File too large. Maximum size is 5MB.' });
+    res.status(413).json({ error: 'File too large. Maximum size is 10MB.' });
     return;
   }
 

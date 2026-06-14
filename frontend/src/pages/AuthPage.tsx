@@ -960,10 +960,26 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                     placeholder="9171234567"
                     value={reg.phone.replace('+63', '')}
                     onChange={e => {
-                      const d = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      let val = e.target.value.replace(/\D/g, '');
+                      // Handle pasted/typed country code or leading zero prefixes
+                      if (val.startsWith('639')) {
+                        val = val.slice(2);
+                      } else if (val.startsWith('09')) {
+                        val = val.slice(1);
+                      }
+                      
+                      // Enforce that the number must start with 9
+                      if (val.length > 0 && !val.startsWith('9')) {
+                        val = '';
+                      }
+                      
+                      const d = val.slice(0, 10);
                       setReg({ ...reg, phone: d ? '+63' + d : '' });
                     }}
                     required
+                    minLength={10}
+                    pattern="9[0-9]{9}"
+                    title="Mobile number must be exactly 10 digits starting with 9 (e.g. 9171234567)"
                   />
                 </div>
                 {errors.phone && <span className="hl-field-err">⚠ {errors.phone[0]}</span>}
