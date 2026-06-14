@@ -6,14 +6,14 @@ import ConfirmModal from '../components/ConfirmModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ExtendedHeroSettings { heading: string; subheading: string; ctaLabel: string; ghostLabel: string; pillText: string; floatBadgeText: string }
-interface ServiceItem    { title: string; description: string; ctaLabel: string }
-interface AboutSettings  { heading: string; body: string }
+interface ServiceItem { title: string; description: string; ctaLabel: string }
+interface AboutSettings { heading: string; body: string }
 interface ExtendedFooterSettings { orgName: string; address: string; facebook: string; instagram: string; tagline: string }
 interface BrandingSettings { primaryColor: string; primaryTextColor: string; btnRadius: string }
-interface ImagesSettings   { heroLogo: string; aboutImg1: string; aboutImg2: string; partnerLogo1: string; partnerLogo2: string; partnerLogo3: string; eventImg1: string; eventImg2: string; eventImg3: string; eventImg4: string }
+interface ImagesSettings { heroLogo: string; aboutImg1: string; aboutImg2: string; partnerLogo1: string; partnerLogo2: string; partnerLogo3: string; eventImg1: string; eventImg2: string; eventImg3: string; eventImg4: string }
 interface TypographySettings { headingFont: string; bodyFont: string }
 
-const GOOGLE_FONTS = ['Inter','Poppins','Manrope','Nunito','Lato','Roboto','Playfair Display','Merriweather','Raleway','Montserrat'];
+const GOOGLE_FONTS = ['Inter', 'Poppins', 'Manrope', 'Nunito', 'Lato', 'Roboto', 'Playfair Display', 'Merriweather', 'Raleway', 'Montserrat'];
 
 // ─── Section input components ─────────────────────────────────────────────────
 const Field: React.FC<{ label: string; value: string; onChange: (v: string) => void; multiline?: boolean }> = ({ label, value, onChange, multiline }) => (
@@ -21,9 +21,9 @@ const Field: React.FC<{ label: string; value: string; onChange: (v: string) => v
     <label className="admin-cms-field-label">{label}</label>
     {multiline
       ? <textarea rows={3} value={value} onChange={e => onChange(e.target.value)}
-          className="admin-cms-textarea" />
+        className="admin-cms-textarea" />
       : <input type="text" value={value} onChange={e => onChange(e.target.value)}
-          className="admin-cms-input" />}
+        className="admin-cms-input" />}
   </div>
 );
 
@@ -34,7 +34,7 @@ const AdminCMS: React.FC = () => {
 
   type LandingSection = 'hero' | 'services' | 'about' | 'footer' | 'branding' | 'images' | 'partners' | 'typography' | 'pastEvents';
   const [landingSection, setLandingSection] = useState<LandingSection>('hero');
-  const [hero, setHero]         = useState<ExtendedHeroSettings>({ heading: '', subheading: '', ctaLabel: '', ghostLabel: '', pillText: '', floatBadgeText: '' });
+  const [hero, setHero] = useState<ExtendedHeroSettings>({ heading: '', subheading: '', ctaLabel: '', ghostLabel: '', pillText: '', floatBadgeText: '' });
 
   const [services, setServices] = useState<ServiceItem[]>([
     { title: '', description: '', ctaLabel: '' },
@@ -49,24 +49,24 @@ const AdminCMS: React.FC = () => {
     { title: '', description: '', date: '', imageKey: 'eventImg3' },
     { title: '', description: '', date: '', imageKey: 'eventImg4' }
   ]);
-  const [about, setAbout]       = useState<AboutSettings>({ heading: '', body: '' });
-  const [footer, setFooter]     = useState<ExtendedFooterSettings>({ orgName: '', address: '', facebook: '', instagram: '', tagline: '' });
+  const [about, setAbout] = useState<AboutSettings>({ heading: '', body: '' });
+  const [footer, setFooter] = useState<ExtendedFooterSettings>({ orgName: '', address: '', facebook: '', instagram: '', tagline: '' });
   const [branding, setBranding] = useState<BrandingSettings>({ primaryColor: '#ad246d', primaryTextColor: '#ffffff', btnRadius: '8px' });
-  const [images, setImages]     = useState<ImagesSettings>({ heroLogo: '', aboutImg1: '', aboutImg2: '', partnerLogo1: '', partnerLogo2: '', partnerLogo3: '', eventImg1: '', eventImg2: '', eventImg3: '', eventImg4: '' });
+  const [images, setImages] = useState<ImagesSettings>({ heroLogo: '', aboutImg1: '', aboutImg2: '', partnerLogo1: '', partnerLogo2: '', partnerLogo3: '', eventImg1: '', eventImg2: '', eventImg3: '', eventImg4: '' });
   const [typography, setTypography] = useState<TypographySettings>({ headingFont: 'Playfair Display', bodyFont: 'Inter' });
-  const [partnerLogos, setPartnerLogos] = useState<{name: string, url: string}[]>([]);
+  const [partnerLogos, setPartnerLogos] = useState<{ name: string, url: string }[]>([]);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
   // Existing CMS state
   const [announcements, setAnnouncements] = useState<any[]>([]);
-  const [partnerships, setPartnerships]   = useState<any[]>([]);
-  const [loading, setLoading]             = useState(true);
-  const [saving, setSaving]               = useState(false);
-  const [saveSuccess, setSaveSuccess]     = useState(false);
-  const [isSubmitting, setIsSubmitting]   = useState(false);
+  const [partnerships, setPartnerships] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', category: 'Care', author: 'Admin', target_audience: 'all' });
-  const [partnershipForm, setPartnershipForm]   = useState({ name: '', type: 'Wigmaker', contact: '', email: '', description: '', status: 'Active' });
-  
+  const [partnershipForm, setPartnershipForm] = useState({ name: '', type: 'Wigmaker', contact: '', email: '', description: '', status: 'Active' });
+
   const [showLandingConfirm, setShowLandingConfirm] = useState(false);
   const [showAnnouncementConfirm, setShowAnnouncementConfirm] = useState(false);
   const [showPartnershipConfirm, setShowPartnershipConfirm] = useState(false);
@@ -89,7 +89,7 @@ const AdminCMS: React.FC = () => {
   const [editSaving, setEditSaving] = useState(false);
 
   const DEFAULTS = {
-    hero:     { heading: 'Every Strand,<br />a Story of <em>Hope.</em>', subheading: 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.', ctaLabel: 'Donate Now', ghostLabel: 'Request a Wig', pillText: 'Strand Up for Cancer', floatBadgeText: '100% Free for Patients' },
+    hero: { heading: 'Every Strand,<br />a Story of <em>Hope.</em>', subheading: 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.', ctaLabel: 'Donate Your Hair', ghostLabel: 'Request a Wig', pillText: 'Strand Up for Cancer', floatBadgeText: '100% Free for Patients' },
 
     services: [
       { title: 'Donate Hair', description: 'Give the gift of confidence to someone in need by donating your hair.', ctaLabel: 'Donate' },
@@ -104,7 +104,7 @@ const AdminCMS: React.FC = () => {
       { title: 'Wig Crafting & Haircut Session', description: 'Professional stylists volunteering to cut and measure hair for custom medical-grade wigs.', date: 'Feb 25, 2026', imageKey: 'eventImg3' },
       { title: 'Donation Celebration', description: 'Donors showcasing their ponytails alongside certificates of appreciation for supporting cancer survivors.', date: 'Feb 2, 2026', imageKey: 'eventImg4' }
     ],
-    about:  { heading: 'About Us', body: 'Strand Up for Cancer (SUFC) is a youth-led initiative dedicated to supporting cancer patients through hair donation and wig crafting. Our mission is to provide high-quality wigs to those experiencing hair loss, restoring their confidence and dignity during their recovery journey.' },
+    about: { heading: 'About Us', body: 'Strand Up for Cancer (SUFC) is a youth-led initiative dedicated to supporting cancer patients through hair donation and wig crafting. Our mission is to provide high-quality wigs to those experiencing hair loss, restoring their confidence and dignity during their recovery journey.' },
     footer: { orgName: 'STRAND UP FOR CANCER', address: 'Manila Downtown YMCA at 945 Sabino Padilla St,\nBinondo, Manila, 1006 Metro Manila', facebook: 'https://www.facebook.com/strandupforcancer', instagram: 'https://www.instagram.com/strandupforcancer/', tagline: 'Empowering cancer patients through hair donation, wig crafting, and community compassion.' },
     branding: { primaryColor: '#ad246d', primaryTextColor: '#ffffff', btnRadius: '8px' },
     typography: { headingFont: 'Playfair Display', bodyFont: 'Inter' },
@@ -140,28 +140,28 @@ const AdminCMS: React.FC = () => {
       setPartnerships(partRes.data);
       setSelectedPartners([]);
       const s = settingsRes.data;
-      
-      setHero(s.hero             ? { ...DEFAULTS.hero, ...s.hero } : DEFAULTS.hero);
-      setServices(s.services     ?? DEFAULTS.services);
+
+      setHero(s.hero ? { ...DEFAULTS.hero, ...s.hero } : DEFAULTS.hero);
+      setServices(s.services ?? DEFAULTS.services);
       setServicesHeader(s.servicesHeader ? { ...DEFAULTS.servicesHeader, ...s.servicesHeader } : DEFAULTS.servicesHeader);
       setPastEventsHeader(s.pastEventsHeader ? { ...DEFAULTS.pastEventsHeader, ...s.pastEventsHeader } : DEFAULTS.pastEventsHeader);
       setPastEvents(s.pastEvents ?? DEFAULTS.pastEvents);
-      setAbout(s.about           ? { ...DEFAULTS.about, ...s.about } : DEFAULTS.about);
-      setFooter(s.footer         ? { ...DEFAULTS.footer, ...s.footer } : DEFAULTS.footer);
-      setBranding(s.branding     ? { ...DEFAULTS.branding, ...s.branding } : DEFAULTS.branding);
+      setAbout(s.about ? { ...DEFAULTS.about, ...s.about } : DEFAULTS.about);
+      setFooter(s.footer ? { ...DEFAULTS.footer, ...s.footer } : DEFAULTS.footer);
+      setBranding(s.branding ? { ...DEFAULTS.branding, ...s.branding } : DEFAULTS.branding);
       setTypography(s.typography ? { ...DEFAULTS.typography, ...s.typography } : DEFAULTS.typography);
-      
+
       setImages({
-        heroLogo:     s.images?.heroLogo     || DEFAULTS.images.heroLogo,
-        aboutImg1:    s.images?.aboutImg1    || DEFAULTS.images.aboutImg1,
-        aboutImg2:    s.images?.aboutImg2    || DEFAULTS.images.aboutImg2,
+        heroLogo: s.images?.heroLogo || DEFAULTS.images.heroLogo,
+        aboutImg1: s.images?.aboutImg1 || DEFAULTS.images.aboutImg1,
+        aboutImg2: s.images?.aboutImg2 || DEFAULTS.images.aboutImg2,
         partnerLogo1: s.images?.partnerLogo1 || DEFAULTS.images.partnerLogo1,
         partnerLogo2: s.images?.partnerLogo2 || DEFAULTS.images.partnerLogo2,
         partnerLogo3: s.images?.partnerLogo3 || DEFAULTS.images.partnerLogo3,
-        eventImg1:    s.images?.eventImg1    || DEFAULTS.images.eventImg1,
-        eventImg2:    s.images?.eventImg2    || DEFAULTS.images.eventImg2,
-        eventImg3:    s.images?.eventImg3    || DEFAULTS.images.eventImg3,
-        eventImg4:    s.images?.eventImg4    || DEFAULTS.images.eventImg4,
+        eventImg1: s.images?.eventImg1 || DEFAULTS.images.eventImg1,
+        eventImg2: s.images?.eventImg2 || DEFAULTS.images.eventImg2,
+        eventImg3: s.images?.eventImg3 || DEFAULTS.images.eventImg3,
+        eventImg4: s.images?.eventImg4 || DEFAULTS.images.eventImg4,
       });
       setPartnerLogos(s.partnerLogos ?? DEFAULTS.partnerLogos);
     } catch (err) {
@@ -183,17 +183,17 @@ const AdminCMS: React.FC = () => {
     setSaveSuccess(false);
     try {
       await apiClient.put('/internal-api/admin/site-settings', [
-        { key: 'hero',             value: hero },
-        { key: 'services',         value: services },
-        { key: 'servicesHeader',   value: servicesHeader },
+        { key: 'hero', value: hero },
+        { key: 'services', value: services },
+        { key: 'servicesHeader', value: servicesHeader },
         { key: 'pastEventsHeader', value: pastEventsHeader },
-        { key: 'pastEvents',       value: pastEvents },
-        { key: 'about',            value: about },
-        { key: 'footer',           value: footer },
-        { key: 'branding',         value: branding },
-        { key: 'images',           value: images },
-        { key: 'typography',       value: typography },
-        { key: 'partnerLogos',     value: partnerLogos },
+        { key: 'pastEvents', value: pastEvents },
+        { key: 'about', value: about },
+        { key: 'footer', value: footer },
+        { key: 'branding', value: branding },
+        { key: 'images', value: images },
+        { key: 'typography', value: typography },
+        { key: 'partnerLogos', value: partnerLogos },
       ]);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -226,19 +226,19 @@ const AdminCMS: React.FC = () => {
       setPartnerLogos(DEFAULTS.partnerLogos);
 
       await apiClient.put('/internal-api/admin/site-settings', [
-        { key: 'hero',             value: DEFAULTS.hero },
-        { key: 'services',         value: DEFAULTS.services },
-        { key: 'servicesHeader',   value: DEFAULTS.servicesHeader },
+        { key: 'hero', value: DEFAULTS.hero },
+        { key: 'services', value: DEFAULTS.services },
+        { key: 'servicesHeader', value: DEFAULTS.servicesHeader },
         { key: 'pastEventsHeader', value: DEFAULTS.pastEventsHeader },
-        { key: 'pastEvents',       value: DEFAULTS.pastEvents },
-        { key: 'about',            value: DEFAULTS.about },
-        { key: 'footer',           value: DEFAULTS.footer },
-        { key: 'branding',         value: DEFAULTS.branding },
-        { key: 'images',           value: DEFAULTS.images },
-        { key: 'typography',       value: DEFAULTS.typography },
-        { key: 'partnerLogos',     value: DEFAULTS.partnerLogos },
+        { key: 'pastEvents', value: DEFAULTS.pastEvents },
+        { key: 'about', value: DEFAULTS.about },
+        { key: 'footer', value: DEFAULTS.footer },
+        { key: 'branding', value: DEFAULTS.branding },
+        { key: 'images', value: DEFAULTS.images },
+        { key: 'typography', value: DEFAULTS.typography },
+        { key: 'partnerLogos', value: DEFAULTS.partnerLogos },
       ]);
-      
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
@@ -318,7 +318,7 @@ const AdminCMS: React.FC = () => {
       const { supabase } = await import('../lib/supabase');
       const fileExt = file.name.split('.').pop();
       const fileName = `cms/${key}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from('hairlink')
         .upload(fileName, file);
@@ -382,8 +382,8 @@ const AdminCMS: React.FC = () => {
 
   const partnerStatusBadge = (status: string) => {
     const cfg: Record<string, { bg: string; color: string }> = {
-      Active:   { bg: '#d1fae5', color: '#065f46' },
-      Pending:  { bg: '#fef3c7', color: '#92400e' },
+      Active: { bg: '#d1fae5', color: '#065f46' },
+      Pending: { bg: '#fef3c7', color: '#92400e' },
       Inactive: { bg: '#fee2e2', color: '#991b1b' },
     };
     const c = cfg[status] || { bg: '#f3f4f6', color: '#374151' };
@@ -405,9 +405,9 @@ const AdminCMS: React.FC = () => {
       </header>
 
       <div className="admin-cms-tab-row">
-        <button onClick={() => setActiveTab('landing')}       className={`admin-cms-page-tab${activeTab === 'landing' ? ' active' : ''}`}>🏠 Landing Page</button>
+        <button onClick={() => setActiveTab('landing')} className={`admin-cms-page-tab${activeTab === 'landing' ? ' active' : ''}`}>🏠 Landing Page</button>
         <button onClick={() => setActiveTab('announcements')} className={`admin-cms-page-tab${activeTab === 'announcements' ? ' active' : ''}`}>📢 Announcements</button>
-        <button onClick={() => setActiveTab('partnerships')}  className={`admin-cms-page-tab${activeTab === 'partnerships' ? ' active' : ''}`}>🤝 Partnerships</button>
+        <button onClick={() => setActiveTab('partnerships')} className={`admin-cms-page-tab${activeTab === 'partnerships' ? ' active' : ''}`}>🤝 Partnerships</button>
       </div>
 
       {activeTab === 'landing' && (
@@ -416,10 +416,10 @@ const AdminCMS: React.FC = () => {
             <p className="admin-page-kicker">Sections</p>
             {(['hero', 'services', 'about', 'footer', 'branding', 'images', 'partners', 'typography', 'pastEvents'] as LandingSection[]).map(sec => (
               <button key={sec} onClick={() => setLandingSection(sec)} className={`admin-cms-section-pill${landingSection === sec ? ' active' : ''}`}>
-                {{ 
-                  hero: '🎯 Hero', 
-                  services: '⚙️ How It Works', 
-                  about: 'ℹ️ About', 
+                {{
+                  hero: '🎯 Hero',
+                  services: '⚙️ How It Works',
+                  about: 'ℹ️ About',
                   footer: '🔻 Footer',
                   branding: '🎨 Branding',
                   images: '🖼️ Images',
@@ -557,22 +557,22 @@ const AdminCMS: React.FC = () => {
                           <i className="bx bx-image admin-cms-img-placeholder-icon"></i>
                         )}
                       </div>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        id={`upload-${key}`} 
-                        className="admin-hidden" 
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id={`upload-${key}`}
+                        className="admin-hidden"
                         onChange={e => e.target.files?.[0] && handleImageUpload(key, e.target.files[0])}
                       />
                       <div className="admin-cms-upload-row">
-                        <button 
-                          onClick={() => document.getElementById(`upload-${key}`)?.click()} 
+                        <button
+                          onClick={() => document.getElementById(`upload-${key}`)?.click()}
                           disabled={uploadingKey === key}
                           className="admin-cms-upload-btn"
                         >
                           {uploadingKey === key ? 'Uploading...' : 'Change'}
                         </button>
-                        <button 
+                        <button
                           onClick={() => setImages(prev => ({ ...prev, [key]: '' }))}
                           className="admin-cms-clear-btn"
                           title="Reset to default"
@@ -656,8 +656,8 @@ const AdminCMS: React.FC = () => {
                 <div className="admin-cms-font-grid">
                   <div>
                     <label className="admin-cms-field-label">Headings Font</label>
-                    <select 
-                      value={typography.headingFont} 
+                    <select
+                      value={typography.headingFont}
                       onChange={e => setTypography({ ...typography, headingFont: e.target.value })}
                       className="admin-cms-font-select" style={{ fontFamily: typography.headingFont }}
                     >
@@ -666,8 +666,8 @@ const AdminCMS: React.FC = () => {
                   </div>
                   <div>
                     <label className="admin-cms-field-label">Body Font</label>
-                    <select 
-                      value={typography.bodyFont} 
+                    <select
+                      value={typography.bodyFont}
                       onChange={e => setTypography({ ...typography, bodyFont: e.target.value })}
                       className="admin-cms-font-select" style={{ fontFamily: typography.bodyFont }}
                     >
@@ -785,11 +785,11 @@ const AdminCMS: React.FC = () => {
               <form onSubmit={handleCreateAnnouncement} className="admin-form-grid">
                 <div className="form-group">
                   <label className="admin-form-label-sm">Title</label>
-                  <input type="text" value={announcementForm.title} onChange={e => setAnnouncementForm({...announcementForm, title: e.target.value})} required />
+                  <input type="text" value={announcementForm.title} onChange={e => setAnnouncementForm({ ...announcementForm, title: e.target.value })} required />
                 </div>
                 <div className="form-group">
                   <label className="admin-form-label-sm">Category</label>
-                  <select value={announcementForm.category} onChange={e => setAnnouncementForm({...announcementForm, category: e.target.value})}>
+                  <select value={announcementForm.category} onChange={e => setAnnouncementForm({ ...announcementForm, category: e.target.value })}>
                     <option value="Care">Wig Care</option>
                     <option value="Styling">Styling</option>
                     <option value="Advocacy">Advocacy</option>
@@ -798,7 +798,7 @@ const AdminCMS: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label className="admin-form-label-sm">Target Audience</label>
-                  <select value={announcementForm.target_audience} onChange={e => setAnnouncementForm({...announcementForm, target_audience: e.target.value})}>
+                  <select value={announcementForm.target_audience} onChange={e => setAnnouncementForm({ ...announcementForm, target_audience: e.target.value })}>
                     <option value="all">All Users</option>
                     <option value="donor">Donors Only</option>
                     <option value="recipient">Recipients Only</option>
@@ -808,7 +808,7 @@ const AdminCMS: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label className="admin-form-label-sm">Content</label>
-                  <textarea rows={5} value={announcementForm.content} onChange={e => setAnnouncementForm({...announcementForm, content: e.target.value})} required></textarea>
+                  <textarea rows={5} value={announcementForm.content} onChange={e => setAnnouncementForm({ ...announcementForm, content: e.target.value })} required></textarea>
                 </div>
                 <button type="submit" disabled={isSubmitting} className="admin-btn-primary-full">
                   {isSubmitting ? 'Publishing...' : 'Publish'}
@@ -988,19 +988,19 @@ const AdminCMS: React.FC = () => {
                 <form onSubmit={handleCreatePartnership} className="admin-form-grid">
                   <div className="form-group">
                     <label className="admin-form-label-sm">Organization Name</label>
-                    <input type="text" value={partnershipForm.name} onChange={e => setPartnershipForm({...partnershipForm, name: e.target.value})} required />
+                    <input type="text" value={partnershipForm.name} onChange={e => setPartnershipForm({ ...partnershipForm, name: e.target.value })} required />
                   </div>
                   <div className="form-group">
                     <label className="admin-form-label-sm">Type</label>
-                    <input type="text" value={partnershipForm.type} onChange={e => setPartnershipForm({...partnershipForm, type: e.target.value})} placeholder="e.g. Wigmaker, Logistics" />
+                    <input type="text" value={partnershipForm.type} onChange={e => setPartnershipForm({ ...partnershipForm, type: e.target.value })} placeholder="e.g. Wigmaker, Logistics" />
                   </div>
                   <div className="form-group">
                     <label className="admin-form-label-sm">Email / Contact</label>
-                    <input type="text" value={partnershipForm.email} onChange={e => setPartnershipForm({...partnershipForm, email: e.target.value})} />
+                    <input type="text" value={partnershipForm.email} onChange={e => setPartnershipForm({ ...partnershipForm, email: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label className="admin-form-label-sm">Status</label>
-                    <select value={partnershipForm.status} onChange={e => setPartnershipForm({...partnershipForm, status: e.target.value})}>
+                    <select value={partnershipForm.status} onChange={e => setPartnershipForm({ ...partnershipForm, status: e.target.value })}>
                       <option value="Active">Active</option>
                       <option value="Pending">Pending</option>
                       <option value="Inactive">Inactive</option>
@@ -1070,19 +1070,19 @@ const AdminCMS: React.FC = () => {
                   <div className="admin-form-grid">
                     <div className="form-group">
                       <label className="admin-form-label-sm">Organization Name</label>
-                      <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
+                      <input type="text" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
                     </div>
                     <div className="form-group">
                       <label className="admin-form-label-sm">Type</label>
-                      <input type="text" value={editForm.type} onChange={e => setEditForm({...editForm, type: e.target.value})} />
+                      <input type="text" value={editForm.type} onChange={e => setEditForm({ ...editForm, type: e.target.value })} />
                     </div>
                     <div className="form-group">
                       <label className="admin-form-label-sm">Email / Contact</label>
-                      <input type="text" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} />
+                      <input type="text" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
                     </div>
                     <div className="form-group">
                       <label className="admin-form-label-sm">Status</label>
-                      <select value={editForm.status} onChange={e => setEditForm({...editForm, status: e.target.value})}>
+                      <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}>
                         <option value="Active">Active</option>
                         <option value="Pending">Pending</option>
                         <option value="Inactive">Inactive</option>

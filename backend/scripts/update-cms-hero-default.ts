@@ -11,7 +11,7 @@ async function main() {
     const heroValue = {
       heading: 'Every Strand,<br />a Story of <em>Hope.</em>',
       subheading: 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.',
-      ctaLabel: 'Donate Now'
+      ctaLabel: 'Donate Your Hair'
     };
 
     console.log('Upserting hero site setting in database...');
