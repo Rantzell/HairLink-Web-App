@@ -221,13 +221,17 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
   if (showNotifications) {
     return (
       <View style={{ flex: 1 }}>
-        <NotificationScreen 
-          onBack={() => setShowNotifications(false)} 
+        <NotificationScreen
+          onBack={() => setShowNotifications(false)}
           onTrack={() => {
             setShowNotifications(false);
             setShowHistory(true);
           }}
-          role="Recipient" 
+          onOpenPost={() => {
+            setShowNotifications(false);
+            setShowCommunity(true);
+          }}
+          role="Recipient"
         />
       </View>
     );

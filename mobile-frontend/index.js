@@ -1,4 +1,5 @@
 import 'react-native-url-polyfill/auto';
+import './lib/philippineTime'; // force Asia/Manila for all date/time formatting
 import { registerRootComponent } from 'expo';
 import App from './App';
 

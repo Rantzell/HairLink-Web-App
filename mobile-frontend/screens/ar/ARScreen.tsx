@@ -26,7 +26,7 @@ type StyleId = 'short' | 'long';
 type ColorId = 'black' | 'brown' | 'light';
 
 const COLORS: { id: ColorId; name: string; hex: string }[] = [
-  { id: 'black', name: 'Black', hex: '#1a1a1a' },
+  { id: 'black', name: 'Black', hex: '#33312f' },
   { id: 'brown', name: 'Brown', hex: '#5a3320' },
   { id: 'light', name: 'Light', hex: '#c9a37a' },
 ];
@@ -206,18 +206,23 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
         </View>
       ) : null}
 
-      <Pressable onPress={onBack} style={[styles.backBtn, { top: insets.top + 12 }]} hitSlop={10}>
-        <Ionicons name="chevron-back" size={22} color="white" />
+      <Pressable onPress={onBack} style={[styles.backBtn, { top: insets.top + 10 }]} hitSlop={12}>
+        <Ionicons name="chevron-back" size={18} color="white" />
       </Pressable>
 
-      <View style={[styles.topRightStack, { top: insets.top + 12 }]}>
-        <Pressable onPress={flipCamera} style={styles.iconBtn} hitSlop={10}>
-          <Ionicons name="camera-reverse" size={22} color="white" />
+      <View style={[styles.topRightStack, { top: insets.top + 10 }]}>
+        <Pressable onPress={flipCamera} style={styles.iconBtn} hitSlop={12}>
+          <Ionicons name="camera-reverse" size={18} color="white" />
         </Pressable>
       </View>
 
       <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 18 }]} pointerEvents="box-none">
-        {/* Style toggle — sits above the colors */}
+        {/* Pink capture button */}
+        <Pressable onPress={capture} style={styles.captureBtn} hitSlop={10}>
+          <View style={styles.captureInner} />
+        </Pressable>
+
+        {/* Style toggle — sits below the capture, above the colors */}
         <View style={styles.styleToggle}>
           {(['short', 'long'] as const).map((s) => (
             <Pressable
@@ -231,11 +236,6 @@ export default function ARScreen({ onBack }: { onBack: () => void }) {
             </Pressable>
           ))}
         </View>
-
-        {/* Pink capture button */}
-        <Pressable onPress={capture} style={styles.captureBtn} hitSlop={10}>
-          <View style={styles.captureInner} />
-        </Pressable>
 
         {/* Color choices */}
         <View style={styles.colorRow}>
@@ -284,27 +284,27 @@ const styles = StyleSheet.create({
   errorText: { color: 'white', fontSize: 13, textAlign: 'center' },
   backBtn: {
     position: 'absolute',
-    left: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    left: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 5,
   },
   topRightStack: {
     position: 'absolute',
-    right: 16,
+    right: 14,
     flexDirection: 'column',
-    gap: 10,
+    gap: 8,
     zIndex: 5,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -314,42 +314,42 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     alignItems: 'center',
-    paddingTop: 18,
-    gap: 16,
+    paddingTop: 10,
+    gap: 9,
     zIndex: 5,
   },
   styleToggle: {
     flexDirection: 'row',
     backgroundColor: 'rgba(20,20,20,0.55)',
-    borderRadius: 26,
-    padding: 4,
+    borderRadius: 18,
+    padding: 3,
   },
-  segment: { paddingHorizontal: 28, paddingVertical: 9, borderRadius: 22 },
+  segment: { paddingHorizontal: 18, paddingVertical: 6, borderRadius: 15 },
   segmentActive: { backgroundColor: '#fff' },
-  segmentText: { color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: 14 },
+  segmentText: { color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: 12 },
   segmentTextActive: { color: '#111' },
   captureBtn: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: 'rgba(255,77,141,0.22)',
-    borderWidth: 4,
+    borderWidth: 3,
     borderColor: '#ff4d8d',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  captureInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: '#ff4d8d' },
+  captureInner: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#ff4d8d' },
   colorRow: { flexDirection: 'row', alignItems: 'center' },
-  swatchWrap: { alignItems: 'center', marginHorizontal: 14 },
+  swatchWrap: { alignItems: 'center', marginHorizontal: 9 },
   swatch: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.35)',
   },
-  swatchActive: { borderColor: 'white', borderWidth: 3 },
-  swatchLabel: { color: 'white', fontSize: 11, marginTop: 6 },
+  swatchActive: { borderColor: 'white', borderWidth: 2.5 },
+  swatchLabel: { color: 'white', fontSize: 9, marginTop: 3 },
   permTitle: { color: 'white', fontSize: 18, fontWeight: '600', marginTop: 18 },
   permBody: {
     color: 'rgba(255,255,255,0.75)',

@@ -135,15 +135,16 @@ const VIRTUAL_CAMERA_FOV_Y = 63;
 // Numbers in cm / radians / scale-factor. d2r(deg) = deg*PI/180.
 const DEG = Math.PI / 180;
 const FACTORY_TRANSFORM = {
+  // Baked from on-device fitting for the current GLB models.
   short: {
-    px: -1.1, py: -0.2, pz: -6.0,   // py raised to cover the crown / real hairline
-    rx: 0, ry: 0, rz: 5 * DEG,
-    sx: 2.28, sy: 2.22, sz: 2.16,
+    px: 0.287, py: 1.112, pz: -10.4,
+    rx: 0, ry: 0, rz: -0.0698,
+    sx: 2.476, sy: 2.916, sz: 2.482,
   },
   long: {
-    px: 2.0, py: 4.3, pz: -2.1,     // py raised to cover the crown
-    rx: 0, ry: 0, rz: 1 * DEG,
-    sx: 3.12, sy: 3.12, sz: 3.12,   // a bit bigger than before (was 2.83)
+    px: 0.438, py: 4.535, pz: -4.1,
+    rx: 0, ry: 0, rz: 0.0175,
+    sx: 1.689, sy: 1.613, sz: 1.613,
   },
 };
 
@@ -166,6 +167,9 @@ const FACE_OVAL = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,37
 // wig's face-covering polygons fall behind it and get culled, while real
 // bangs (closer to the camera) still render in front.
 const OCCLUDER_FORWARD = 0.06;
+// Reference face width (cm) used to convert normalized landmark z → world depth
+// when giving the occluder its 3D curvature/tilt.
+const OCCLUDER_FACE_CM = 14;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function b64ToArrayBuffer(b64) {
@@ -572,18 +576,38 @@ async function main() {
               const sw = window.innerWidth, sh = window.innerHeight;
               const cover = Math.max(sw / vw, sh / vh);
               const oX = (sw - vw * cover) / 2, oY = (sh - vh * cover) / 2;
-              const targetZ = tmpMatrix.elements[14] * (1 - OCCLUDER_FORWARD); // toward camera
+              const baseZ = tmpMatrix.elements[14] * (1 - OCCLUDER_FORWARD); // toward camera
+              // Per-vertex DEPTH from the landmark z so the mask is a curved
+              // surface that TILTS with the head — when you look up/down the
+              // forehead recedes and the mask follows it, so the front hair no
+              // longer sinks "inside" the head. Convert the normalized landmark
+              // z into cm using the measured face width as the scale reference.
+              const a = lm[234], b = lm[454];
+              const ovalW = (a && b) ? Math.hypot(a.x - b.x, a.y - b.y) : 0.33;
+              const kz = OCCLUDER_FACE_CM / Math.max(ovalW, 0.05);
+              // Clamp the TOP of the mask down to the eyebrow line so the
+              // forehead is NOT covered — otherwise the occluder culls the
+              // bangs that legitimately sit on the forehead, punching holes in
+              // the hair. Eyes / nose / cheeks / jaw stay covered.
+              const browA = lm[105], browB = lm[334];
+              const browSy = (browA && browB)
+                ? Math.min(browA.y, browB.y) * vh * cover + oY
+                : null;
               let cx = 0, cy = 0, cz = 0;
               for (let i = 0; i < OVAL_N; i++) {
                 const p = lm[FACE_OVAL[i]];
                 const sx = p.x * vw * cover + oX;
-                const sy = p.y * vh * cover + oY;
+                let sy = p.y * vh * cover + oY;
+                if (browSy !== null && sy < browSy) sy = browSy; // don't cover forehead
                 const ndcX = (sx / sw) * 2 - 1;
                 const ndcY = -((sy / sh) * 2 - 1);
                 // camera is at the origin → unproject + normalize gives the ray
-                // direction; scale it to reach the target depth plane.
+                // direction; scale it to reach this vertex's depth.
                 maskRay.set(ndcX, ndcY, 0.5).unproject(camera).normalize();
-                const t = targetZ / maskRay.z;
+                // Landmark z is smaller (more negative) when CLOSER to camera,
+                // so move that vertex toward the camera (toward 0) accordingly.
+                const depth = baseZ - (p.z || 0) * kz;
+                const t = depth / maskRay.z;
                 const wx = maskRay.x * t, wy = maskRay.y * t, wz = maskRay.z * t;
                 const vi = (i + 1) * 3;
                 maskPos[vi] = wx; maskPos[vi + 1] = wy; maskPos[vi + 2] = wz;
@@ -624,8 +648,7 @@ async function main() {
       camera.updateProjectionMatrix();
     });
 
-    // (Touch gestures removed — transforms are baked factory defaults,
-    //  so per-session pan/pinch/twist adjustments are no longer needed.)
+    // (Fitting controls removed — wig transforms are baked in FACTORY_TRANSFORM.)
 
     // ── Camera flip ──
     window.__flipCamera = async function() {

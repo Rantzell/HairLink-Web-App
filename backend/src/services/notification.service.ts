@@ -1,6 +1,12 @@
 import prisma from '../config/database';
 
-export const createNotification = async (userId: string, title: string, message: string, type: string = 'general') => {
+export const createNotification = async (
+  userId: string,
+  title: string,
+  message: string,
+  type: string = 'general',
+  link: string | null = null,
+) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return null;
@@ -11,6 +17,7 @@ export const createNotification = async (userId: string, title: string, message:
         title,
         message,
         type,
+        link,
         is_read: false,
       },
     });
@@ -97,9 +104,9 @@ export const notifyDonationStatus = async (userId: string, status: string, refer
   const title = titles[status] || 'Donation Status Updated 🌸';
   let message = `Your donation (${reference}) is now: ${status}. Thank you for your support!`;
   if (status === 'Verified') {
-    message = `Your donation (${reference}) is now Verified. You can now put the submission delivery tracking link on the tracking page.`;
+    message = `Your donation (${reference}) has been verified. You can now add your delivery tracking link on the tracking page.`;
   }
-  return createNotification(userId, title, message, 'donation');
+  return createNotification(userId, title, message, 'donation', `track:donation:${reference}`);
 };
 
 export const notifyRequestStatus = async (userId: string, status: string, reference: string) => {
@@ -138,7 +145,7 @@ export const notifyRequestStatus = async (userId: string, status: string, refere
 
   const title = titles[status] || 'Request Status Updated 💖';
   const message = messages[status] || `Your wig request (${reference}) is now: ${status}. We are with you on this journey.`;
-  return createNotification(userId, title, message, 'request');
+  return createNotification(userId, title, message, 'request', `track:request:${reference}`);
 };
 
 export const notifyWigmakerAssignment = async (wigmakerId: string, taskCode: string, staffNote?: string) => {
@@ -166,7 +173,8 @@ export const notifyCommunityInteraction = async (ownerId: string, actorName: str
     action === 'reply'   ? `${actorName} replied to your comment.` :
                            `${actorName} liked your post.`;
 
-  // Embed postId so the frontend can navigate directly to the post
+  // Embed postId in the message (the web client parses this) AND set the link
+  // column (the mobile client uses this) so both can deep-link to the post.
   const message = `${actionText} [postId:${postId}]`;
 
   const title =
@@ -174,7 +182,25 @@ export const notifyCommunityInteraction = async (ownerId: string, actorName: str
     action === 'comment' ? '💬 New comment on your post' :
                            '↩️ New reply to your comment';
 
-  return createNotification(ownerId, title, message, 'community');
+  return createNotification(ownerId, title, message, 'community', `post:${postId}`);
+};
+
+/** Notify both sides of a successful referral redemption. */
+export const notifyReferralRedeemed = async (redeemerId: string, referrerId: string, redeemerName: string) => {
+  await Promise.all([
+    createNotification(
+      redeemerId,
+      'Referral Applied! 🌟',
+      `Your referral code was applied successfully — you earned 3 stars. Thank you for spreading the word about HairLink!`,
+      'referral',
+    ),
+    createNotification(
+      referrerId,
+      'You Earned a Referral Reward! 🌟',
+      `${redeemerName || 'A new member'} used your referral code — you earned 5 stars. Keep sharing the love!`,
+      'referral',
+    ),
+  ]);
 };
 
 /** Send an announcement notification only to the specified audience.

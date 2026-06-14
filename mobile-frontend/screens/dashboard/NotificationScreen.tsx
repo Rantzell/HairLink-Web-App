@@ -22,6 +22,7 @@ interface NotificationItem {
   title: string;
   message: string;
   type: string;
+  link?: string | null;
   is_read: boolean;
   created_at: string;
 }
@@ -48,7 +49,7 @@ const ScaleButton = ({ children, onPress, style }: any) => {
   );
 };
 
-export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: { onBack?: () => void, onTrack?: () => void, role?: 'Donor' | 'Recipient' }) {
+export default function NotificationScreen({ onBack, onTrack, onOpenPost, role = 'Donor' }: { onBack?: () => void, onTrack?: () => void, onOpenPost?: (postId: string) => void, role?: 'Donor' | 'Recipient' }) {
   const isRecipient = role === 'Recipient';
 
   // ── Role-themed palette ──────────────────────────────────────────────
@@ -62,7 +63,6 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
     ring: isRecipient ? '#E8DAEF' : '#FFD6EF',
   };
 
-  const [activeTab, setActiveTab] = useState<'All' | 'Unread'>('All');
   const [search, setSearch] = useState('');
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,11 +113,28 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
   };
 
   const filteredNotifications = notifications.filter((n) => {
-    const matchesTab = activeTab === 'All' || !n.is_read;
-    const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) ||
-      n.message.toLowerCase().includes(search.toLowerCase());
-    return matchesTab && matchesSearch;
+    const q = search.toLowerCase();
+    return (n.title || '').toLowerCase().includes(q) || (n.message || '').toLowerCase().includes(q);
   });
+
+  // Route a notification tap to its target screen based on the deep-link.
+  //   post:<id>             → open the community post
+  //   track:request:<ref>   → open tracking
+  //   track:donation:<ref>  → open tracking
+  const handleNotificationPress = (n: NotificationItem) => {
+    if (!n.is_read) markAsRead(n.id);
+    const link = n.link || '';
+    if (link.startsWith('post:') && onOpenPost) {
+      onOpenPost(link.slice('post:'.length));
+      return;
+    }
+    if (link.startsWith('track:') && onTrack) {
+      onTrack();
+      return;
+    }
+    // No deep-link → just expand/collapse the message.
+    setExpandedId(expandedId === n.id ? null : n.id);
+  };
 
   // ── Time formatting ──────────────────────────────────────────────────
   const getRelativeTime = (dateStr: string) => {
@@ -208,7 +225,6 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
   };
 
   const insets = useSafeAreaInsets();
-  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -225,10 +241,9 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
           <TouchableOpacity onPress={onBack} style={styles.iconBtn}>
             <Ionicons name="chevron-back" size={ms(24)} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Notification</Text>
-          <TouchableOpacity style={styles.iconBtn} onPress={markAllAsRead}>
-            <Ionicons name="ellipsis-vertical" size={ms(20)} color="#fff" />
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Notifications</Text>
+          {/* Spacer to keep the title centered (three-dot menu removed). */}
+          <View style={styles.iconBtn} />
         </View>
       </LinearGradient>
 
@@ -256,39 +271,6 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
               </TouchableOpacity>
             )}
           </View>
-        </Animated.View>
-
-        {/* ── Filter Tabs ───────────────────────────────── */}
-        <Animated.View entering={FadeInDown.delay(120)} style={styles.tabsRow}>
-          <View style={styles.tabsGroup}>
-            {(['All', 'Unread'] as const).map((tab) => {
-              const isActive = activeTab === tab;
-              return (
-                <TouchableOpacity
-                  key={tab}
-                  style={[
-                    styles.tab,
-                    isActive && { backgroundColor: theme.deep, borderColor: theme.deep },
-                  ]}
-                  onPress={() => setActiveTab(tab)}
-                >
-                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{tab}</Text>
-                  {unreadCount > 0 && (
-                    <View style={[styles.badge, isActive ? styles.badgeActive : { backgroundColor: theme.pale }]}>
-                      <Text style={[styles.badgeText, isActive ? styles.badgeTextActive : { color: theme.deep }]}>
-                        {unreadCount}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          {unreadCount > 0 && (
-            <TouchableOpacity onPress={markAllAsRead}>
-              <Text style={[styles.markAllText, { color: theme.deep }]}>Mark all read</Text>
-            </TouchableOpacity>
-          )}
         </Animated.View>
 
         {/* ── Loading / Empty States ───────────────────── */}
@@ -323,10 +305,7 @@ export default function NotificationScreen({ onBack, onTrack, role = 'Donor' }: 
                 <ScaleButton
                   key={n.id}
                   style={[styles.notificationCard, !n.is_read && styles.notificationCardUnread]}
-                  onPress={() => {
-                    setExpandedId(isExpanded ? null : n.id);
-                    if (!n.is_read) markAsRead(n.id);
-                  }}
+                  onPress={() => handleNotificationPress(n)}
                 >
                   <View style={styles.cardInner}>
                     {/* Themed icon circle — gradient from deep → soft (role color) */}

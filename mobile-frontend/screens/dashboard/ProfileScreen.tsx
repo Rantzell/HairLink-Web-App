@@ -12,6 +12,7 @@ import {
     Platform,
     Dimensions,
     KeyboardAvoidingView,
+    Modal,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,6 +58,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     // Redemption State
     const [otherReferralCode, setOtherReferralCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
+    const [showReferralSuccess, setShowReferralSuccess] = useState(false);
 
     const insets = useSafeAreaInsets();
 
@@ -108,10 +110,10 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
         if (!otherReferralCode.trim()) return;
         setIsRedeeming(true);
         try {
-            const res = await api.post('/referral/', { referral_code: otherReferralCode });
-            Alert.alert('Success', res.data.message || 'Referral code applied successfully! ✨');
+            await api.post('/referral/', { referral_code: otherReferralCode });
             setOtherReferralCode('');
             await fetchProfile();
+            setShowReferralSuccess(true);
         } catch (error: any) {
             const msg = error.response?.data?.error || error.response?.data?.message || 'Invalid referral code.';
             Alert.alert('Redeem Failed', msg);
@@ -435,6 +437,39 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                     <View style={{ height: 100 }} />
                 </View>
             </ScrollView>
+
+            {/* ── Referral success modal ───────────────────────────── */}
+            <Modal
+                visible={showReferralSuccess}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowReferralSuccess(false)}
+            >
+                <View style={styles.referralModalBackdrop}>
+                    <Animated.View entering={FadeInUp.springify().damping(15)} style={styles.referralModalCard}>
+                        <LinearGradient
+                            colors={['#FF1493', '#FF66B2']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.referralModalIcon}
+                        >
+                            <Ionicons name="star" size={ms(40)} color="#fff" />
+                        </LinearGradient>
+                        <Text style={styles.referralModalTitle}>Referral Applied!</Text>
+                        <Text style={styles.referralModalMessage}>
+                            You earned <Text style={{ fontWeight: '900', color: '#FF1493' }}>3 stars</Text> and your
+                            referrer earned <Text style={{ fontWeight: '900', color: '#FF1493' }}>5 stars</Text>.
+                            Thank you for spreading the word about HairLink! 🌸
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.referralModalBtn}
+                            onPress={() => setShowReferralSuccess(false)}
+                        >
+                            <Text style={styles.referralModalBtnText}>Awesome!</Text>
+                        </TouchableOpacity>
+                    </Animated.View>
+                </View>
+            </Modal>
         </KeyboardAvoidingView>
     );
 }
@@ -705,6 +740,47 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     claimBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(14), letterSpacing: 1 },
+
+    // ── Referral success modal ──
+    referralModalBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: ms(32),
+    },
+    referralModalCard: {
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: ms(24),
+        paddingVertical: vs(28),
+        paddingHorizontal: ms(24),
+        alignItems: 'center',
+    },
+    referralModalIcon: {
+        width: ms(78),
+        height: ms(78),
+        borderRadius: ms(39),
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: vs(16),
+    },
+    referralModalTitle: { fontSize: ms(20), fontWeight: '900', color: '#1a1a1a', marginBottom: vs(8) },
+    referralModalMessage: {
+        fontSize: ms(13.5),
+        color: '#6B6470',
+        textAlign: 'center',
+        lineHeight: ms(20),
+        marginBottom: vs(22),
+    },
+    referralModalBtn: {
+        backgroundColor: '#FF1493',
+        paddingVertical: vs(13),
+        borderRadius: ms(16),
+        alignItems: 'center',
+        width: '100%',
+    },
+    referralModalBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(15), letterSpacing: 0.5 },
 
     // Logout
     premiumLogout: {

@@ -81,6 +81,15 @@ router.post('/', authenticate, validate(referralCodeSchema), async (req, res) =>
       console.warn('[Referral] Milestone credit failed (non-fatal):', err);
     }
 
+    // Notify both the redeemer and the referrer (non-fatal).
+    try {
+      const { notifyReferralRedeemed } = await import('../services/notification.service');
+      const redeemerName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+      await notifyReferralRedeemed(user.id, referrer.id, redeemerName);
+    } catch (err) {
+      console.warn('[Referral] Notification failed (non-fatal):', err);
+    }
+
     res.json({
       success: true,
       message: 'Referral code applied! You earned 3 stars and your referrer earned 5.',

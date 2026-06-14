@@ -262,13 +262,17 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         entering={FadeInUp.springify().damping(15).stiffness(120)}
         exiting={FadeOut.duration(200)}
       >
-        <NotificationScreen 
-          onBack={() => setShowNotifications(false)} 
+        <NotificationScreen
+          onBack={() => setShowNotifications(false)}
           onTrack={() => {
             setShowNotifications(false);
             setShowHistory(true);
           }}
-          role="Donor" 
+          onOpenPost={() => {
+            setShowNotifications(false);
+            setShowCommunity(true);
+          }}
+          role="Donor"
         />
       </Animated.View>
     );

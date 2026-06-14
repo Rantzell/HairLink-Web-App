@@ -80,6 +80,25 @@ function stripMarkdown(text: string): string {
     .replace(/_(.+?)_/g, '$1');
 }
 
+/**
+ * Render text with **bold** / __bold__ segments actually shown in bold, instead
+ * of stripping the markers. Other inline markdown is flattened via stripMarkdown.
+ */
+function renderRichText(text: string, boldColor = '#1C1917') {
+  const parts = (text ?? '').split(/(\*\*[^*]+\*\*|__[^_]+__)/g);
+  return parts.map((part, i) => {
+    const m = part.match(/^(?:\*\*([^*]+)\*\*|__([^_]+)__)$/);
+    if (m) {
+      return (
+        <Text key={i} style={{ fontWeight: '800', color: boldColor }}>
+          {m[1] ?? m[2]}
+        </Text>
+      );
+    }
+    return <Text key={i}>{stripMarkdown(part)}</Text>;
+  });
+}
+
 // Same role palette as the web
 const ROLE_COLORS: Record<string, { bg: string; color: string; label: string }> = {
   donor:     { bg: '#EEF3FF', color: '#3B66D4', label: 'Donor' },
@@ -142,6 +161,16 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
   const [postingComment, setPostingComment] = useState(false);
   const [replyingToComment, setReplyingToComment] = useState<any>(null);
 
+  // Edit-post state — when set, the composer modal runs in "edit" mode.
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editingExistingImage, setEditingExistingImage] = useState<string | null>(null);
+
+  // Current signed-in user id — used to show edit/delete only on own posts.
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
+
   const fetchPosts = useCallback(async () => {
     try {
       const response = await api.get('/community/posts');
@@ -187,6 +216,50 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
     setNewImage(null);
     setNewCategory('Stories');
     setCatOpen(false);
+    setEditingPostId(null);
+    setEditingExistingImage(null);
+  };
+
+  // Open the composer pre-filled to edit an existing post.
+  const openEditModal = (post: any) => {
+    const { topic, title, body } = decodePost(post.content ?? '');
+    const cat = (CATEGORIES.find((c) => c.toLowerCase() === topic) || 'Stories') as Category;
+    setNewCategory(cat);
+    setNewTitle(title || '');
+    setNewContent(body || '');
+    setNewImage(null);
+    setEditingExistingImage(post.imageUrl || post.full_image_url || null);
+    setEditingPostId(post.id);
+    setCatOpen(false);
+    setModalOpen(true);
+  };
+
+  const handleDeletePost = (post: any) => {
+    Alert.alert('Delete Post', 'Are you sure you want to delete this post? This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/community/posts/${post.id}`);
+            setPosts((curr) => curr.filter((p) => p.id !== post.id));
+            if (activePost?.id === post.id) setActivePost(null);
+          } catch (e) {
+            Alert.alert('Error', 'Failed to delete post.');
+          }
+        },
+      },
+    ]);
+  };
+
+  // Tapping the ⋯ on your own post.
+  const openPostMenu = (post: any) => {
+    Alert.alert('Post options', undefined, [
+      { text: 'Edit', onPress: () => openEditModal(post) },
+      { text: 'Delete', style: 'destructive', onPress: () => handleDeletePost(post) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const handlePublish = async () => {
@@ -203,7 +276,8 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
       const fullContent = encodeTopicInContent(newCategory, newTitle, newContent);
       formData.append('content', fullContent);
 
-      // Attach the image only if the user picked one.
+      // Attach the image only if the user picked a NEW one. On edit, leaving
+      // it empty keeps the existing image on the backend.
       if (newImage) {
         const fileExt = newImage.split('.').pop()?.toLowerCase();
         const fileName = `post-image-${Date.now()}.${fileExt}`;
@@ -214,15 +288,22 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
         } as any);
       }
 
-      const response = await api.post('/community/posts', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setPosts([response.data, ...posts]);
+      if (editingPostId) {
+        const response = await api.patch(`/community/posts/${editingPostId}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        setPosts((curr) => curr.map((p) => (p.id === editingPostId ? response.data : p)));
+      } else {
+        const response = await api.post('/community/posts', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        setPosts([response.data, ...posts]);
+      }
       resetComposer();
       setModalOpen(false);
     } catch (error) {
-      console.error('Error creating post:', error);
-      Alert.alert('Error', 'Failed to publish post.');
+      console.error('Error saving post:', error);
+      Alert.alert('Error', editingPostId ? 'Failed to update post.' : 'Failed to publish post.');
     } finally {
       setSubmitting(false);
     }
@@ -343,11 +424,22 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
           <View style={[styles.topicChip, { backgroundColor: topicStyle.bg }]}>
             <Text style={[styles.topicChipText, { color: topicStyle.fg }]}>{topicLabel}</Text>
           </View>
+
+          {/* Owner-only edit/delete menu */}
+          {currentUserId && String(u.id) === String(currentUserId) && (
+            <TouchableOpacity
+              style={styles.postMenuBtn}
+              onPress={() => openPostMenu(item)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="ellipsis-horizontal" size={ms(18)} color="#78716C" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Title + body */}
-        {title && <Text style={styles.postTitle}>{title}</Text>}
-        {body ? <Text style={styles.postBody}>{stripMarkdown(body)}</Text> : null}
+        {title && <Text style={styles.postTitle}>{stripMarkdown(title)}</Text>}
+        {body ? <Text style={styles.postBody}>{renderRichText(body)}</Text> : null}
 
         {/* Image */}
         {imageUrl && (
@@ -487,12 +579,12 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
       </KeyboardAvoidingView>
 
       {/* ── Create Post Modal ── */}
-      <Modal visible={modalOpen} animationType="slide" transparent onRequestClose={() => setModalOpen(false)}>
+      <Modal visible={modalOpen} animationType="slide" transparent onRequestClose={() => { setModalOpen(false); resetComposer(); }}>
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView style={styles.modalSheet} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create a Post</Text>
-              <TouchableOpacity onPress={() => setModalOpen(false)} style={styles.modalClose}>
+              <Text style={styles.modalTitle}>{editingPostId ? 'Edit Post' : 'Create a Post'}</Text>
+              <TouchableOpacity onPress={() => { setModalOpen(false); resetComposer(); }} style={styles.modalClose}>
                 <Ionicons name="close" size={ms(22)} color="#1C1917" />
               </TouchableOpacity>
             </View>
@@ -551,13 +643,15 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                 maxLength={1500}
               />
 
-              {/* Image preview */}
-              {newImage && (
+              {/* Image preview — newly picked image, or the existing one when editing */}
+              {(newImage || editingExistingImage) && (
                 <View style={styles.previewBox}>
-                  <Image source={{ uri: newImage }} style={styles.previewImage} />
-                  <TouchableOpacity style={styles.removeImageBtn} onPress={() => setNewImage(null)}>
-                    <Ionicons name="close" size={ms(15)} color="#fff" />
-                  </TouchableOpacity>
+                  <Image source={{ uri: (newImage || editingExistingImage) as string }} style={styles.previewImage} />
+                  {newImage && (
+                    <TouchableOpacity style={styles.removeImageBtn} onPress={() => setNewImage(null)}>
+                      <Ionicons name="close" size={ms(15)} color="#fff" />
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
 
@@ -565,7 +659,9 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
               <View style={styles.modalFooter}>
                 <TouchableOpacity style={styles.addPhotoBtn} onPress={pickImage} activeOpacity={0.85}>
                   <Feather name="image" size={ms(15)} color="#D63B8A" />
-                  <Text style={styles.addPhotoBtnText}>Add Photo</Text>
+                  <Text style={styles.addPhotoBtnText}>
+                    {newImage || editingExistingImage ? 'Change Photo' : 'Add Photo'}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -581,8 +677,8 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
                     <>
-                      <Feather name="send" size={ms(14)} color="#fff" />
-                      <Text style={styles.publishBtnText}>Publish</Text>
+                      <Feather name={editingPostId ? 'check' : 'send'} size={ms(14)} color="#fff" />
+                      <Text style={styles.publishBtnText}>{editingPostId ? 'Save Changes' : 'Publish'}</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -895,6 +991,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: ms(8),
     paddingVertical: vs(3),
     borderRadius: 999,
+  },
+  postMenuBtn: {
+    marginLeft: ms(6),
+    width: ms(28),
+    height: ms(28),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   topicChipText: {
     fontSize: ms(10),

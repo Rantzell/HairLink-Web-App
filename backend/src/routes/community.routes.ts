@@ -95,6 +95,49 @@ router.post('/posts', authenticate, upload.single('image'), async (req: Request,
   }
 });
 
+// PATCH /internal-api/community/posts/:postId — edit own post (content + optional new image)
+router.patch('/posts/:postId', authenticate, upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    const postId = req.params.postId as string;
+    const existing = await prisma.communityPost.findUnique({ where: { id: postId } });
+    if (!existing) { res.status(404).json({ message: 'Post not found' }); return; }
+    if (existing.userId !== req.user!.id && req.user!.role !== 'admin') {
+      res.status(403).json({ message: 'Unauthorized edit' }); return;
+    }
+
+    const content = (req.body.content ?? '').toString().trim();
+    if (!content) { res.status(400).json({ error: 'Caption is required' }); return; }
+
+    const data: { content: string; imageUrl?: string } = { content };
+    if (req.file) {
+      const path = await uploadFile(req.file, 'hairlink', 'community/posts');
+      data.imageUrl = getPublicUrl('hairlink', path);
+    }
+
+    const updated = await prisma.communityPost.update({
+      where: { id: postId },
+      data,
+      include: {
+        user: true,
+        comments: {
+          where: { parentId: null },
+          include: { user: true, replies: { include: { user: true }, orderBy: { createdAt: 'asc' } } },
+          orderBy: { createdAt: 'asc' },
+        },
+        likedBy: true,
+      },
+    });
+
+    const likesCount = updated.likedBy ? updated.likedBy.length : 0;
+    const isLiked = updated.likedBy ? updated.likedBy.some((l) => l.userId === req.user!.id) : false;
+    const { likedBy, ...rest } = updated;
+    res.json({ ...serializePost(rest), likes: likesCount, is_liked: isLiked });
+  } catch (err) {
+    console.error('[Community] Edit post error:', err);
+    res.status(500).json({ error: 'Failed to edit post' });
+  }
+});
+
 // POST /internal-api/community/posts/:postId/comments
 router.post('/posts/:postId/comments', authenticate, upload.single('image'), async (req: Request, res: Response) => {
   try {
