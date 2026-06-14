@@ -171,7 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               return;
             }
             setUser(profile);
-            window.location.href = dashboardPath[profile.role] || '/donor/dashboard';
+            window.location.replace(dashboardPath[profile.role] || '/donor/dashboard');
             return;
           }
         } catch (e: any) {
@@ -192,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile = await fetchProfile();
       if (!profile) throw new Error('Profile not found');
       setUser(profile);
-      window.location.href = dashboardPath[profile.role] || '/donor/dashboard';
+      window.location.replace(dashboardPath[profile.role] || '/donor/dashboard');
     } catch (err: any) {
       console.error('[Auth] Demo login failed:', err);
       toast.error(`Demo login failed: ${err?.message || err?.response?.data?.error || JSON.stringify(err)}`);

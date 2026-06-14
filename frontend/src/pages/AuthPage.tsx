@@ -581,9 +581,23 @@ const authStyles = `
    COMPONENT
 ═══════════════════════════════════════════════════════════════ */
 const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMode: _im = 'register' }) => {
-  const { login, loginAs, register } = useAuth();
+  const { user, login, loginAs, register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // If user is already logged in and visits /login, redirect them
+  useEffect(() => {
+    if (user) {
+      const dashboardPath: Record<string, string> = {
+        admin: '/admin/dashboard',
+        staff: '/staff/dashboard',
+        wigmaker: '/wigmaker/dashboard',
+        recipient: '/recipient/dashboard',
+        donor: '/donor/dashboard',
+      };
+      navigate(dashboardPath[user.role] || '/donor/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const [isReg, setIsReg] = useState(location.pathname === '/register');
   const [loading, setLoading] = useState(false);
@@ -663,7 +677,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
     setLoading(true); setErrors({});
     try {
       const res = await login(loginData.email, loginData.password);
-      navigate(res.redirect);
+      navigate(res.redirect, { replace: true });
     } catch (err: any) {
       if (err.response?.status === 422) setErrors(err.response.data.errors);
       else setErrors({ email: [err.response?.data?.error || err.response?.data?.message || 'Login failed.'] });
@@ -717,7 +731,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
     setLoading(true); setErrors({});
     try {
       const res = await register(reg);
-      navigate(res.redirect);
+      navigate(res.redirect, { replace: true });
     } catch (err: any) {
       if (err.response?.status === 422) setErrors(err.response.data.errors);
       else setErrors({ email: [err.response?.data?.error || err.response?.data?.message || 'Registration failed.'] });

@@ -839,8 +839,10 @@ const StaffRealtimeTracking: React.FC = () => {
                       const { wpId, wp, donations: bd } = row;
                       const isOpen = !!batchOpen[wpId];
                       const batchRef = getBatchHairReference(wp);
-                      const wigmakerReceivedHair = ['processing', 'completed', 'shipped', 'received'].includes(wp.status);
-                      const wigmakerReceivedCount = wigmakerReceivedHair ? bd.length : 0;
+                      const wigmakerReceivedCount = bd.reduce((acc, d) => {
+                        const dState = (data.donationStateMap as any)[d.id];
+                        return acc + (dState?.wigmakerReceived ? 1 : 0);
+                      }, 0);
                       const stageLabel =
                         wp.status === 'assigned' ? `Waiting for ${wp.wigmaker?.firstName || 'wigmaker'} to receive hair` :
                           wp.status === 'processing' ? `Hair received by ${wp.wigmaker?.firstName || 'wigmaker'}` :

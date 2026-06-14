@@ -15,7 +15,7 @@ const dashStyles = `
   padding: 0 !important;
 }
 
-.hl-dash-root * {
+.hl-dash-root, .hl-dash-root * {
   box-sizing: border-box;
 }
 .hl-dash-root a {
@@ -109,6 +109,7 @@ const dashStyles = `
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .hl-dash-hero-left {
@@ -156,6 +157,7 @@ const dashStyles = `
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
   box-shadow: 0 4px 20px rgba(214, 59, 138, 0.02);
 }
 
@@ -356,6 +358,7 @@ const dashStyles = `
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .hl-dash-rewards-banner i {
@@ -389,6 +392,7 @@ const dashStyles = `
 .hl-dash-ref-form {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .hl-dash-ref-input {
@@ -440,6 +444,8 @@ const dashStyles = `
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .hl-dash-claim-header-left {

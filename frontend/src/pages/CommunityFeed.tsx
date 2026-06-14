@@ -1,5 +1,7 @@
 import toast from 'react-hot-toast';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import apiClient from '../api/client';
 import type { CommunityPost } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,10 +33,10 @@ function decodePost(content: string): { topic: string; title: string | null; bod
     }
   }
 
-  // Extract bold title
-  const titleMatch = rest.match(/^\*\*(.+?)\*\*\n\n([\s\S]*)$/);
+  // Extract bold title. Use [\s\S]* to catch newlines, and match \r or \n robustly.
+  const titleMatch = rest.match(/^\*\*(.+?)\*\*(?:[\r\n]+([\s\S]*))?$/);
   if (titleMatch) {
-    return { topic, title: titleMatch[1], body: titleMatch[2] };
+    return { topic, title: titleMatch[1], body: titleMatch[2] || '' };
   }
   return { topic, title: null, body: rest };
 }
@@ -82,13 +84,21 @@ type FilterMode = 'all' | string;
 ═══════════════════════════════════════════════════════ */
 const CommunityFeed: React.FC = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const targetPostId = searchParams.get('postId');
+
   const [posts, setPosts]           = useState<CommunityPost[]>([]);
   const [loading, setLoading]       = useState(true);
   const [filter, setFilter]         = useState<FilterMode>('all');
   const [sort, setSort]             = useState<SortMode>('new');
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
 
-  /* create-post modal */
-  const [modalOpen, setModalOpen]   = useState(false);
+  // Ref map: postId → DOM element, so we can scroll to it
+  const postRefs = useRef<Record<string, HTMLElement | null>>({});
+  const createPostRef = useRef<HTMLDivElement>(null);
+
+  /* create-post form */
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [newContent, setNewContent] = useState('');
   const [newTitle,   setNewTitle]   = useState('');
   const [newCategory, setNewCategory] = useState('Stories');
@@ -99,7 +109,7 @@ const CommunityFeed: React.FC = () => {
   /* category dropdown inside modal */
   const [catOpen, setCatOpen] = useState(false);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const res = await apiClient.get('/internal-api/community/posts');
       setPosts(res.data);
@@ -108,16 +118,22 @@ const CommunityFeed: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => { fetchPosts(); }, []);
-
-  /* close modal on Escape */
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setModalOpen(false); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  // Scroll to and highlight the target post once posts have loaded
+  useEffect(() => {
+    if (!targetPostId || loading) return;
+    const el = postRefs.current[targetPostId];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightedPostId(targetPostId);
+      // Remove highlight after 3 seconds
+      const t = setTimeout(() => setHighlightedPostId(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [targetPostId, loading, posts]);
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +151,7 @@ const CommunityFeed: React.FC = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setNewContent(''); setNewTitle(''); setNewFile(null); setNewCategory('Stories');
-      setModalOpen(false);
+      setShowCreateForm(false);
       fetchPosts();
     } catch (err) {
       console.error('Post creation failed', err);
@@ -156,9 +172,23 @@ const CommunityFeed: React.FC = () => {
   const handleComment = async (postId: string, content: string) => {
     if (!content.trim()) return;
     try {
-      await apiClient.post(`/internal-api/community/posts/${postId}/comments`, { content, parent_id: null });
+      await apiClient.post(`/internal-api/community/posts/${postId}/comments`, { content });
       fetchPosts();
-    } catch (err) { console.error('Comment failed', err); }
+    } catch (err) {
+      console.error('Comment failed', err);
+      toast.error('Could not post comment');
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    try {
+      await apiClient.delete(`/internal-api/community/posts/${postId}`);
+      toast.success('Post deleted successfully');
+      setPosts(prev => prev.filter(p => p.id !== postId));
+    } catch (err) {
+      console.error('Delete failed', err);
+      toast.error('Could not delete post');
+    }
   };
 
   /* Filter + sort — topic is decoded from stored content prefix */
@@ -191,8 +221,8 @@ const CommunityFeed: React.FC = () => {
               Share your journey, celebrate others, ask questions, and find support from people<br className="cf-hero-br" /> who truly understand.
             </p>
           </div>
-          <button className="cf-create-btn" onClick={() => setModalOpen(true)}>
-            <span className="cf-create-plus">+</span> Create Post
+          <button className="cf-create-btn" onClick={() => setShowCreateForm(v => !v)}>
+            <span className="cf-create-plus">+</span> {showCreateForm ? 'Cancel' : 'Create Post'}
           </button>
         </div>
       </header>
@@ -227,40 +257,14 @@ const CommunityFeed: React.FC = () => {
 
       {/* ── FEED ── */}
       <div className="cf-feed-wrap">
-        {loading ? (
-          <div className="cf-loading">
-            <div className="cf-spinner" /><span>Loading community feed…</span>
+        {/* ── CREATE POST INLINE FORM ── */}
+        {showCreateForm && (
+          <div className="cf-card cf-create-post-card" ref={createPostRef} style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column' }}>
+          <div className="cf-modal-head">
+            <span className="cf-modal-title">Create a Post</span>
           </div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="cf-empty">
-            <div className="cf-empty-icon">💬</div>
-            <p>Be the first to share something with the community!</p>
-            <button className="cf-create-btn" style={{ marginTop: '1rem' }} onClick={() => setModalOpen(true)}>
-              + Create Post
-            </button>
-          </div>
-        ) : (
-          filteredPosts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onLike={() => handleLike(post.id)}
-              onComment={handleComment}
-            />
-          ))
-        )}
-      </div>
 
-      {/* ── CREATE POST MODAL ── */}
-      {modalOpen && (
-        <div className="cf-modal-overlay" onClick={e => { if (e.target === e.currentTarget) setModalOpen(false); }}>
-          <div className="cf-modal">
-            {/* Modal header */}
-            <div className="cf-modal-head">
-              <span className="cf-modal-title">Create a Post</span>
-              <button className="cf-modal-close" onClick={() => setModalOpen(false)} aria-label="Close">✕</button>
-            </div>
-
+          <div className="cf-modal-body" style={{ overflow: 'visible' }}>
             {/* Author row at top — shows who is posting before they begin */}
             {user && (
               <div className="cf-modal-user-row" style={{ borderTop: 'none', borderBottom: '1px solid #ead7e8', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
@@ -376,7 +380,35 @@ const CommunityFeed: React.FC = () => {
             </form>
           </div>
         </div>
-      )}
+        )}
+        {loading ? (
+          <div className="cf-loading">
+            <div className="cf-spinner" /><span>Loading community feed…</span>
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="cf-empty">
+            <div className="cf-empty-icon">💬</div>
+            <p>Be the first to share something with the community!</p>
+            <button className="cf-create-btn" style={{ marginTop: '1rem' }} onClick={() => setShowCreateForm(v => !v)}>
+              + Create Post
+            </button>
+          </div>
+        ) : (
+          filteredPosts.map(post => (
+            <PostCard
+              key={post.id}
+              post={post}
+              currentUser={user}
+              onLike={() => handleLike(post.id)}
+              onComment={handleComment}
+              onDelete={() => handleDeletePost(post.id)}
+              highlighted={highlightedPostId === post.id}
+              postRef={(el) => { postRefs.current[post.id] = el; }}
+            />
+          ))
+        )}
+
+      </div>
     </div>
   );
 };
@@ -386,12 +418,17 @@ const CommunityFeed: React.FC = () => {
 ═══════════════════════════════════════════════════════ */
 const PostCard: React.FC<{
   post: CommunityPost;
+  currentUser: any;
   onLike: () => void;
   onComment: (id: string, content: string) => void;
-}> = ({ post, onLike, onComment }) => {
+  onDelete: () => void;
+  highlighted?: boolean;
+  postRef?: (el: HTMLElement | null) => void;
+}> = ({ post, currentUser, onLike, onComment, onDelete, highlighted = false, postRef }) => {
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
   /* Close lightbox on Escape */
@@ -423,7 +460,10 @@ const PostCard: React.FC<{
   };
 
   return (
-    <article className="cf-card">
+    <article
+      className={`cf-card${highlighted ? ' cf-card-highlighted' : ''}`}
+      ref={postRef as React.RefCallback<HTMLElement>}
+    >
       {/* Vote strip (left gutter) */}
       <div className="cf-vote-strip">
         <button
@@ -448,7 +488,7 @@ const PostCard: React.FC<{
       {/* Main content */}
       <div className="cf-card-body">
         {/* Author row */}
-        <div className="cf-author-row">
+        <div className="cf-author-row" style={{ position: 'relative' }}>
           <div className="cf-avatar">{initials}</div>
           <span className="cf-author-name">
             {post.user?.firstName} {post.user?.lastName?.[0]}.
@@ -460,11 +500,41 @@ const PostCard: React.FC<{
           {topicLabel && (
             <span className="cf-topic-badge">{topicLabel}</span>
           )}
-          <span className="cf-timestamp">{timeAgo(post.createdAt)}</span>
+
+          {/* Delete Button / Inline Confirmation */}
+          {currentUser && (currentUser.id === post.userId || currentUser.role === 'admin') && (
+            <div style={{ position: 'absolute', right: 0, top: 0 }}>
+              {showDeleteConfirm ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', padding: '4px 8px', borderRadius: '6px', boxShadow: '0 2px 10px rgba(0,0,0,0.08)', border: '1px solid #f0eaf4' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#cf2f84', fontWeight: 700 }}>Delete?</span>
+                  <button 
+                    onClick={() => { setShowDeleteConfirm(false); onDelete(); }}
+                    style={{ fontSize: '0.7rem', padding: '4px 10px', background: '#cf2f84', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    Yes
+                  </button>
+                  <button 
+                    onClick={() => setShowDeleteConfirm(false)}
+                    style={{ fontSize: '0.7rem', padding: '4px 10px', background: '#f5f0f7', color: '#685973', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    No
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setShowDeleteConfirm(true)}
+                  title="Delete post"
+                  style={{ background: 'none', border: 'none', color: '#c3a1b9', cursor: 'pointer', padding: '4px' }}
+                >
+                  <i className='bx bx-trash' style={{ fontSize: '1.2rem' }}></i>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Content */}
-        {displayTitle && <h3 className="cf-post-title">{displayTitle}</h3>}
+        {displayTitle && <h3 className="cf-post-title" style={{ fontWeight: 'bold' }}>{displayTitle}</h3>}
         <p className="cf-post-content">{displayContent}</p>
 
         {/* Image — click to open lightbox */}
@@ -481,7 +551,7 @@ const PostCard: React.FC<{
         )}
 
         {/* Lightbox */}
-        {lightboxOpen && post.imageUrl && (
+        {lightboxOpen && post.imageUrl && createPortal(
           <div
             className="cf-lightbox-overlay"
             onClick={() => setLightboxOpen(false)}
@@ -494,7 +564,8 @@ const PostCard: React.FC<{
             <div className="cf-lightbox-content" onClick={e => e.stopPropagation()}>
               <img src={post.imageUrl} alt="Full size" className="cf-lightbox-img" />
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Action bar */}
@@ -521,6 +592,9 @@ const PostCard: React.FC<{
             </svg>
             {post.comments?.length || 0} comments
           </button>
+          <span className="cf-timestamp" style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#a99cae' }}>
+            {timeAgo(post.createdAt)}
+          </span>
         </div>
 
         {/* Comments panel */}

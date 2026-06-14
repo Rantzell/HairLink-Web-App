@@ -13,7 +13,6 @@ const MonetaryDonation: React.FC = () => {
   const [customAmount, setCustomAmount] = useState('');
   const [currency, setCurrency] = useState('PHP');
   const [amountNumber, setAmountNumber] = useState('');
-  const [amountWords, setAmountWords] = useState('');
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,7 +61,6 @@ const MonetaryDonation: React.FC = () => {
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append('amount', customAmount || activeAmount?.toString() || '0');
-    formData.append('amount_words', amountWords);
     formData.append('currency', currency);
     formData.append('payment_method', paymentMethod);
     formData.append('is_anonymous', isAnonymous ? '1' : '0');
@@ -303,7 +301,7 @@ const MonetaryDonation: React.FC = () => {
           <div className="billing-fields" style={{ marginTop: '2rem' }}>
               <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1rem' }}>
                 <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Amount of Donation (in number) *</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Amount of Donation *</label>
                   <input 
                     type="text" 
                     placeholder="Ex. 1,000.00"
@@ -311,17 +309,6 @@ const MonetaryDonation: React.FC = () => {
                     readOnly
                     className="form-input-premium"
                     style={{ width: '100%', background: '#f5f3f7', border: '2px solid #ead7e8', borderRadius: '12px', padding: '0.85rem 1rem' }}
-                  />
-                </div>
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Amount of Donation (in words) *</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ex. One thousand pesos"
-                    value={amountWords}
-                    onChange={e => setAmountWords(e.target.value)}
-                    className="form-input-premium"
-                    style={{ width: '100%', border: '2px solid #ead7e8', borderRadius: '12px', padding: '0.85rem 1rem' }}
                   />
                 </div>
               </div>

@@ -13,6 +13,36 @@ interface Notification {
   type?: string;
 }
 
+/** Extract a postId embedded as `[postId:xxx]` inside a notification message */
+function extractPostId(message: string): string | null {
+  const m = message?.match(/\[postId:([a-zA-Z0-9_-]+)\]/);
+  return m ? m[1] : null;
+}
+
+/** Strip metadata tags from the message for display */
+function cleanMessage(message: string): string {
+  return message?.replace(/\[postId:[a-zA-Z0-9_-]+\]/g, '').trim() ?? '';
+}
+
+/** Return the icon to display for each notification type */
+function getNotifIcon(n: Notification): string {
+  if (n.type === 'announcement') return '📢';
+  if (n.type === 'community') {
+    if (n.title.includes('liked')) return '❤️';
+    if (n.title.includes('comment')) return '💬';
+    if (n.title.includes('reply')) return '↩️';
+    return '💬';
+  }
+  if (n.type === 'donation') return '🌸';
+  if (n.type === 'request') return '💖';
+  if (n.type === 'wigmaker') return '🧵';
+  if (n.type === 'staff_donation') return '📦';
+  if (n.type === 'staff_request') return '📋';
+  if (n.type === 'event') return '📣';
+  if (n.type === 'pickup_ready') return '🎉';
+  return '🔔';
+}
+
 const NotificationBell: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -89,7 +119,10 @@ const NotificationBell: React.FC = () => {
       // Fallback for generic staff notification types
       if (n.type === 'donation') return { label: 'View Tracking →', path: '/staff/tracking/donation' };
       if (n.type === 'request') return { label: 'View Tracking →', path: '/staff/tracking/recipient' };
-      if (n.type === 'community') return { label: 'View Post →', path: '/staff/community' };
+      if (n.type === 'community') {
+        const postId = extractPostId(n.message);
+        return { label: 'View Post →', path: postId ? `/staff/community?postId=${postId}` : '/staff/community' };
+      }
       return null;
     }
 
@@ -104,7 +137,10 @@ const NotificationBell: React.FC = () => {
         if (ref.startsWith('HD-') || ref.startsWith('HD ')) return { label: 'View Verification →', path: '/admin/verification?view=donor' };
         if (ref.startsWith('WR-') || ref.startsWith('WR ') || ref.startsWith('REQ-') || ref.startsWith('REQ ')) return { label: 'View Verification →', path: '/admin/verification?view=recipient' };
       }
-      if (n.type === 'community') return { label: 'View Community →', path: '/admin/community' };
+      if (n.type === 'community') {
+        const postId = extractPostId(n.message);
+        return { label: 'View Post →', path: postId ? `/admin/community?postId=${postId}` : '/admin/community' };
+      }
       return null;
     }
 
@@ -122,7 +158,11 @@ const NotificationBell: React.FC = () => {
     }
     if (n.type === 'donation') return { label: 'View Donation →', path: '/donor/tracking' };
     if (n.type === 'request') return { label: 'View Request →', path: '/recipient/tracking' };
-    if (n.type === 'community') return { label: 'View Post →', path: `/${role}/community` };
+    if (n.type === 'community') {
+      const postId = extractPostId(n.message);
+      const base = `/${role}/community`;
+      return { label: 'View Post →', path: postId ? `${base}?postId=${postId}` : base };
+    }
     if (n.type === 'pickup_ready') return { label: 'View Request →', path: '/recipient/tracking' };
     if (n.type === 'event') return { label: 'View Events →', path: `/${role}/dashboard` };
     return null;
@@ -202,15 +242,19 @@ const NotificationBell: React.FC = () => {
             ) : (
               notifications.map(n => {
                 const link = getNotifLink(n);
+                const icon = getNotifIcon(n);
                 return (
                   <div 
                     key={n.id} 
                     className={`notif-item ${!n.is_read ? 'unread' : ''} ${link ? 'clickable' : ''}`}
                     onClick={() => handleNotifClick(n)}
                   >
+                    <div className="notif-icon-wrap">
+                      <span className="notif-icon">{icon}</span>
+                    </div>
                     <div className="notif-content">
                       <p className="notif-title">{n.title}</p>
-                      <p className="notif-message">{n.message}</p>
+                      <p className="notif-message">{cleanMessage(n.message)}</p>
                       <div className="notif-meta">
                         <span className="notif-time">{new Date(n.created_at).toLocaleString()}</span>
                         {link && <span className="notif-link-hint">{link.label}</span>}
@@ -387,8 +431,19 @@ const NotificationBell: React.FC = () => {
           background: #ad246d;
           border-radius: 50%;
         }
+        .notif-icon-wrap {
+          display: flex;
+          align-items: flex-start;
+          padding-top: 2px;
+          flex-shrink: 0;
+        }
+        .notif-icon {
+          font-size: 1.2rem;
+          line-height: 1;
+        }
         .notif-content {
           flex: 1;
+          min-width: 0;
         }
         .notif-title {
           margin: 0 0 4px;

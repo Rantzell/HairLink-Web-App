@@ -161,12 +161,20 @@ export const notifyWigmakerMaterialDelivery = async (wigmakerId: string, taskCod
 };
 
 export const notifyCommunityInteraction = async (ownerId: string, actorName: string, postId: string, action: 'comment' | 'like' | 'reply') => {
-  const message =
+  const actionText =
     action === 'comment' ? `${actorName} commented on your post.` :
     action === 'reply'   ? `${actorName} replied to your comment.` :
                            `${actorName} liked your post.`;
 
-  return createNotification(ownerId, 'Community Update 💬', message, 'community');
+  // Embed postId so the frontend can navigate directly to the post
+  const message = `${actionText} [postId:${postId}]`;
+
+  const title =
+    action === 'like'    ? '❤️ Someone liked your post' :
+    action === 'comment' ? '💬 New comment on your post' :
+                           '↩️ New reply to your comment';
+
+  return createNotification(ownerId, title, message, 'community');
 };
 
 /** Send an announcement notification only to the specified audience.
