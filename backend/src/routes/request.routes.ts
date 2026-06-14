@@ -269,15 +269,23 @@ router.post('/:reference/confirm-pickup', authenticate, async (req: Request, res
     const now = new Date();
     await prisma.hairRequest.update({
       where: { id: hairRequest.id },
-      data: { status: 'Pickup Confirmed', receivedAt: now },
+      data: { status: 'Completed', receivedAt: now },
     });
-    await createStatusHistory(REQUEST_TYPE, hairRequest.id, 'Pickup Confirmed', 'Recipient confirmed receipt of wig from Binondo office.');
+    await createStatusHistory(REQUEST_TYPE, hairRequest.id, 'Completed', 'Recipient confirmed receipt of wig from Binondo office.');
 
     if (hairRequest.userId) {
       await notifyRequestStatus(hairRequest.userId, 'Completed', hairRequest.reference!);
     }
 
-    res.json({ message: 'Pickup confirmed! Staff will close your request shortly.', success: true });
+    // Notify linked donors
+    const wp = await prisma.wigProduction.findFirst({ where: { hairRequestId: hairRequest.id }, include: { donations: true } });
+    if (wp?.donations) {
+      for (const don of wp.donations) {
+        if (don.userId) await notifyDonationStatus(don.userId, 'Wig Received', don.reference!);
+      }
+    }
+
+    res.json({ message: 'Pickup confirmed! Your request is now complete.', success: true });
   } catch (err) { res.status(500).json({ error: 'Failed to confirm pickup' }); }
 });
 

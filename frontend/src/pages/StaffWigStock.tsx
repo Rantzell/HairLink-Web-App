@@ -50,12 +50,14 @@ const StaffWigStock: React.FC = () => {
   const pagedWigs = filteredWigs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const handlePrint = () => {
-    window.print();
+    import('../utils/pdfExport').then(({ exportPDF }) => {
+      exportPDF('wigStockPanel', 'Wig-Stock-Inventory');
+    });
   };
 
   return (
     <section className="section-wrap reveal active staff-page">
-      <article className="staff-block">
+      <article className="staff-block" id="wigStockPanel">
         <div className="staff-bar staff-wig-bar">
           <h2 className="staff-wig-title">Wig Stock Inventory</h2>
           <div className="staff-tools staff-wig-tools">

@@ -33,7 +33,7 @@ const StaffHairStock: React.FC = () => {
 
   return (
     <section className="section-wrap reveal active staff-page">
-      <article className="stock-panel hair-stock-panel">
+      <article className="stock-panel hair-stock-panel" id="hairStockPanel">
         <div className="staff-bar hair-stock-bar">
           <div className="hair-stock-bar-left">
             <h2 className="hair-stock-title">Hair Stock Inventory</h2>
@@ -42,7 +42,11 @@ const StaffHairStock: React.FC = () => {
             <button 
               type="button" 
               className="hair-stock-print-btn" 
-              onClick={() => window.print()}
+              onClick={() => {
+                import('../utils/pdfExport').then(({ exportPDF }) => {
+                  exportPDF('hairStockPanel', 'Hair-Stock-Inventory');
+                });
+              }}
             >
               <i className='bx bx-printer'></i>
               Print as PDF

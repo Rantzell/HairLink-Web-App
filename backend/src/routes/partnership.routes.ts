@@ -15,7 +15,7 @@ router.post('/', validate(partnershipSchema), async (req, res) => {
         contact: req.body.phone || null,
         description: req.body.message,
         type: req.body.organization || 'Organization',
-        status: 'Active',
+        status: 'Pending',
       },
     });
     res.json({ success: true, message: 'Partnership inquiry submitted!' });

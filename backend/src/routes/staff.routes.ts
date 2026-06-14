@@ -150,17 +150,22 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
       include: { user: true }, orderBy: { updatedAt: 'desc' },
     });
     const wigmakers = await prisma.user.findMany({ where: { role: 'wigmaker', isActive: true } });
-    const wpIds = donations
-      .map(d => (d as any).wigProductionId)
-      .filter((id: any) => id != null) as number[];
-
-    let wps: any[] = [];
-    if (wpIds.length > 0) {
-      wps = await prisma.wigProduction.findMany({
-        where: { id: { in: wpIds } },
-        include: { wigmaker: true },
-      });
-    }
+    
+    // Fetch all parent tasks (where taskCode does not contain '-W')
+    const wps = await prisma.wigProduction.findMany({
+      where: {
+        NOT: {
+          taskCode: { contains: '-W' }
+        }
+      },
+      include: {
+        wigmaker: true,
+        donations: {
+          include: { user: true }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
 
     // Fetch all child wigs associated with these parent tasks.
     // Parent may be "WB YYYY-XXXX" but children are "WIG YYYY-XXXX-W{n}",
@@ -227,6 +232,13 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
       }
     }
 
+    const batches = wps.map(wp => s({
+      ...wp,
+      batchHairReference: formatBatchHairReference(wp),
+      statusHistories: wpHistoriesMap[wp.id] || [],
+      childWigs: childWigsMap[wp.taskCode] || [],
+    }));
+
     // Fetch per-donation wigmaker receive/missing states from status history
     const donationIds = donations.map(d => d.id);
     const donationHistories = donationIds.length > 0
@@ -252,7 +264,7 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
       where: { status: { in: ['Validated', 'In Production', 'Matched', 'In Transit', 'Arrived', 'Completed', 'Ready for Pickup', 'Pickup Confirmed'] } },
       include: { user: true }, orderBy: { updatedAt: 'desc' },
     });
-    res.json({ donations: s(donations), requests: s(requests), wigmakers: s(wigmakers), wigProductions: wpMap, donationStateMap });
+    res.json({ donations: s(donations), requests: s(requests), wigmakers: s(wigmakers), wigProductions: wpMap, batches, donationStateMap });
   } catch (err: any) { res.status(500).json({ error: 'Failed', message: err.message }); }
 });
 
@@ -566,9 +578,13 @@ router.get('/wig-stock', ...staffOnly, async (_req, res) => {
 // GET /internal-api/staff/matching-list
 router.get('/matching-list', ...staffOnly, async (_req, res) => {
   try {
-    const reqs = await prisma.hairRequest.findMany({ where: { status: { in: ['Validated', 'Matched', 'In Transit', 'Arrived', 'Ready for Pickup', 'Pickup Confirmed'] } }, include: { user: true }, orderBy: { updatedAt: 'desc' } });
+    const reqs = await prisma.hairRequest.findMany({ where: { status: { in: ['Validated', 'Matched', 'In Transit', 'Arrived', 'Ready for Pickup'] } }, include: { user: true }, orderBy: { updatedAt: 'desc' } });
     const avail = await prisma.wigProduction.findMany({ 
-      where: { status: { in: ['completed', 'received'] }, hairRequestId: null }
+      where: {
+        status: { in: ['completed', 'received'] },
+        hairRequestId: null,
+        taskCode: { contains: '-W' }
+      }
     });
     const result = reqs.map(r => {
       if (r.status !== 'Validated') return { ...s(r), best_match: null, match_score: 0 };
@@ -580,40 +596,6 @@ router.get('/matching-list', ...staffOnly, async (_req, res) => {
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
-// POST /internal-api/staff/requests/:reference/complete-pickup
-router.post('/requests/:reference/complete-pickup', ...staffOnly, async (req, res) => {
-  try {
-    const { reference } = req.params;
-    const hr = await prisma.hairRequest.findFirst({ where: { reference: reference as string } });
-    if (!hr) { res.status(404).json({ message: 'Not found' }); return; }
-
-    if ((hr as any).deliveryMethod !== 'pickup') {
-      res.status(422).json({ message: 'This action is only available for pick-up requests.' });
-      return;
-    }
-    if (hr.status !== 'Pickup Confirmed') {
-      res.status(422).json({ message: 'Request must be in Pickup Confirmed status before marking as Completed.' });
-      return;
-    }
-
-    await prisma.hairRequest.update({ where: { id: hr.id }, data: { status: 'Completed' } });
-    await createStatusHistory(REQUEST_TYPE, hr.id, 'Completed', 'Hair request successfully fulfilled and closed by staff.');
-
-    const { notifyRequestStatus } = await import('../services/notification.service');
-    if (hr.userId) await notifyRequestStatus(hr.userId, 'Completed', hr.reference!);
-
-    // Notify linked donors
-    const wp = await prisma.wigProduction.findFirst({ where: { hairRequestId: hr.id }, include: { donations: true } });
-    if (wp?.donations) {
-      const { notifyDonationStatus } = await import('../services/notification.service');
-      for (const don of wp.donations) {
-        if (don.userId) await notifyDonationStatus(don.userId, 'Wig Received', don.reference!);
-      }
-    }
-
-    res.json({ message: 'Transaction marked as Completed.', success: true });
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
-});
 
 // POST /internal-api/staff/requests/:reference/ready-for-pickup
 router.post('/requests/:reference/ready-for-pickup', ...staffOnly, async (req, res) => {
@@ -644,7 +626,10 @@ router.get('/rule-matching', ...staffOnly, async (_req, res) => {
   try {
     const recipients = await prisma.hairRequest.findMany({ where: { status: { in: ['Validated', 'Submitted'] } }, include: { user: true } });
     const wigs = await prisma.wigProduction.findMany({
-      where: { status: { in: ['completed', 'received'] } },
+      where: {
+        status: { in: ['completed', 'received'] },
+        taskCode: { contains: '-W' }
+      },
       include: { donations: true } as any
     });
     res.json({ recipients: s(recipients), wigs: s(wigs) });

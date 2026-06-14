@@ -297,6 +297,53 @@ router.post('/partnerships', ...adminOnly, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
+// PUT /internal-api/admin/partnerships/:id
+router.put('/partnerships/:id', ...adminOnly, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) { res.status(400).json({ error: 'Invalid ID' }); return; }
+    const { name, type, contact, email, description, status } = req.body;
+    const p = await prisma.partnership.update({
+      where: { id },
+      data: { name, type, contact, email, description, status },
+    });
+    res.json(s(p));
+  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
+// DELETE /internal-api/admin/partnerships/:id
+router.delete('/partnerships/:id', ...adminOnly, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID' });
+    await prisma.partnership.delete({ where: { id } });
+    res.json({ message: 'Partnership deleted successfully', success: true });
+  } catch (err: any) {
+    console.error('Error deleting partnership:', err);
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
+});
+
+// POST /internal-api/admin/partnerships/bulk-delete
+router.post('/partnerships/bulk-delete', ...adminOnly, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) {
+      return res.status(400).json({ error: 'Invalid IDs list' });
+    }
+    const numericIds = ids.map(id => typeof id === 'string' ? parseInt(id, 10) : id).filter(id => !isNaN(id));
+    await prisma.partnership.deleteMany({
+      where: {
+        id: { in: numericIds }
+      }
+    });
+    res.json({ message: 'Partnerships deleted successfully', success: true });
+  } catch (err: any) {
+    console.error('Error bulk deleting partnerships:', err);
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
+});
+
 // GET /internal-api/admin/announcements
 router.get('/announcements', ...adminOnly, async (_req, res) => {
   try {
@@ -318,6 +365,39 @@ router.post('/announcements', ...adminOnly, async (req, res) => {
 
     res.status(201).json(s(a));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
+// DELETE /internal-api/admin/announcements/:id
+router.delete('/announcements/:id', ...adminOnly, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID' });
+    await prisma.haircareArticle.delete({ where: { id } });
+    res.json({ message: 'Announcement deleted successfully', success: true });
+  } catch (err: any) {
+    console.error('Error deleting announcement:', err);
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
+});
+
+// POST /internal-api/admin/announcements/bulk-delete
+router.post('/announcements/bulk-delete', ...adminOnly, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) {
+      return res.status(400).json({ error: 'Invalid IDs list' });
+    }
+    const numericIds = ids.map(id => typeof id === 'string' ? parseInt(id, 10) : id).filter(id => !isNaN(id));
+    await prisma.haircareArticle.deleteMany({
+      where: {
+        id: { in: numericIds }
+      }
+    });
+    res.json({ message: 'Announcements deleted successfully', success: true });
+  } catch (err: any) {
+    console.error('Error bulk deleting announcements:', err);
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
 });
 
 // GET /internal-api/admin/reports

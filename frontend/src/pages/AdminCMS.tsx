@@ -72,6 +72,22 @@ const AdminCMS: React.FC = () => {
   const [showPartnershipConfirm, setShowPartnershipConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
+  // Announcements selection / deletion state
+  const [selectedAnns, setSelectedAnns] = useState<number[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Partnerships selection / deletion state
+  const [selectedPartners, setSelectedPartners] = useState<number[]>([]);
+  const [showPartnerDeleteConfirm, setShowPartnerDeleteConfirm] = useState(false);
+  const [isPartnerDeleting, setIsPartnerDeleting] = useState(false);
+
+  // Partnership detail / edit state
+  const [selectedPartner, setSelectedPartner] = useState<any>(null);
+  const [editingPartner, setEditingPartner] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ name: '', type: '', contact: '', email: '', description: '', status: '' });
+  const [editSaving, setEditSaving] = useState(false);
+
   const DEFAULTS = {
     hero:     { heading: 'Every Strand,<br />a Story of <em>Hope.</em>', subheading: 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.', ctaLabel: 'Donate Now', ghostLabel: 'Request a Wig', pillText: 'Strand Up for Cancer', floatBadgeText: '100% Free for Patients' },
 
@@ -120,7 +136,9 @@ const AdminCMS: React.FC = () => {
         apiClient.get('/internal-api/admin/site-settings'),
       ]);
       setAnnouncements(annRes.data);
+      setSelectedAnns([]);
       setPartnerships(partRes.data);
+      setSelectedPartners([]);
       const s = settingsRes.data;
       
       setHero(s.hero             ? { ...DEFAULTS.hero, ...s.hero } : DEFAULTS.hero);
@@ -246,6 +264,38 @@ const AdminCMS: React.FC = () => {
     finally { setIsSubmitting(false); }
   };
 
+  const doDeleteAnnouncements = async () => {
+    setShowDeleteConfirm(false);
+    setIsDeleting(true);
+    try {
+      await apiClient.post('/internal-api/admin/announcements/bulk-delete', { ids: selectedAnns });
+      toast.success('Successfully deleted selected announcements');
+      setSelectedAnns([]);
+      fetchData();
+    } catch (err) {
+      console.error('Failed to delete announcements', err);
+      toast.error('Failed to delete selected announcements');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const doDeletePartnerships = async () => {
+    setShowPartnerDeleteConfirm(false);
+    setIsPartnerDeleting(true);
+    try {
+      await apiClient.post('/internal-api/admin/partnerships/bulk-delete', { ids: selectedPartners });
+      toast.success('Successfully deleted selected partnerships');
+      setSelectedPartners([]);
+      fetchData();
+    } catch (err) {
+      console.error('Failed to delete partnerships', err);
+      toast.error('Failed to delete selected partnerships');
+    } finally {
+      setIsPartnerDeleting(false);
+    }
+  };
+
   const handleCreatePartnership = (e: React.FormEvent) => {
     e.preventDefault();
     setShowPartnershipConfirm(true);
@@ -311,6 +361,37 @@ const AdminCMS: React.FC = () => {
     } finally {
       setUploadingKey(null);
     }
+  };
+
+  const openPartnerEdit = (p: any) => {
+    setEditingPartner(p);
+    setEditForm({ name: p.name || '', type: p.type || '', contact: p.contact || '', email: p.email || '', description: p.description || '', status: p.status || 'Active' });
+  };
+
+  const doPartnerEdit = async () => {
+    if (!editingPartner) return;
+    setEditSaving(true);
+    try {
+      await apiClient.put(`/internal-api/admin/partnerships/${editingPartner.id}`, editForm);
+      toast.success('Partnership updated.');
+      setEditingPartner(null);
+      fetchData();
+    } catch { toast.error('Failed to update.'); }
+    finally { setEditSaving(false); }
+  };
+
+  const partnerStatusBadge = (status: string) => {
+    const cfg: Record<string, { bg: string; color: string }> = {
+      Active:   { bg: '#d1fae5', color: '#065f46' },
+      Pending:  { bg: '#fef3c7', color: '#92400e' },
+      Inactive: { bg: '#fee2e2', color: '#991b1b' },
+    };
+    const c = cfg[status] || { bg: '#f3f4f6', color: '#374151' };
+    return (
+      <span style={{ padding: '2px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 700, background: c.bg, color: c.color }}>
+        {status}
+      </span>
+    );
   };
 
   if (loading) return <div className="section-wrap">Loading CMS...</div>;
@@ -603,28 +684,97 @@ const AdminCMS: React.FC = () => {
       {activeTab === 'announcements' && (
         <div className="admin-sidebar-layout">
           <article className="admin-card-rounded">
-            <h2 className="admin-card-subtitle"><i className='bx bx-news'></i> Published Announcements</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <h2 className="admin-card-subtitle" style={{ margin: 0 }}><i className='bx bx-news'></i> Published Announcements</h2>
+              {selectedAnns.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    background: '#ef4444',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#dc2626'}
+                  onMouseOut={(e) => e.currentTarget.style.background = '#ef4444'}
+                >
+                  <i className='bx bx-trash' style={{ fontSize: '1rem' }}></i> Delete Selected ({selectedAnns.length})
+                </button>
+              )}
+            </div>
             <div className="table-wrap">
               <table className="admin-table">
-                <thead><tr><th>Title</th><th>Category</th><th>Audience</th><th>Author</th><th>Date</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th style={{ width: '40px', textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={announcements.length > 0 && selectedAnns.length === announcements.length}
+                        onChange={() => {
+                          if (selectedAnns.length === announcements.length) {
+                            setSelectedAnns([]);
+                          } else {
+                            setSelectedAnns(announcements.map(a => a.id));
+                          }
+                        }}
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                      />
+                    </th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Audience</th>
+                    <th>Author</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {announcements.map(a => {
-                    const audienceMap: Record<string, string> = { all: 'All Users', donor: 'Donors', recipient: 'Recipients', staff: 'Staff' };
-                    const audienceLabel = audienceMap[a.targetAudience ?? 'all'] ?? 'All Users';
-                    return (
-                    <tr key={a.id}>
-                      <td><strong>{a.title}</strong></td>
-                      <td>{a.category}</td>
-                      <td>
-                        <span style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, background: '#fdf2f8', color: '#ad246d', border: '1px solid #f9cde8' }}>
-                          {audienceLabel}
-                        </span>
+                  {announcements.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                        No announcements published yet.
                       </td>
-                      <td>{a.author}</td>
-                      <td>{new Date(a.createdAt).toLocaleDateString()}</td>
                     </tr>
-                    );
-                  })}
+                  ) : (
+                    announcements.map(a => {
+                      const audienceMap: Record<string, string> = { all: 'All Users', donor: 'Donors', recipient: 'Recipients', staff: 'Staff' };
+                      const audienceLabel = audienceMap[a.targetAudience ?? 'all'] ?? 'All Users';
+                      const isSelected = selectedAnns.includes(a.id);
+                      return (
+                        <tr key={a.id} style={{ background: isSelected ? '#fff5f5' : 'transparent', transition: 'background 0.15s ease' }}>
+                          <td style={{ textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                setSelectedAnns(prev =>
+                                  prev.includes(a.id) ? prev.filter(id => id !== a.id) : [...prev, a.id]
+                                );
+                              }}
+                              style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                            />
+                          </td>
+                          <td><strong>{a.title}</strong></td>
+                          <td>{a.category}</td>
+                          <td>
+                            <span style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, background: '#fdf2f8', color: '#ad246d', border: '1px solid #f9cde8' }}>
+                              {audienceLabel}
+                            </span>
+                          </td>
+                          <td>{a.author}</td>
+                          <td>{new Date(a.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -668,58 +818,297 @@ const AdminCMS: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'partnerships' && (
-        <div className="admin-sidebar-layout">
-          <article className="admin-card-rounded">
-            <h2 className="admin-card-subtitle"><i className='bx bx-briefcase'></i> Active Partnerships</h2>
-            <div className="table-wrap">
-              <table className="admin-table">
-                <thead><tr><th>Partner</th><th>Type</th><th>Contact</th><th>Status</th></tr></thead>
-                <tbody>
-                  {partnerships.map(p => (
-                    <tr key={p.id}>
-                      <td><strong>{p.name}</strong></td>
-                      <td>{p.type}</td>
-                      <td>{p.email || p.contact}</td>
-                      <td>{p.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {activeTab === 'partnerships' && (() => {
+        const pendingInquiries = partnerships.filter(p => p.status === 'Pending');
+        const otherPartners = partnerships.filter(p => p.status !== 'Pending');
+        return (
+          <div className="admin-sidebar-layout">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {selectedPartners.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowPartnerDeleteConfirm(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      background: '#ef4444',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = '#dc2626'}
+                    onMouseOut={(e) => e.currentTarget.style.background = '#ef4444'}
+                  >
+                    <i className='bx bx-trash' style={{ fontSize: '1rem' }}></i> Delete Selected ({selectedPartners.length})
+                  </button>
+                </div>
+              )}
+
+              {/* ── Pending Inquiries ── */}
+              {pendingInquiries.length > 0 && (
+                <article className="admin-card-rounded" style={{ borderLeft: '4px solid #f59e0b' }}>
+                  <h2 className="admin-card-subtitle" style={{ color: '#92400e' }}>
+                    <i className='bx bx-time-five'></i> Pending Inquiries ({pendingInquiries.length})
+                  </h2>
+                  <div className="table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '40px', textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={pendingInquiries.length > 0 && pendingInquiries.every(p => selectedPartners.includes(p.id))}
+                              onChange={() => {
+                                const pendingIds = pendingInquiries.map(p => p.id);
+                                const allPendingSelected = pendingIds.every(id => selectedPartners.includes(id));
+                                if (allPendingSelected) {
+                                  setSelectedPartners(prev => prev.filter(id => !pendingIds.includes(id)));
+                                } else {
+                                  setSelectedPartners(prev => [...new Set([...prev, ...pendingIds])]);
+                                }
+                              }}
+                              style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                            />
+                          </th>
+                          <th>Name</th>
+                          <th>Organization / Type</th>
+                          <th>Email</th>
+                          <th>Status</th>
+                          <th style={{ width: '32px' }}></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingInquiries.map(p => {
+                          const isSelected = selectedPartners.includes(p.id);
+                          return (
+                            <tr key={p.id} style={{ cursor: 'pointer', background: isSelected ? '#fff5f5' : 'transparent', transition: 'background 0.15s ease' }} onClick={() => setSelectedPartner(p)}>
+                              <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    setSelectedPartners(prev =>
+                                      prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]
+                                    );
+                                  }}
+                                  style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                                />
+                              </td>
+                              <td><strong>{p.name}</strong></td>
+                              <td>{p.type}</td>
+                              <td>{p.email || p.contact || '—'}</td>
+                              <td>{partnerStatusBadge(p.status)}</td>
+                              <td style={{ color: '#d1d5db', fontSize: '1rem', textAlign: 'center' }}><i className='bx bx-chevron-right'></i></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </article>
+              )}
+
+              {/* ── All Partnerships ── */}
+              <article className="admin-card-rounded">
+                <h2 className="admin-card-subtitle"><i className='bx bx-briefcase'></i> All Partnerships</h2>
+                <div className="table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '40px', textAlign: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={otherPartners.length > 0 && otherPartners.every(p => selectedPartners.includes(p.id))}
+                            onChange={() => {
+                              const otherIds = otherPartners.map(p => p.id);
+                              const allOtherSelected = otherIds.every(id => selectedPartners.includes(id));
+                              if (allOtherSelected) {
+                                setSelectedPartners(prev => prev.filter(id => !otherIds.includes(id)));
+                              } else {
+                                setSelectedPartners(prev => [...new Set([...prev, ...otherIds])]);
+                              }
+                            }}
+                            style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                          />
+                        </th>
+                        <th>Partner</th>
+                        <th>Type</th>
+                        <th>Contact</th>
+                        <th>Status</th>
+                        <th style={{ width: '32px' }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {otherPartners.length === 0 && pendingInquiries.length === 0 ? (
+                        <tr><td colSpan={6} style={{ textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>No partnerships yet.</td></tr>
+                      ) : (
+                        otherPartners.map(p => {
+                          const isSelected = selectedPartners.includes(p.id);
+                          return (
+                            <tr key={p.id} style={{ cursor: 'pointer', background: isSelected ? '#fff5f5' : 'transparent', transition: 'background 0.15s ease' }} onClick={() => setSelectedPartner(p)}>
+                              <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    setSelectedPartners(prev =>
+                                      prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]
+                                    );
+                                  }}
+                                  style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                                />
+                              </td>
+                              <td><strong>{p.name}</strong></td>
+                              <td>{p.type}</td>
+                              <td>{p.email || p.contact || '—'}</td>
+                              <td>{partnerStatusBadge(p.status)}</td>
+                              <td style={{ color: '#d1d5db', fontSize: '1rem', textAlign: 'center' }}><i className='bx bx-chevron-right'></i></td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
             </div>
-          </article>
-          <aside>
-            <article className="admin-card-rounded">
-              <h3 className="admin-cms-card-title">New Partnership</h3>
-              <form onSubmit={handleCreatePartnership} className="admin-form-grid">
-                <div className="form-group">
-                  <label className="admin-form-label-sm">Organization Name</label>
-                  <input type="text" value={partnershipForm.name} onChange={e => setPartnershipForm({...partnershipForm, name: e.target.value})} required />
+
+            {/* ── Sidebar ── */}
+            <aside>
+              <article className="admin-card-rounded">
+                <h3 className="admin-cms-card-title">New Partnership</h3>
+                <form onSubmit={handleCreatePartnership} className="admin-form-grid">
+                  <div className="form-group">
+                    <label className="admin-form-label-sm">Organization Name</label>
+                    <input type="text" value={partnershipForm.name} onChange={e => setPartnershipForm({...partnershipForm, name: e.target.value})} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="admin-form-label-sm">Type</label>
+                    <input type="text" value={partnershipForm.type} onChange={e => setPartnershipForm({...partnershipForm, type: e.target.value})} placeholder="e.g. Wigmaker, Logistics" />
+                  </div>
+                  <div className="form-group">
+                    <label className="admin-form-label-sm">Email / Contact</label>
+                    <input type="text" value={partnershipForm.email} onChange={e => setPartnershipForm({...partnershipForm, email: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="admin-form-label-sm">Status</label>
+                    <select value={partnershipForm.status} onChange={e => setPartnershipForm({...partnershipForm, status: e.target.value})}>
+                      <option value="Active">Active</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <button type="submit" disabled={isSubmitting} className="admin-btn-primary-full">
+                    {isSubmitting ? 'Saving...' : 'Save Partner'}
+                  </button>
+                </form>
+              </article>
+            </aside>
+
+            {/* ── Detail Modal ── */}
+            {selectedPartner && (
+              <div
+                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+                onClick={() => setSelectedPartner(null)}
+              >
+                <div
+                  style={{ background: '#fff', borderRadius: '16px', padding: '2rem', maxWidth: '520px', width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,0.18)' }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#1c1917' }}>{selectedPartner.name}</h3>
+                      <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#78716c' }}>{selectedPartner.type} · {selectedPartner.email || selectedPartner.contact || '—'}</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      {partnerStatusBadge(selectedPartner.status)}
+                      <button onClick={() => setSelectedPartner(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '1.25rem', lineHeight: 1 }}>×</button>
+                    </div>
+                  </div>
+                  {selectedPartner.description && (
+                    <div style={{ background: '#fafaf9', border: '1px solid #e7e5e4', borderRadius: '10px', padding: '1rem', marginBottom: '1.25rem' }}>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#44403c', lineHeight: 1.65, whiteSpace: 'pre-line' }}>{selectedPartner.description}</p>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                    <button
+                      style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', color: '#374151' }}
+                      onClick={() => setSelectedPartner(null)}
+                    >
+                      Close
+                    </button>
+                    <button
+                      style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', background: '#ad246d', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}
+                      onClick={() => { openPartnerEdit(selectedPartner); setSelectedPartner(null); }}
+                    >
+                      <i className='bx bx-edit-alt'></i> Edit Status
+                    </button>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="admin-form-label-sm">Type</label>
-                  <input type="text" value={partnershipForm.type} onChange={e => setPartnershipForm({...partnershipForm, type: e.target.value})} placeholder="e.g. Wigmaker, Logistics" />
+              </div>
+            )}
+
+            {/* ── Edit Modal ── */}
+            {editingPartner && (
+              <div
+                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+                onClick={() => setEditingPartner(null)}
+              >
+                <div
+                  style={{ background: '#fff', borderRadius: '16px', padding: '2rem', maxWidth: '440px', width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,0.18)' }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.05rem', fontWeight: 800 }}>Edit Partnership — {editingPartner.name}</h3>
+                  <div className="admin-form-grid">
+                    <div className="form-group">
+                      <label className="admin-form-label-sm">Organization Name</label>
+                      <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="admin-form-label-sm">Type</label>
+                      <input type="text" value={editForm.type} onChange={e => setEditForm({...editForm, type: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="admin-form-label-sm">Email / Contact</label>
+                      <input type="text" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="admin-form-label-sm">Status</label>
+                      <select value={editForm.status} onChange={e => setEditForm({...editForm, status: e.target.value})}>
+                        <option value="Active">Active</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+                    <button
+                      style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', color: '#374151' }}
+                      onClick={() => setEditingPartner(null)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', background: '#ad246d', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}
+                      onClick={doPartnerEdit}
+                      disabled={editSaving}
+                    >
+                      {editSaving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="admin-form-label-sm">Email / Contact</label>
-                  <input type="text" value={partnershipForm.email} onChange={e => setPartnershipForm({...partnershipForm, email: e.target.value})} />
-                </div>
-                <div className="form-group">
-                  <label className="admin-form-label-sm">Status</label>
-                  <select value={partnershipForm.status} onChange={e => setPartnershipForm({...partnershipForm, status: e.target.value})}>
-                    <option value="Active">Active</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-                <button type="submit" disabled={isSubmitting} className="admin-btn-primary-full">
-                  {isSubmitting ? 'Saving...' : 'Save Partner'}
-                </button>
-              </form>
-            </article>
-          </aside>
-        </div>
-      )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <ConfirmModal
         isOpen={showLandingConfirm}
@@ -760,6 +1149,28 @@ const AdminCMS: React.FC = () => {
         message={`Add ${partnershipForm.name || 'this organization'} as a new ${partnershipForm.type} partner?`}
         confirmText="Yes, Add Partner"
         isConfirming={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={doDeleteAnnouncements}
+        variant="danger"
+        title="Delete Announcements"
+        message={`Are you sure you want to permanently delete the ${selectedAnns.length} selected announcement${selectedAnns.length > 1 ? 's' : ''}? This action cannot be undone.`}
+        confirmText="Yes, Delete"
+        isConfirming={isDeleting}
+      />
+
+      <ConfirmModal
+        isOpen={showPartnerDeleteConfirm}
+        onClose={() => setShowPartnerDeleteConfirm(false)}
+        onConfirm={doDeletePartnerships}
+        variant="danger"
+        title="Delete Partnerships"
+        message={`Are you sure you want to permanently delete the ${selectedPartners.length} selected partnership${selectedPartners.length > 1 ? 's' : ''}? This action cannot be undone.`}
+        confirmText="Yes, Delete"
+        isConfirming={isPartnerDeleting}
       />
     </section>
   );

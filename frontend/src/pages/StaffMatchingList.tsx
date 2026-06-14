@@ -35,12 +35,14 @@ const StaffMatchingList: React.FC = () => {
   const pagedMatches = filteredMatches.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const handlePrint = () => {
-    window.print();
+    import('../utils/pdfExport').then(({ exportPDF }) => {
+      exportPDF('matchingListPanel', 'Recipient-Matching-List');
+    });
   };
 
   return (
     <section className="section-wrap reveal active staff-page">
-      <article className="staff-block matching-list-card">
+      <article className="staff-block matching-list-card" id="matchingListPanel">
         <div className="staff-bar matching-list-header">
           <div className="matching-list-header-left">
             <h2 className="matching-list-title">Recipient Matching List</h2>

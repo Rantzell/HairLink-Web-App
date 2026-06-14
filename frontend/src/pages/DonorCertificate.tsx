@@ -50,7 +50,13 @@ const DonorCertificate: React.FC = () => {
   }, [refParam]);
 
   const handlePrint = () => {
-    window.print();
+    import('../utils/pdfExport').then(({ exportPDF }) => {
+      exportPDF(
+        'certificatePaper', 
+        `Certificate-${selectedDonation?.certificateNo || selectedDonation?.reference || 'Recognition'}`,
+        { jsPDF: { orientation: 'landscape', format: 'a4' }, margin: 5 }
+      );
+    });
   };
 
   if (loading) return <div className="section-wrap">Loading...</div>;

@@ -16,12 +16,14 @@ const StaffRealtimeTracking: React.FC = () => {
     requests: HairRequest[];
     wigmakers: User[];
     wigProductions: Record<string, WigProduction>;
+    batches: WigProduction[];
     donationStateMap: Record<number, { wigmakerReceived: boolean; isMissing: boolean }>;
   }>({
     donations: [],
     requests: [],
     wigmakers: [],
     wigProductions: {},
+    batches: [],
     donationStateMap: {},
   });
   const [loading, setLoading] = useState(true);
@@ -138,6 +140,7 @@ const StaffRealtimeTracking: React.FC = () => {
   };
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'recent' | 'oldest'>('recent');
   const [currentPage, setCurrentPage] = useState(1);
 
   const PAGE_SIZE = 10;
@@ -149,8 +152,8 @@ const StaffRealtimeTracking: React.FC = () => {
     return `B${wp?.id || '0'}-${month}-${year}`;
   };
 
-  // Reset page when view or search changes
-  useEffect(() => { setCurrentPage(1); }, [type, searchTerm]);
+  // Reset page when view, search or sort changes
+  useEffect(() => { setCurrentPage(1); }, [type, searchTerm, sortBy]);
 
   const filteredDonations = (data.donations || []).filter(d => {
     const ref = d.reference || '';
@@ -173,18 +176,45 @@ const StaffRealtimeTracking: React.FC = () => {
   const isDonation = type === 'donation';  // solo HD- donation rows only
   const isBatchDonation = type === 'batch-donation';  // assigned hair batch rows only
 
+  const sortedDonations = [...filteredDonations].sort((a, b) => {
+    const timeA = new Date(a.createdAt || 0).getTime();
+    const timeB = new Date(b.createdAt || 0).getTime();
+    return sortBy === 'recent' ? timeB - timeA : timeA - timeB;
+  });
+
+  const sortedRequests = [...filteredRequests].sort((a, b) => {
+    const timeA = new Date(a.createdAt || 0).getTime();
+    const timeB = new Date(b.createdAt || 0).getTime();
+    return sortBy === 'recent' ? timeB - timeA : timeA - timeB;
+  });
+
   // Group batched donations by wigProductionId
   // Once a donation has a wigProductionId it has been batched and must NOT appear in Donation Trackers.
-  const batchGroups = new Map<number, { wp: any; donations: typeof filteredDonations }>();
-  const soloDonations: typeof filteredDonations = [];
-  for (const d of filteredDonations) {
+  const batchGroups = new Map<number, { wp: any; donations: typeof sortedDonations }>();
+  const soloDonations: typeof sortedDonations = [];
+
+  if (data.batches) {
+    const sortedBatches = [...data.batches].sort((a, b) => {
+      const timeA = new Date(a.createdAt || 0).getTime();
+      const timeB = new Date(b.createdAt || 0).getTime();
+      return sortBy === 'recent' ? timeB - timeA : timeA - timeB;
+    });
+    for (const wp of sortedBatches) {
+      batchGroups.set(Number(wp.id), { wp, donations: [] });
+    }
+  }
+
+  for (const d of sortedDonations) {
     const wpId = (d as any).wigProductionId as number | null;
     if (wpId) {
       // Batched — goes to batchGroups only, never to soloDonations
-      const wp = data.wigProductions[d.id];
-      if (wp) {
-        if (!batchGroups.has(wpId)) batchGroups.set(wpId, { wp, donations: [] });
+      if (batchGroups.has(wpId)) {
         batchGroups.get(wpId)!.donations.push(d);
+      } else {
+        const wp = data.wigProductions[d.id];
+        if (wp) {
+          batchGroups.set(wpId, { wp, donations: [d] });
+        }
       }
       // If wp data isn't available yet, skip entirely (still batched, remove from Donation Trackers)
     } else {
@@ -195,25 +225,35 @@ const StaffRealtimeTracking: React.FC = () => {
   // All batches — used for Hair Batch Donation Tracking (shows all assigned batches)
   const allBatchGroupsArray = Array.from(batchGroups.entries());
 
-  // Wigmaker tracking only shows batches once wigs have been shipped back to staff
-  const batchGroupsArray = allBatchGroupsArray.filter(([, { wp }]) =>
-    (wp.childWigs || []).some((w: any) => ['shipped', 'received', 'missing'].includes(w.status))
-  );
+  // Wigmaker tracking only shows batches once wigs have been shipped back to staff, and hides them once fully received/resolved
+  const batchGroupsArray = allBatchGroupsArray.filter(([, { wp }]) => {
+    if (['received', 'matched'].includes(wp.status)) return false;
+    const children = wp.childWigs || [];
+    if (children.length === 0) return false;
+    const hasShippedOrReceived = children.some((w: any) => ['shipped', 'received', 'missing'].includes(w.status));
+    if (!hasShippedOrReceived) return false;
+    const allResolved = children.every((w: any) => ['received', 'missing'].includes(w.status));
+    if (allResolved) return false;
+    return true;
+  });
   const batchTotalPages = Math.ceil(batchGroupsArray.length / PAGE_SIZE);
   const pagedBatchGroups = batchGroupsArray.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   type DonationTrackingRow =
-    | { kind: 'batch'; wpId: number; wp: any; donations: typeof filteredDonations }
+    | { kind: 'batch'; wpId: number; wp: any; donations: typeof sortedDonations }
     | { kind: 'donation'; donation: Donation };
   // Hair Batch Donation Tracking uses all batches (monitoring all assigned batches)
-  const batchDonationRows: DonationTrackingRow[] = allBatchGroupsArray.map(([wpId, group]) => ({ kind: 'batch', wpId, ...group }));
+  // Filter out standalone batches from Hair Batch Donation Tracking
+  const batchDonationRows: DonationTrackingRow[] = allBatchGroupsArray
+    .filter(([, group]) => group.donations.length > 0)
+    .map(([wpId, group]) => ({ kind: 'batch', wpId, ...group }));
   const donationRows: DonationTrackingRow[] = soloDonations.map(donation => ({ kind: 'donation', donation }));
   const visibleDonationRows = isBatchDonation ? batchDonationRows : donationRows;
   const donationTotalPages = Math.ceil(visibleDonationRows.length / PAGE_SIZE);
   const pagedDonationRows = visibleDonationRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const requestTotalPages = Math.ceil(filteredRequests.length / PAGE_SIZE);
-  const pagedRequests = filteredRequests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const requestTotalPages = Math.ceil(sortedRequests.length / PAGE_SIZE);
+  const pagedRequests = sortedRequests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const triggerBatchAction = (refs: string[], status: string, link?: string) => {
     setPendingBatchRefs(refs);
@@ -322,7 +362,7 @@ const StaffRealtimeTracking: React.FC = () => {
         </div>
         <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)' }}>
           <span className="tracking-active-dot"></span>
-          {isWigmaker ? batchGroupsArray.length : (isDonation || isBatchDonation) ? visibleDonationRows.length : filteredRequests.length} Active {isWigmaker ? 'Batches' : isBatchDonation ? 'Hair Batches' : isDonation ? 'Donations' : 'Requests'}
+          {isWigmaker ? batchGroupsArray.length : (isDonation || isBatchDonation) ? visibleDonationRows.length : sortedRequests.length} Active {isWigmaker ? 'Batches' : isBatchDonation ? 'Hair Batches' : isDonation ? 'Donations' : 'Requests'}
         </div>
       </div>
 
@@ -399,8 +439,8 @@ const StaffRealtimeTracking: React.FC = () => {
         </div>
       )}
 
-      {/* Global Search Bar (Left Aligned) */}
-      <div className="search-container tracking-search-container">
+      {/* Global Search Bar (Left Aligned) & Sort Dropdown */}
+      <div className="search-container tracking-search-container" style={{ gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <div className="tracking-search-wrapper">
           <i className='bx bx-search tracking-search-icon'></i>
           <input
@@ -418,6 +458,40 @@ const StaffRealtimeTracking: React.FC = () => {
               <i className='bx bx-x-circle'></i>
             </button>
           )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '0.8rem', color: '#8c7895', fontWeight: 700, whiteSpace: 'nowrap' }}>
+            <i className='bx bx-sort-alt-2' style={{ fontSize: '1rem', verticalAlign: 'middle', marginRight: '4px' }}></i>
+            Sort by:
+          </span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'recent' | 'oldest')}
+            style={{
+              padding: '0.5rem 2.2rem 0.5rem 1rem',
+              borderRadius: '12px',
+              border: '1px solid #ead7e8',
+              background: '#fff',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#ad246d',
+              outline: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)',
+              appearance: 'none',
+              backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23ad246d\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E")',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 0.8rem center',
+              backgroundSize: '1rem',
+              minWidth: '130px',
+              transition: 'all 0.2s ease'
+            }}
+            className="custom-select"
+          >
+            <option value="recent">Most Recent</option>
+            <option value="oldest">Oldest</option>
+          </select>
         </div>
       </div>
 
@@ -1326,14 +1400,10 @@ const StaffRealtimeTracking: React.FC = () => {
                           </span>
                         )}
                         {request.status === 'Pickup Confirmed' && (
-                          <button
-                            className="soft-btn"
-                            onClick={() => triggerAction(request.reference, 'recipient', 'Completed', 'Mark Transaction Complete')}
-                            disabled={isSubmitting}
-                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 10px rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', gap: '4px' }}
-                          >
-                            <i className='bx bx-check-circle'></i> Mark Transaction Complete
-                          </button>
+                          <span className="tracking-awaiting-text" style={{ color: '#10b981', fontWeight: 700 }}>
+                            <i className='bx bx-time' style={{ verticalAlign: 'middle', marginRight: '4px' }}></i>
+                            Awaiting Recipient Confirmation...
+                          </span>
                         )}
                       </td>
                     </tr>

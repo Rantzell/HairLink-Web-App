@@ -186,7 +186,7 @@ export const notifyAnnouncement = async (title: string, message: string, audienc
       audience === 'donor'     ? ['donor'] :
       audience === 'recipient' ? ['recipient'] :
       audience === 'staff'     ? ['staff'] :
-      ['donor', 'recipient'];
+      ['donor', 'recipient', 'staff', 'wigmaker'];
 
     const targetUsers = await prisma.user.findMany({
       where: { role: { in: roles }, isActive: true },
@@ -247,7 +247,7 @@ export const notifyMonetaryReceived = async (userId: string, amount: number, ref
 export const notifyAllUsers = async (title: string, message: string, type: string = 'announcement') => {
   try {
     const users = await prisma.user.findMany({
-      where: { isActive: true, role: { in: ['donor', 'recipient'] } },
+      where: { isActive: true, role: { in: ['donor', 'recipient', 'staff', 'wigmaker'] } },
       select: { id: true },
     });
     if (users.length === 0) return 0;

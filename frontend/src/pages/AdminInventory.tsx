@@ -73,40 +73,19 @@ const AdminInventory: React.FC = () => {
 
       {/* Summary Grid - Always Visible or just on Overview? Let's keep it on Overview for a cleaner look */}
       {view === 'overview' && (
-        <>
-          <div className="inv-summary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: "0.75rem", margin: "0.75rem 0" }}>
-            {[
-              { label: 'Hair Records', count: data.totalHairRecords, icon: 'bx-cut' },
-              { label: 'Wig Stock', count: data.wigCount, icon: 'bx-shopping-bag' },
-              { label: 'Donation History', count: data.allDonationsCount, icon: 'bx-history' },
-              { label: 'Available Stock', count: data.totalHairRecords, icon: 'bx-check-circle' },
-            ].map((item, i) => (
-              <div key={i} className="inv-summary-item admin-mini-stat">
-                <span className="admin-mini-stat-label">{item.label}</span>
-                <strong className="admin-val-pink-lg">{item.count}</strong>
-              </div>
-            ))}
-          </div>
-
-          <article className="admin-card admin-card-white">
-            <h3 className="admin-section-underline">
-              <i className="bx bx-transfer-alt admin-icon-pink"></i> Hair Stock Categorization
-            </h3>
-            <div className="hair-stock-grid admin-hair-stock-grid">
-              {['Short', 'Long'].map(len => (
-                <div key={len} className="hair-stock-col admin-hair-col">
-                  <h4 className="admin-hair-col-title">{len}</h4>
-                  {['Black', 'Brown', 'Light'].map(col => (
-                    <div key={col} className="admin-hair-row">
-                      <span className="admin-hair-color-label">{col}</span>
-                      <strong className="admin-icon-pink">{data.stock[len]?.[col] || 0}</strong>
-                    </div>
-                  ))}
-                </div>
-              ))}
+        <div className="inv-summary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: "0.75rem", margin: "0.75rem 0" }}>
+          {[
+            { label: 'Hair Records', count: data.totalHairRecords, icon: 'bx-cut' },
+            { label: 'Wig Stock', count: data.wigCount, icon: 'bx-shopping-bag' },
+            { label: 'Donation History', count: data.allDonationsCount, icon: 'bx-history' },
+            { label: 'Available Stock', count: data.totalHairRecords, icon: 'bx-check-circle' },
+          ].map((item, i) => (
+            <div key={i} className="inv-summary-item admin-mini-stat">
+              <span className="admin-mini-stat-label">{item.label}</span>
+              <strong className="admin-val-pink-lg">{item.count}</strong>
             </div>
-          </article>
-        </>
+          ))}
+        </div>
       )}
 
       {view === 'hair' && (

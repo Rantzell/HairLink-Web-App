@@ -54,7 +54,9 @@ const AdminReports: React.FC = () => {
   }, []);
 
   const handlePrint = () => {
-    window.print();
+    import('../utils/pdfExport').then(({ exportPDF }) => {
+      exportPDF('reportDocument', `System-Report-${reportType}`);
+    });
   };
 
   const handleDownloadCSV = () => {
@@ -124,7 +126,7 @@ const AdminReports: React.FC = () => {
     switch(reportType) {
       case 'monetary':
         return (
-          <div className="report-document admin-report-doc">
+          <div className="report-document admin-report-doc" id="reportDocument">
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">Monetary Contributions Log</h2>
@@ -180,7 +182,7 @@ const AdminReports: React.FC = () => {
         );
       case 'hair':
         return (
-          <div className="report-document admin-report-doc">
+          <div className="report-document admin-report-doc" id="reportDocument">
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">Hair Inventory Levels</h2>
@@ -212,7 +214,7 @@ const AdminReports: React.FC = () => {
         );
       case 'wigs':
         return (
-          <div className="report-document admin-report-doc">
+          <div className="report-document admin-report-doc" id="reportDocument">
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">Wig Inventory & Monitoring</h2>
@@ -271,7 +273,7 @@ const AdminReports: React.FC = () => {
         );
       case 'matching':
         return (
-          <div className="report-document admin-report-doc">
+          <div className="report-document admin-report-doc" id="reportDocument">
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">Wig Matching & Distribution</h2>
@@ -354,7 +356,7 @@ const AdminReports: React.FC = () => {
         );
       case 'users':
         return (
-          <div className="report-document admin-report-doc">
+          <div className="report-document admin-report-doc" id="reportDocument">
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">User Engagement Statistics</h2>
@@ -383,7 +385,7 @@ const AdminReports: React.FC = () => {
       case 'donations':
       default:
         return (
-          <div className="report-document admin-report-doc">
+          <div className="report-document admin-report-doc" id="reportDocument">
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">Donation Intake Summary</h2>
