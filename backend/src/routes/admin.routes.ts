@@ -41,7 +41,7 @@ router.get('/dashboard', ...adminOrStaff, async (_req, res) => {
     const recentDonations = await prisma.donation.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' }, take: 5 });
     const recentRequests = await prisma.hairRequest.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' }, take: 5 });
     const [ad, pdc, rd, ar, prc] = await Promise.all([
-      prisma.donation.count({ where: { status: 'Completed' } }),
+      prisma.donation.count({ where: { status: { in: ['Received Hair', 'In Queue', 'In Production', 'In Progress', 'Completed', 'Wig Received', 'Verified'] } } }),
       prisma.donation.count({ where: { status: { in: ['Submitted', 'Received Hair'] } } }),
       prisma.donation.count({ where: { status: 'Rejected' } }),
       prisma.hairRequest.count({ where: { status: 'Validated' } }),
@@ -235,6 +235,19 @@ router.put('/events/:id', ...adminOnly, validate(eventCreateSchema), async (req,
     res.json({ message: 'Event updated successfully', success: true, event: s(ev) });
   } catch (err: any) {
     console.error('Error updating event:', err);
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
+});
+
+// DELETE /internal-api/admin/events/:id
+router.delete('/events/:id', ...adminOnly, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID' });
+    await prisma.event.delete({ where: { id } });
+    res.json({ message: 'Event deleted successfully', success: true });
+  } catch (err: any) {
+    console.error('Error deleting event:', err);
     res.status(500).json({ error: 'Failed', message: err.message });
   }
 });

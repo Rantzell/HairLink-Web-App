@@ -180,6 +180,17 @@ const CommunityFeed: React.FC = () => {
     }
   };
 
+  const handleEditPost = async (postId: string, newContent: string) => {
+    try {
+      const res = await apiClient.put(`/internal-api/community/posts/${postId}`, { content: newContent });
+      toast.success('Post updated');
+      setPosts(prev => prev.map(p => p.id === postId ? res.data : p));
+    } catch (err) {
+      console.error('Update failed', err);
+      toast.error('Could not update post');
+    }
+  };
+
   const handleDeletePost = async (postId: string) => {
     try {
       await apiClient.delete(`/internal-api/community/posts/${postId}`);
@@ -401,6 +412,7 @@ const CommunityFeed: React.FC = () => {
               currentUser={user}
               onLike={() => handleLike(post.id)}
               onComment={handleComment}
+              onEdit={handleEditPost}
               onDelete={() => handleDeletePost(post.id)}
               highlighted={highlightedPostId === post.id}
               postRef={(el) => { postRefs.current[post.id] = el; }}
@@ -421,15 +433,26 @@ const PostCard: React.FC<{
   currentUser: any;
   onLike: () => void;
   onComment: (id: string, content: string) => void;
+  onEdit: (id: string, content: string) => void;
   onDelete: () => void;
   highlighted?: boolean;
   postRef?: (el: HTMLElement | null) => void;
-}> = ({ post, currentUser, onLike, onComment, onDelete, highlighted = false, postRef }) => {
+}> = ({ post, currentUser, onLike, onComment, onEdit, onDelete, highlighted = false, postRef }) => {
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContentText, setEditContentText] = useState('');
   const commentInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!showOptions) return;
+    const onClick = () => setShowOptions(false);
+    window.addEventListener('click', onClick);
+    return () => window.removeEventListener('click', onClick);
+  }, [showOptions]);
 
   /* Close lightbox on Escape */
   useEffect(() => {
@@ -457,6 +480,28 @@ const PostCard: React.FC<{
     if (!commentText.trim()) return;
     onComment(post.id, commentText);
     setCommentText('');
+  };
+
+  const startEditing = () => {
+    setIsEditing(true);
+    setEditContentText(rawBody || '');
+    setShowOptions(false);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+  };
+
+  const saveEdit = () => {
+    if (!editContentText.trim()) return;
+    // We must re-encode it with the original topic and title!
+    const fullContent = encodeTopicInContent(
+      postTopic !== 'all' ? postTopic : 'Stories', 
+      rawTitle || '', 
+      editContentText
+    );
+    onEdit(post.id, fullContent);
+    setIsEditing(false);
   };
 
   return (
@@ -501,9 +546,9 @@ const PostCard: React.FC<{
             <span className="cf-topic-badge">{topicLabel}</span>
           )}
 
-          {/* Delete Button / Inline Confirmation */}
+          {/* Options Button / Inline Confirmation */}
           {currentUser && (currentUser.id === post.userId || currentUser.role === 'admin') && (
-            <div style={{ position: 'absolute', right: 0, top: 0 }}>
+            <div style={{ position: 'absolute', right: 0, top: 0 }} onClick={e => e.stopPropagation()}>
               {showDeleteConfirm ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', padding: '4px 8px', borderRadius: '6px', boxShadow: '0 2px 10px rgba(0,0,0,0.08)', border: '1px solid #f0eaf4' }}>
                   <span style={{ fontSize: '0.75rem', color: '#cf2f84', fontWeight: 700 }}>Delete?</span>
@@ -521,13 +566,25 @@ const PostCard: React.FC<{
                   </button>
                 </div>
               ) : (
-                <button 
-                  onClick={() => setShowDeleteConfirm(true)}
-                  title="Delete post"
-                  style={{ background: 'none', border: 'none', color: '#c3a1b9', cursor: 'pointer', padding: '4px' }}
-                >
-                  <i className='bx bx-trash' style={{ fontSize: '1.2rem' }}></i>
-                </button>
+                <div style={{ position: 'relative' }}>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setShowOptions(!showOptions); }}
+                    title="Options"
+                    style={{ background: 'none', border: 'none', color: '#a99cae', cursor: 'pointer', padding: '4px' }}
+                  >
+                    <i className='bx bx-dots-horizontal-rounded' style={{ fontSize: '1.4rem' }}></i>
+                  </button>
+                  {showOptions && (
+                    <div style={{ position: 'absolute', right: 0, top: '100%', background: '#fff', border: '1px solid #ead7e8', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', zIndex: 10, overflow: 'hidden', minWidth: '120px' }}>
+                      <button onClick={(e) => { e.stopPropagation(); startEditing(); }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 1rem', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#685973', textAlign: 'left' }}>
+                        <i className='bx bx-edit-alt'></i> Edit
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setShowOptions(false); setShowDeleteConfirm(true); }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 1rem', border: 'none', borderTop: '1px solid #ead7e8', background: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#cf2f84', textAlign: 'left' }}>
+                        <i className='bx bx-trash'></i> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -535,7 +592,22 @@ const PostCard: React.FC<{
 
         {/* Content */}
         {displayTitle && <h3 className="cf-post-title" style={{ fontWeight: 'bold' }}>{displayTitle}</h3>}
-        <p className="cf-post-content">{displayContent}</p>
+        {isEditing ? (
+          <div style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
+            <textarea 
+              className="cf-modal-textarea" 
+              value={editContentText} 
+              onChange={e => setEditContentText(e.target.value)} 
+              rows={4}
+            />
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', justifyContent: 'flex-end' }}>
+              <button onClick={cancelEditing} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid #ead7e8', background: '#fff', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={saveEdit} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderRadius: '6px', border: 'none', background: '#ad246d', color: '#fff', cursor: 'pointer' }}>Save</button>
+            </div>
+          </div>
+        ) : (
+          <p className="cf-post-content">{displayContent}</p>
+        )}
 
         {/* Image — click to open lightbox */}
         {post.imageUrl && (

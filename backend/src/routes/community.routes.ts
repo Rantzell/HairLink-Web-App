@@ -182,6 +182,38 @@ router.post('/posts/:postId/like', authenticate, async (req: Request, res: Respo
   } catch (err) { res.status(500).json({ error: 'Failed to toggle like' }); }
 });
 
+// PUT /internal-api/community/posts/:postId
+router.put('/posts/:postId', authenticate, upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    const postId = req.params.postId as string;
+    const post = await prisma.communityPost.findUnique({ where: { id: postId } });
+    if (!post) { res.status(404).json({ message: 'Post not found' }); return; }
+    if (post.userId !== req.user!.id && req.user!.role !== 'admin') {
+      res.status(403).json({ message: 'Unauthorized update' }); return;
+    }
+
+    const content = req.body.content?.toString().trim();
+    if (!content) { res.status(400).json({ error: 'Content is required' }); return; }
+
+    let imageUrl = post.imageUrl;
+    if (req.file) {
+      const path = await uploadFile(req.file, 'hairlink', 'community/posts');
+      imageUrl = getPublicUrl('hairlink', path);
+    }
+
+    const updatedPost = await prisma.communityPost.update({
+      where: { id: postId },
+      data: { content, imageUrl },
+      include: { user: true, comments: true },
+    });
+
+    res.json({ ...serializePost(updatedPost) });
+  } catch (err) {
+    console.error('[Community] Update post error:', err);
+    res.status(500).json({ error: 'Failed to update post' });
+  }
+});
+
 // DELETE /internal-api/community/posts/:postId
 router.delete('/posts/:postId', authenticate, async (req: Request, res: Response) => {
   try {

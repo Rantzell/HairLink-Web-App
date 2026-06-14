@@ -295,6 +295,11 @@
   display: grid;
   grid-template-columns: 1fr 350px;
   gap: 2rem;
+  align-items: start;
+}
+
+.admin-sidebar-layout > * {
+  min-width: 0;
 }
 
 .admin-priority-grid {
@@ -1983,4 +1988,9 @@
 .admin-status-pill-default {
   background: #fdf7fb;
   color: #ad246d;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  width: 100%;
 }

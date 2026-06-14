@@ -186,6 +186,7 @@ export const notifyAnnouncement = async (title: string, message: string, audienc
       audience === 'donor'     ? ['donor'] :
       audience === 'recipient' ? ['recipient'] :
       audience === 'staff'     ? ['staff'] :
+      audience === 'donor_recipient' ? ['donor', 'recipient'] :
       ['donor', 'recipient', 'staff', 'wigmaker'];
 
     const targetUsers = await prisma.user.findMany({

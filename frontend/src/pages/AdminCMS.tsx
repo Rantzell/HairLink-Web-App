@@ -745,7 +745,7 @@ const AdminCMS: React.FC = () => {
                     </tr>
                   ) : (
                     announcements.map(a => {
-                      const audienceMap: Record<string, string> = { all: 'All Users', donor: 'Donors', recipient: 'Recipients', staff: 'Staff' };
+                      const audienceMap: Record<string, string> = { all: 'All Users', donor: 'Donors', recipient: 'Recipients', staff: 'Staff', donor_recipient: 'Donors & Recipients' };
                       const audienceLabel = audienceMap[a.targetAudience ?? 'all'] ?? 'All Users';
                       const isSelected = selectedAnns.includes(a.id);
                       return (
@@ -803,6 +803,7 @@ const AdminCMS: React.FC = () => {
                     <option value="donor">Donors Only</option>
                     <option value="recipient">Recipients Only</option>
                     <option value="staff">Staff Only</option>
+                    <option value="donor_recipient">Both Donors & Recipients</option>
                   </select>
                 </div>
                 <div className="form-group">

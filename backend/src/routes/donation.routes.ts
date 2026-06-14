@@ -306,10 +306,10 @@ router.post('/:reference/schedule-delivery', authenticate, validate(scheduleDeli
       return;
     }
 
-    // Enforce working hours: scheduling is only allowed between 8 AM and 4 PM PHT
+    // Enforce working hours: scheduling is only allowed between 9 AM and 7 PM PHT
     const phtHour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' })).getHours();
-    if (phtHour < 8 || phtHour >= 16) {
-      res.status(422).json({ error: 'Scheduling is only available during working hours (8:00 AM – 4:00 PM).' });
+    if (phtHour < 9 || phtHour >= 19) {
+      res.status(422).json({ error: 'Scheduling is only available during working hours (9:00 AM – 7:00 PM).' });
       return;
     }
 

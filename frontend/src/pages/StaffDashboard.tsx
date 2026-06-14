@@ -161,8 +161,8 @@ const StaffDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="sd-action-grid cols-4">
-          <Link className="sd-action-link" to="/staff/tracking/donation">
+        <div className="sd-action-grid cols-3">
+          <Link className="sd-action-link" to="/staff/tracking/wigmaker">
             <div className="sd-action-link-icon"><i className="bx bx-radar" /></div>
             <div className="sd-action-link-body">
               <h3>Wigmaker Tracking</h3>
@@ -170,11 +170,27 @@ const StaffDashboard: React.FC = () => {
             </div>
             <i className="bx bx-chevron-right sd-action-link-arrow" />
           </Link>
+          <Link className="sd-action-link" to="/staff/tracking/donation">
+            <div className="sd-action-link-icon"><i className="bx bx-package" /></div>
+            <div className="sd-action-link-body">
+              <h3>Donation Trackers</h3>
+              <p>Track incoming donations</p>
+            </div>
+            <i className="bx bx-chevron-right sd-action-link-arrow" />
+          </Link>
+          <Link className="sd-action-link" to="/staff/tracking/batch-donation">
+            <div className="sd-action-link-icon"><i className="bx bx-layer" /></div>
+            <div className="sd-action-link-body">
+              <h3>Hair Batch Tracking</h3>
+              <p>Manage grouped batches</p>
+            </div>
+            <i className="bx bx-chevron-right sd-action-link-arrow" />
+          </Link>
           <Link className="sd-action-link" to="/staff/tracking/recipient">
             <div className="sd-action-link-icon"><i className="bx bx-transfer-alt" /></div>
             <div className="sd-action-link-body">
               <h3>Request Trackers</h3>
-              <p>Track batch progress</p>
+              <p>Track request progress</p>
             </div>
             <i className="bx bx-chevron-right sd-action-link-arrow" />
           </Link>

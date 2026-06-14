@@ -536,38 +536,34 @@ const DonorProfile: React.FC = () => {
                 >
                   <i className='bx bx-share-alt'></i> Share
                 </button>
-                <button
-                  type="button"
-                  onClick={handleGenerateCode}
-                  disabled={isGeneratingCode}
-                  style={{
-                    flex: '1 1 160px',
-                    padding: '0.65rem 1rem',
-                    borderRadius: '12px',
-                    border: 'none',
-                    background: '#ad246d',
-                    color: '#fff',
-                    fontWeight: 800,
-                    fontSize: '0.85rem',
-                    cursor: isGeneratingCode ? 'not-allowed' : 'pointer',
-                    opacity: isGeneratingCode ? 0.7 : 1,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.4rem',
-                    boxShadow: '0 4px 12px rgba(173, 36, 109, 0.25)'
-                  }}
-                >
-                  <i className='bx bx-refresh'></i>
-                  {isGeneratingCode ? 'Generating…' : referralCode === 'NOT-GENERATED' ? 'Generate Code' : 'Generate New'}
-                </button>
+                {referralCode === 'NOT-GENERATED' && (
+                  <button
+                    type="button"
+                    onClick={handleGenerateCode}
+                    disabled={isGeneratingCode}
+                    style={{
+                      flex: '1 1 160px',
+                      padding: '0.65rem 1rem',
+                      borderRadius: '12px',
+                      border: 'none',
+                      background: '#ad246d',
+                      color: '#fff',
+                      fontWeight: 800,
+                      fontSize: '0.85rem',
+                      cursor: isGeneratingCode ? 'not-allowed' : 'pointer',
+                      opacity: isGeneratingCode ? 0.7 : 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.4rem',
+                      boxShadow: '0 4px 12px rgba(173, 36, 109, 0.25)'
+                    }}
+                  >
+                    <i className='bx bx-refresh'></i>
+                    {isGeneratingCode ? 'Generating…' : 'Generate Code'}
+                  </button>
+                )}
               </div>
-
-              {referralCode !== 'NOT-GENERATED' && (
-                <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#8c7895', textAlign: 'center' }}>
-                  Generating a new code replaces your current one. Any previously shared codes will no longer work.
-                </p>
-              )}
             </div>
           </div>
         </div>

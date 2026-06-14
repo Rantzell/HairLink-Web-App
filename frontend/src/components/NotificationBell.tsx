@@ -88,6 +88,9 @@ const NotificationBell: React.FC = () => {
     if (n.type === 'announcement' || n.title.includes('Announcement:')) {
       return { label: 'View Announcement', path: '' };
     }
+    if (n.type === 'event' || n.title.includes('New Event:')) {
+      return { label: 'View Event', path: '' };
+    }
 
     // Extract reference codes from the notification message
     const match = n.message.match(/\(((?:HD|WR|REQ|MD)[- ][A-Z0-9-]+)\)/i);
@@ -164,7 +167,6 @@ const NotificationBell: React.FC = () => {
       return { label: 'View Post →', path: postId ? `${base}?postId=${postId}` : base };
     }
     if (n.type === 'pickup_ready') return { label: 'View Request →', path: '/recipient/tracking' };
-    if (n.type === 'event') return { label: 'View Events →', path: `/${role}/dashboard` };
     return null;
   };
 
@@ -180,7 +182,7 @@ const NotificationBell: React.FC = () => {
       }
     }
     const link = getNotifLink(n);
-    if (n.type === 'announcement' || n.title.includes('Announcement:')) {
+    if (n.type === 'announcement' || n.title.includes('Announcement:') || n.type === 'event' || n.title.includes('New Event:')) {
       setSelectedAnnouncement(n);
       setIsOpen(false);
     } else if (link?.path) {
@@ -276,7 +278,7 @@ const NotificationBell: React.FC = () => {
           <div className="announcement-modal-card" onClick={e => e.stopPropagation()}>
             <header className="announcement-modal-header">
               <div className="announcement-modal-badge">
-                <i className='bx bx-bell'></i> Announcement
+                <i className='bx bx-bell'></i> {selectedAnnouncement.type === 'event' || selectedAnnouncement.title.includes('New Event:') ? 'Event Details' : 'Announcement'}
               </div>
               <button className="announcement-modal-close" onClick={() => setSelectedAnnouncement(null)}>
                 <i className='bx bx-x'></i>
@@ -284,7 +286,7 @@ const NotificationBell: React.FC = () => {
             </header>
             <main className="announcement-modal-body">
               <h2 className="announcement-modal-title">
-                {selectedAnnouncement.title.replace('📢 Announcement: ', '').replace('📢 ', '')}
+                {selectedAnnouncement.title.replace('📢 Announcement: ', '').replace('📢 ', '').replace('📣 New Event: ', '').replace('📣 ', '')}
               </h2>
               <p className="announcement-modal-date">
                 <i className='bx bx-calendar'></i> {new Date(selectedAnnouncement.created_at).toLocaleString()}

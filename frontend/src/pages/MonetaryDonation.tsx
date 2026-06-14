@@ -153,18 +153,21 @@ const MonetaryDonation: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'end' }}>
             <div className="form-group">
               <label htmlFor="custom-amount" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Or Enter A Custom Amount</label>
-              <input 
-                type="number" 
-                id="custom-amount" 
-                placeholder="0.00"
-                value={customAmount}
-                onChange={handleCustomAmountChange}
-                className="form-input-premium"
-                style={{ width: '100%', padding: '0.85rem 1rem', border: '2px solid #ead7e8', borderRadius: '12px', fontWeight: 600 }}
-              />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <span style={{ position: 'absolute', left: '1rem', color: '#4a3452', fontWeight: 700, fontSize: '1rem', pointerEvents: 'none' }}>&#8369;</span>
+                <input 
+                  type="number" 
+                  id="custom-amount" 
+                  placeholder="0.00"
+                  value={customAmount}
+                  onChange={handleCustomAmountChange}
+                  className="form-input-premium"
+                  style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.2rem', border: '2px solid #ead7e8', borderRadius: '12px', fontWeight: 600 }}
+                />
+              </div>
             </div>
             <div className="form-group">
               <label htmlFor="currency" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Currency *</label>

@@ -220,15 +220,15 @@ const DonorTrackingDetail: React.FC = () => {
                     Pick the date you plan to send your donated hair to us. We'll notify our staff right away, and on the day you choose, you'll be able to submit your delivery tracking link here.
                   </p>
                   <p style={{ fontSize: '0.72rem', color: '#ad246d', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <i className='bx bx-time-five'></i> Scheduling is available during working hours only (8:00 AM – 4:00 PM).
+                    <i className='bx bx-time-five'></i> Scheduling is available during working hours only (9:00 AM – 7:00 PM).
                   </p>
                   {(() => {
                     const phtNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
                     const h = phtNow.getHours();
-                    const outsideHours = h < 8 || h >= 16;
+                    const outsideHours = h < 9 || h >= 19;
                     return outsideHours ? (
                       <p style={{ fontSize: '0.8rem', color: '#e03c3c', display: 'flex', alignItems: 'center', gap: '4px', background: '#fef2f2', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #fee2e2' }}>
-                        <i className='bx bx-error-circle'></i> Scheduling is currently unavailable. Please come back between 8:00 AM and 4:00 PM.
+                        <i className='bx bx-error-circle'></i> Scheduling is currently unavailable. Please come back between 9:00 AM and 7:00 PM.
                       </p>
                     ) : (
                       <form onSubmit={handleScheduleDelivery} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>

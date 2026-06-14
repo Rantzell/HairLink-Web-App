@@ -93,7 +93,16 @@ const StaffMatching: React.FC = () => {
   }, [selectedRecipient, wigs]);
 
   const filteredWigs = useMemo(() => {
-    return scoredWigs.filter(w => w.score >= 85);
+    // Find all 100% matches
+    const perfectMatches = scoredWigs.filter(w => w.score === 100);
+    
+    // If there are perfect matches, ONLY show perfect matches
+    if (perfectMatches.length > 0) {
+      return perfectMatches;
+    }
+    
+    // Otherwise, show other similar matches (score >= 60, meaning at least one attribute matched exactly, or both partially)
+    return scoredWigs.filter(w => w.score >= 60);
   }, [scoredWigs]);
 
   const handleMatch = (wigId: string) => {

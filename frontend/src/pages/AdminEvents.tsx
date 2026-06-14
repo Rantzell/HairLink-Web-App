@@ -32,6 +32,8 @@ const AdminEvents: React.FC = () => {
   const [form, setForm] = useState({ title: '', date: '', description: '', location: '' });
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchEvents = async () => {
     try {
@@ -82,6 +84,22 @@ const AdminEvents: React.FC = () => {
       console.error('Failed to save event', err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const doDelete = async () => {
+    if (!eventToDelete) return;
+    setIsDeleting(true);
+    try {
+      await apiClient.delete(`/internal-api/admin/events/${eventToDelete.id}`);
+      toast.success('Event deleted successfully');
+      setEventToDelete(null);
+      fetchEvents();
+    } catch (err) {
+      console.error('Failed to delete event', err);
+      toast.error('Failed to delete event');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -177,9 +195,14 @@ const AdminEvents: React.FC = () => {
                     <h4 className="admin-event-title">{ev.title}</h4>
                     <p className="admin-event-meta">{ev.location} · {new Date(ev.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
-                  <button className="admin-btn-ghost" style={{ padding: '6px', minWidth: 'auto', border: 'none', background: 'transparent' }} onClick={() => handleEdit(ev)} title="Edit Event">
-                    <i className="bx bx-edit admin-icon-pink" style={{ fontSize: '1.2rem', cursor: 'pointer' }}></i>
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.2rem' }}>
+                    <button className="admin-btn-ghost" style={{ padding: '6px', minWidth: 'auto', border: 'none', background: 'transparent' }} onClick={() => handleEdit(ev)} title="Edit Event">
+                      <i className="bx bx-edit admin-icon-pink" style={{ fontSize: '1.2rem', cursor: 'pointer' }}></i>
+                    </button>
+                    <button className="admin-btn-ghost" style={{ padding: '6px', minWidth: 'auto', border: 'none', background: 'transparent' }} onClick={() => setEventToDelete(ev)} title="Delete Event">
+                      <i className="bx bx-trash" style={{ fontSize: '1.2rem', cursor: 'pointer', color: '#c53030' }}></i>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -208,10 +231,10 @@ const AdminEvents: React.FC = () => {
                     <td>
                       <button 
                         className="admin-btn-ghost" 
-                        style={{ padding: '4px 8px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                        onClick={() => handleEdit(ev)}
+                        style={{ padding: '4px 8px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', cursor: 'pointer', color: '#c53030', borderColor: '#feb2b2' }}
+                        onClick={() => setEventToDelete(ev)}
                       >
-                        <i className="bx bx-edit admin-icon-pink"></i> Edit
+                        <i className="bx bx-trash"></i> Delete
                       </button>
                     </td>
                   </tr>
@@ -237,6 +260,16 @@ const AdminEvents: React.FC = () => {
           : `Publish "${form.title}" scheduled on ${form.date ? new Date(form.date).toLocaleString() : ''}? This will appear on the public HairLink events page.`}
         confirmText={editingEvent ? "Yes, Save Changes" : "Yes, Publish Event"}
         isConfirming={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={!!eventToDelete}
+        onClose={() => setEventToDelete(null)}
+        onConfirm={doDelete}
+        title="Delete Event"
+        message={`Are you sure you want to delete the event "${eventToDelete?.title}"? This action cannot be undone.`}
+        confirmText="Yes, Delete Event"
+        isConfirming={isDeleting}
       />
     </section>
   );
