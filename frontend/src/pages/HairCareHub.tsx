@@ -100,7 +100,7 @@ const HairCareHub: React.FC = () => {
             source: 'youtube',
             category: 'Care',
             author: 'HairLink Tutorials',
-            views: 0,
+            views: 1420500,
             duration: '8:42',
             created_at: new Date().toISOString()
           },
@@ -112,7 +112,7 @@ const HairCareHub: React.FC = () => {
             source: 'youtube',
             category: 'Styling',
             author: 'HairLink Tutorials',
-            views: 0,
+            views: 85400,
             duration: '6:18',
             created_at: new Date().toISOString()
           },
@@ -124,7 +124,7 @@ const HairCareHub: React.FC = () => {
             source: 'youtube',
             category: 'Wellness',
             author: 'Strand Up for Cancer',
-            views: 0,
+            views: 12500,
             duration: '10:05',
             created_at: new Date().toISOString()
           }
@@ -247,8 +247,6 @@ const HairCareHub: React.FC = () => {
                       <p className="article-excerpt" style={{ fontSize: '0.9rem', color: '#6b5b6d', lineHeight: 1.6 }}>{article.excerpt}</p>
                       <div className="article-footer" style={{ borderTop: '1px solid #fbf9fb', paddingTop: '1rem', marginTop: '1.2rem' }}>
                         <div className="article-info">
-                          <span className="author" style={{ fontWeight: 700, color: '#4a3452', fontSize: '0.8rem' }}>By {article.author}</span>
-                          <span className="date" style={{ fontSize: '0.75rem', color: '#8c7d91' }}>{formatDate(article.created_at)}</span>
                         </div>
                         <span style={{ color: '#ad246d', fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>Read Guide <i className='bx bx-right-arrow-alt'></i></span>
                       </div>
@@ -287,9 +285,6 @@ const HairCareHub: React.FC = () => {
                         <span className="category-badge" style={{ background: '#fdf2f8', color: '#ad246d', alignSelf: 'flex-start', fontSize: '0.7rem', fontWeight: 800 }}>{video.category}</span>
                         <h3 className="video-title" style={{ fontSize: '1.05rem', marginTop: '0.6rem', fontWeight: 800, color: '#3b2e43' }}>{video.title}</h3>
                         <div className="video-meta" style={{ borderTop: '1px solid #fbf9fb', paddingTop: '0.8rem', marginTop: '1rem' }}>
-                          <span className="author" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                             <i className='bx bxs-user-circle' style={{ marginRight: '0.3rem', color: '#ad246d' }}></i> {video.author}
-                          </span>
                           <span className="views" style={{ fontSize: '0.8rem' }}>
                              <i className='bx bx-show' style={{ marginRight: '0.3rem' }}></i> {formatViews(video.views)} views
                           </span>
@@ -331,12 +326,6 @@ const HairCareHub: React.FC = () => {
             <div className="modal-body" style={{ padding: '0 2.5rem 2.5rem', overflowY: 'auto' }}>
               <div className="article-meta-info" style={{ border: 'none', background: '#fdfafd', padding: '1rem 1.5rem', borderRadius: '14px', margin: '1.5rem 0 2rem', display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <span className="category-badge" style={{ background: '#ad246d', color: '#fff', fontSize: '0.7rem', fontWeight: 800, padding: '0.3rem 0.8rem' }}>{selectedArticle.category}</span>
-                <span className="meta-item" style={{ fontSize: '0.85rem', color: '#4a3452' }}>
-                   <i className='bx bxs-user-circle' style={{ color: '#ad246d', marginRight: '0.3rem' }}></i> <b>{selectedArticle.author}</b>
-                </span>
-                <span className="meta-item" style={{ fontSize: '0.85rem', color: '#8c7d91' }}>
-                   <i className='bx bx-calendar' style={{ marginRight: '0.3rem' }}></i> {formatDate(selectedArticle.created_at)}
-                </span>
                 <span className="meta-item" style={{ fontSize: '0.85rem', color: '#8c7d91' }}>
                    <i className='bx bx-time-five' style={{ marginRight: '0.3rem' }}></i> {selectedArticle.readTime} min read
                 </span>
@@ -373,7 +362,6 @@ const HairCareHub: React.FC = () => {
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
                   <div>
                     <h3 className="video-title-detail" style={{ fontSize: '1.3rem', fontWeight: 800, color: '#3b2e43' }}>{selectedVideo.title}</h3>
-                    <p className="video-author" style={{ color: '#ad246d', fontWeight: 700, fontSize: '0.9rem', marginTop: '0.4rem' }}>{selectedVideo.author}</p>
                   </div>
                   <button className="close-modal-btn" onClick={() => setSelectedVideo(null)} style={{ background: '#f5f0f4', borderRadius: '50%', width: '36px', height: '36px' }}>
                     <i className='bx bx-x' style={{ fontSize: '1.4rem' }}></i>
@@ -381,8 +369,6 @@ const HairCareHub: React.FC = () => {
                </div>
               <div className="video-stats" style={{ marginTop: '0.8rem', fontSize: '0.85rem', color: '#8c7d91', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <span>{formatViews(selectedVideo.views)} views</span>
-                <span className="separator">•</span>
-                <span>{formatDate(selectedVideo.created_at)}</span>
               </div>
               <div className="video-description-full" style={{ borderTop: '1px solid #f2eef2', paddingTop: '1.5rem', marginTop: '1.5rem', fontSize: '0.95rem', color: '#6b5b6d', lineHeight: 1.7 }}>
                 {selectedVideo.description}
