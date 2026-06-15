@@ -35,11 +35,20 @@
 }
 .match-search-container {
   margin-bottom: 1rem;
+  position: relative;
+}
+.match-search-icon {
+  position: absolute;
+  left: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ad246d;
+  font-size: 1rem;
 }
 .match-search-input {
   width: 100%;
   height: 32px;
-  padding: 0 10px;
+  padding: 0 10px 0 2.2rem;
   border-radius: 8px;
   border: 1px solid #ead7e8;
   font-size: 0.8rem;

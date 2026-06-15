@@ -114,13 +114,16 @@ const AdminInventory: React.FC = () => {
         <article className="admin-card admin-card-white">
           <div className="admin-bar admin-bar">
             <h3 className="admin-bar-title"><i className="bx bx-shopping-bag admin-icon-pink"></i> Completed Wig Stock</h3>
-            <input 
-              type="text" 
-              placeholder="Search wig stock..." 
-              value={wigFilter} 
-              onChange={e => setWigFilter(e.target.value)}
-              className="admin-filter-input"
-            />
+            <div className="admin-search-wrapper">
+              <i className="bx bx-search admin-search-icon"></i>
+              <input 
+                type="text" 
+                placeholder="Search wig stock..." 
+                value={wigFilter} 
+                onChange={e => setWigFilter(e.target.value)}
+                className="admin-filter-input"
+              />
+            </div>
           </div>
           <div className="table-wrap">
             <table className="admin-table">
@@ -155,13 +158,16 @@ const AdminInventory: React.FC = () => {
         <article className="admin-card admin-card-white">
           <div className="admin-bar admin-bar">
             <h3 className="admin-bar-title"><i className="bx bx-history admin-icon-pink"></i> Donation Records History</h3>
-            <input 
-              type="text" 
-              placeholder="Search donor history..." 
-              value={donFilter} 
-              onChange={e => setDonFilter(e.target.value)}
-              className="admin-filter-input"
-            />
+            <div className="admin-search-wrapper">
+              <i className="bx bx-search admin-search-icon"></i>
+              <input 
+                type="text" 
+                placeholder="Search donor history..." 
+                value={donFilter} 
+                onChange={e => setDonFilter(e.target.value)}
+                className="admin-filter-input"
+              />
+            </div>
           </div>
           <div className="table-wrap">
             <table className="admin-table">

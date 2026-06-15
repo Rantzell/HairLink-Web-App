@@ -211,6 +211,8 @@
   flex-direction: column;
   min-height: 100vh;
   min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* ── Top Header ── */
@@ -343,6 +345,9 @@
 .sd-content {
   padding: 2rem;
   flex: 1;
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* ── Page Header ── */
@@ -686,3 +691,102 @@
 
 /* ── Legacy class aliases for any inherited global styles ── */
 .staff-actions-single-col { grid-template-columns: 1fr; }
+
+/* ══════════════════════════════════════
+   WIGMAKER PAGE — Mobile Fixes
+══════════════════════════════════════ */
+
+/* Prevent any page content from overflowing the content area */
+.sd-content > * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Wigmaker section pages */
+.wigmaker-page {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  /* Reduce topbar padding on small screens */
+  .sd-topbar {
+    padding: 0 1rem;
+  }
+
+  /* Stack title + action button vertically */
+  .dashboard-section-title-block {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  /* Title wraps cleanly */
+  .dashboard-title {
+    font-size: 1.3rem;
+    white-space: normal;
+  }
+
+  .dashboard-subtitle {
+    white-space: normal;
+    max-width: 100%;
+  }
+
+  /* Button row fills width */
+  .dashboard-section-title-block > div {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Task board card */
+  .dashboard-task-board {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  /* Filter tab row: scrollable instead of wrapping into a column */
+  .dashboard-task-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    gap: 0.4rem;
+    scrollbar-width: none;
+  }
+
+  .dashboard-task-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dashboard-filter-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Table wrapper scrolls horizontally */
+  .dashboard-task-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+  }
+
+  /* Tighter cell padding on mobile */
+  .dashboard-th,
+  .dashboard-td {
+    padding: 0.65rem 0.5rem;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sd-content {
+    padding: 1rem;
+  }
+
+  .dashboard-task-board {
+    padding: 0.75rem;
+  }
+}

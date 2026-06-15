@@ -87,32 +87,38 @@ const AdminVerification: React.FC = () => {
           </h2>
         </div>
 
-        <table className="admin-compact-table">
-          <thead>
-            <tr className="admin-compact-table-head-row">
-              <th className="admin-compact-th">Reference</th>
-              <th className="admin-compact-th">Submission Date</th>
-              <th className="admin-compact-th">User / Participant</th>
-              <th className="admin-compact-th">Verification Status</th>
-              <th className="admin-compact-th">Admin Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.map((item: any) => (
-              <tr key={item.id} className="admin-compact-tr">
-                <td className="admin-compact-td"><strong>{item.reference || item.reference_number}</strong></td>
-                <td className="admin-compact-td admin-td-muted">{new Date(item.createdAt).toLocaleDateString()}</td>
-                <td className="admin-compact-td">{item.user ? `${item.user.firstName} ${item.user.lastName}` : (item.name || 'Anonymous')}</td>
-                <td className="admin-compact-td"><StatusPill status={item.status} /></td>
-                <td className="admin-compact-td admin-td-note">
-                  {item.status === 'Pending' ? 'Awaiting staff review' : `Verified on ${new Date(item.updatedAt).toLocaleDateString()}`}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        {currentItems.length === 0 && (
+        {currentItems.length > 0 ? (
+          <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table className="admin-compact-table">
+              <thead>
+                <tr className="admin-compact-table-head-row">
+                  <th className="admin-compact-th">Reference</th>
+                  <th className="admin-compact-th">Submission Date</th>
+                  <th className="admin-compact-th">User / Participant</th>
+                  <th className="admin-compact-th">Verification Status</th>
+                  <th className="admin-compact-th">Admin Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.map((item: any) => (
+                  <tr key={item.id} className="admin-compact-tr">
+                    <td className="admin-compact-td"><strong>{item.reference || item.reference_number}</strong></td>
+                    <td className="admin-compact-td admin-td-muted">{new Date(item.createdAt).toLocaleDateString()}</td>
+                    <td className="admin-compact-td">{item.user ? `${item.user.firstName} ${item.user.lastName}` : (item.name || 'Anonymous')}</td>
+                    <td className="admin-compact-td"><StatusPill status={item.status} /></td>
+                    <td className="admin-compact-td admin-td-note">
+                      {['verified', 'approved', 'completed', 'accepted'].includes(item.status?.toLowerCase()) 
+                        ? `Verified on ${new Date(item.updatedAt).toLocaleDateString()}` 
+                        : ['rejected', 'declined'].includes(item.status?.toLowerCase()) 
+                          ? `Rejected on ${new Date(item.updatedAt).toLocaleDateString()}` 
+                          : 'Awaiting staff review'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
           <div className="admin-empty-state">
             <i className="bx bx-check-shield admin-icon-faded"></i>
             <p className="admin-empty-title">Queue Clear</p>

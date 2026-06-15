@@ -64,13 +64,16 @@ const RecipientTracking: React.FC = () => {
         <h1 className="tracking-module-title">My Request Tracking</h1>
         <p className="tracking-module-subtitle">Monitor the status of your hair requests and coordination updates.</p>
         <div className="tracking-tools-row">
-          <input 
-            type="text" 
-            placeholder="Search reference, status..."
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            className="tracking-search-input"
-          />
+          <div className="tracking-search-wrapper">
+            <i className="bx bx-search tracking-search-icon"></i>
+            <input 
+              type="text" 
+              placeholder="Search reference, status..."
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+              className="tracking-search-input"
+            />
+          </div>
           <Link to="/recipient/request" className="tracking-new-request-btn">
             Submit New Request
           </Link>

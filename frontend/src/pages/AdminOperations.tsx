@@ -80,31 +80,35 @@ const AdminOperations: React.FC = () => {
           <h2 className="admin-ops-card-title">Active Distribution &amp; Delivery Log</h2>
         </div>
 
-        <table className="admin-compact-table">
-          <thead>
-            <tr className="admin-compact-table-head-row">
-              <th className="admin-compact-th">Reference / ID</th>
-              <th className="admin-compact-th">Recipient</th>
-              <th className="admin-compact-th">Current Status</th>
-              <th className="admin-compact-th">Delivery Info</th>
-              <th className="admin-compact-th">Last Activity</th>
-            </tr>
-          </thead>
-          <tbody>
-            {opsPagedRows.map((row: any) => (
-              <tr key={row.id} className="admin-compact-tr">
-                <td className="admin-compact-td"><strong>{row.reference}</strong><br/><small className="admin-match-meta">Wig Request</small></td>
-                <td className="admin-compact-td">{row.user?.firstName} {row.user?.lastName}</td>
-                <td className="admin-compact-td"><span className="admin-status-pill">{row.status}</span></td>
-                <td className="admin-compact-td">{row.status === 'In Transit' ? 'Out for Delivery' : 'In Fulfillment'}</td>
-                <td className="admin-compact-td admin-td-muted">{new Date(row.updatedAt).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <Pagination currentPage={opsPage} totalPages={opsTotalPages} onPageChange={setOpsPage} />
-
-        {opsRows.length === 0 && (
+        {opsRows.length > 0 ? (
+          <>
+            <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table className="admin-compact-table">
+                <thead>
+                  <tr className="admin-compact-table-head-row">
+                    <th className="admin-compact-th">Reference / ID</th>
+                    <th className="admin-compact-th">Recipient</th>
+                    <th className="admin-compact-th">Current Status</th>
+                    <th className="admin-compact-th">Delivery Info</th>
+                    <th className="admin-compact-th">Last Activity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {opsPagedRows.map((row: any) => (
+                    <tr key={row.id} className="admin-compact-tr">
+                      <td className="admin-compact-td"><strong>{row.reference}</strong><br/><small className="admin-match-meta">Wig Request</small></td>
+                      <td className="admin-compact-td">{row.user?.firstName} {row.user?.lastName}</td>
+                      <td className="admin-compact-td"><span className="admin-status-pill">{row.status}</span></td>
+                      <td className="admin-compact-td">{row.status === 'In Transit' ? 'Out for Delivery' : 'In Fulfillment'}</td>
+                      <td className="admin-compact-td admin-td-muted">{new Date(row.updatedAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination currentPage={opsPage} totalPages={opsTotalPages} onPageChange={setOpsPage} />
+          </>
+        ) : (
           <div className="admin-empty-state">
             <i className="admin-icon-faded bx bx-package"></i>
             <p className="admin-empty-title">No Active Wig Deliveries in Progress</p>

@@ -210,13 +210,11 @@
 .tracking-search-icon {
     position: absolute;
     left: 1rem;
-    top: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    top: 50%;
+    transform: translateY(-50%);
     color: #ad246d;
     font-size: 1.1rem;
+    pointer-events: none;
 }
 
 .tracking-search-input {
@@ -783,4 +781,47 @@
     font-weight: 800;
     font-size: 0.78rem;
     box-shadow: 0 2px 6px rgba(173, 36, 109, 0.15);
+}
+
+@media (max-width: 768px) {
+    .tracking-title-block {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .tracking-page-title {
+        font-size: 1.8rem;
+    }
+    .tracking-search-container {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 1rem;
+    }
+    .tracking-search-wrapper {
+        max-width: 100%;
+        width: 100%;
+    }
+    .tracking-table-wrap {
+        border-radius: 12px;
+    }
+    .batch-action-bar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+    }
+    .batch-action-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    .batch-action-right {
+        flex-direction: column;
+        max-width: 100%;
+    }
+    .tracking-batch-expanded-inner {
+        padding: 1rem;
+    }
+    .tracking-batch-expanded-cell {
+        padding: 1rem !important;
+    }
 }

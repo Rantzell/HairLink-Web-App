@@ -160,6 +160,7 @@ const AdminUserManagement: React.FC = () => {
         <button 
           onClick={() => handleOpenModal()} 
           className="admin-btn-print"
+          style={{ alignSelf: 'flex-start' }}
         >
           <i className='bx bx-user-plus'></i> Create User
         </button>
@@ -195,13 +196,17 @@ const AdminUserManagement: React.FC = () => {
             }
           </h2>
           <div className="admin-tools admin-tools">
-            <input 
-              type="text" 
-              placeholder="Search users..." 
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-              className="admin-filter-input"
-            />
+            <div className="admin-search-wrapper" style={{ position: 'relative' }}>
+              <i className="bx bx-search admin-search-icon" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#ad246d', zIndex: 1 }}></i>
+              <input 
+                type="text" 
+                placeholder="Search users..." 
+                value={filter}
+                onChange={e => setFilter(e.target.value)}
+                className="admin-filter-input"
+                style={{ paddingLeft: '2.5rem' }}
+              />
+            </div>
           </div>
         </div>
 

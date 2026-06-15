@@ -43,13 +43,16 @@ const DonorTracking: React.FC = () => {
         <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>My Donation Tracking</h1>
         <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.2rem' }}>Monitor status changes from submission to completion and certificate release.</p>
         <div className="tracking-tools" style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', alignItems: 'center' }}>
-          <input 
-            type="text" 
-            placeholder="Search reference, status..."
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid #ead7e8', fontSize: '0.8rem', width: '250px' }}
-          />
+          <div style={{ position: 'relative' }}>
+            <i className="bx bx-search" style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: '#ad246d', fontSize: '1rem' }}></i>
+            <input 
+              type="text" 
+              placeholder="Search reference, status..."
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+              style={{ padding: '0.4rem 0.8rem 0.4rem 2.2rem', borderRadius: '8px', border: '1px solid #ead7e8', fontSize: '0.8rem', width: '250px', outline: 'none' }}
+            />
+          </div>
           <Link 
             to="/donor/donate" 
             style={{ 

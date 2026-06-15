@@ -139,6 +139,7 @@ const StaffMatching: React.FC = () => {
           <h2 className="match-title">Select Recipient</h2>
           
           <div className="match-search-container">
+            <i className="bx bx-search match-search-icon"></i>
             <input 
               type="text" 
               placeholder="Search recipient..." 

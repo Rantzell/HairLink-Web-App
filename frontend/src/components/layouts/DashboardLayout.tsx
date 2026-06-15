@@ -654,86 +654,86 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <div className="dash-links-middle">
               {role === 'donor' && (
                 <>
-                  <Link to="/donor/dashboard" className={isActive('/donor/dashboard') ? 'active' : ''}>Overview</Link>
-                  <Link to="/donor/donate" className={isActive('/donor/donate') ? 'active' : ''}>Donate Hair</Link>
-                  <Link to="/donor/tracking" className={isActive('/donor/tracking') ? 'active' : ''}>Tracking</Link>
-                  <Link to="/donor/certificate" className={isActive('/donor/certificate') ? 'active' : ''}>Certificate</Link>
+                  <Link to="/donor/dashboard" className={isActive('/donor/dashboard') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Overview</Link>
+                  <Link to="/donor/donate" className={isActive('/donor/donate') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Donate Hair</Link>
+                  <Link to="/donor/tracking" className={isActive('/donor/tracking') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Tracking</Link>
+                  <Link to="/donor/certificate" className={isActive('/donor/certificate') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Certificate</Link>
                 </>
               )}
 
               {role === 'recipient' && (
                 <>
-                  <Link to="/recipient/dashboard" className={isActive('/recipient/dashboard') ? 'active' : ''}>Overview</Link>
-                  <Link to="/recipient/request" className={isActive('/recipient/request') ? 'active' : ''}>Request Hair</Link>
-                  <Link to="/recipient/tracking" className={isActive('/recipient/tracking') ? 'active' : ''}>Tracking</Link>
+                  <Link to="/recipient/dashboard" className={isActive('/recipient/dashboard') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Overview</Link>
+                  <Link to="/recipient/request" className={isActive('/recipient/request') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Request Hair</Link>
+                  <Link to="/recipient/tracking" className={isActive('/recipient/tracking') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Tracking</Link>
                 </>
               )}
 
               {(role as string) === 'wigmaker' && (
                 <>
-                  <Link to="/wigmaker/dashboard" className={isActive('/wigmaker/dashboard') ? 'active' : ''}>Overview</Link>
-                  <Link to="/wigmaker/hair-batch-tracking" className={isActive('/wigmaker/hair-batch-tracking') ? 'active' : ''}>Hair Batch Tracking</Link>
-                  <Link to="/wigmaker/wig-inventory" className={isActive('/wigmaker/wig-inventory') ? 'active' : ''}>Wig Inventory</Link>
+                  <Link to="/wigmaker/dashboard" className={isActive('/wigmaker/dashboard') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Overview</Link>
+                  <Link to="/wigmaker/hair-batch-tracking" className={isActive('/wigmaker/hair-batch-tracking') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Hair Batch Tracking</Link>
+                  <Link to="/wigmaker/wig-inventory" className={isActive('/wigmaker/wig-inventory') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Wig Inventory</Link>
                 </>
               )}
 
               {(role as string) === 'staff' && (
                 <>
-                  <Link to="/staff/dashboard" className={isActive('/staff/dashboard') ? 'active' : ''}>Overview</Link>
-                  <Link to="/staff/verification/donor" className={location.pathname === '/staff/verification/donor' ? 'active' : ''}>Donation</Link>
-                  <Link to="/staff/verification/recipient" className={location.pathname === '/staff/verification/recipient' ? 'active' : ''}>Request</Link>
-                  <Link to="/staff/verification/monetary" className={location.pathname === '/staff/verification/monetary' ? 'active' : ''}>Monetary</Link>
+                  <Link to="/staff/dashboard" className={isActive('/staff/dashboard') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Overview</Link>
+                  <Link to="/staff/verification/donor" className={location.pathname === '/staff/verification/donor' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Donation</Link>
+                  <Link to="/staff/verification/recipient" className={location.pathname === '/staff/verification/recipient' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Request</Link>
+                  <Link to="/staff/verification/monetary" className={location.pathname === '/staff/verification/monetary' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Monetary</Link>
                   <div className="nav-dropdown">
                     <span className={`nav-dropdown-trigger ${location.pathname.includes('/staff/tracking') ? 'active' : ''}`}>Tracking <i className='bx bx-chevron-down'></i></span>
                     <div className="nav-dropdown-content">
-                      <Link to="/staff/tracking/donation">Donation Trackers</Link>
-                      <Link to="/staff/tracking/recipient">Request Trackers</Link>
+                      <Link to="/staff/tracking/donation" onClick={() => setIsMenuOpen(false)}>Donation Trackers</Link>
+                      <Link to="/staff/tracking/recipient" onClick={() => setIsMenuOpen(false)}>Request Trackers</Link>
                     </div>
                   </div>
-                  <Link to="/staff/wig-stock" className={isActive('/staff/wig-stock') ? 'active' : ''}>Wigs</Link>
-                  <Link to="/staff/hair-stock" className={isActive('/staff/hair-stock') ? 'active' : ''}>Hair</Link>
-                  <Link to="/staff/matching" className={isActive('/staff/matching') ? 'active' : ''}>Matching</Link>
-                  <Link to="/staff/reports" className={isActive('/staff/reports') ? 'active' : ''}>Reports</Link>
+                  <Link to="/staff/wig-stock" className={isActive('/staff/wig-stock') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Wigs</Link>
+                  <Link to="/staff/hair-stock" className={isActive('/staff/hair-stock') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Hair</Link>
+                  <Link to="/staff/matching" className={isActive('/staff/matching') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Matching</Link>
+                  <Link to="/staff/reports" className={isActive('/staff/reports') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Reports</Link>
                 </>
               )}
 
               {(role as string) === 'admin' && (
                 <>
-                  <Link to="/admin/dashboard" className={isActive('/admin/dashboard') ? 'active' : ''}>Overview</Link>
+                  <Link to="/admin/dashboard" className={isActive('/admin/dashboard') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Overview</Link>
                   <div className="nav-dropdown">
                     <span className={`nav-dropdown-trigger ${isActive('/admin/verification') ? 'active' : ''}`}>Verify <i className='bx bx-chevron-down'></i></span>
                     <div className="nav-dropdown-content">
-                      <Link to="/admin/verification?view=donor">Hair Donations</Link>
-                      <Link to="/admin/verification?view=recipient">Recipient Requests</Link>
+                      <Link to="/admin/verification?view=donor" onClick={() => setIsMenuOpen(false)}>Hair Donations</Link>
+                      <Link to="/admin/verification?view=recipient" onClick={() => setIsMenuOpen(false)}>Recipient Requests</Link>
                     </div>
                   </div>
-                  <Link to="/admin/matching" className={isActive('/admin/matching') ? 'active' : ''}>Matching</Link>
-                  <Link to="/admin/operations?view=distribution" className={isActive('/admin/operations') ? 'active' : ''}>Distribution</Link>
+                  <Link to="/admin/matching" className={isActive('/admin/matching') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Matching</Link>
+                  <Link to="/admin/operations?view=distribution" className={isActive('/admin/operations') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Distribution</Link>
                   <div className="nav-dropdown">
                     <span className={`nav-dropdown-trigger ${isActive('/admin/inventory') ? 'active' : ''}`}>Inventory <i className='bx bx-chevron-down'></i></span>
                     <div className="nav-dropdown-content">
-                      <Link to="/admin/inventory?view=overview">Global Overview</Link>
-                      <Link to="/admin/inventory?view=hair">Hair Stock</Link>
-                      <Link to="/admin/inventory?view=wigs">Wig Stock</Link>
-                      <Link to="/admin/inventory?view=donations">Donation Records</Link>
+                      <Link to="/admin/inventory?view=overview" onClick={() => setIsMenuOpen(false)}>Global Overview</Link>
+                      <Link to="/admin/inventory?view=hair" onClick={() => setIsMenuOpen(false)}>Hair Stock</Link>
+                      <Link to="/admin/inventory?view=wigs" onClick={() => setIsMenuOpen(false)}>Wig Stock</Link>
+                      <Link to="/admin/inventory?view=donations" onClick={() => setIsMenuOpen(false)}>Donation Records</Link>
                     </div>
                   </div>
                   <div className="nav-dropdown">
                     <span className={`nav-dropdown-trigger ${isActive('/admin/users') ? 'active' : ''}`}>Users <i className='bx bx-chevron-down'></i></span>
                     <div className="nav-dropdown-content">
-                      <Link to="/admin/users?role=all">All Users</Link>
-                      <Link to="/admin/users?role=donor">Donors</Link>
-                      <Link to="/admin/users?role=recipient">Recipients</Link>
-                      <Link to="/admin/users?role=staff">Staff Accounts</Link>
-                      <Link to="/admin/users?role=wigmaker">Wigmakers</Link>
+                      <Link to="/admin/users?role=all" onClick={() => setIsMenuOpen(false)}>All Users</Link>
+                      <Link to="/admin/users?role=donor" onClick={() => setIsMenuOpen(false)}>Donors</Link>
+                      <Link to="/admin/users?role=recipient" onClick={() => setIsMenuOpen(false)}>Recipients</Link>
+                      <Link to="/admin/users?role=staff" onClick={() => setIsMenuOpen(false)}>Staff Accounts</Link>
+                      <Link to="/admin/users?role=wigmaker" onClick={() => setIsMenuOpen(false)}>Wigmakers</Link>
                     </div>
                   </div>
                   <div className="nav-dropdown">
                     <span className={`nav-dropdown-trigger ${isActive('/admin/reports') || isActive('/admin/cms') || isActive('/admin/events') ? 'active' : ''}`}>System <i className='bx bx-chevron-down'></i></span>
                     <div className="nav-dropdown-content">
-                      <Link to="/admin/cms">Content (CMS)</Link>
-                      <Link to="/admin/events">Events Schedule</Link>
-                      <Link to="/admin/reports?type=donations">System Reports</Link>
+                      <Link to="/admin/cms" onClick={() => setIsMenuOpen(false)}>Content (CMS)</Link>
+                      <Link to="/admin/events" onClick={() => setIsMenuOpen(false)}>Events Schedule</Link>
+                      <Link to="/admin/reports?type=donations" onClick={() => setIsMenuOpen(false)}>System Reports</Link>
                     </div>
                   </div>
                 </>
@@ -742,10 +742,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
             <div className="dash-links-right">
               {['donor', 'recipient', 'staff', 'wigmaker', 'admin'].includes(role || '') && (
-                <Link to={`/${role}/profile`} className={isActive(`/${role}/profile`) ? 'active' : ''}>Profile</Link>
+                <Link to={`/${role}/profile`} className={isActive(`/${role}/profile`) ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Profile</Link>
               )}
               {['donor', 'recipient'].includes(role || '') && <NotificationBell />}
-              <a href="#" className="logout-btn" onClick={handleLogout}>Logout</a>
+              <a href="#" className="logout-btn" onClick={(e) => { setIsMenuOpen(false); handleLogout(e); }}>Logout</a>
             </div>
           </div>
         </nav>

@@ -34,18 +34,15 @@
 .staff-wig-search-icon {
   position: absolute;
   left: 0.8rem;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  top: 50%;
+  transform: translateY(-50%);
   color: #ad246d;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .staff-wig-search-input {
   width: 100%;
-  padding: 0 1rem 0 2.2rem;
+  padding: 0 1rem 0 2.2rem !important;
   border-radius: 8px;
   border: 1px solid #ead7e8;
   height: 32px;

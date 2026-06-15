@@ -1531,8 +1531,19 @@
   margin: 0;
   font-size: 1rem;
 }
+.admin-search-wrapper {
+  position: relative;
+}
+.admin-search-icon {
+  position: absolute;
+  left: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ad246d;
+  font-size: 0.95rem;
+}
 .admin-filter-input {
-  padding: 0.3rem 0.8rem;
+  padding: 0.3rem 0.8rem 0.3rem 1.8rem;
   border-radius: 6px;
   border: 1px solid #ead7e8;
   font-size: 0.8rem;

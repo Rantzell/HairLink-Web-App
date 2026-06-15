@@ -5,6 +5,7 @@ import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import { getPublicUrl } from '../lib/storage';
 import '../styles/WigmakerTaskDetail.css';
+import '../styles/WigmakerDashboard.css';
 
 /** Returns the current date/time in Philippines Time (UTC+8) formatted for datetime-local (YYYY-MM-DDTHH:mm) */
 function getPhilippinesDateTimeLocal(): string {
@@ -177,15 +178,23 @@ const WigmakerWigInventory: React.FC = () => {
   const receivedWigsCount = wigs.filter(w => w.status === 'received').length;
 
   return (
-    <section className="wigmaker-page reveal active staff-page">
-      <div className="section-title-block dashboard-section-title-block">
+    <section className="wigmaker-page reveal active staff-page" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+      {/* Page Header */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+        marginBottom: '1.5rem',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
         <div>
-          <h1 className="dashboard-title">Wig Inventory</h1>
-          <p className="dashboard-subtitle">
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#3b2e43', margin: 0 }}>Wig Inventory</h1>
+          <p style={{ fontSize: '0.82rem', color: '#8c7895', marginTop: '0.2rem', marginBottom: 0 }}>
             Manage your completed wigs, batch ship them to the staff, and track return status.
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
@@ -204,11 +213,10 @@ const WigmakerWigInventory: React.FC = () => {
               boxShadow: '0 4px 12px rgba(173, 36, 109, 0.15)',
               transition: 'all 0.2s ease'
             }}
-            className="soft-btn"
           >
             <i className="bx bx-plus-circle"></i> Add Wig
           </button>
-          <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)' }}>
+          <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)', whiteSpace: 'nowrap' }}>
             <span className="tracking-active-dot"></span>
             {wigs.length} Total Wigs
           </div>
@@ -301,7 +309,7 @@ const WigmakerWigInventory: React.FC = () => {
       )}
 
       {/* Tabs / Filters */}
-      <article className="task-board dashboard-task-board">
+      <article className="task-board dashboard-task-board" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
         <div className="task-board-head dashboard-task-board-head" style={{ borderBottom: '1px solid #f2ebf4', paddingBottom: '1rem', marginBottom: '1rem' }}>
           <h2 className="dashboard-task-board-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <i className="bx bxs-crown" style={{ color: '#ad246d' }}></i> Wig Inventory Records
@@ -309,22 +317,22 @@ const WigmakerWigInventory: React.FC = () => {
           <p className="dashboard-task-board-subtitle">Select finished wigs to bundle into batches and track returning deliveries.</p>
         </div>
 
-        <div className="task-filters dashboard-task-filters" style={{ marginBottom: '1.25rem' }}>
-          <button className={`filter-btn dashboard-filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
+        <div className="task-filters dashboard-task-filters" style={{ marginBottom: '1.25rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+          <button className={`dashboard-filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')} style={{ flexShrink: 0, whiteSpace: 'nowrap', width: 'auto' }}>
             All ({wigs.length})
           </button>
-          <button className={`filter-btn dashboard-filter-btn ${filter === 'completed' ? 'active' : ''}`} onClick={() => setFilter('completed')}>
+          <button className={`dashboard-filter-btn ${filter === 'completed' ? 'active' : ''}`} onClick={() => setFilter('completed')} style={{ flexShrink: 0, whiteSpace: 'nowrap', width: 'auto' }}>
             Production Finished ({readyWigsCount})
           </button>
-          <button className={`filter-btn dashboard-filter-btn ${filter === 'shipped' ? 'active' : ''}`} onClick={() => setFilter('shipped')}>
+          <button className={`dashboard-filter-btn ${filter === 'shipped' ? 'active' : ''}`} onClick={() => setFilter('shipped')} style={{ flexShrink: 0, whiteSpace: 'nowrap', width: 'auto' }}>
             Shipping ({shippedWigsCount})
           </button>
-          <button className={`filter-btn dashboard-filter-btn ${filter === 'received' ? 'active' : ''}`} onClick={() => setFilter('received')}>
+          <button className={`dashboard-filter-btn ${filter === 'received' ? 'active' : ''}`} onClick={() => setFilter('received')} style={{ flexShrink: 0, whiteSpace: 'nowrap', width: 'auto' }}>
             Finalized ({receivedWigsCount})
           </button>
         </div>
 
-        <div className="task-table-wrap dashboard-task-table-wrap" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', overflow: 'hidden' }}>
+        <div className="task-table-wrap dashboard-task-table-wrap" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', overflowX: 'auto', width: '100%', boxSizing: 'border-box' }}>
           <table className="task-table dashboard-task-table">
             <thead>
               <tr className="dashboard-tr-head">
