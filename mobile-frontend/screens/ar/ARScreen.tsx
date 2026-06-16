@@ -26,7 +26,7 @@ type StyleId = 'short' | 'long';
 type ColorId = 'black' | 'brown' | 'light';
 
 const COLORS: { id: ColorId; name: string; hex: string }[] = [
-  { id: 'black', name: 'Black', hex: '#33312f' },
+  { id: 'black', name: 'Black', hex: '#4a4744' },
   { id: 'brown', name: 'Brown', hex: '#5a3320' },
   { id: 'light', name: 'Light', hex: '#c9a37a' },
 ];
@@ -307,6 +307,34 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconBtnActive: { backgroundColor: '#ff4d8d' },
+  adjustPanel: {
+    width: '88%',
+    maxWidth: 380,
+    backgroundColor: 'rgba(15,15,22,0.82)',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 2,
+  },
+  adjustHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  adjustTitle: { color: 'white', fontSize: 12, fontWeight: '700' },
+  adjustReset: { color: '#ff8dc7', fontSize: 12, fontWeight: '700' },
+  adjustRow: { flexDirection: 'row', alignItems: 'center' },
+  adjustIcon: { width: 20 },
+  slider: { flex: 1, height: 34 },
+  adjustVal: {
+    minWidth: 42,
+    textAlign: 'right',
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
   },
   bottomPanel: {
     position: 'absolute',

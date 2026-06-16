@@ -137,14 +137,18 @@ const DEG = Math.PI / 180;
 const FACTORY_TRANSFORM = {
   // Baked from on-device fitting for the current GLB models.
   short: {
-    px: 0.287, py: 1.112, pz: -10.4,
-    rx: 0, ry: 0, rz: -0.0698,
-    sx: 2.476, sy: 2.916, sz: 2.482,
+    // px baked with the user's Horizontal -1.4 (0.287 + (-1.4) = -1.113).
+    px: -1.113, py: 1.112, pz: -10.4,
+    // ry baked with the user's Rotation 11° (11 * PI/180 = 0.192).
+    rx: 0, ry: 0.192, rz: -0.0698,
+    // Baked +4% from the user's preferred on-device fit (slider was 104%).
+    sx: 2.575, sy: 3.033, sz: 2.581,
   },
   long: {
     px: 0.438, py: 4.535, pz: -4.1,
     rx: 0, ry: 0, rz: 0.0175,
-    sx: 1.689, sy: 1.613, sz: 1.613,
+    // Baked +3% from the user's preferred on-device fit (slider was 103%).
+    sx: 1.740, sy: 1.661, sz: 1.661,
   },
 };
 
@@ -170,6 +174,27 @@ const OCCLUDER_FORWARD = 0.06;
 // Reference face width (cm) used to convert normalized landmark z → world depth
 // when giving the occluder its 3D curvature/tilt.
 const OCCLUDER_FACE_CM = 14;
+// How far up the forehead the depth mask extends:
+//   0   = stop at the eyebrows (forehead fully exposed → back-of-wig strands
+//         bleed through onto the forehead — the artifact we're fixing)
+//   1   = extend all the way to the hairline (forehead fully masked → strands
+//         draped behind the head are culled there)
+// Raise toward 1 if you still see back hair on the forehead; lower it if real
+// bangs start getting clipped.
+const FOREHEAD_COVER = 0.9;
+// Extra depth (cm) the forehead part of the mask is pushed AWAY from the camera,
+// so it sits BEHIND real bangs (which hang in front of the skin) yet still in
+// FRONT of the back-of-head strands. This is what lets bangs render while the
+// back hair on the forehead is culled. Increase if bangs get clipped; decrease
+// if back strands still show through the forehead.
+const FOREHEAD_PUSH_BACK = 1.5;
+// Soft halo radius (CSS px) around the WIG's OUTER edge only. Implemented as a
+// drop-shadow in the current hair color — so the wig INTERIOR stays fully sharp
+// (hair strands visible) and only the silhouette gets a soft colored fringe
+// that bleeds over the real hair at the hairline/temples and hides it. The
+// camera feed stays sharp too. Raise to cover more real hair at the edge;
+// lower for a crisper outline. 0 = off (no edge halo).
+const WIG_EDGE_BLUR_PX = 0;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function b64ToArrayBuffer(b64) {
@@ -221,14 +246,27 @@ const userOffset = {
   long:  makeOffset('long'),
 };
 
+// User-adjustable controls (set live from the RN UI), per style:
+//   userScale — size multiplier on top of the auto-fit + factory scale (1 = default)
+//   userSpinY — extra spin around the head's vertical axis, in radians (0..2π) → 360°
+//   userMove  — extra position offset (cm) added to the factory anchor:
+//                 mx = horizontal (left/right), my = vertical (up/down),
+//                 mz = depth (toward/away from the camera)
+const userScale = { short: 1, long: 1 };
+const userSpinY = { short: 0, long: 0 };
+const userMove  = { short: { mx: 0, my: 0, mz: 0 }, long: { mx: 0, my: 0, mz: 0 } };
+
 function applyTransform(style) {
   const m = models[style];
   if (!m) return;
   const b = baseTransform[style];
   const u = userOffset[style];
-  m.position.set(u.px, u.py, u.pz);
-  m.rotation.set(u.rx, u.ry, u.rz);
-  m.scale.set(b.scale * u.sx, b.scale * u.sy, b.scale * u.sz);
+  const us = userScale[style] || 1;
+  const spin = userSpinY[style] || 0;
+  const mv = userMove[style] || { mx: 0, my: 0, mz: 0 };
+  m.position.set(u.px + mv.mx, u.py + mv.my, u.pz + mv.mz);
+  m.rotation.set(u.rx, u.ry + spin, u.rz);
+  m.scale.set(b.scale * u.sx * us, b.scale * u.sy * us, b.scale * u.sz * us);
 }
 
 function resetOffset(style) {
@@ -253,6 +291,21 @@ function applyColor(root, hex) {
 
 function setVisibility(style) {
   Object.keys(models).forEach(k => { if (models[k]) models[k].visible = (k === style); });
+}
+
+// Keep the wig sharp, but give its OUTER silhouette a soft halo in the current
+// hair color so the edge blends over (and hides) the real hair. Uses stacked
+// drop-shadows — these only affect the silhouette, never the interior strands.
+function applyEdgeFeather() {
+  const c = document.getElementById('canvas');
+  if (!c) return;
+  // Keep the original light 0.8px anti-alias feather on the silhouette.
+  let f = 'blur(0.8px)';
+  if (WIG_EDGE_BLUR_PX > 0) {
+    const ds = ' drop-shadow(0 0 ' + WIG_EDGE_BLUR_PX + 'px ' + currentColor + ')';
+    f += ds + ds + ds; // stack 3 for a denser, more opaque fringe
+  }
+  c.style.filter = f;
 }
 
 // (Calibration panel removed — transforms baked in FACTORY_TRANSFORM.)
@@ -512,6 +565,10 @@ async function main() {
 
     // ── Render loop ──
     const video = document.getElementById('video');
+    // Camera feed AND wig interior stay sharp — only the wig's outer edge gets a
+    // soft colored halo (see applyEdgeFeather) to blend over the real hair.
+    video.style.filter = 'none';
+    applyEdgeFeather();
     const tmpMatrix = new THREE.Matrix4();
 
     // ── Head-pose smoothing ──
@@ -597,8 +654,17 @@ async function main() {
               for (let i = 0; i < OVAL_N; i++) {
                 const p = lm[FACE_OVAL[i]];
                 const sx = p.x * vw * cover + oX;
-                let sy = p.y * vh * cover + oY;
-                if (browSy !== null && sy < browSy) sy = browSy; // don't cover forehead
+                const trueSy = p.y * vh * cover + oY;
+                let sy = trueSy;
+                // Vertices above the eyebrow line are the forehead/hairline rim.
+                // Instead of clamping them flat to the brow (which left the
+                // forehead exposed), raise them back UP toward the hairline by
+                // FOREHEAD_COVER so the forehead gets masked too.
+                let isForehead = false;
+                if (browSy !== null && trueSy < browSy) {
+                  isForehead = true;
+                  sy = browSy + (trueSy - browSy) * FOREHEAD_COVER;
+                }
                 const ndcX = (sx / sw) * 2 - 1;
                 const ndcY = -((sy / sh) * 2 - 1);
                 // camera is at the origin → unproject + normalize gives the ray
@@ -606,7 +672,10 @@ async function main() {
                 maskRay.set(ndcX, ndcY, 0.5).unproject(camera).normalize();
                 // Landmark z is smaller (more negative) when CLOSER to camera,
                 // so move that vertex toward the camera (toward 0) accordingly.
-                const depth = baseZ - (p.z || 0) * kz;
+                // For forehead vertices, push the mask a bit deeper (away from
+                // camera) so it stays behind real bangs but in front of the
+                // back-of-head strands.
+                const depth = (baseZ - (p.z || 0) * kz) - (isForehead ? FOREHEAD_PUSH_BACK : 0);
                 const t = depth / maskRay.z;
                 const wx = maskRay.x * t, wy = maskRay.y * t, wz = maskRay.z * t;
                 const vi = (i + 1) * 3;
@@ -687,6 +756,7 @@ async function main() {
           if (vR > oR) { dh = out.height; dw = dh * vR; dx = (out.width - dw) / 2; dy = 0; }
           else { dw = out.width; dh = dw / vR; dx = 0; dy = (out.height - dh) / 2; }
           ctx.save();
+          // Camera feed stays sharp in the saved photo (no blur here).
           if (isMirror) {
             ctx.translate(out.width, 0);
             ctx.scale(-1, 1);
@@ -697,12 +767,24 @@ async function main() {
           ctx.restore();
         }
 
-        // Overlay three.js — also mirror if needed
+        // Overlay the wig: sharp interior + a soft colored edge halo that
+        // matches the live drop-shadow feather (CSS filters don't apply to
+        // drawImage, so reproduce the halo with a canvas shadow in device px).
         ctx.save();
         if (isMirror) {
           ctx.translate(out.width, 0);
           ctx.scale(-1, 1);
         }
+        if (WIG_EDGE_BLUR_PX > 0) {
+          ctx.shadowColor = currentColor;
+          ctx.shadowBlur = Math.round(WIG_EDGE_BLUR_PX * dpr);
+          // Draw a few times to build up the halo density like the stacked CSS shadows.
+          ctx.drawImage(canvas3, 0, 0, out.width, out.height);
+          ctx.drawImage(canvas3, 0, 0, out.width, out.height);
+          ctx.shadowColor = 'rgba(0,0,0,0)';
+          ctx.shadowBlur = 0;
+        }
+        // Sharp wig on top — crisp interior strands.
         ctx.drawImage(canvas3, 0, 0, out.width, out.height);
         ctx.restore();
 
@@ -744,10 +826,43 @@ function handleMessage(raw) {
   if (msg.type === 'setStyle') {
     currentStyle = msg.value;
     setVisibility(msg.value);
+    // Carry the currently selected color over to the newly shown style so
+    // switching Short ↔ Long keeps the same hair color.
+    const m = models[currentStyle];
+    if (m) applyColor(m, currentColor);
+    applyEdgeFeather();
   } else if (msg.type === 'setColor') {
     currentColor = msg.value;
     const m = models[currentStyle];
     if (m) applyColor(m, msg.value);
+    applyEdgeFeather(); // recolor the edge halo to match the new hair color
+  } else if (msg.type === 'setScale') {
+    // Size multiplier (clamped). Applies to the currently visible style.
+    const v = Math.max(0.4, Math.min(2.5, Number(msg.value) || 1));
+    userScale[currentStyle] = v;
+    applyTransform(currentStyle);
+  } else if (msg.type === 'setSpin') {
+    // 360° rotation around the head's vertical axis. value = degrees (0..360).
+    userSpinY[currentStyle] = ((Number(msg.value) || 0) * Math.PI) / 180;
+    applyTransform(currentStyle);
+  } else if (msg.type === 'setMoveX') {
+    // Horizontal move (cm). +right / -left.
+    userMove[currentStyle].mx = Math.max(-8, Math.min(8, Number(msg.value) || 0));
+    applyTransform(currentStyle);
+  } else if (msg.type === 'setMoveY') {
+    // Vertical move (cm). +up / -down.
+    userMove[currentStyle].my = Math.max(-8, Math.min(8, Number(msg.value) || 0));
+    applyTransform(currentStyle);
+  } else if (msg.type === 'setDepth') {
+    // Depth move (cm). + toward camera / - away (deeper onto the head).
+    userMove[currentStyle].mz = Math.max(-10, Math.min(10, Number(msg.value) || 0));
+    applyTransform(currentStyle);
+  } else if (msg.type === 'resetAdjust') {
+    // Reset size + spin + move/depth for the current style back to factory defaults.
+    userScale[currentStyle] = 1;
+    userSpinY[currentStyle] = 0;
+    userMove[currentStyle] = { mx: 0, my: 0, mz: 0 };
+    applyTransform(currentStyle);
   } else if (msg.type === 'flipCamera') {
     if (window.__flipCamera) window.__flipCamera();
   } else if (msg.type === 'capture') {
