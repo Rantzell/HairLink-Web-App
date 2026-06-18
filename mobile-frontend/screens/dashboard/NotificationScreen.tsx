@@ -348,11 +348,11 @@ export default function NotificationScreen({ onBack, onTrack, onOpenPost, role =
                       </View>
                     </View>
 
-                    {/* Right-side status accent dot — semantic color from getNotifStyle */}
-                    <View style={styles.rightAccent}>
-                      <View style={[styles.accentDot, { backgroundColor: style.dot }]} />
-                      {!n.is_read && <View style={[styles.unreadPill, { backgroundColor: theme.deep }]} />}
-                    </View>
+                    {!n.is_read && (
+                      <View style={styles.rightAccent}>
+                        <View style={[styles.unreadPill, { backgroundColor: theme.deep }]} />
+                      </View>
+                    )}
                   </View>
                 </ScaleButton>
               );

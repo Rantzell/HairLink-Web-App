@@ -41,6 +41,8 @@ import * as ImagePicker from 'expo-image-picker';
 
 interface CommunityScreenProps {
   onBack: () => void;
+  /** When set (e.g. from a notification tap), opens that post's detail modal on mount. */
+  openPostId?: string | null;
 }
 
 // ── topic helpers (mirror frontend/src/pages/CommunityFeed.tsx) ──
@@ -136,7 +138,7 @@ function timeAgo(iso: string | undefined | null) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function CommunityScreen({ onBack }: CommunityScreenProps) {
+export default function CommunityScreen({ onBack, openPostId }: CommunityScreenProps) {
   const insets = useSafeAreaInsets();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -154,6 +156,9 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
   const [newContent, setNewContent] = useState('');
   const [newImage, setNewImage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Image lightbox — full-screen preview when the user taps a post photo
+  const [zoomImageUri, setZoomImageUri] = useState<string | null>(null);
 
   // Comment modal state (kept from previous design — already wired to API)
   const [activePost, setActivePost] = useState<any>(null);
@@ -189,6 +194,20 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
   }, [activePost]);
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  // Deep-link from a notification → auto-open the targeted post ONCE per id.
+  // Without the consumed-ref guard, every posts refetch (polling, like, comment)
+  // would re-open the modal even after the user closed it.
+  const consumedPostIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openPostId || posts.length === 0) return;
+    if (consumedPostIdRef.current === String(openPostId)) return;
+    const target = posts.find((p: any) => String(p.id) === String(openPostId));
+    if (target) {
+      setActivePost(target);
+      consumedPostIdRef.current = String(openPostId);
+    }
+  }, [openPostId, posts]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -247,6 +266,33 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
             if (activePost?.id === post.id) setActivePost(null);
           } catch (e) {
             Alert.alert('Error', 'Failed to delete post.');
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleDeleteComment = (comment: any) => {
+    Alert.alert('Delete Comment', 'Remove this comment? This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/community/comments/${comment.id}`);
+            setPosts((curr) =>
+              curr.map((p) =>
+                p.id === activePost?.id
+                  ? { ...p, comments: (p.comments || []).filter((c: any) => c.id !== comment.id) }
+                  : p,
+              ),
+            );
+            setActivePost((curr: any) =>
+              curr ? { ...curr, comments: (curr.comments || []).filter((c: any) => c.id !== comment.id) } : curr,
+            );
+          } catch (e) {
+            Alert.alert('Error', 'Failed to delete comment.');
           }
         },
       },
@@ -443,7 +489,9 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
 
         {/* Image */}
         {imageUrl && (
-          <Image source={{ uri: imageUrl }} style={styles.postImage} resizeMode="cover" />
+          <TouchableOpacity activeOpacity={0.9} onPress={() => setZoomImageUri(imageUrl)}>
+            <Image source={{ uri: imageUrl }} style={styles.postImage} resizeMode="cover" />
+          </TouchableOpacity>
         )}
 
         {/* Footer counts + actions */}
@@ -739,10 +787,15 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
                         <Text style={styles.commentText}>{item.content}</Text>
                       </View>
                     </View>
-                    <View style={{ flexDirection: 'row', marginLeft: ms(44), marginTop: vs(4) }}>
+                    <View style={{ flexDirection: 'row', marginLeft: ms(44), marginTop: vs(4), alignItems: 'center', gap: ms(14) }}>
                       <TouchableOpacity onPress={() => setReplyingToComment(item)}>
                         <Text style={styles.replyLink}>Reply</Text>
                       </TouchableOpacity>
+                      {currentUserId && String(cu.id) === String(currentUserId) && (
+                        <TouchableOpacity onPress={() => handleDeleteComment(item)}>
+                          <Text style={[styles.replyLink, { color: '#C0392B' }]}>Delete</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                 );
@@ -793,6 +846,24 @@ export default function CommunityScreen({ onBack }: CommunityScreenProps) {
             </View>
           </KeyboardAvoidingView>
         </View>
+      </Modal>
+
+      {/* ── Image lightbox ─────────────────────────────────────── */}
+      <Modal
+        visible={!!zoomImageUri}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setZoomImageUri(null)}
+      >
+        <Pressable style={styles.lightboxBackdrop} onPress={() => setZoomImageUri(null)}>
+          {zoomImageUri && (
+            <Image source={{ uri: zoomImageUri }} style={styles.lightboxImage} resizeMode="contain" />
+          )}
+          <TouchableOpacity style={styles.lightboxClose} onPress={() => setZoomImageUri(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <Ionicons name="close" size={ms(22)} color="#fff" />
+          </TouchableOpacity>
+        </Pressable>
       </Modal>
     </View>
   );
@@ -1240,4 +1311,24 @@ const styles = StyleSheet.create({
     borderColor: '#EEEDE8',
   },
   sendBtn: { marginLeft: ms(10), padding: ms(8) },
+
+  // Image lightbox
+  lightboxBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.94)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightboxImage: { width: '100%', height: '100%' },
+  lightboxClose: {
+    position: 'absolute',
+    top: ms(48),
+    right: ms(16),
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

@@ -277,9 +277,11 @@ const MonetaryDonation: React.FC = () => {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                   <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1.5px', opacity: 0.8, fontWeight: 700 }}>BDO Unibank</span>
-                  <svg width="32" height="22" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.85 }}>
-                    <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
-                  </svg>
+                  <img
+                    src="/assets/images/bdo-logo.jpg"
+                    alt="BDO Unibank"
+                    style={{ width: '44px', height: '44px', objectFit: 'contain', borderRadius: '6px', background: '#fff', padding: '2px' }}
+                  />
                 </div>
                 <p style={{ margin: '0 0 0.5rem', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.75, fontWeight: 700 }}>Account Name</p>
                 <p style={{ margin: '0 0 1.25rem', fontSize: '1rem', fontWeight: 800 }}>Venus Alinsod</p>

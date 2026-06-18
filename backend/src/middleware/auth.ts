@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createLocalJWKSet, createRemoteJWKSet, jwtVerify, JWTPayload } from 'jose';
 import prisma from '../config/database';
 
 export interface AuthUser {
@@ -20,13 +20,52 @@ declare global {
   }
 }
 
-/**
- * Supabase JWKS endpoint — fetched ONCE at startup and cached by jose.
- * This enables fast, LOCAL RS256 JWT verification with no network call per request.
- */
-const JWKS = createRemoteJWKSet(
-  new URL(`${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`)
-);
+const JWKS_URL = `${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`;
+const remoteJWKS = createRemoteJWKSet(new URL(JWKS_URL));
+
+// Pinned local copy of the JWKS so per-request verification never needs the
+// network. The first successful fetch (with retries) populates this; until
+// then we fall back to the remote set, which also caches internally.
+let localJWKS: ReturnType<typeof createLocalJWKSet> | null = null;
+
+async function loadJWKS(): Promise<void> {
+  for (let attempt = 1; attempt <= 6; attempt++) {
+    try {
+      const res = await fetch(JWKS_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const jwks = await res.json();
+      localJWKS = createLocalJWKSet(jwks);
+      console.log(`[Auth] JWKS loaded (${jwks.keys?.length ?? 0} key(s))`);
+      return;
+    } catch (err: any) {
+      console.warn(`[Auth] JWKS fetch attempt ${attempt} failed: ${err?.message || err}`);
+      await new Promise((r) => setTimeout(r, 1000 * attempt));
+    }
+  }
+  console.error('[Auth] Could not pre-load JWKS — will rely on remote fetch per request');
+}
+
+loadJWKS();
+setInterval(loadJWKS, 60 * 60 * 1000);
+
+async function verifyJWT(token: string): Promise<JWTPayload> {
+  const issuer = `${process.env.SUPABASE_URL}/auth/v1`;
+  if (localJWKS) {
+    return (await jwtVerify(token, localJWKS, { issuer })).payload;
+  }
+  let lastErr: any;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return (await jwtVerify(token, remoteJWKS, { issuer })).payload;
+    } catch (err: any) {
+      lastErr = err;
+      const msg = String(err?.message || '');
+      if (!msg.includes('fetch failed') && err?.code !== 'ERR_JOSE_GENERIC') throw err;
+      await new Promise((r) => setTimeout(r, 200 * attempt));
+    }
+  }
+  throw lastErr;
+}
 
 // High-performance in-memory cache for authenticated users (30s TTL)
 const userCache = new Map<string, { user: AuthUser; expiry: number }>();
@@ -49,13 +88,11 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     }
 
     // Verify JWT locally
-    let payload: any;
+    let payload: JWTPayload;
     try {
-      const result = await jwtVerify(token, JWKS, {
-        issuer: `${process.env.SUPABASE_URL}/auth/v1`,
-      });
-      payload = result.payload;
+      payload = await verifyJWT(token);
     } catch (jwtErr: any) {
+      console.error('[Auth] jwtVerify failed:', jwtErr?.code, jwtErr?.message);
       res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }

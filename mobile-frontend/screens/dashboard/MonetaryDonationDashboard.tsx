@@ -156,170 +156,233 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
                 showsVerticalScrollIndicator={false}
             >
                 {/* Title Section */}
-                <Text style={styles.pageTitle}>Monetary Donation</Text>
-                <Text style={styles.pageSubtitle}>
-                    Let's boost your confidence. Request hair to support your journey of comfort and self-expression.
-                </Text>
+                <View style={styles.titleBlock}>
+                    <View style={[styles.titleChip, { backgroundColor: themePale, borderColor: themeLight }]}>
+                        <MaterialCommunityIcons name="hand-heart" size={ms(14)} color={themeColor} />
+                        <Text style={[styles.titleChipText, { color: themeColor }]}>Support our mission</Text>
+                    </View>
+                    <Text style={styles.pageTitle}>Monetary Donation</Text>
+                    <Text style={styles.pageSubtitle}>
+                        Your gift helps us turn donated hair into wigs for those who need them most.
+                    </Text>
+                </View>
 
                 {/* Guidelines Card */}
-                <View style={[styles.guidelinesCard, { borderColor: themeMedium }]}>
+                <View style={styles.guidelinesCard}>
                     <View style={styles.guideHeader}>
-                        <Ionicons name="information-circle-outline" size={ms(22)} color={themeColor} />
-                        <Text style={[styles.guideTitle, { color: themeColor }]}> Donation Guidelines</Text>
+                        <View style={[styles.guideIconWrap, { backgroundColor: themePale }]}>
+                            <Ionicons name="information-circle" size={ms(18)} color={themeColor} />
+                        </View>
+                        <Text style={styles.guideTitle}>Before you donate</Text>
                     </View>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
-                        <View style={{ flex: 1, paddingRight: 10 }}>
-                            <Text style={styles.bulletTitle}>• Prepare the following:</Text>
-                            <Text style={styles.bulletItem}>   - Proof of transfer</Text>
-                            <Text style={styles.bulletItem}>   - Account details</Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.bulletTitle}>• Wait for us to message you directly</Text>
-                            <View style={{ height: 10 }} />
-                            <Text style={styles.bulletTitle}>• Fill up the required form</Text>
-                        </View>
+                    <View style={styles.guideListCol}>
+                        {[
+                            'Take a screenshot or photo of your transfer receipt',
+                            'Make sure your full name matches your bank account',
+                            'Submit the form — we\'ll message you directly to confirm',
+                        ].map((line) => (
+                            <View key={line} style={styles.guideRow}>
+                                <View style={[styles.guideCheck, { backgroundColor: themePale }]}>
+                                    <Ionicons name="checkmark" size={ms(12)} color={themeColor} />
+                                </View>
+                                <Text style={styles.guideRowText}>{line}</Text>
+                            </View>
+                        ))}
                     </View>
                 </View>
 
-                {/* Donation Details Main Frame */}
-                <View style={[styles.detailsFrame, { borderColor: themeLight }]}>
-                    <Text style={styles.sectionTitle}>Donation details</Text>
-
-                    <Text style={styles.inputLabel}>Select an amount</Text>
+                {/* ── Amount ───────────────────────────────────────── */}
+                <View style={styles.card}>
+                    <Text style={styles.cardLabel}>Choose an amount</Text>
                     <View style={styles.amountGrid}>
-                        {amounts.map((v) => (
-                            <TouchableOpacity
-                                key={v}
-                                style={[styles.amountBtn, { borderColor: themeLight }, amount === v && { backgroundColor: themeMedium, borderColor: themeMedium }]}
-                                onPress={() => { setAmount(v); setCustomAmount(''); setNumAmount(v.toString()); }}
-                            >
-                                <Text style={[styles.amountBtnText, amount === v && styles.amountBtnTextActive]}>₱ {v}</Text>
-                            </TouchableOpacity>
-                        ))}
+                        {amounts.map((v) => {
+                            const active = amount === v;
+                            return (
+                                <TouchableOpacity
+                                    key={v}
+                                    activeOpacity={0.85}
+                                    style={[
+                                        styles.amountChip,
+                                        active && { backgroundColor: themeColor, borderColor: themeColor },
+                                    ]}
+                                    onPress={() => { setAmount(v); setCustomAmount(''); setNumAmount(v.toString()); }}
+                                >
+                                    <Text style={[styles.amountChipText, active && styles.amountChipTextActive]}>
+                                        ₱{v.toLocaleString()}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
 
-                    <Text style={styles.inputLabel}>Or Enter A Custom Amount</Text>
-                    <View style={[styles.inputBox, { borderColor: themeLight }]}>
+                    <View style={styles.customAmountWrap}>
+                        <Text style={styles.pesoPrefix}>₱</Text>
                         <TextInput
-                            style={styles.input}
+                            style={styles.customAmountInput}
                             placeholder="Enter custom amount"
-                            placeholderTextColor="#999"
+                            placeholderTextColor="#A0A4AB"
                             keyboardType="number-pad"
                             value={customAmount}
                             onChangeText={(t) => { setCustomAmount(t); setAmount(null); setNumAmount(t); }}
                         />
                     </View>
+                </View>
 
-                    {/* Payment Method Toggle */}
-                    <View style={styles.toggleRow}>
+                {/* ── Payment method ──────────────────────────────── */}
+                <View style={styles.card}>
+                    <Text style={styles.cardLabel}>Payment method</Text>
+                    <View style={styles.segmented}>
                         <TouchableOpacity
-                            style={[
-                                styles.toggleBtn,
-                                paymentMethod === 'Bank' && { backgroundColor: themeMedium, borderColor: themeMedium },
-                                { borderTopLeftRadius: 16, borderBottomLeftRadius: 16 }
-                            ]}
+                            style={[styles.segment, paymentMethod === 'Bank' && { backgroundColor: '#fff', shadowOpacity: 0.08 }]}
                             onPress={() => setPaymentMethod('Bank')}
+                            activeOpacity={0.85}
                         >
-                            <Text style={[styles.toggleBtnText, paymentMethod === 'Bank' && styles.toggleBtnTextActive]}>Bank Transfer</Text>
+                            <Ionicons name="business-outline" size={ms(15)} color={paymentMethod === 'Bank' ? themeColor : '#7A7E86'} />
+                            <Text style={[styles.segmentText, paymentMethod === 'Bank' && { color: themeColor }]}>Bank Transfer</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[
-                                styles.toggleBtn,
-                                paymentMethod === 'InstaPay' && { backgroundColor: themeMedium, borderColor: themeMedium },
-                                { borderTopRightRadius: 16, borderBottomRightRadius: 16, borderLeftWidth: 0 }
-                            ]}
+                            style={[styles.segment, paymentMethod === 'InstaPay' && { backgroundColor: '#fff', shadowOpacity: 0.08 }]}
                             onPress={() => setPaymentMethod('InstaPay')}
+                            activeOpacity={0.85}
                         >
-                            <Text style={[styles.toggleBtnText, paymentMethod === 'InstaPay' && styles.toggleBtnTextActive]}>InstaPay</Text>
+                            <Ionicons name="qr-code-outline" size={ms(15)} color={paymentMethod === 'InstaPay' ? themeColor : '#7A7E86'} />
+                            <Text style={[styles.segmentText, paymentMethod === 'InstaPay' && { color: themeColor }]}>InstaPay</Text>
                         </TouchableOpacity>
                     </View>
 
-                    {/* Billing Info block */}
-                    <Text style={styles.sectionTitle}>Billing Information</Text>
-                    <View style={[styles.billingBox, { backgroundColor: themeFrame }]}>
-                        {paymentMethod === 'Bank' ? (
-                            <View style={styles.billingCenter}>
-                                <View style={styles.bdoMock}>
-                                    <Text style={styles.bdoText}>BDO</Text>
+                    {/* Billing details */}
+                    {paymentMethod === 'Bank' ? (
+                        <View style={styles.billingCard}>
+                            <Image
+                                source={require('../../assets/bdo-logo.jpg')}
+                                style={styles.bdoLogo}
+                                resizeMode="contain"
+                            />
+                            <View style={styles.billingDivider} />
+                            <View style={styles.billingRow}>
+                                <Text style={styles.billingRowLabel}>Account Name</Text>
+                                <Text style={styles.billingRowValue}>Venus Alinsod</Text>
+                            </View>
+                            <View style={styles.billingRow}>
+                                <Text style={styles.billingRowLabel}>Account Number</Text>
+                                <Text style={[styles.billingRowValue, styles.billingMono]}>0045 6002 5684</Text>
+                            </View>
+                        </View>
+                    ) : (
+                        <View style={styles.billingCard}>
+                            <TouchableOpacity
+                                activeOpacity={0.85}
+                                onPress={() => setQrZoomOpen(true)}
+                                style={styles.qrTouch}
+                            >
+                                <Image
+                                    source={require('../../assets/instapay-qr.png')}
+                                    style={styles.qrImage}
+                                    resizeMode="contain"
+                                />
+                                <View style={styles.qrTapHint}>
+                                    <Ionicons name="expand" size={ms(11)} color="#fff" />
+                                    <Text style={styles.qrTapHintText}>Tap to zoom</Text>
                                 </View>
-                                <Text style={styles.billingName}>Venus Alinsod</Text>
-                                <Text style={styles.billingAccount}>004560025684</Text>
-                            </View>
-                        ) : (
-                            <View style={styles.billingCenter}>
-                                <TouchableOpacity
-                                    activeOpacity={0.85}
-                                    onPress={() => setQrZoomOpen(true)}
-                                    style={styles.qrTouch}
-                                >
-                                    <Image
-                                        source={require('../../assets/instapay-qr.png')}
-                                        style={styles.qrImage}
-                                        resizeMode="contain"
-                                    />
-                                    <View style={styles.qrTapHint}>
-                                        <Ionicons name="expand" size={ms(12)} color="#fff" />
-                                        <Text style={styles.qrTapHintText}>Tap to zoom</Text>
-                                    </View>
-                                </TouchableOpacity>
-                                <Text style={styles.billingName}>InstaPay QR</Text>
-                                <Text style={styles.billingAccount}>Scan to donate</Text>
-                            </View>
-                        )}
+                            </TouchableOpacity>
+                            <Text style={styles.billingName}>InstaPay QR</Text>
+                            <Text style={styles.billingHint}>Scan with any e-wallet to donate</Text>
+                        </View>
+                    )}
+                </View>
+
+                {/* ── Donor info ──────────────────────────────────── */}
+                <View style={styles.card}>
+                    <Text style={styles.cardLabel}>Donor information</Text>
+
+                    <Text style={styles.formLabel}>Full name</Text>
+                    <View style={styles.fieldBox}>
+                        <Ionicons name="person-outline" size={ms(16)} color="#7A7E86" />
+                        <TextInput
+                            style={styles.fieldInput}
+                            placeholder="As it appears on your bank account"
+                            placeholderTextColor="#A0A4AB"
+                            value={fullName}
+                            onChangeText={setFullName}
+                        />
                     </View>
 
-                    {/* Form */}
-                    <Text style={styles.formLabel}>Full Name *</Text>
-                    <Text style={styles.subtext}>Full Name must be the same on the ACCOUNT NAME used for donations</Text>
-                    <View style={[styles.inputBox, { borderColor: themeLight }]}>
-                        <TextInput style={styles.input} placeholder="Full Name" placeholderTextColor="#aaa" value={fullName} onChangeText={setFullName} />
+                    <Text style={styles.formLabel}>Amount donated</Text>
+                    <View style={styles.fieldBox}>
+                        <Text style={styles.fieldPeso}>₱</Text>
+                        <TextInput
+                            style={styles.fieldInput}
+                            placeholder="0.00"
+                            placeholderTextColor="#A0A4AB"
+                            keyboardType="numeric"
+                            value={numAmount}
+                            onChangeText={setNumAmount}
+                        />
                     </View>
 
-                    <Text style={styles.formLabel}>Amount of Donation *</Text>
-                    <View style={[styles.inputBox, { borderColor: themeLight }]}>
-                        <TextInput style={styles.input} placeholder="Ex. 10,000.00" placeholderTextColor="#aaa" keyboardType="numeric" value={numAmount} onChangeText={setNumAmount} />
-                    </View>
-
-                    <Text style={styles.formLabel}>Proof of Donation *</Text>
-                    <Text style={styles.subtext}>Kindly insert the screenshot/photo or any proof of donation</Text>
-                    <Text style={[styles.subtext, { marginBottom: 10 }]}>Upload 1 supported file: PDF, document, or image. Max 10 MB</Text>
+                    <Text style={styles.formLabel}>Proof of payment</Text>
+                    <Text style={styles.fieldHint}>Upload a screenshot of your receipt. PNG, JPG, or PDF up to 10 MB.</Text>
 
                     {proofImage ? (
-                        <View style={{ marginBottom: 24, alignSelf: 'flex-start' }}>
-                            <Image source={{ uri: proofImage }} style={{ width: 100, height: 140, borderRadius: 12, borderWidth: 1.5, borderColor: themeLight }} resizeMode="cover" />
+                        <View style={styles.proofPreviewWrap}>
+                            <Image source={{ uri: proofImage }} style={styles.proofPreviewImage} resizeMode="cover" />
                             <TouchableOpacity
-                                style={{ position: 'absolute', top: -10, right: -10, backgroundColor: '#fff', borderRadius: 15, elevation: 4 }}
+                                style={styles.proofRemove}
                                 onPress={() => setProofImage(null)}
                                 activeOpacity={0.7}
                             >
-                                <Ionicons name="close-circle" size={28} color="#e53e3e" />
+                                <Ionicons name="close" size={ms(14)} color="#fff" />
                             </TouchableOpacity>
                         </View>
                     ) : (
-                        <TouchableOpacity style={styles.uploadBtn} onPress={pickImage} activeOpacity={0.7}>
-                            <Ionicons name="cloud-upload-outline" size={20} color="#1a1a1a" />
-                            <Text style={styles.uploadBtnText}> Add File</Text>
+                        <TouchableOpacity
+                            style={[styles.uploadDropzone, { borderColor: themeLight, backgroundColor: themePale }]}
+                            onPress={pickImage}
+                            activeOpacity={0.7}
+                        >
+                            <View style={[styles.uploadIconCircle, { backgroundColor: '#fff' }]}>
+                                <Ionicons name="cloud-upload-outline" size={ms(20)} color={themeColor} />
+                            </View>
+                            <Text style={[styles.uploadDropzoneText, { color: themeColor }]}>Tap to upload proof</Text>
+                            <Text style={styles.uploadDropzoneHint}>or paste a screenshot</Text>
                         </TouchableOpacity>
                     )}
 
                     <View style={styles.anonRow}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.anonTitle}>Donate anonymously</Text>
+                            <Text style={styles.anonSub}>Your name won't appear in public lists</Text>
+                        </View>
                         <Switch
-                            trackColor={{ false: '#d1d1d1', true: themeLight }}
-                            thumbColor={anonymous ? themeMedium : '#f4f3f4'}
+                            trackColor={{ false: '#E3E5E8', true: themeLight }}
+                            thumbColor={anonymous ? themeColor : '#fff'}
+                            ios_backgroundColor="#E3E5E8"
                             onValueChange={setAnonymous}
                             value={anonymous}
                         />
-                        <Text style={styles.anonText}>Make this donation anonymous</Text>
                     </View>
-
-                    <TouchableOpacity
-                        style={[styles.donateSubmitBtn, { backgroundColor: themeMedium, shadowColor: themeColor }, loading && { opacity: 0.7 }]}
-                        onPress={handleDonate}
-                        disabled={loading}
-                    >
-                        <Text style={styles.donateSubmitText}>{loading ? 'Submitting...' : 'Donate it'}</Text>
-                    </TouchableOpacity>
                 </View>
+
+                {submitError && (
+                    <View style={styles.errorBanner}>
+                        <Ionicons name="alert-circle" size={ms(16)} color="#C0392B" />
+                        <Text style={styles.errorBannerText}>{submitError}</Text>
+                    </View>
+                )}
+
+                <TouchableOpacity
+                    style={[styles.donateSubmitBtn, { backgroundColor: themeColor, shadowColor: themeColor }, loading && { opacity: 0.7 }]}
+                    onPress={handleDonate}
+                    disabled={loading}
+                    activeOpacity={0.9}
+                >
+                    <Text style={styles.donateSubmitText}>
+                        {loading ? 'Submitting…' : numAmount ? `Donate ₱${Number(numAmount).toLocaleString()}` : 'Confirm donation'}
+                    </Text>
+                </TouchableOpacity>
+                <Text style={styles.legalText}>
+                    By donating, you agree to our terms. Your contribution is non-refundable.
+                </Text>
 
                 <View style={{ height: 60 }} />
             </ScrollView>
@@ -365,73 +428,99 @@ const styles = StyleSheet.create({
 
     header: {
         flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: ms(16), paddingTop: vs(10), paddingBottom: vs(10),
+        paddingHorizontal: ms(16), paddingTop: vs(8), paddingBottom: vs(6),
     },
-    backBtn: { width: ms(44), height: ms(44), justifyContent: 'center' },
-    logoImage: { width: ms(50), height: ms(50), resizeMode: 'contain', borderRadius: ms(25), marginLeft: ms(-6) },
+    backBtn: { width: ms(40), height: ms(40), justifyContent: 'center' },
+    logoImage: { width: ms(44), height: ms(44), resizeMode: 'contain', borderRadius: ms(22), marginLeft: ms(-4) },
     spacer: { flex: 1 },
 
-    scrollContent: { paddingHorizontal: ms(16), paddingBottom: vs(40) },
+    scrollContent: { paddingHorizontal: ms(18), paddingBottom: vs(40) },
 
-    pageTitle: { fontSize: ms(26), fontWeight: '900', color: '#1a1a1a', textAlign: 'center', marginTop: vs(10) },
-    pageSubtitle: { fontSize: ms(14), color: '#333', textAlign: 'center', marginTop: vs(10), marginBottom: vs(20), paddingHorizontal: ms(10), lineHeight: vs(20), fontWeight: '500' },
+    // Title block
+    titleBlock: { alignItems: 'center', marginTop: vs(8), marginBottom: vs(20) },
+    titleChip: {
+        flexDirection: 'row', alignItems: 'center', gap: ms(6),
+        borderWidth: 1, paddingHorizontal: ms(12), paddingVertical: vs(5),
+        borderRadius: ms(20), marginBottom: vs(12),
+    },
+    titleChipText: { fontSize: ms(11), fontWeight: '800', letterSpacing: 0.4, textTransform: 'uppercase' },
+    pageTitle: { fontSize: ms(26), fontWeight: '900', color: '#1a1a1a', textAlign: 'center', letterSpacing: -0.5 },
+    pageSubtitle: {
+        fontSize: ms(13.5), color: '#5C616B', textAlign: 'center',
+        marginTop: vs(8), paddingHorizontal: ms(20), lineHeight: vs(20), fontWeight: '500',
+    },
 
+    // Guidelines
     guidelinesCard: {
-        backgroundColor: '#fff',
-        borderWidth: 1.5,
-        borderRadius: ms(20), padding: ms(18),
-        marginBottom: vs(24),
+        backgroundColor: '#fff', borderWidth: 1, borderColor: '#EEEDEC',
+        borderRadius: ms(18), padding: ms(18), marginBottom: vs(18),
     },
-    guideHeader: { flexDirection: 'row', alignItems: 'center' },
-    guideTitle: { fontSize: ms(16), fontWeight: '800' },
-    bulletTitle: { fontSize: ms(13), fontWeight: '800', color: '#555', marginTop: vs(6), marginBottom: vs(2) },
-    bulletItem: { fontSize: ms(12), color: '#666', marginBottom: vs(2) },
+    guideHeader: { flexDirection: 'row', alignItems: 'center', gap: ms(10), marginBottom: vs(12) },
+    guideIconWrap: {
+        width: ms(32), height: ms(32), borderRadius: ms(16),
+        alignItems: 'center', justifyContent: 'center',
+    },
+    guideTitle: { fontSize: ms(14.5), fontWeight: '800', color: '#1a1a1a' },
+    guideListCol: { gap: vs(10) },
+    guideRow: { flexDirection: 'row', alignItems: 'flex-start', gap: ms(10) },
+    guideCheck: {
+        width: ms(20), height: ms(20), borderRadius: ms(10),
+        alignItems: 'center', justifyContent: 'center', marginTop: vs(1),
+    },
+    guideRowText: { flex: 1, fontSize: ms(13), color: '#444851', lineHeight: vs(19), fontWeight: '500' },
 
-    detailsFrame: {
-        backgroundColor: '#fff',
-        borderWidth: 1.5,
-        borderRadius: ms(30), padding: ms(20),
-        marginBottom: vs(20),
+    // Cards
+    card: {
+        backgroundColor: '#fff', borderWidth: 1, borderColor: '#EEEDEC',
+        borderRadius: ms(18), padding: ms(18), marginBottom: vs(14),
     },
-    sectionTitle: { fontSize: ms(20), fontWeight: '900', color: '#1a1a1a', marginBottom: vs(16) },
+    cardLabel: {
+        fontSize: ms(11), fontWeight: '900', color: '#7A7E86',
+        letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: vs(12),
+    },
 
-    inputLabel: { fontSize: ms(14), fontWeight: '800', color: '#444', marginBottom: vs(8) },
-    amountGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: ms(10), marginBottom: vs(16) },
-    amountBtn: {
-        borderWidth: 1.5, borderRadius: ms(12),
-        paddingVertical: vs(12), paddingHorizontal: ms(16),
-        flexBasis: '47%', alignItems: 'center'
+    // Amount chips
+    amountGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: ms(8), marginBottom: vs(12) },
+    amountChip: {
+        borderWidth: 1.5, borderColor: '#E6E5E3', borderRadius: ms(12),
+        paddingVertical: vs(11), paddingHorizontal: ms(14),
+        flexBasis: '31%', flexGrow: 1, alignItems: 'center', backgroundColor: '#fff',
     },
-    amountBtnText: { fontSize: ms(18), color: '#888', fontWeight: '800' },
-    amountBtnTextActive: { color: '#fff' },
+    amountChipText: { fontSize: ms(15), color: '#1a1a1a', fontWeight: '800' },
+    amountChipTextActive: { color: '#fff' },
 
-    inputBox: {
-        borderWidth: 1.5, borderRadius: ms(12),
-        height: vs(52), paddingHorizontal: ms(16), justifyContent: 'center',
-        marginBottom: vs(20),
+    // Custom amount with peso prefix
+    customAmountWrap: {
+        flexDirection: 'row', alignItems: 'center',
+        borderWidth: 1.5, borderColor: '#E6E5E3', borderRadius: ms(12),
+        paddingHorizontal: ms(14), height: vs(50), backgroundColor: '#FAFAF9',
     },
-    input: { fontSize: ms(16), color: '#1a1a1a', flex: 1 },
+    pesoPrefix: { fontSize: ms(17), color: '#7A7E86', fontWeight: '800', marginRight: ms(8) },
+    customAmountInput: { flex: 1, fontSize: ms(15), color: '#1a1a1a', fontWeight: '700', paddingVertical: 0 },
 
-    toggleRow: { flexDirection: 'row', alignSelf: 'flex-end', marginBottom: vs(24), marginTop: vs(10) },
-    toggleBtn: {
-        borderWidth: 1, borderColor: '#555',
-        paddingVertical: vs(10), paddingHorizontal: ms(16),
-        minWidth: ms(110), alignItems: 'center'
+    // Segmented toggle
+    segmented: {
+        flexDirection: 'row', backgroundColor: '#F3F2F0',
+        borderRadius: ms(12), padding: ms(4), marginBottom: vs(16),
     },
-    toggleBtnText: { fontSize: ms(14), fontWeight: '700', color: '#1a1a1a' },
-    toggleBtnTextActive: { color: '#fff' },
+    segment: {
+        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: ms(6), paddingVertical: vs(10), borderRadius: ms(10),
+        shadowColor: '#000', shadowOpacity: 0, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+    },
+    segmentText: { fontSize: ms(13), fontWeight: '800', color: '#7A7E86' },
 
-    billingBox: {
-        borderRadius: ms(20),
-        padding: ms(24), paddingVertical: vs(36), marginBottom: vs(24),
-        alignItems: 'center', justifyContent: 'center'
+    // Billing card
+    billingCard: {
+        backgroundColor: '#FAFAF9', borderWidth: 1, borderColor: '#EEEDEC',
+        borderRadius: ms(14), padding: ms(18), alignItems: 'center',
     },
-    billingCenter: { alignItems: 'center' },
-    bdoMock: {
-        width: ms(120), height: ms(120), backgroundColor: '#005b9f',
-        justifyContent: 'center', alignItems: 'center', marginBottom: vs(16)
-    },
-    bdoText: { color: '#f7c800', fontSize: ms(40), fontWeight: '900', fontStyle: 'italic' },
+    bdoLogo: { width: ms(96), height: ms(96), borderRadius: ms(10) },
+    billingDivider: { width: '100%', height: 1, backgroundColor: '#EEEDEC', marginVertical: vs(14) },
+    billingRow: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: vs(6) },
+    billingRowLabel: { fontSize: ms(12), color: '#7A7E86', fontWeight: '700' },
+    billingRowValue: { fontSize: ms(14), color: '#1a1a1a', fontWeight: '800' },
+    billingMono: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', letterSpacing: 1 },
     qrTouch: {
         width: ms(180),
         height: ms(180),
@@ -491,28 +580,80 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginTop: vs(10),
     },
-    billingName: { fontSize: ms(18), fontWeight: '900', color: '#1a1a1a', marginBottom: vs(4) },
-    billingAccount: { fontSize: ms(16), fontWeight: '900', color: '#1a1a1a' },
+    billingName: { fontSize: ms(15), fontWeight: '900', color: '#1a1a1a', marginTop: vs(10) },
+    billingHint: { fontSize: ms(12), color: '#7A7E86', fontWeight: '600', marginTop: vs(2) },
 
-    formLabel: { fontSize: ms(14), fontWeight: '800', color: '#444', marginTop: vs(4), marginBottom: vs(2) },
-    subtext: { fontSize: ms(11), color: '#888', marginBottom: vs(8), lineHeight: vs(16) },
-
-    uploadBtn: {
-        flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
-        borderWidth: 1.5, borderColor: '#1a1a1a', borderRadius: ms(12),
-        paddingVertical: vs(10), paddingHorizontal: ms(16), marginBottom: vs(24)
+    // Form fields
+    formLabel: { fontSize: ms(13), fontWeight: '800', color: '#1a1a1a', marginTop: vs(8), marginBottom: vs(6) },
+    fieldHint: { fontSize: ms(12), color: '#7A7E86', marginBottom: vs(10), lineHeight: vs(17), fontWeight: '500' },
+    fieldBox: {
+        flexDirection: 'row', alignItems: 'center', gap: ms(10),
+        borderWidth: 1.5, borderColor: '#E6E5E3', borderRadius: ms(12),
+        paddingHorizontal: ms(14), height: vs(50), backgroundColor: '#FAFAF9',
+        marginBottom: vs(8),
     },
-    uploadBtnText: { fontSize: ms(14), fontWeight: '700', color: '#1a1a1a' },
+    fieldInput: { flex: 1, fontSize: ms(14), color: '#1a1a1a', fontWeight: '600', paddingVertical: 0 },
+    fieldPeso: { fontSize: ms(17), color: '#7A7E86', fontWeight: '800' },
 
-    anonRow: { flexDirection: 'row', alignItems: 'center', marginBottom: vs(30) },
-    anonText: { fontSize: ms(14), fontWeight: '800', color: '#444', marginLeft: ms(10) },
+    // Upload
+    uploadDropzone: {
+        borderWidth: 1.5, borderStyle: 'dashed', borderRadius: ms(14),
+        paddingVertical: vs(22), paddingHorizontal: ms(16),
+        alignItems: 'center', justifyContent: 'center', marginBottom: vs(16),
+    },
+    uploadIconCircle: {
+        width: ms(40), height: ms(40), borderRadius: ms(20),
+        alignItems: 'center', justifyContent: 'center', marginBottom: vs(8),
+    },
+    uploadDropzoneText: { fontSize: ms(13.5), fontWeight: '800' },
+    uploadDropzoneHint: { fontSize: ms(11.5), color: '#7A7E86', marginTop: vs(2), fontWeight: '500' },
 
+    proofPreviewWrap: {
+        alignSelf: 'flex-start', marginBottom: vs(16),
+        borderRadius: ms(12), overflow: 'visible',
+    },
+    proofPreviewImage: {
+        width: ms(110), height: ms(150),
+        borderRadius: ms(12), borderWidth: 1, borderColor: '#E6E5E3',
+    },
+    proofRemove: {
+        position: 'absolute', top: -ms(8), right: -ms(8),
+        width: ms(26), height: ms(26), borderRadius: ms(13),
+        backgroundColor: '#1a1a1a', alignItems: 'center', justifyContent: 'center',
+        shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 4,
+    },
+
+    // Anonymous switch row
+    anonRow: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: '#FAFAF9', borderRadius: ms(12),
+        borderWidth: 1, borderColor: '#EEEDEC',
+        padding: ms(14), marginTop: vs(4),
+    },
+    anonTitle: { fontSize: ms(13.5), fontWeight: '800', color: '#1a1a1a', marginBottom: vs(2) },
+    anonSub: { fontSize: ms(11.5), color: '#7A7E86', fontWeight: '500' },
+
+    // Error
+    errorBanner: {
+        flexDirection: 'row', alignItems: 'center', gap: ms(8),
+        backgroundColor: '#FEE9E5', borderWidth: 1, borderColor: '#F8C9C0',
+        paddingHorizontal: ms(14), paddingVertical: vs(11),
+        borderRadius: ms(12), marginBottom: vs(12),
+    },
+    errorBannerText: { flex: 1, fontSize: ms(12.5), color: '#C0392B', fontWeight: '700' },
+
+    // Submit
     donateSubmitBtn: {
-        borderRadius: ms(24), height: vs(56),
+        borderRadius: ms(16), height: vs(54),
         justifyContent: 'center', alignItems: 'center',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3, shadowRadius: 8, elevation: 5,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.22, shadowRadius: 14, elevation: 6,
+        marginTop: vs(4),
     },
-    donateSubmitText: { color: '#fff', fontSize: ms(20), fontWeight: '900' },
+    donateSubmitText: { color: '#fff', fontSize: ms(15.5), fontWeight: '900', letterSpacing: 0.3 },
+    legalText: {
+        fontSize: ms(11), color: '#9CA0A6', textAlign: 'center',
+        marginTop: vs(12), paddingHorizontal: ms(20), lineHeight: vs(15), fontWeight: '500',
+    },
 });
 

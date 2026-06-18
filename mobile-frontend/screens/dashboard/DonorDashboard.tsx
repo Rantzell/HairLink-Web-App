@@ -122,6 +122,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
   const [showProfile, setShowProfile] = useState(false);
   const [showAR, setShowAR] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
+  const [communityPostId, setCommunityPostId] = useState<string | null>(null);
   const [showHairCare, setShowHairCare] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
   const [starPoints, setStarPoints] = useState(0);
@@ -268,8 +269,9 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
             setShowNotifications(false);
             setShowHistory(true);
           }}
-          onOpenPost={() => {
+          onOpenPost={(postId: string) => {
             setShowNotifications(false);
+            setCommunityPostId(postId);
             setShowCommunity(true);
           }}
           role="Donor"
@@ -326,7 +328,10 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         entering={FadeInUp.springify().damping(15).stiffness(120)}
         exiting={FadeOut.duration(200)}
       >
-        <CommunityScreen onBack={() => setShowCommunity(false)} />
+        <CommunityScreen
+          onBack={() => { setShowCommunity(false); setCommunityPostId(null); }}
+          openPostId={communityPostId}
+        />
       </Animated.View>
     );
   }

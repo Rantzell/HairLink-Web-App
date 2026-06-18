@@ -34,21 +34,37 @@ export async function uploadFile(
   const ext = path.extname(file.originalname) || '.jpg';
   const fileName = `${folder}/${uuidv4()}${ext}`;
 
-  const { error } = await supabaseAdmin.storage
-    .from(bucket)
-    .upload(fileName, file.buffer, {
-      contentType: file.mimetype,
-      upsert: false,
-    });
+  const MAX_ATTEMPTS = 4;
+  let lastError: any;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const { error } = await supabaseAdmin.storage
+      .from(bucket)
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
 
-  console.log(`[Storage] Upload attempt: bucket=${bucket}, path=${fileName}, type=${file.mimetype}, success=${!error}`);
+    if (!error) {
+      console.log(`[Storage] Upload OK: bucket=${bucket}, path=${fileName}, attempt=${attempt}`);
+      return fileName;
+    }
 
-  if (error) {
-    console.error('[Storage] Upload error:', error);
-    throw Object.assign(new Error('File upload failed'), { status: 500 });
+    lastError = error;
+    const cause: any = (error as any)?.originalError?.cause || (error as any)?.cause;
+    const transient =
+      cause?.code === 'ECONNRESET' ||
+      cause?.code === 'ETIMEDOUT' ||
+      cause?.code === 'ENOTFOUND' ||
+      String((error as any)?.message || '').includes('fetch failed');
+
+    console.warn(`[Storage] Upload attempt ${attempt}/${MAX_ATTEMPTS} failed:`, (error as any)?.message, cause?.code || '');
+
+    if (!transient) break;
+    await new Promise((r) => setTimeout(r, 500 * attempt));
   }
 
-  return fileName;
+  console.error('[Storage] Upload giving up:', lastError);
+  throw Object.assign(new Error('File upload failed'), { status: 500 });
 }
 
 /**

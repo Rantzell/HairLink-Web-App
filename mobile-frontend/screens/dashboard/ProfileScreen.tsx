@@ -25,6 +25,12 @@ import Animated, {
     FadeInDown,
     FadeInUp,
     Layout,
+    useSharedValue,
+    useAnimatedStyle,
+    withRepeat,
+    withTiming,
+    withSequence,
+    Easing,
 } from 'react-native-reanimated';
 import api from '../../lib/api';
 import { supabase } from '../../lib/supabase';
@@ -59,6 +65,91 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const [otherReferralCode, setOtherReferralCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [showReferralSuccess, setShowReferralSuccess] = useState(false);
+
+    // Delete Account State
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Change Password State
+    const [showChangePassword, setShowChangePassword] = useState(false);
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showOldPw, setShowOldPw] = useState(false);
+    const [showNewPw, setShowNewPw] = useState(false);
+    const [showConfirmPw, setShowConfirmPw] = useState(false);
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+    const doChangePassword = async () => {
+        if (!oldPassword) {
+            Alert.alert('Missing field', 'Please enter your current password.');
+            return;
+        }
+        if (newPassword.length < 8) {
+            Alert.alert('Weak password', 'New password must be at least 8 characters.');
+            return;
+        }
+        if (!/[0-9]/.test(newPassword)) {
+            Alert.alert('Weak password', 'New password must contain a number.');
+            return;
+        }
+        if (!/[!@#$%^&*(),.?":{}|<>_]/.test(newPassword)) {
+            Alert.alert('Weak password', 'New password must contain a symbol.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            Alert.alert('Mismatch', 'Passwords do not match.');
+            return;
+        }
+
+        setIsChangingPassword(true);
+        try {
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email,
+                password: oldPassword,
+            });
+            if (signInError) {
+                Alert.alert('Incorrect password', 'Your current password is wrong.');
+                return;
+            }
+
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            if (error) {
+                Alert.alert('Could not update password', error.message || 'Please try again.');
+                return;
+            }
+
+            setShowChangePassword(false);
+            setOldPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+            Alert.alert('Password changed', 'Your password has been updated successfully.');
+        } catch (err: any) {
+            Alert.alert('Error', err?.message || 'An unexpected error occurred.');
+        } finally {
+            setIsChangingPassword(false);
+        }
+    };
+
+    const doDeleteAccount = async () => {
+        if (deleteConfirmText !== 'DELETE') return;
+        setIsDeleting(true);
+        try {
+            await api.delete('/auth/account');
+            await supabase.auth.signOut();
+            setShowDeleteConfirm(false);
+            setDeleteConfirmText('');
+            onLogout();
+        } catch (err: any) {
+            Alert.alert(
+                'Could not delete account',
+                err?.response?.data?.message || err?.message || 'Please try again.',
+            );
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     const insets = useSafeAreaInsets();
 
@@ -209,11 +300,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     // hero gradient + a few labels, but it is no longer user-mutable.
 
     if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#FF1493" />
-            </View>
-        );
+        return <ProfileSkeleton role={role} insetsTop={insets.top} />;
     }
 
     return (
@@ -428,10 +515,38 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                         </Animated.View>
                     )}
 
+                    {/* Change Password Action */}
+                    <TouchableOpacity
+                        style={styles.changePwBtn}
+                        onPress={() => {
+                            setOldPassword(''); setNewPassword(''); setConfirmPassword('');
+                            setShowOldPw(false); setShowNewPw(false); setShowConfirmPw(false);
+                            setShowChangePassword(true);
+                        }}
+                    >
+                        <View style={styles.changePwIcon}>
+                            <Feather name="lock" size={ms(18)} color="#1D4ED8" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.changePwTitle}>Change Password</Text>
+                            <Text style={styles.changePwSub}>Update the password used to sign in</Text>
+                        </View>
+                        <Feather name="chevron-right" size={ms(20)} color="#94A3B8" />
+                    </TouchableOpacity>
+
                     {/* Logout Action */}
                     <TouchableOpacity style={styles.premiumLogout} onPress={onLogout}>
                         <Feather name="log-out" size={ms(18)} color="#C0392B" />
                         <Text style={styles.logoutText}>Sign Out Account</Text>
+                    </TouchableOpacity>
+
+                    {/* Delete Account Action */}
+                    <TouchableOpacity
+                        style={styles.deleteAccountBtn}
+                        onPress={() => { setDeleteConfirmText(''); setShowDeleteConfirm(true); }}
+                    >
+                        <Feather name="trash-2" size={ms(16)} color="#7F1D1D" />
+                        <Text style={styles.deleteAccountText}>Delete My Account</Text>
                     </TouchableOpacity>
 
                     <View style={{ height: 100 }} />
@@ -467,6 +582,163 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                         >
                             <Text style={styles.referralModalBtnText}>Awesome!</Text>
                         </TouchableOpacity>
+                    </Animated.View>
+                </View>
+            </Modal>
+
+            {/* ── Change Password modal ──────────────────────────────── */}
+            <Modal
+                visible={showChangePassword}
+                transparent
+                animationType="fade"
+                onRequestClose={() => { if (!isChangingPassword) setShowChangePassword(false); }}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    style={styles.referralModalBackdrop}
+                >
+                    <Animated.View entering={FadeInUp.springify().damping(15)} style={styles.changePwCard}>
+                        <View style={styles.changePwCardHeader}>
+                            <View style={styles.changePwCardIcon}>
+                                <Feather name="lock" size={ms(20)} color="#1D4ED8" />
+                            </View>
+                            <Text style={styles.changePwCardTitle}>Change Password</Text>
+                        </View>
+
+                        <Text style={styles.changePwFieldLabel}>Current password</Text>
+                        <View style={styles.changePwField}>
+                            <TextInput
+                                value={oldPassword}
+                                onChangeText={setOldPassword}
+                                placeholder="Enter current password"
+                                placeholderTextColor="#9CA3AF"
+                                secureTextEntry={!showOldPw}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                editable={!isChangingPassword}
+                                style={styles.changePwInput}
+                            />
+                            <TouchableOpacity onPress={() => setShowOldPw((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                <Feather name={showOldPw ? 'eye-off' : 'eye'} size={ms(16)} color="#6B7280" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={styles.changePwFieldLabel}>New password</Text>
+                        <View style={styles.changePwField}>
+                            <TextInput
+                                value={newPassword}
+                                onChangeText={setNewPassword}
+                                placeholder="At least 8 chars, 1 number, 1 symbol"
+                                placeholderTextColor="#9CA3AF"
+                                secureTextEntry={!showNewPw}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                editable={!isChangingPassword}
+                                style={styles.changePwInput}
+                            />
+                            <TouchableOpacity onPress={() => setShowNewPw((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                <Feather name={showNewPw ? 'eye-off' : 'eye'} size={ms(16)} color="#6B7280" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={styles.changePwFieldLabel}>Confirm new password</Text>
+                        <View style={styles.changePwField}>
+                            <TextInput
+                                value={confirmPassword}
+                                onChangeText={setConfirmPassword}
+                                placeholder="Repeat new password"
+                                placeholderTextColor="#9CA3AF"
+                                secureTextEntry={!showConfirmPw}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                editable={!isChangingPassword}
+                                style={styles.changePwInput}
+                            />
+                            <TouchableOpacity onPress={() => setShowConfirmPw((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                <Feather name={showConfirmPw ? 'eye-off' : 'eye'} size={ms(16)} color="#6B7280" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.deleteModalActions}>
+                            <TouchableOpacity
+                                style={[styles.deleteModalCancel, isChangingPassword && { opacity: 0.5 }]}
+                                onPress={() => setShowChangePassword(false)}
+                                disabled={isChangingPassword}
+                            >
+                                <Text style={styles.deleteModalCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.changePwConfirm, isChangingPassword && { opacity: 0.6 }]}
+                                onPress={doChangePassword}
+                                disabled={isChangingPassword}
+                            >
+                                {isChangingPassword ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.deleteModalConfirmText}>Update Password</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+                </KeyboardAvoidingView>
+            </Modal>
+
+            {/* ── Delete Account confirmation modal ───────────────────── */}
+            <Modal
+                visible={showDeleteConfirm}
+                transparent
+                animationType="fade"
+                onRequestClose={() => { if (!isDeleting) { setShowDeleteConfirm(false); setDeleteConfirmText(''); } }}
+            >
+                <View style={styles.referralModalBackdrop}>
+                    <Animated.View entering={FadeInUp.springify().damping(15)} style={styles.deleteModalCard}>
+                        <View style={styles.deleteModalIconWrap}>
+                            <Feather name="alert-triangle" size={ms(32)} color="#DC2626" />
+                        </View>
+                        <Text style={styles.deleteModalTitle}>Delete account?</Text>
+                        <Text style={styles.deleteModalBody}>
+                            This action is <Text style={{ fontWeight: '900' }}>irreversible</Text>. Your account,
+                            donations, history, and data will be permanently deleted.
+                        </Text>
+                        <Text style={styles.deleteModalHint}>
+                            Type <Text style={{ fontWeight: '900', color: '#DC2626' }}>DELETE</Text> to confirm.
+                        </Text>
+                        <TextInput
+                            value={deleteConfirmText}
+                            onChangeText={setDeleteConfirmText}
+                            placeholder="DELETE"
+                            placeholderTextColor="#9CA3AF"
+                            autoCapitalize="characters"
+                            autoCorrect={false}
+                            editable={!isDeleting}
+                            style={[
+                                styles.deleteModalInput,
+                                { borderColor: deleteConfirmText === 'DELETE' ? '#DC2626' : '#E5E7EB' },
+                            ]}
+                        />
+                        <View style={styles.deleteModalActions}>
+                            <TouchableOpacity
+                                style={[styles.deleteModalCancel, isDeleting && { opacity: 0.5 }]}
+                                onPress={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }}
+                                disabled={isDeleting}
+                            >
+                                <Text style={styles.deleteModalCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.deleteModalConfirm,
+                                    (deleteConfirmText !== 'DELETE' || isDeleting) && { opacity: 0.5 },
+                                ]}
+                                onPress={doDeleteAccount}
+                                disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+                            >
+                                {isDeleting ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.deleteModalConfirmText}>Delete Forever</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                     </Animated.View>
                 </View>
             </Modal>
@@ -507,6 +779,92 @@ function InfoRow({ icon, label, value, isEdit, onChange, keyboardType, readOnly,
                         {value || `Add ${label}`}
                     </Text>
                 )}
+            </View>
+        </View>
+    );
+}
+
+// ── Loading skeleton ────────────────────────────────────────────
+// A shimmering placeholder that mirrors the profile layout so the
+// transition into the loaded view feels seamless.
+function SkeletonBlock({ width, height, radius = 8, style }: { width: number | string; height: number; radius?: number; style?: any }) {
+    const opacity = useSharedValue(0.55);
+    useEffect(() => {
+        opacity.value = withRepeat(
+            withSequence(
+                withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+                withTiming(0.55, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+            ),
+            -1,
+            false,
+        );
+    }, [opacity]);
+    const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+    return (
+        <Animated.View
+            style={[
+                { width: width as any, height, borderRadius: radius, backgroundColor: '#E6E5E3' },
+                animatedStyle,
+                style,
+            ]}
+        />
+    );
+}
+
+function ProfileSkeleton({ role, insetsTop }: { role: 'Donor' | 'Recipient'; insetsTop: number }) {
+    const themePale = role === 'Recipient' ? '#F5EEF8' : '#FFF0F5';
+    return (
+        <View style={[styles.skeletonContainer, { paddingTop: insetsTop }]}>
+            {/* Top bar */}
+            <View style={styles.skeletonTopBar}>
+                <SkeletonBlock width={36} height={36} radius={18} />
+                <SkeletonBlock width={120} height={18} radius={6} />
+                <SkeletonBlock width={36} height={36} radius={18} />
+            </View>
+
+            {/* Hero card */}
+            <View style={[styles.skeletonHero, { backgroundColor: themePale }]}>
+                <SkeletonBlock width={104} height={104} radius={52} style={{ alignSelf: 'center' }} />
+                <View style={{ alignItems: 'center', marginTop: vs(14), gap: vs(8) }}>
+                    <SkeletonBlock width={180} height={20} radius={6} />
+                    <SkeletonBlock width={140} height={14} radius={5} />
+                </View>
+                <View style={styles.skeletonStatsRow}>
+                    <View style={styles.skeletonStatCol}>
+                        <SkeletonBlock width={40} height={20} radius={6} />
+                        <SkeletonBlock width={50} height={11} radius={4} style={{ marginTop: vs(6) }} />
+                    </View>
+                    <View style={styles.skeletonStatDivider} />
+                    <View style={styles.skeletonStatCol}>
+                        <SkeletonBlock width={40} height={20} radius={6} />
+                        <SkeletonBlock width={50} height={11} radius={4} style={{ marginTop: vs(6) }} />
+                    </View>
+                    <View style={styles.skeletonStatDivider} />
+                    <View style={styles.skeletonStatCol}>
+                        <SkeletonBlock width={40} height={20} radius={6} />
+                        <SkeletonBlock width={50} height={11} radius={4} style={{ marginTop: vs(6) }} />
+                    </View>
+                </View>
+            </View>
+
+            {/* Info card */}
+            <View style={styles.skeletonCard}>
+                <SkeletonBlock width={100} height={11} radius={4} style={{ marginBottom: vs(14) }} />
+                {[0, 1, 2, 3].map((i) => (
+                    <View key={i} style={styles.skeletonRow}>
+                        <SkeletonBlock width={28} height={28} radius={14} />
+                        <View style={{ flex: 1, gap: vs(6), marginLeft: ms(12) }}>
+                            <SkeletonBlock width={'40%'} height={11} radius={4} />
+                            <SkeletonBlock width={'75%'} height={15} radius={5} />
+                        </View>
+                    </View>
+                ))}
+            </View>
+
+            {/* Action tiles */}
+            <View style={styles.skeletonActionsRow}>
+                <SkeletonBlock width={'48%'} height={68} radius={16} />
+                <SkeletonBlock width={'48%'} height={68} radius={16} />
             </View>
         </View>
     );
@@ -789,5 +1147,115 @@ const styles = StyleSheet.create({
         borderWidth: 2, borderColor: '#FEE2E2', marginBottom: vs(20)
     },
     logoutText: { color: '#C0392B', fontWeight: '900', fontSize: ms(16), marginLeft: ms(12), textTransform: 'uppercase', letterSpacing: 1 },
+
+    // Delete account
+    deleteAccountBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        paddingVertical: ms(14), borderRadius: ms(14),
+        marginBottom: vs(20),
+    },
+    deleteAccountText: {
+        color: '#7F1D1D', fontWeight: '700', fontSize: ms(13),
+        marginLeft: ms(8), textDecorationLine: 'underline',
+    },
+    deleteModalCard: {
+        backgroundColor: '#fff', borderRadius: ms(20), padding: ms(22),
+        width: '100%', maxWidth: ms(360), alignItems: 'center',
+        shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 12,
+    },
+    deleteModalIconWrap: {
+        width: ms(56), height: ms(56), borderRadius: ms(28),
+        backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center',
+        marginBottom: vs(12),
+    },
+    deleteModalTitle: { fontSize: ms(18), fontWeight: '900', color: '#111827', marginBottom: vs(8) },
+    deleteModalBody: { fontSize: ms(13), color: '#4B5563', textAlign: 'center', lineHeight: ms(19), marginBottom: vs(14) },
+    deleteModalHint: { fontSize: ms(12), color: '#6B7280', marginBottom: vs(8), alignSelf: 'flex-start' },
+    deleteModalInput: {
+        width: '100%', borderWidth: 1.5, borderRadius: ms(12),
+        paddingHorizontal: ms(14), paddingVertical: ms(12),
+        fontSize: ms(15), fontWeight: '700', letterSpacing: 1,
+        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+        color: '#111827', marginBottom: vs(16),
+    },
+    deleteModalActions: { flexDirection: 'row', gap: ms(10), width: '100%' },
+    deleteModalCancel: {
+        flex: 1, paddingVertical: ms(13), borderRadius: ms(12),
+        backgroundColor: '#F3F4F6', alignItems: 'center',
+    },
+    deleteModalCancelText: { color: '#374151', fontWeight: '800', fontSize: ms(14) },
+    deleteModalConfirm: {
+        flex: 1, paddingVertical: ms(13), borderRadius: ms(12),
+        backgroundColor: '#DC2626', alignItems: 'center',
+    },
+    deleteModalConfirmText: { color: '#fff', fontWeight: '900', fontSize: ms(14) },
+
+    // Change password row
+    changePwBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: ms(12),
+        backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#DBEAFE',
+        padding: ms(16), borderRadius: ms(20), marginBottom: vs(12),
+    },
+    changePwIcon: {
+        width: ms(40), height: ms(40), borderRadius: ms(20),
+        backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center',
+    },
+    changePwTitle: { color: '#1E3A8A', fontWeight: '900', fontSize: ms(14.5), letterSpacing: 0.3 },
+    changePwSub: { color: '#3B82F6', fontWeight: '600', fontSize: ms(11.5), marginTop: 2 },
+
+    // Change password modal
+    changePwCard: {
+        backgroundColor: '#fff', borderRadius: ms(20), padding: ms(20),
+        width: '100%', maxWidth: ms(380),
+        shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 12,
+    },
+    changePwCardHeader: { flexDirection: 'row', alignItems: 'center', gap: ms(10), marginBottom: vs(14) },
+    changePwCardIcon: {
+        width: ms(40), height: ms(40), borderRadius: ms(20),
+        backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center',
+    },
+    changePwCardTitle: { fontSize: ms(17), fontWeight: '900', color: '#111827' },
+    changePwFieldLabel: { fontSize: ms(12), fontWeight: '800', color: '#374151', marginBottom: vs(6), marginTop: vs(6) },
+    changePwField: {
+        flexDirection: 'row', alignItems: 'center', gap: ms(8),
+        borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: ms(12),
+        paddingHorizontal: ms(12), height: vs(46), backgroundColor: '#F9FAFB',
+        marginBottom: vs(4),
+    },
+    changePwInput: { flex: 1, fontSize: ms(14), color: '#111827', paddingVertical: 0, fontWeight: '600' },
+    changePwConfirm: {
+        flex: 1, paddingVertical: ms(13), borderRadius: ms(12),
+        backgroundColor: '#2563EB', alignItems: 'center',
+    },
+
+    // Skeleton
+    skeletonContainer: { flex: 1, backgroundColor: '#FAFAF9', paddingHorizontal: ms(16) },
+    skeletonTopBar: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingVertical: vs(10), marginBottom: vs(10),
+    },
+    skeletonHero: {
+        borderRadius: ms(20), padding: ms(20), paddingBottom: vs(20),
+        marginBottom: vs(14),
+    },
+    skeletonStatsRow: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around',
+        marginTop: vs(20), paddingTop: vs(16),
+        borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)',
+    },
+    skeletonStatCol: { alignItems: 'center', flex: 1 },
+    skeletonStatDivider: { width: 1, height: vs(28), backgroundColor: 'rgba(0,0,0,0.08)' },
+    skeletonCard: {
+        backgroundColor: '#fff', borderWidth: 1, borderColor: '#EEEDEC',
+        borderRadius: ms(18), padding: ms(16), marginBottom: vs(14),
+    },
+    skeletonRow: {
+        flexDirection: 'row', alignItems: 'center',
+        paddingVertical: vs(12),
+        borderTopWidth: 1, borderTopColor: '#F4F1ED',
+    },
+    skeletonActionsRow: {
+        flexDirection: 'row', justifyContent: 'space-between',
+    },
 });
 
