@@ -19,17 +19,18 @@ export const exportPDF = async (elementId: string, filename: string, options: an
     }
 
     // Clone element configuration and apply options
-    const opt = {
+    const opt: any = {
       margin:       options.hasOwnProperty('margin') ? options.margin : 10,
       filename:     filename.endsWith('.pdf') ? filename : `${filename}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { 
-        scale: 2, 
-        useCORS: true, 
+      html2canvas:  {
+        scale: 2,
+        useCORS: true,
         ignoreElements: (el: HTMLElement) => el.classList?.contains('no-print') || el.tagName === 'BUTTON' || el.classList?.contains('hair-stock-print-btn') || el.classList?.contains('wig-stock-print-btn') || el.classList?.contains('matching-print-btn') || el.classList?.contains('reports-print-btn'),
-        ...options.html2canvas 
+        ...options.html2canvas
       },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait', ...options.jsPDF }
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait', ...options.jsPDF },
+      pagebreak:    options.pagebreak || { mode: ['css', 'legacy'] }
     };
 
     await (window as any).html2pdf().from(element).set(opt).save();

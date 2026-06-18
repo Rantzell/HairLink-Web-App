@@ -80,13 +80,20 @@ function buildCertificateHtml(opts: {
   reference: string;
   certificateNo: string;
   issuedDate: string;
-  ribbonDataUri: string;
-  sufcDataUri: string;
+  pronoun: string;
+  leftLogoUri: string;
+  rightLogoUri: string;
+  pinkRibbonUri: string;
+  sigJanelleUri: string;
+  sigJhoanaUri: string;
+  sigVenusUri: string;
+  sigHonorioUri: string;
 }) {
-  const { donorName, reference, certificateNo, issuedDate, ribbonDataUri, sufcDataUri } = opts;
-  // Inline logos as data so the PDF stays self-contained even if the
-  // device is offline at print time. (Falls back gracefully if the
-  // bundle doesn't include them.)
+  const { 
+    donorName, reference, certificateNo, issuedDate, pronoun,
+    leftLogoUri, rightLogoUri, pinkRibbonUri, sigJanelleUri, sigJhoanaUri, sigVenusUri, sigHonorioUri 
+  } = opts;
+  
   return `<!DOCTYPE html>
 <html>
   <head>
@@ -98,14 +105,14 @@ function buildCertificateHtml(opts: {
       html, body { margin: 0; padding: 0; background: #fff; }
       body {
         font-family: 'Helvetica', 'Arial', sans-serif;
-        color: #1C1917;
+        color: #1a1a1a;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
       .page {
         width: 100vw;
         height: 100vh;
-        padding: 28px;
+        padding: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -114,120 +121,194 @@ function buildCertificateHtml(opts: {
         width: 100%;
         height: 100%;
         background: #fff;
-        border: 1px solid #EAD7E8;
-        border-radius: 18px;
-        padding: 12px;
-        box-shadow: 0 8px 24px rgba(173, 36, 109, 0.06);
+        border: 6px solid #cf2f84;
+        border-radius: 4px;
+        padding: 5px;
       }
       .paper {
         width: 100%;
         height: 100%;
-        border: 2px solid ${BRAND.pink};
-        border-radius: 12px;
-        background: ${BRAND.pinkSoft};
-        padding: 32px 56px;
+        border: 1.5px solid #f08dbc;
+        background: #fff;
+        padding: 24px 36px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: space-between;
       }
-      .logos {
+      .header-layout {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 24px;
+        justify-content: space-between;
+        width: 100%;
         margin-bottom: 8px;
       }
-      .logo-mark {
-        width: 72px;
-        height: 72px;
+      .logo-col-left {
+        width: 110px;
+        text-align: left;
+      }
+      .logo-col-right {
+        width: 110px;
+        text-align: right;
+      }
+      .logo-img {
+        height: 65px;
+        width: auto;
         object-fit: contain;
-        display: inline-block;
       }
-      .title {
-        font-size: 22px;
-        font-weight: 900;
-        color: ${BRAND.pink};
-        letter-spacing: 4px;
+      .pink-ribbon-img {
+        display: block;
+        margin: 0 auto 6px;
+        height: 55px;
+        width: auto;
+        object-fit: contain;
+      }
+      .header-center {
+        flex: 1;
         text-align: center;
-        margin: 4px 0 6px;
       }
-      .subtitle {
-        font-size: 13px;
-        color: ${BRAND.mute};
-        font-style: italic;
-        text-align: center;
-        margin: 0 0 18px;
-      }
-      .name {
-        font-family: 'Georgia', 'Times New Roman', serif;
-        font-size: 48px;
-        font-weight: 700;
-        letter-spacing: -1px;
-        color: ${BRAND.ink};
-        text-align: center;
-        margin: 8px 0 18px;
-      }
-      .body {
+      .header-chinese {
         font-size: 14px;
         font-weight: 700;
-        color: ${BRAND.inkSoft};
-        text-align: center;
-        line-height: 1.4;
-        margin: 0 auto 6px;
-        max-width: 640px;
+        color: #3b2e43;
+        letter-spacing: 2px;
+        margin-bottom: 1px;
       }
-      .body-sub {
-        font-size: 12px;
-        color: ${BRAND.mute};
-        text-align: center;
-        line-height: 1.5;
-        margin: 0 auto;
-        max-width: 640px;
+      .header-english {
+        font-size: 16px;
+        font-weight: 900;
+        color: #3b2e43;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
       }
-      .footer {
-        margin-top: 28px;
-        padding-top: 14px;
-        border-top: 1px solid ${BRAND.pinkLine};
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        width: 100%;
-      }
-      .col-left   { text-align: left;   flex: 1; }
-      .col-center { text-align: center; flex: 1.1; }
-      .col-right  { text-align: right;  flex: 1; }
-      .label {
-        font-size: 9px;
-        color: ${BRAND.mute};
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
+      .presents {
+        font-style: italic;
+        font-family: 'Georgia', serif;
+        font-size: 13px;
+        color: #7a6a84;
         margin-bottom: 2px;
       }
-      .value {
+      .appreciation-title {
+        font-family: 'Georgia', serif;
+        font-style: italic;
+        font-size: 24px;
+        font-weight: 600;
+        color: #bc2f79;
+        margin: 2px 0;
+      }
+      .to {
         font-size: 12px;
-        font-weight: 800;
-        color: ${BRAND.ink};
+        color: #7a6a84;
+        margin-top: 1px;
+      }
+      .name-container {
+        margin: 8px 0;
+        text-align: center;
+        width: 100%;
+      }
+      .name {
+        font-family: 'Georgia', serif;
+        font-size: 36px;
+        font-weight: bold;
+        color: #cf2f84;
+        margin-bottom: 4px;
+      }
+      .name-line {
+        width: 70%;
+        height: 1.5px;
+        background: #cf2f84;
+        margin: 0 auto;
+      }
+      .body-text {
+        text-align: center;
+        line-height: 1.5;
+        margin: 8px 0;
+      }
+      .copy {
+        font-family: 'Georgia', serif;
+        font-style: italic;
+        font-size: 16px;
+        color: #5f4565;
+        margin: 0 0 4px;
+      }
+      .target {
+        font-size: 19px;
+        font-weight: 900;
+        color: #3b2e43;
+        margin: 4px 0;
+        letter-spacing: 0.5px;
+      }
+      .copy-sub {
+        font-size: 14px;
+        color: #7a6a84;
+        margin: 4px 0 0;
+      }
+      .signatures-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 48px;
+        width: 100%;
+        margin-top: 16px;
+        padding: 0 24px;
+      }
+      .sig-col {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .sig-img-wrap {
+        height: 46px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        margin-bottom: -9px;
+        position: relative;
+        z-index: 2;
+      }
+      .sig-img {
+        height: 100%;
+        object-fit: contain;
       }
       .sig-line {
-        width: 70%;
+        width: 80%;
         height: 1px;
-        background: ${BRAND.ink};
-        margin: 0 auto 4px;
+        background: #d5a5c4;
+        margin: 4px auto 6px;
+        position: relative;
+        z-index: 1;
+      }
+      .sig-name {
+        font-weight: 700;
+        font-size: 12px;
+        color: #3b2e43;
+        line-height: 1.3;
+        margin-bottom: 2px;
+      }
+      .sig-title {
+        font-size: 10.5px;
+        color: #7a6a84;
+        line-height: 1.3;
+        margin-bottom: 1px;
       }
       .sig-org {
-        font-size: 12px;
-        font-weight: 800;
-        color: ${BRAND.ink};
+        font-size: 10.5px;
+        color: #7a6a84;
+        line-height: 1.3;
       }
-      .sig-role {
+      .meta-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 16px;
+        padding: 8px 24px 0;
+        border-top: 1px solid #f08dbc;
         font-size: 9px;
-        color: ${BRAND.mute};
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        margin-top: 1px;
+        color: #7a6a84;
+        width: 100%;
+      }
+      .meta-footer strong {
+        color: #5f4565;
       }
     </style>
   </head>
@@ -235,42 +316,77 @@ function buildCertificateHtml(opts: {
     <div class="page">
       <div class="shell">
         <div class="paper">
-          <!-- Header logos: HairLink pink ribbon + SUFC organization mark.
-               Both are embedded as base64 data URIs so the PDF stays
-               self-contained (works offline, no remote fetch on print). -->
-          <div class="logos">
-            <img class="logo-mark" src="${ribbonDataUri}" alt="HairLink ribbon" />
-            <img class="logo-mark" src="${sufcDataUri}" alt="Strand Up For Cancer" />
-          </div>
-
-          <div>
-            <div class="title">CERTIFICATE OF RECOGNITION</div>
-            <div class="subtitle">This certificate is proudly presented to</div>
-          </div>
-
-          <div class="name">${donorName}</div>
-
-          <div>
-            <p class="body">In deep appreciation for your selfless and generous hair donation.</p>
-            <p class="body-sub">Your contribution provides hope, confidence, and strength to patients experiencing medical hair loss. Thank you for making a beautiful difference.</p>
-          </div>
-
-          <div class="footer">
-            <div class="col-left">
-              <div class="label">Reference</div>
-              <div class="value">${reference}</div>
+          <div class="header-layout">
+            <div class="logo-col-left">
+              <img class="logo-img" src="${leftLogoUri}" alt="Logo Left" />
             </div>
-            <div class="col-center">
+            <div class="header-center">
+              <img class="pink-ribbon-img" src="${pinkRibbonUri}" alt="Pink Ribbon Logo" />
+              <div class="header-chinese">岷尼拉市區青年會青年組</div>
+              <div class="header-english">MANILA DOWNTOWN YMCA YOUTH CLUB</div>
+              <div class="presents">presents this</div>
+              <div class="appreciation-title">Certificate of Appreciation</div>
+              <div class="to">to</div>
+            </div>
+            <div class="logo-col-right">
+              <img class="logo-img" src="${rightLogoUri}" alt="Logo Right" />
+            </div>
+          </div>
+
+          <div class="name-container">
+            <div class="name">${donorName}</div>
+            <div class="name-line"></div>
+          </div>
+
+          <div class="body-text">
+            <div class="copy">for ${pronoun} generous hair donation to</div>
+            <div class="target">STRAND UP FOR CANCER;</div>
+            <div class="copy-sub">this hair will be made into a wig to give to those who suffer from hair loss.</div>
+          </div>
+
+          <div class="signatures-grid">
+            <div class="sig-col">
+              <div class="sig-img-wrap">
+                <img class="sig-img" src="${sigJanelleUri}" alt="Signature" />
+              </div>
               <div class="sig-line"></div>
-              <div class="sig-org">HairLink Foundation</div>
-              <div class="sig-role">Authorized Signature</div>
+              <div class="sig-name">Ma. Janelle D. Yeo</div>
+              <div class="sig-title">VP for Community Development</div>
+              <div class="sig-org">MDYMCA Youth Club</div>
             </div>
-            <div class="col-right">
-              <div class="label">Cert. No</div>
-              <div class="value">${certificateNo}</div>
-              <div class="label" style="margin-top:6px">Date</div>
-              <div class="value">${issuedDate}</div>
+            <div class="sig-col">
+              <div class="sig-img-wrap">
+                <img class="sig-img" src="${sigJhoanaUri}" alt="Signature" />
+              </div>
+              <div class="sig-line"></div>
+              <div class="sig-name">Ma. Jhoana D. Yeo</div>
+              <div class="sig-title">President</div>
+              <div class="sig-org">MDYMCA Youth Club</div>
             </div>
+            <div class="sig-col">
+              <div class="sig-img-wrap">
+                <img class="sig-img" src="${sigVenusUri}" alt="Signature" />
+              </div>
+              <div class="sig-line"></div>
+              <div class="sig-name">Venus May Alinsod</div>
+              <div class="sig-title">Executive Director</div>
+              <div class="sig-org">Manila Downtown YMCA</div>
+            </div>
+            <div class="sig-col">
+              <div class="sig-img-wrap">
+                <img class="sig-img" src="${sigHonorioUri}" alt="Signature" />
+              </div>
+              <div class="sig-line"></div>
+              <div class="sig-name">Dr. Honorio T. Tan</div>
+              <div class="sig-title">President</div>
+              <div class="sig-org">Manila Downtown YMCA</div>
+            </div>
+          </div>
+
+          <div class="meta-footer">
+            <div>Reference: <strong>${reference}</strong></div>
+            <div>Cert. No: <strong>${certificateNo}</strong></div>
+            <div>Date: <strong>${issuedDate}</strong></div>
           </div>
         </div>
       </div>
@@ -285,12 +401,16 @@ export default function DonorCertificateScreen({ reference, certificateNo, dateR
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
-  // Logo data URIs — loaded once at mount so the PDF generator can embed
-  // them inline. The state stays empty until the asset bundling finishes,
-  // which gates the "Download" button to avoid generating a logo-less PDF.
+  // Logo data URIs — loaded once at mount so the PDF generator can embed them
   const [logosReady, setLogosReady] = useState(false);
-  const [ribbonDataUri, setRibbonDataUri] = useState('');
-  const [sufcDataUri, setSufcDataUri] = useState('');
+  const [leftLogoUri, setLeftLogoUri] = useState('');
+  const [rightLogoUri, setRightLogoUri] = useState('');
+  const [pinkRibbonUri, setPinkRibbonUri] = useState('');
+  const [sigJanelleUri, setSigJanelleUri] = useState('');
+  const [sigJhoanaUri, setSigJhoanaUri] = useState('');
+  const [sigVenusUri, setSigVenusUri] = useState('');
+  const [sigHonorioUri, setSigHonorioUri] = useState('');
+  const [gender, setGender] = useState('');
 
   // One-shot entrance pop for the trophy chip + headline.
   const heroScale = React.useRef(new Animated.Value(0.8)).current;
@@ -305,6 +425,7 @@ export default function DonorCertificateScreen({ reference, certificateNo, dateR
         const last = res.data.lastName || res.data.last_name || '';
         const composed = `${first} ${last}`.trim();
         setDonorName(composed || res.data.name || 'Valued Donor');
+        setGender(res.data.gender || '');
       } catch (err) {
         console.error('Error fetching profile for certificate:', err);
       } finally {
@@ -314,36 +435,56 @@ export default function DonorCertificateScreen({ reference, certificateNo, dateR
     fetchProfile();
 
     // Load the certificate logos and convert them to base64 data URIs.
-    // We embed them inline in the generated HTML so the PDF doesn't need
-    // network access or local file resolution at print time.
     const loadLogos = async () => {
       try {
-        const [ribbonAsset, sufcAsset] = await Promise.all([
+        const [
+          leftLogoAsset,
+          rightLogoAsset,
+          pinkRibbonAsset,
+          sigJanelleAsset,
+          sigJhoanaAsset,
+          sigVenusAsset,
+          sigHonorioAsset
+        ] = await Promise.all([
+          Asset.fromModule(require('../../assets/ymca_left_logo.png')).downloadAsync(),
+          Asset.fromModule(require('../../assets/ymca_right_logo.png')).downloadAsync(),
           Asset.fromModule(require('../../assets/pink-ribbon.png')).downloadAsync(),
-          Asset.fromModule(require('../../assets/sufc-logo.jpg')).downloadAsync(),
+          Asset.fromModule(require('../../assets/sig_janelle.png')).downloadAsync(),
+          Asset.fromModule(require('../../assets/sig_jhoana.png')).downloadAsync(),
+          Asset.fromModule(require('../../assets/sig_venus.png')).downloadAsync(),
+          Asset.fromModule(require('../../assets/sig_honorio.png')).downloadAsync(),
         ]);
 
-        // `EncodingType.Base64` is the documented constant but some SDK
-        // builds ship it on a different surface — fall back to the plain
-        // 'base64' literal which the runtime always accepts.
         const base64Enc: any = (FileSystem as any).EncodingType?.Base64 ?? 'base64';
 
-        const [ribbonB64, sufcB64] = await Promise.all([
-          FileSystem.readAsStringAsync(ribbonAsset.localUri || ribbonAsset.uri, {
-            encoding: base64Enc,
-          }),
-          FileSystem.readAsStringAsync(sufcAsset.localUri || sufcAsset.uri, {
-            encoding: base64Enc,
-          }),
+        const [
+          leftLogoB64,
+          rightLogoB64,
+          pinkRibbonB64,
+          sigJanelleB64,
+          sigJhoanaB64,
+          sigVenusB64,
+          sigHonorioB64
+        ] = await Promise.all([
+          FileSystem.readAsStringAsync(leftLogoAsset.localUri || leftLogoAsset.uri, { encoding: base64Enc }),
+          FileSystem.readAsStringAsync(rightLogoAsset.localUri || rightLogoAsset.uri, { encoding: base64Enc }),
+          FileSystem.readAsStringAsync(pinkRibbonAsset.localUri || pinkRibbonAsset.uri, { encoding: base64Enc }),
+          FileSystem.readAsStringAsync(sigJanelleAsset.localUri || sigJanelleAsset.uri, { encoding: base64Enc }),
+          FileSystem.readAsStringAsync(sigJhoanaAsset.localUri || sigJhoanaAsset.uri, { encoding: base64Enc }),
+          FileSystem.readAsStringAsync(sigVenusAsset.localUri || sigVenusAsset.uri, { encoding: base64Enc }),
+          FileSystem.readAsStringAsync(sigHonorioAsset.localUri || sigHonorioAsset.uri, { encoding: base64Enc }),
         ]);
 
-        setRibbonDataUri(`data:image/png;base64,${ribbonB64}`);
-        setSufcDataUri(`data:image/jpeg;base64,${sufcB64}`);
+        setLeftLogoUri(`data:image/png;base64,${leftLogoB64}`);
+        setRightLogoUri(`data:image/png;base64,${rightLogoB64}`);
+        setPinkRibbonUri(`data:image/png;base64,${pinkRibbonB64}`);
+        setSigJanelleUri(`data:image/png;base64,${sigJanelleB64}`);
+        setSigJhoanaUri(`data:image/png;base64,${sigJhoanaB64}`);
+        setSigVenusUri(`data:image/png;base64,${sigVenusB64}`);
+        setSigHonorioUri(`data:image/png;base64,${sigHonorioB64}`);
         setLogosReady(true);
       } catch (err) {
         console.error('Error loading certificate logos:', err);
-        // Even if logos fail to load we still let the user download — the
-        // <img> tags will simply render empty. Better than blocking the cert.
         setLogosReady(true);
       }
     };
@@ -370,6 +511,8 @@ export default function DonorCertificateScreen({ reference, certificateNo, dateR
     return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
   })();
 
+  const pronoun = gender.toLowerCase() === 'female' ? 'her' : (gender.toLowerCase() === 'male' ? 'his' : 'his/her');
+
   const handleDownloadPdf = async () => {
     setDownloading(true);
     try {
@@ -379,8 +522,14 @@ export default function DonorCertificateScreen({ reference, certificateNo, dateR
         reference,
         certificateNo,
         issuedDate,
-        ribbonDataUri,
-        sufcDataUri,
+        pronoun,
+        leftLogoUri,
+        rightLogoUri,
+        pinkRibbonUri,
+        sigJanelleUri,
+        sigJhoanaUri,
+        sigVenusUri,
+        sigHonorioUri,
       });
       const { uri } = await Print.printToFileAsync({
         html,

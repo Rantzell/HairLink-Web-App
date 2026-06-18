@@ -9,6 +9,7 @@ import type { Donation } from '../types';
 const DonorCertificate: React.FC = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const pronoun = user?.gender?.toLowerCase() === 'female' ? 'her' : (user?.gender?.toLowerCase() === 'male' ? 'his' : 'his/her');
   const refParam = searchParams.get('ref');
   
   const [donations, setDonations] = useState<any[]>([]);
@@ -51,10 +52,30 @@ const DonorCertificate: React.FC = () => {
 
   const handlePrint = () => {
     import('../utils/pdfExport').then(({ exportPDF }) => {
+      const el = document.getElementById('certificatePaper');
+      if (!el) return;
+
+      const pxToMm = 0.264583;
+      const widthMm = el.offsetWidth * pxToMm;
+      const heightMm = el.offsetHeight * pxToMm;
+      const marginMm = 5;
+
       exportPDF(
-        'certificatePaper', 
+        'certificatePaper',
         `Certificate-${selectedDonation?.certificateNo || selectedDonation?.reference || 'Recognition'}`,
-        { jsPDF: { orientation: 'landscape', format: 'a4' }, margin: 5 }
+        {
+          jsPDF: {
+            unit: 'mm',
+            format: [widthMm + marginMm * 2, heightMm + marginMm * 2],
+            orientation: widthMm >= heightMm ? 'landscape' : 'portrait'
+          },
+          margin: marginMm,
+          html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+          pagebreak: {
+            mode: ['css', 'legacy'],
+            avoid: ['.cert-signatures-grid-new', '.sig-col', '.cert-header-layout', '.certificate-name-wrap', '.cert-body-new', '.cert-meta-footer-new']
+          }
+        }
       );
     });
   };
@@ -124,37 +145,86 @@ const DonorCertificate: React.FC = () => {
           <>
             <div className="certificate-paper" id="certificatePaper">
               <div className="certificate-inner">
-                <div className="cert-header">
-                  <div className="cert-logos">
-                    <img src="/assets/images/landing/pink-ribbon.png" className="cert-logo-main" alt="HairLink Logo" />
-                    <img src="/assets/images/landing/logo.jpg" className="cert-logo-sufc" alt="Strand Up For Cancer Logo" />
+                <div className="cert-header-layout">
+                  <div className="cert-header-left">
+                    <img src="/assets/images/landing/ymca_left_logo.png" alt="Manila Downtown YMCA Youth Club" />
                   </div>
-                  <h2 className="certificate-title">CERTIFICATE OF RECOGNITION</h2>
-                  <p className="certificate-subtitle">This certificate is proudly presented to</p>
+                  <div className="cert-header-center">
+                    <img src="/assets/images/landing/pink-ribbon.png" alt="HairLink Logo" style={{ display: 'block', margin: '0 auto 0.5rem', height: '70px', objectFit: 'contain' }} />
+                    <div className="cert-header-chinese">岷尼拉市區青年會青年組</div>
+                    <div className="cert-header-english">MANILA DOWNTOWN YMCA YOUTH CLUB</div>
+                    <div className="cert-presents">presents this</div>
+                    <div className="cert-appreciation-title">Certificate of Appreciation</div>
+                    <div className="cert-to">to</div>
+                  </div>
+                  <div className="cert-header-right">
+                    <img src="/assets/images/landing/ymca_right_logo.png" alt="Manila Downtown YMCA since 1920" />
+                  </div>
                 </div>
 
-                <h1 className="certificate-name" style={{ fontSize: '2.5rem', fontWeight: 900 }}>{user?.firstName || 'Donor'} {user?.lastName || 'Demo'}</h1>
-
-                <div className="cert-body">
-                  <p className="certificate-copy">In deep appreciation for your selfless and generous hair donation.</p>
-                  <p className="certificate-copy-sub">Your contribution provides hope, confidence, and strength to patients experiencing medical hair loss. Thank you for making a beautiful difference.</p>
+                <div className="certificate-name-wrap">
+                  <h1 className="certificate-name-new">
+                    {user?.firstName || 'Donor'} {user?.lastName || 'Demo'}
+                  </h1>
+                  <div className="certificate-name-line"></div>
                 </div>
 
-                <div className="cert-footer">
-                  <div className="cert-meta-wrap">
-                    <p>Reference: <strong>{selectedDonation.reference}</strong></p>
-                  </div>
-                  
-                  <div className="cert-signature">
-                    <div className="signature-line"></div>
-                    <p>HairLink Foundation</p>
-                    <span>Authorized Signature</span>
+                <div className="cert-body-new">
+                  <p className="cert-copy-new">for {pronoun} generous hair donation to</p>
+                  <p className="cert-target-new">STRAND UP FOR CANCER;</p>
+                  <p className="cert-copy-sub-new">this hair will be made into a wig to give to those who suffer from hair loss.</p>
+                </div>
+
+                <div className="cert-signatures-grid-new">
+                  {/* Row 1 Left */}
+                  <div className="sig-col">
+                    <div className="sig-img-wrap">
+                      <img src="/assets/images/landing/sig_janelle.png" alt="Signature of Ma. Janelle D. Yeo" />
+                    </div>
+                    <div className="sig-line-new"></div>
+                    <div className="sig-name-new">Ma. Janelle D. Yeo</div>
+                    <div className="sig-title-new">VP for Community Development</div>
+                    <div className="sig-org-new">MDYMCA Youth Club</div>
                   </div>
 
-                  <div className="cert-meta-wrap right-meta">
-                    <p>Cert. No: <strong>{selectedDonation.certificateNo || 'Pending'}</strong></p>
-                    <p>Date: <strong>{new Date(selectedDonation.updatedAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</strong></p>
+                  {/* Row 1 Right */}
+                  <div className="sig-col">
+                    <div className="sig-img-wrap">
+                      <img src="/assets/images/landing/sig_jhoana.png" alt="Signature of Ma. Jhoana D. Yeo" />
+                    </div>
+                    <div className="sig-line-new"></div>
+                    <div className="sig-name-new">Ma. Jhoana D. Yeo</div>
+                    <div className="sig-title-new">President</div>
+                    <div className="sig-org-new">MDYMCA Youth Club</div>
                   </div>
+
+                  {/* Row 2 Left */}
+                  <div className="sig-col">
+                    <div className="sig-img-wrap">
+                      <img src="/assets/images/landing/sig_venus.png" alt="Signature of Venus May Alinsod" />
+                    </div>
+                    <div className="sig-line-new"></div>
+                    <div className="sig-name-new">Venus May Alinsod</div>
+                    <div className="sig-title-new">Executive Director</div>
+                    <div className="sig-org-new">Manila Downtown YMCA</div>
+                  </div>
+
+                  {/* Row 2 Right */}
+                  <div className="sig-col">
+                    <div className="sig-img-wrap">
+                      <img src="/assets/images/landing/sig_honorio.png" alt="Signature of Dr. Honorio T. Tan" />
+                    </div>
+                    <div className="sig-line-new"></div>
+                    <div className="sig-name-new">Dr. Honorio T. Tan</div>
+                    <div className="sig-title-new">President</div>
+                    <div className="sig-org-new">Manila Downtown YMCA</div>
+                  </div>
+                </div>
+
+                <div className="cert-meta-footer-new">
+                  <div>Reference: <strong>{selectedDonation.reference}</strong></div>
+                  <div>Cert. No: <strong>{selectedDonation.certificateNo || 'Pending'}</strong></div>
+                  <div>Date: <strong>{new Date(selectedDonation.updatedAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</strong></div>
                 </div>
               </div>
             </div>
