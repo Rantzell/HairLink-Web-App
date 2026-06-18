@@ -145,12 +145,9 @@ const AdminReports: React.FC = () => {
       padding: '1.5rem 2rem',
       borderRadius: '12px 12px 0 0'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+      {/* Left side: Pink ribbon logo only */}
+      <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
         <img src="/assets/images/landing/pink-ribbon.png" alt="HairLink Logo" style={{ height: '45px', filter: 'drop-shadow(0 2px 4px rgba(173,36,109,0.2))' }} />
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontWeight: '800', fontSize: '1.4rem', color: '#ad246d', lineHeight: '1' }}>HairLink</span>
-          <span style={{ fontSize: '0.75rem', color: '#8c7895', fontWeight: '600', letterSpacing: '0.5px' }}>MANAGEMENT SYSTEM</span>
-        </div>
       </div>
       <div style={{ textAlign: 'center', flex: 2 }}>
         <h1 style={{ margin: '0 0 0.25rem 0', fontSize: '1.8rem', color: '#ad246d', fontWeight: '900', letterSpacing: '-0.5px' }}>Strand Up for Cancer</h1>
