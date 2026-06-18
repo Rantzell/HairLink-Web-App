@@ -19,6 +19,7 @@ const AdminReports: React.FC = () => {
   const [wigStockPage, setWigStockPage] = useState(1);
   const [monetaryPage, setMonetaryPage] = useState(1);
   const [matchingPage, setMatchingPage] = useState(1);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -54,10 +55,20 @@ const AdminReports: React.FC = () => {
   }, []);
 
   const handlePrint = () => {
-    import('../utils/pdfExport').then(({ exportPDF }) => {
-      exportPDF('reportDocument', `System-Report-${reportType}`);
-    });
+    setIsPrinting(true);
   };
+
+  useEffect(() => {
+    if (isPrinting) {
+      setTimeout(() => {
+        import('../utils/pdfExport').then(({ exportPDF }) => {
+          exportPDF('reportDocument', `System-Report-${reportType}`).finally(() => {
+            setIsPrinting(false);
+          });
+        });
+      }, 500); // Wait for React to re-render and images to load
+    }
+  }, [isPrinting, reportType]);
 
   const handleDownloadCSV = () => {
     let csv = '';
@@ -122,11 +133,41 @@ const AdminReports: React.FC = () => {
   if (loading) return <div className="section-wrap">Aggregating system records...</div>;
   if (!data) return <div className="section-wrap">Error: Could not generate system reports. Please check your connection.</div>;
 
+  const ReportBrandHeader = () => (
+    <div className="admin-print-brand-header" style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'space-between', 
+      borderBottom: '3px solid #ad246d', 
+      paddingBottom: '1.5rem', 
+      marginBottom: '2rem',
+      backgroundColor: '#fdf7fc',
+      padding: '1.5rem 2rem',
+      borderRadius: '12px 12px 0 0'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+        <img src="/assets/images/landing/pink-ribbon.png" alt="HairLink Logo" style={{ height: '45px', filter: 'drop-shadow(0 2px 4px rgba(173,36,109,0.2))' }} />
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontWeight: '800', fontSize: '1.4rem', color: '#ad246d', lineHeight: '1' }}>HairLink</span>
+          <span style={{ fontSize: '0.75rem', color: '#8c7895', fontWeight: '600', letterSpacing: '0.5px' }}>MANAGEMENT SYSTEM</span>
+        </div>
+      </div>
+      <div style={{ textAlign: 'center', flex: 2 }}>
+        <h1 style={{ margin: '0 0 0.25rem 0', fontSize: '1.8rem', color: '#ad246d', fontWeight: '900', letterSpacing: '-0.5px' }}>Strand Up for Cancer</h1>
+        <p style={{ margin: 0, fontSize: '0.85rem', color: '#ad246d', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '700', opacity: 0.8 }}>Official System Report</p>
+      </div>
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+        <img src="/assets/images/landing/logo.jpg" alt="SUFC Logo" style={{ height: '55px', objectFit: 'contain', borderRadius: '50%', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', border: '2px solid #fff' }} onError={(e) => (e.currentTarget.style.display = 'none')} />
+      </div>
+    </div>
+  );
+
   const renderReportContent = () => {
     switch(reportType) {
       case 'monetary':
         return (
           <div className="report-document admin-report-doc" id="reportDocument">
+            <ReportBrandHeader />
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">Monetary Contributions Log</h2>
@@ -161,7 +202,9 @@ const AdminReports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {monetaryData.slice((monetaryPage - 1) * PAGE_SIZE, monetaryPage * PAGE_SIZE).map((m: any) => (
+                  {[...monetaryData]
+                    .sort((a: any, b: any) => String(a.referenceNumber || '').localeCompare(String(b.referenceNumber || '')))
+                    .slice(isPrinting ? 0 : (monetaryPage - 1) * PAGE_SIZE, isPrinting ? undefined : monetaryPage * PAGE_SIZE).map((m: any) => (
                     <tr key={m.id}>
                       <td className="admin-report-td"><strong>{m.referenceNumber}</strong></td>
                       <td className="admin-report-td">{m.name || m.user?.firstName || 'Anonymous'}</td>
@@ -176,13 +219,14 @@ const AdminReports: React.FC = () => {
                   )}
                 </tbody>
               </table>
-              <Pagination currentPage={monetaryPage} totalPages={Math.ceil(monetaryData.length / PAGE_SIZE)} onPageChange={setMonetaryPage} />
+              {!isPrinting && <Pagination currentPage={monetaryPage} totalPages={Math.ceil(monetaryData.length / PAGE_SIZE)} onPageChange={setMonetaryPage} />}
             </section>
           </div>
         );
       case 'hair':
         return (
           <div className="report-document admin-report-doc" id="reportDocument">
+            <ReportBrandHeader />
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">Hair Inventory Levels</h2>
@@ -215,6 +259,7 @@ const AdminReports: React.FC = () => {
       case 'wigs':
         return (
           <div className="report-document admin-report-doc" id="reportDocument">
+            <ReportBrandHeader />
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">Wig Inventory & Monitoring</h2>
@@ -256,7 +301,9 @@ const AdminReports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.inventory.wigStock.slice((wigStockPage - 1) * PAGE_SIZE, wigStockPage * PAGE_SIZE).map((w: any) => (
+                  {[...(data.inventory.wigStock || [])]
+                    .sort((a: any, b: any) => String(a.taskCode || '').localeCompare(String(b.taskCode || '')))
+                    .slice(isPrinting ? 0 : (wigStockPage - 1) * PAGE_SIZE, isPrinting ? undefined : wigStockPage * PAGE_SIZE).map((w: any) => (
                     <tr key={w.id}>
                       <td className="admin-report-td"><strong>{w.taskCode}</strong></td>
                       <td className="admin-report-td">{w.wigmaker?.firstName} {w.wigmaker?.lastName}</td>
@@ -267,13 +314,14 @@ const AdminReports: React.FC = () => {
                   ))}
                 </tbody>
               </table>
-              <Pagination currentPage={wigStockPage} totalPages={Math.ceil(data.inventory.wigStock.length / PAGE_SIZE)} onPageChange={setWigStockPage} />
+              {!isPrinting && <Pagination currentPage={wigStockPage} totalPages={Math.ceil(data.inventory.wigStock.length / PAGE_SIZE)} onPageChange={setWigStockPage} />}
             </section>
           </div>
         );
       case 'matching':
         return (
           <div className="report-document admin-report-doc" id="reportDocument">
+            <ReportBrandHeader />
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">Wig Matching & Distribution</h2>
@@ -316,9 +364,10 @@ const AdminReports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data.summary.fulfilledRequests || [])
+                  {[...(data.summary.fulfilledRequests || [])]
                     .filter((req: any) => req.wigProductions?.some((w: any) => w.taskCode.includes('-W')))
-                    .slice((matchingPage - 1) * PAGE_SIZE, matchingPage * PAGE_SIZE)
+                    .sort((a: any, b: any) => String(a.reference || '').localeCompare(String(b.reference || '')))
+                    .slice(isPrinting ? 0 : (matchingPage - 1) * PAGE_SIZE, isPrinting ? undefined : matchingPage * PAGE_SIZE)
                     .map((req: any) => {
                       const childWig = req.wigProductions?.find((w: any) => w.taskCode.includes('-W'));
                       const assignedWig = childWig?.taskCode || '—';
@@ -330,11 +379,7 @@ const AdminReports: React.FC = () => {
                         <td className="admin-report-td">{req.wigColor}</td>
                         <td className="admin-report-td">{new Date(req.receivedAt || req.updatedAt).toLocaleDateString()}</td>
                         <td className="admin-report-td">
-                          {assignedWig !== '—' ? (
-                            <span className="admin-chip admin-chip-sm active">{assignedWig}</span>
-                          ) : (
-                            '—'
-                          )}
+                          <strong>{assignedWig}</strong>
                         </td>
                       </tr>
                     );
@@ -346,17 +391,18 @@ const AdminReports: React.FC = () => {
                   )}
                 </tbody>
               </table>
-              <Pagination
+              {!isPrinting && <Pagination
                 currentPage={matchingPage}
                 totalPages={Math.ceil(((data.summary.fulfilledRequests || []).filter((req: any) => req.wigProductions?.some((w: any) => w.taskCode.includes('-W')))).length / PAGE_SIZE)}
                 onPageChange={setMatchingPage}
-              />
+              />}
             </section>
           </div>
         );
       case 'users':
         return (
           <div className="report-document admin-report-doc" id="reportDocument">
+            <ReportBrandHeader />
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">User Engagement Statistics</h2>
@@ -386,6 +432,7 @@ const AdminReports: React.FC = () => {
       default:
         return (
           <div className="report-document admin-report-doc" id="reportDocument">
+            <ReportBrandHeader />
             <div className="report-header admin-report-doc-header">
               <div>
                 <h2 className="admin-report-doc-title">Donation Intake Summary</h2>
@@ -423,7 +470,9 @@ const AdminReports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data.inventory.allDonations || []).slice((donationsPage - 1) * PAGE_SIZE, donationsPage * PAGE_SIZE).map((d: any) => (
+                  {[...(data.inventory.allDonations || [])]
+                    .sort((a: any, b: any) => String(a.reference || '').localeCompare(String(b.reference || '')))
+                    .slice(isPrinting ? 0 : (donationsPage - 1) * PAGE_SIZE, isPrinting ? undefined : donationsPage * PAGE_SIZE).map((d: any) => (
                     <tr key={d.id}>
                       <td className="admin-report-td"><strong>{d.reference}</strong></td>
                       <td className="admin-report-td">{d.user?.firstName} {d.user?.lastName}</td>
@@ -437,11 +486,11 @@ const AdminReports: React.FC = () => {
                   )}
                 </tbody>
               </table>
-              <Pagination
+              {!isPrinting && <Pagination
                 currentPage={donationsPage}
                 totalPages={Math.ceil((data.inventory.allDonations || []).length / PAGE_SIZE)}
                 onPageChange={setDonationsPage}
-              />
+              />}
             </section>
           </div>
         );
@@ -469,8 +518,9 @@ const AdminReports: React.FC = () => {
             <button
               onClick={handlePrint}
               className="admin-btn-print"
+              disabled={isPrinting}
             >
-              <i className='bx bx-printer'></i> Print as PDF
+              <i className='bx bx-printer'></i> {isPrinting ? 'Preparing PDF...' : 'Print as PDF'}
             </button>
           </div>
         )}

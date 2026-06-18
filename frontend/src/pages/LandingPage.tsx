@@ -1844,8 +1844,9 @@ const LandingPage: React.FC = () => {
     apiClient.get('/api/public/site-settings').then(r => setCms(r.data)).catch(() => { });
     apiClient.get('/api/public/events/upcoming').then(r => {
       const events: any[] = Array.isArray(r.data) ? r.data : [];
-      if (events.length > 0) setNextEvent(events[0]);
-      setUpcomingEvents(events);
+      const validEvents = events.filter(e => new Date(e.date).getTime() > Date.now());
+      if (validEvents.length > 0) setNextEvent(validEvents[0]);
+      setUpcomingEvents(validEvents);
     }).catch(() => { });
   }, []);
 
@@ -2005,7 +2006,7 @@ const LandingPage: React.FC = () => {
             </p>
             <div className="hl-hero-actions">
               <Link to="/donor/donate" className="hl-btn-hero-primary">
-                {get('hero', 'ctaLabel', 'Donate Your Hair')} →
+                {get('hero', 'ctaLabel', 'Donate Your Hair')}
               </Link>
               <Link to="/recipient/request" className="hl-btn-hero-ghost">
                 {get('hero', 'ghostLabel', 'Request a Wig')}
@@ -2048,7 +2049,7 @@ const LandingPage: React.FC = () => {
                 <h3 className="hl-how-title">{svc.title}</h3>
                 <p className="hl-how-body">{svc.description}</p>
                 <Link to={serviceLinks[i] || '/donor/donate'} className="hl-how-link">
-                  {svc.ctaLabel} →
+                  {svc.ctaLabel}
                 </Link>
               </div>
             ))}
@@ -2199,7 +2200,7 @@ const LandingPage: React.FC = () => {
               {get('about', 'body', 'Strand Up for Cancer (SUFC) is a youth-led initiative dedicated to supporting cancer patients through hair donation and wig crafting. We believe every person fighting cancer deserves to feel beautiful and confident.')}
             </p>
             <Link to="/register" className="hl-btn-hero-primary" style={{ width: 'fit-content', marginTop: '0.5rem' }}>
-              Join Our Mission →
+              Join Our Mission
             </Link>
           </div>
         </div>
@@ -2312,7 +2313,7 @@ const LandingPage: React.FC = () => {
                   />
                 </div>
                 <button type="submit" className="hl-form-submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Sending…' : 'Send Partnership Inquiry →'}
+                  {isSubmitting ? 'Sending…' : 'Send Partnership Inquiry'}
                 </button>
               </div>
             </form>

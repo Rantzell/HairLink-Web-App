@@ -299,7 +299,7 @@ const HairCareHub: React.FC = () => {
         <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#3b2e43', marginBottom: '0.8rem' }}>Need More Help?</h3>
         <p style={{ color: '#6b5b6d', fontSize: '0.95rem', maxWidth: '500px', margin: '0 auto 2rem', lineHeight: 1.6 }}>Connect with our community for personalized wig care tips and peer support from others who understand.</p>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Link to="/recipient/community" className="soft-btn" style={{ height: '42px', padding: '0 2rem', fontSize: '0.9rem', borderRadius: '50px', fontWeight: 700, background: 'linear-gradient(135deg, #cf2f84, #a0206a)', boxShadow: '0 4px 15px rgba(207, 47, 132, 0.2)' }}>
+          <Link to="/recipient/community" className="soft-btn" style={{ height: '42px', padding: '0 2rem', fontSize: '0.9rem', borderRadius: '50px', fontWeight: 700, background: 'linear-gradient(135deg, #cf2f84, #a0206a)', boxShadow: '0 4px 15px rgba(207, 47, 132, 0.2)', color: '#fff', display: 'flex', alignItems: 'center' }}>
              Visit Community Forum
           </Link>
         </div>

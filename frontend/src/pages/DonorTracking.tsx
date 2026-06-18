@@ -42,7 +42,7 @@ const DonorTracking: React.FC = () => {
       <header className="module-head" style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#261d2b', margin: 0 }}>My Donation Tracking</h1>
         <p style={{ color: '#665772', fontSize: '0.75rem', marginTop: '0.2rem' }}>Monitor status changes from submission to completion and certificate release.</p>
-        <div className="tracking-tools" style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', alignItems: 'center' }}>
+        <div className="tracking-tools" style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', marginTop: '1rem', alignItems: 'center' }}>
           <div style={{ position: 'relative' }}>
             <i className="bx bx-search" style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: '#ad246d', fontSize: '1rem' }}></i>
             <input 

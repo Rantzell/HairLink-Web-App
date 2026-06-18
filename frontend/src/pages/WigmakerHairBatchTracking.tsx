@@ -10,6 +10,8 @@ const WigmakerHairBatchTracking: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<Record<string, boolean>>({});
   const [openBatches, setOpenBatches] = useState<Record<number, boolean>>({});
+  const [deleteConfirm, setDeleteConfirm] = useState<{ taskCode: string; batchRef: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const toggleBatch = (taskId: number) =>
     setOpenBatches(prev => ({ ...prev, [taskId]: !prev[taskId] }));
@@ -53,6 +55,21 @@ const WigmakerHairBatchTracking: React.FC = () => {
       toast.error(err.response?.data?.message || 'Failed to report missing.');
     } finally {
       setSubmitting(p => ({ ...p, [key]: false }));
+    }
+  };
+
+  const handleDeleteBatch = async () => {
+    if (!deleteConfirm) return;
+    setDeleting(true);
+    try {
+      await apiClient.delete(`/internal-api/wigmaker/tasks/${encodeURIComponent(deleteConfirm.taskCode)}`);
+      toast.success(`Batch ${deleteConfirm.batchRef} deleted.`);
+      setDeleteConfirm(null);
+      await fetchTasks();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete batch.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -114,10 +131,10 @@ const WigmakerHairBatchTracking: React.FC = () => {
             return (
               <article key={task.id} style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(73,20,52,0.04)' }}>
 
-                {/* Batch header */}
-                <div style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                {/* Batch header — main row */}
+                <div style={{ padding: '1.1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#FFF0F8', color: '#ad246d', display: 'grid', placeItems: 'center', fontSize: '1.1rem' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#FFF0F8', color: '#ad246d', display: 'grid', placeItems: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
                       <i className="bx bx-package"></i>
                     </div>
                     <div>
@@ -127,45 +144,31 @@ const WigmakerHairBatchTracking: React.FC = () => {
                       <div style={{ fontSize: '0.75rem', color: '#8c7895', marginTop: '2px' }}>
                         {task.taskCode} · {donations.length} donor{donations.length !== 1 ? 's' : ''} · Started {new Date(task.createdAt).toLocaleDateString()}
                       </div>
-                      {/* Tracking delivery link */}
-                      {task.materialDeliveryLink && (
-                        <a href={task.materialDeliveryLink} target="_blank" rel="noreferrer"
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '0.72rem', fontWeight: 700, color: '#3b82f6', background: '#eff6ff', border: '1px solid #dbeafe', borderRadius: '6px', padding: '0.15rem 0.55rem', textDecoration: 'none' }}>
-                          <i className="bx bx-link-external"></i> Track Incoming Delivery
-                        </a>
-                      )}
-                      {/* Staff note */}
-                      {task.staffNote && (() => {
-                        // Extract actual note from "Batch X assigned by staff. Staff note: <note>"
-                        const raw: string = task.staffNote;
-                        const noteMatch = raw.match(/Staff note:\s*(.+)$/i);
-                        const displayNote = noteMatch ? noteMatch[1].trim() : raw;
-                        return (
-                          <div style={{ marginTop: '6px', display: 'inline-flex', alignItems: 'flex-start', gap: '5px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.3rem 0.65rem', maxWidth: '380px' }}>
-                            <i className="bx bx-note" style={{ color: '#d97706', fontSize: '0.85rem', marginTop: '1px', flexShrink: 0 }}></i>
-                            <span style={{ fontSize: '0.75rem', color: '#92400e', fontWeight: 600, lineHeight: 1.4 }}>
-                              <span style={{ fontWeight: 800, color: '#b45309' }}>Staff Note: </span>{displayNote}
-                            </span>
-                          </div>
-                        );
-                      })()}
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {/* Status pill — stays Assigned even if some are missing */}
                     <StatusPill status={task.status} />
 
                     {pendingCount > 0 && (
                       <button
                         onClick={() => handleReceiveAll(task.taskCode, donations)}
                         disabled={isReceiveAllBusy}
-                        style={{ padding: '0.4rem 0.9rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', fontWeight: 800, fontSize: '0.75rem', cursor: isReceiveAllBusy ? 'not-allowed' : 'pointer', opacity: isReceiveAllBusy ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', boxShadow: '0 2px 8px rgba(22,163,74,0.25)' }}
+                        style={{ padding: '0.35rem 0.8rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', fontWeight: 800, fontSize: '0.72rem', cursor: isReceiveAllBusy ? 'not-allowed' : 'pointer', opacity: isReceiveAllBusy ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', boxShadow: '0 2px 8px rgba(22,163,74,0.25)', whiteSpace: 'nowrap' }}
                       >
-                        {isReceiveAllBusy ? '…' : <><i className="bx bx-check-double"></i> Mark All Received ({pendingCount})</>}
+                        {isReceiveAllBusy ? '…' : <><i className="bx bx-check-double"></i> Mark All ({pendingCount})</>}
                       </button>
                     )}
 
-
+                    {/* Delete batch button */}
+                    <button
+                      onClick={() => setDeleteConfirm({ taskCode: task.taskCode, batchRef })}
+                      title="Delete batch"
+                      style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1.5px solid #fecaca', background: '#fff5f5', color: '#dc2626', display: 'grid', placeItems: 'center', cursor: 'pointer', fontSize: '1rem', flexShrink: 0 }}
+                    >
+                      <i className="bx bx-trash"></i>
+                    </button>
 
                     {/* Collapse toggle */}
                     {donations.length > 0 && (
@@ -176,6 +179,31 @@ const WigmakerHairBatchTracking: React.FC = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Info bar — tracking link + staff note */}
+                {(task.materialDeliveryLink || task.staffNote) && (() => {
+                  const raw: string = task.staffNote || '';
+                  const noteMatch = raw.match(/Staff note:\s*(.+)$/i);
+                  const displayNote = noteMatch ? noteMatch[1].trim() : raw;
+                  return (
+                    <div style={{ padding: '0.6rem 1.5rem', background: '#fdfbfe', borderTop: '1px dashed #f2ebf4', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' }}>
+                      {task.materialDeliveryLink && (
+                        <a href={task.materialDeliveryLink} target="_blank" rel="noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', fontWeight: 700, color: '#3b82f6', background: '#eff6ff', border: '1px solid #dbeafe', borderRadius: '6px', padding: '0.2rem 0.6rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                          <i className="bx bx-link-external"></i> Track Incoming Delivery
+                        </a>
+                      )}
+                      {task.staffNote && displayNote && (
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '0.2rem 0.6rem', maxWidth: '480px' }}>
+                          <i className="bx bx-note" style={{ color: '#d97706', fontSize: '0.82rem', flexShrink: 0 }}></i>
+                          <span style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 600, lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <span style={{ fontWeight: 800, color: '#b45309' }}>Staff Note: </span>{displayNote}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Collapsible donor table */}
                 {donations.length > 0 && isOpen && (
@@ -280,6 +308,40 @@ const WigmakerHairBatchTracking: React.FC = () => {
               </article>
             );
           })}
+        </div>
+      )}
+
+      {/* Delete confirm modal */}
+      {deleteConfirm && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget && !deleting) setDeleteConfirm(null); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(30,18,36,0.55)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+        >
+          <div style={{ background: '#fff', borderRadius: '20px', padding: '2rem', maxWidth: '400px', width: '100%', border: '1px solid #ead7e8', boxShadow: '0 24px 60px rgba(173,36,109,0.15)', textAlign: 'center' }}>
+            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#fff5f5', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.75rem' }}>
+              <i className="bx bx-trash"></i>
+            </div>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43', margin: '0 0 0.5rem' }}>Delete Batch?</h2>
+            <p style={{ color: '#5d4d62', fontSize: '0.88rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>
+              Are you sure you want to delete batch <strong>{deleteConfirm.batchRef}</strong>? This action cannot be undone.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                style={{ height: '42px', borderRadius: '50px', border: '1.5px solid #ead7e8', background: '#fff', color: '#5d4d62', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteBatch}
+                disabled={deleting}
+                style={{ height: '42px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.75 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                {deleting ? <><i className="bx bx-loader-alt bx-spin" /> Deleting...</> : <><i className="bx bx-trash" /> Yes, Delete</>}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>

@@ -166,8 +166,8 @@ const DonorTrackingDetail: React.FC = () => {
         </div>
       </div>
 
-      <div className="detail-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '1rem', alignItems: 'start' }}>
-        <div className="module-card" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.25rem' }}>
+      <div className="detail-layout" style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'flex-start' }}>
+        <div className="module-card" style={{ flex: '1 1 300px', minWidth: 0, background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <i className='bx bx-git-commit' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>
             <h3 style={{ margin: 0 }}>Donation Roadmap</h3>
@@ -348,7 +348,7 @@ const DonorTrackingDetail: React.FC = () => {
           </div>
         </div>
 
-        <div className="side-box" style={{ display: 'grid', gap: '1rem' }}>
+        <div className="side-box" style={{ flex: '1 1 260px', maxWidth: '400px', display: 'grid', gap: '1rem' }}>
           <div style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', padding: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <i className='bx bx-cut' style={{ color: '#ad246d', fontSize: '1.4rem' }}></i>

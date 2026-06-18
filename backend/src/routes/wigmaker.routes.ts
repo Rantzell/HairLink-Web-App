@@ -621,6 +621,69 @@ router.post('/wigs/ship', ...wmOnly, async (req, res) => {
   }
 });
 
+// DELETE /internal-api/wigmaker/tasks/:taskCode
+router.delete('/tasks/:taskCode', ...wmOnly, async (req, res) => {
+  try {
+    const task = await prisma.wigProduction.findFirst({
+      where: { taskCode: req.params.taskCode as string, wigmakerId: req.user!.id },
+      include: { donations: true } as any,
+    });
+    if (!task) { res.status(404).json({ message: 'Task not found or does not belong to you.' }); return; }
+
+    // Unlink donations from this batch (set wigProductionId to null) and reset their status
+    if ((task as any).donations?.length) {
+      for (const don of (task as any).donations as any[]) {
+        await prisma.donation.update({
+          where: { id: don.id },
+          data: { wigProductionId: null, status: 'Received Hair' } as any,
+        });
+        await createStatusHistory(DON_TYPE, don.id, 'Received Hair', `Batch ${task.taskCode} was deleted by wigmaker. Hair returned to unassigned pool.`);
+      }
+    }
+
+    // Delete status histories for this task
+    await prisma.statusHistory.deleteMany({
+      where: { trackableType: WIG_TYPE, trackableId: task.id },
+    });
+
+    // Delete the task itself
+    await prisma.wigProduction.delete({ where: { id: task.id } });
+
+    res.json({ message: `Batch ${task.taskCode} deleted successfully.`, success: true });
+  } catch (err) {
+    console.error('[Wigmaker] Delete task error:', err);
+    res.status(500).json({ error: 'Failed to delete batch.' });
+  }
+});
+
+// Helper to check if all hairs are accounted for and update batch status
+async function checkAndUpdateBatchStatus(taskId: number) {
+  const task = await prisma.wigProduction.findUnique({
+    where: { id: taskId },
+    include: { donations: true }
+  });
+  if (!task || !task.donations?.length) return;
+
+  const donationIds = (task.donations as any[]).map(d => d.id);
+  const histories = await prisma.statusHistory.findMany({
+    where: {
+      trackableType: DON_TYPE,
+      trackableId: { in: donationIds },
+      status: { in: ['wigmaker_received', 'missing'] }
+    }
+  });
+
+  const processedDonationIds = new Set(histories.map(h => h.trackableId));
+
+  if (processedDonationIds.size === donationIds.length && task.status !== 'received') {
+    await prisma.wigProduction.update({
+      where: { id: task.id },
+      data: { status: 'received', isReceived: true } as any
+    });
+    await createStatusHistory(WIG_TYPE, task.id, 'received', `Wigmaker received all materials for batch ${task.taskCode}.`);
+  }
+}
+
 // POST /internal-api/wigmaker/tasks/:taskCode/receive-hair/:donationId
 router.post('/tasks/:taskCode/receive-hair/:donationId', ...wmOnly, async (req, res) => {
   try {
@@ -639,6 +702,8 @@ router.post('/tasks/:taskCode/receive-hair/:donationId', ...wmOnly, async (req, 
     const batchRef = `B${task.id}-${String(new Date(task.createdAt!).getMonth() + 1).padStart(2, '0')}-${new Date(task.createdAt!).getFullYear()}`;
     const wmUser = await prisma.user.findUnique({ where: { id: req.user!.id } });
     await notifyStaffHairReceived(task.taskCode, batchRef, donation.reference, wmUser?.name || 'Wigmaker');
+
+    await checkAndUpdateBatchStatus(task.id);
 
     res.json({ message: `Hair ${donation.reference} marked as received.`, success: true });
   } catch (err) {
@@ -665,6 +730,8 @@ router.post('/tasks/:taskCode/report-missing/:donationId', ...wmOnly, async (req
 
     const wmUser = await prisma.user.findUnique({ where: { id: req.user!.id } });
     await notifyStaffMissingHair(task.taskCode, batchRef, donation.reference, wmUser?.name || 'Wigmaker');
+
+    await checkAndUpdateBatchStatus(task.id);
 
     res.json({ message: `Hair ${donation.reference} reported as missing. Staff has been notified.`, success: true });
   } catch (err) {
