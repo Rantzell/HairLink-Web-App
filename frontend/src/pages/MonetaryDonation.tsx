@@ -235,8 +235,11 @@ const MonetaryDonation: React.FC = () => {
           </div>
 
           {paymentMethod === 'gcash' ? (
-            <div className="gcash-payment-body" style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 280px) 1fr', gap: '2rem', alignItems: 'center' }}>
+            <div className="gcash-payment-body" style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'center' }}>
               <div className="gcash-qr-wrap" style={{
+                flex: '1 1 240px',
+                maxWidth: '320px',
+                margin: '0 auto',
                 background: '#fff',
                 border: '2px solid #ead7e8',
                 borderRadius: '16px',
@@ -251,7 +254,7 @@ const MonetaryDonation: React.FC = () => {
                 />
                 <p style={{ margin: '0.75rem 0 0', fontSize: '0.72rem', color: '#8c7895', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Scan to Pay</p>
               </div>
-              <div className="gcash-instructions" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div className="gcash-instructions" style={{ flex: '2 1 300px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <h4 style={{ margin: 0, color: '#4a3452', fontSize: '1.05rem', fontWeight: 800 }}>How to donate via GCash</h4>
                 <ol style={{ margin: 0, paddingLeft: '1.25rem', color: '#665772', fontSize: '0.9rem', lineHeight: 1.7 }}>
                   <li>Open your GCash or InstaPay app and tap <strong>Scan QR</strong>.</li>
@@ -265,8 +268,11 @@ const MonetaryDonation: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="bank-payment-body" style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 320px) 1fr', gap: '2rem', alignItems: 'flex-start' }}>
+            <div className="bank-payment-body" style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'flex-start' }}>
               <div className="bank-card" style={{
+                flex: '1 1 280px',
+                maxWidth: '360px',
+                margin: '0 auto',
                 background: 'linear-gradient(135deg, #4a3452 0%, #ad246d 100%)',
                 color: '#fff',
                 borderRadius: '16px',
@@ -288,7 +294,7 @@ const MonetaryDonation: React.FC = () => {
                 <p style={{ margin: '0 0 0.5rem', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.75, fontWeight: 700 }}>Account Number</p>
                 <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, letterSpacing: '2px' }}>0045 6002 5684</p>
               </div>
-              <div className="bank-instructions" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div className="bank-instructions" style={{ flex: '2 1 300px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <h4 style={{ margin: 0, color: '#4a3452', fontSize: '1.05rem', fontWeight: 800 }}>How to donate via Bank Transfer</h4>
                 <ol style={{ margin: 0, paddingLeft: '1.25rem', color: '#665772', fontSize: '0.9rem', lineHeight: 1.7 }}>
                   <li>Log in to your online or mobile banking app.</li>

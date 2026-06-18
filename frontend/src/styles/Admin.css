@@ -631,8 +631,17 @@
 }
 
 .admin-delete-btn {
-  color: #ad246d;
-  font-size: 0.75rem;
+  color: #ad246d !important;
+  font-size: 0.75rem !important;
+  padding: 0.35rem 0.6rem !important;
+  height: auto !important;
+  min-height: unset !important;
+  line-height: 1.2 !important;
+  border-radius: 6px !important;
+  width: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 /* ── Pills / Badges ── */

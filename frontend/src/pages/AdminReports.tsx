@@ -190,7 +190,8 @@ const AdminReports: React.FC = () => {
 
             <section>
               <h3 className="admin-report-section-title">Contribution Log</h3>
-              <table className="admin-report-table">
+              <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch', marginBottom: '1rem' }}>
+                <table className="admin-report-table">
                 <thead>
                   <tr className="admin-compact-table-head-row">
                     <th className="admin-report-th">Reference</th>
@@ -219,6 +220,7 @@ const AdminReports: React.FC = () => {
                   )}
                 </tbody>
               </table>
+              </div>
               {!isPrinting && <Pagination currentPage={monetaryPage} totalPages={Math.ceil(monetaryData.length / PAGE_SIZE)} onPageChange={setMonetaryPage} />}
             </section>
           </div>
@@ -290,7 +292,8 @@ const AdminReports: React.FC = () => {
 
             <section>
               <h3 className="admin-report-section-title">Finished Wig Stock Log</h3>
-              <table className="admin-report-table">
+              <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch', marginBottom: '1rem' }}>
+                <table className="admin-report-table">
                 <thead>
                   <tr className="admin-compact-table-head-row">
                     <th className="admin-report-th">Task Code</th>
@@ -314,6 +317,7 @@ const AdminReports: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
               {!isPrinting && <Pagination currentPage={wigStockPage} totalPages={Math.ceil(data.inventory.wigStock.length / PAGE_SIZE)} onPageChange={setWigStockPage} />}
             </section>
           </div>
@@ -352,7 +356,8 @@ const AdminReports: React.FC = () => {
 
             <section>
               <h3 className="admin-report-section-title">Fulfilled Requests Log</h3>
-              <table className="admin-report-table">
+              <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch', marginBottom: '1rem' }}>
+                <table className="admin-report-table">
                 <thead>
                   <tr className="admin-compact-table-head-row">
                     <th className="admin-report-th">Reference</th>
@@ -391,6 +396,7 @@ const AdminReports: React.FC = () => {
                   )}
                 </tbody>
               </table>
+              </div>
               {!isPrinting && <Pagination
                 currentPage={matchingPage}
                 totalPages={Math.ceil(((data.summary.fulfilledRequests || []).filter((req: any) => req.wigProductions?.some((w: any) => w.taskCode.includes('-W')))).length / PAGE_SIZE)}
@@ -459,7 +465,8 @@ const AdminReports: React.FC = () => {
 
             <section>
               <h3 className="admin-report-section-title">Full Hair Donation Records</h3>
-              <table className="admin-report-table">
+              <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch', marginBottom: '1rem' }}>
+                <table className="admin-report-table">
                 <thead>
                   <tr className="admin-compact-table-head-row">
                     <th className="admin-report-th">Reference</th>
@@ -486,6 +493,7 @@ const AdminReports: React.FC = () => {
                   )}
                 </tbody>
               </table>
+              </div>
               {!isPrinting && <Pagination
                 currentPage={donationsPage}
                 totalPages={Math.ceil((data.inventory.allDonations || []).length / PAGE_SIZE)}
@@ -582,6 +590,30 @@ const AdminReports: React.FC = () => {
             box-shadow: none !important;
             padding: 0 !important;
             min-height: auto !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .admin-print-brand-header {
+            flex-direction: column !important;
+            text-align: center !important;
+            gap: 1.5rem !important;
+            padding: 1.5rem 1rem !important;
+          }
+          .admin-print-brand-header > div {
+            flex: unset !important;
+            justify-content: center !important;
+          }
+          .admin-print-brand-header > div:nth-child(2) {
+            order: -1; /* Put the main title at the top on mobile */
+          }
+          .admin-report-doc-header {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 1rem !important;
+          }
+          .admin-match-score-wrap {
+            text-align: center !important;
           }
         }
       `}</style>

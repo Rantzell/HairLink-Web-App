@@ -120,25 +120,6 @@ const AdminCommunityModeration: React.FC = () => {
         </div>
       </article>
 
-      <article className="admin-card admin-card-rounded">
-        <h2 className="admin-card-title"><i className="bx bx-pin admin-icon-pink"></i> Pinned Announcements</h2>
-        <div className="event-list admin-form-grid">
-          {[
-            { title: 'New Hair Donation Policy', desc: 'Minimum length is now 10 inches.' },
-            { title: 'Wig Request Portal Open', desc: 'Online submissions now accepted.' },
-          ].map((pin, i) => (
-            <div key={i} className="event-item admin-event-item">
-              <div className="admin-pin-icon">
-                <i className='bx bx-pin'></i>
-              </div>
-              <div>
-                <h4 className="admin-event-title">{pin.title}</h4>
-                <p className="admin-event-meta">{pin.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </article>
 
       <ConfirmModal
         isOpen={showDeleteConfirm}
