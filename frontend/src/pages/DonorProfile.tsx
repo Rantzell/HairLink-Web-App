@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import PasswordInput from '../components/PasswordInput';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -29,6 +30,14 @@ const DonorProfile: React.FC = () => {
   });
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
 
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: '',
+    password: '',
+    confirmPassword: '',
+  });
+
   const initials = user ? (user.firstName?.[0] || user.name?.[0] || 'U').toUpperCase() + (user.lastName?.[0] || '').toUpperCase() : '??';
   const fullName = user ? (user.firstName ? `${user.firstName} ${user.lastName}` : user.name) : 'Donor';
 
@@ -50,6 +59,57 @@ const DonorProfile: React.FC = () => {
       }
     }
     setShowConfirm(true);
+  };
+
+  const doChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordData.oldPassword) {
+      toast.error('Please enter your current password.');
+      return;
+    }
+    if (passwordData.password.length < 8) {
+      toast.error('New password must be at least 8 characters.');
+      return;
+    }
+    if (!/[0-9]/.test(passwordData.password)) {
+      toast.error('New password must contain a number.');
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>_]/.test(passwordData.password)) {
+      toast.error('New password must contain a symbol.');
+      return;
+    }
+    if (passwordData.password !== passwordData.confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: passwordData.oldPassword,
+      });
+
+      if (signInError) {
+        toast.error('Incorrect current password.');
+        setIsChangingPassword(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({ password: passwordData.password });
+      if (error) {
+        toast.error(error.message || 'Failed to update password.');
+      } else {
+        toast.success('Password changed successfully!');
+        setShowChangePasswordModal(false);
+        setPasswordData({ oldPassword: '', password: '', confirmPassword: '' });
+      }
+    } catch (err) {
+      toast.error('An unexpected error occurred.');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const doUpdate = async () => {
@@ -353,14 +413,14 @@ const DonorProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Delete Account Button ── */}
-      <div style={{ marginTop: '1.5rem' }}>
+      {/* ── Account Actions (Change Password / Delete) ── */}
+      <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
         <button
           type="button"
-          onClick={() => { setDeleteConfirmText(''); setShowDeleteConfirm(true); }}
+          onClick={() => { setPasswordData({ oldPassword: '', password: '', confirmPassword: '' }); setShowChangePasswordModal(true); }}
           style={{
             background: 'transparent',
-            color: '#dc2626',
+            color: '#4b5563',
             border: 'none',
             padding: '0',
             fontSize: '0.82rem',
@@ -375,10 +435,141 @@ const DonorProfile: React.FC = () => {
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.75'; }}
         >
-          <i className='bx bx-trash' />
-          Delete My Account
+          <i className='bx bx-lock-alt' />
+          Change Password
         </button>
+
+        {user?.role !== 'admin' && (
+          <button
+            type="button"
+            onClick={() => { setDeleteConfirmText(''); setShowDeleteConfirm(true); }}
+            style={{
+              background: 'transparent',
+              color: '#dc2626',
+              border: 'none',
+              padding: '0',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              opacity: 0.75,
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.75'; }}
+          >
+            <i className='bx bx-trash' />
+            Delete My Account
+          </button>
+        )}
       </div>
+
+      {/* ── Change Password Modal ── */}
+      {showChangePasswordModal && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget && !isChangingPassword) setShowChangePasswordModal(false); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+        >
+          <div style={{ background: '#fff', borderRadius: '20px', padding: '2rem', maxWidth: '440px', width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#fdf2f8', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                <i className='bx bx-lock-alt' style={{ fontSize: '1.5rem', color: '#ad246d' }} />
+              </div>
+              <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#111827' }}>Change Password</h2>
+            </div>
+            
+            <form onSubmit={doChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="ep-field" style={{ margin: 0 }}>
+                <label className="ep-label" style={{ fontWeight: 700 }}>Current password</label>
+                <PasswordInput 
+                  id="cp-old-password"
+                  placeholder="Enter current password"
+                  value={passwordData.oldPassword || ''}
+                  onChange={e => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                />
+              </div>
+              <div className="ep-field" style={{ margin: 0 }}>
+                <label className="ep-label" style={{ fontWeight: 700 }}>New password</label>
+                <PasswordInput 
+                  id="cp-new-password"
+                  placeholder="Min 8 characters"
+                  value={passwordData.password || ''}
+                  onChange={e => setPasswordData({ ...passwordData, password: e.target.value })}
+                />
+                {passwordData.password && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '6px' }}>
+                    {[
+                      { label: 'At least 8 characters', ok: passwordData.password.length >= 8 },
+                      { label: 'Contains a number', ok: /[0-9]/.test(passwordData.password) },
+                      { label: 'Contains a symbol', ok: /[!@#$%^&*(),.?":{}|<>_]/.test(passwordData.password) },
+                    ].map((r, i) => (
+                      <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.66rem', fontWeight: 500, color: r.ok ? '#4A7C59' : '#B45454' }}>
+                        <i className={`bx ${r.ok ? 'bx-check-circle' : 'bx-circle'}`} style={{ fontSize: '0.76rem' }} />
+                        {r.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="ep-field" style={{ margin: 0 }}>
+                <label className="ep-label" style={{ fontWeight: 700 }}>Confirm new password</label>
+                <PasswordInput 
+                  id="cp-confirm-password"
+                  placeholder="Repeat new password"
+                  value={passwordData.confirmPassword || ''}
+                  onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                />
+                {passwordData.confirmPassword && passwordData.password !== passwordData.confirmPassword && (
+                  <span style={{ fontSize: '0.69rem', color: '#B45454', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '6px' }}>
+                    ⚠ Passwords do not match
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowChangePasswordModal(false)}
+                  disabled={isChangingPassword}
+                  style={{
+                    flex: 1,
+                    padding: '0.7rem',
+                    borderRadius: '50px',
+                    border: '1.5px solid #e5e7eb',
+                    background: '#fff',
+                    color: '#374151',
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  style={{
+                    flex: 1,
+                    padding: '0.7rem',
+                    borderRadius: '50px',
+                    border: 'none',
+                    background: '#ad246d',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                    cursor: isChangingPassword ? 'not-allowed' : 'pointer',
+                    opacity: isChangingPassword ? 0.7 : 1
+                  }}
+                >
+                  {isChangingPassword ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── Delete Account Confirmation Modal ── */}
       {showDeleteConfirm && (
@@ -496,6 +687,8 @@ const DonorProfile: React.FC = () => {
                   <label className="ep-label">Email</label>
                   <input type="email" value={user?.email || ''} readOnly className="ep-input ep-input-readonly" />
                 </div>
+
+
 
                 <div className="ep-field">
                   <label className="ep-label">Phone number</label>

@@ -39,11 +39,13 @@ const WigmakerWigInventory: React.FC = () => {
 
   // Add Wig Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [wigLength, setWigLength] = useState<'short' | 'long' | ''>('');
   const [wigColor, setWigColor] = useState<'black' | 'brown' | 'light' | ''>('');
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [customDate, setCustomDate] = useState(() => getPhilippinesDateTimeLocal());
+  const [nextWigCode, setNextWigCode] = useState<string>('');
   const todayMin = React.useMemo(() => {
     return getPhilippinesDateTimeLocal();
   }, []);
@@ -71,10 +73,15 @@ const WigmakerWigInventory: React.FC = () => {
     return () => { document.body.style.overflow = ''; };
   }, [isAddModalOpen]);
 
-  // Set custom date when modal opens
+  // Set custom date and fetch next code when modal opens
   useEffect(() => {
     if (isAddModalOpen) {
       setCustomDate(getPhilippinesDateTimeLocal());
+      apiClient.get('/internal-api/wigmaker/wigs/next-code')
+        .then(res => setNextWigCode(res.data.nextCode))
+        .catch(err => console.error('Failed to fetch next wig code:', err));
+    } else {
+      setNextWigCode('');
     }
   }, [isAddModalOpen]);
 
@@ -130,13 +137,16 @@ const WigmakerWigInventory: React.FC = () => {
     }
   };
 
-  const handleAddWigSubmit = async (e: React.FormEvent) => {
+  const handleAddWigSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!wigLength || !wigColor) {
       toast.error('Please select both length and color.');
       return;
     }
+    setIsConfirmModalOpen(true);
+  };
 
+  const executeAddWig = async () => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -150,6 +160,7 @@ const WigmakerWigInventory: React.FC = () => {
       });
 
       toast.success('Wig added to inventory successfully.');
+      setIsConfirmModalOpen(false);
       setIsAddModalOpen(false);
       
       // Reset form
@@ -532,9 +543,16 @@ const WigmakerWigInventory: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #f2ebf4', paddingBottom: '0.8rem' }}>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="bx bxs-crown" style={{ color: '#ad246d' }}></i> Add Wig to Inventory
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <i className="bx bxs-crown" style={{ color: '#ad246d' }}></i> Add Wig
+                </h2>
+                {nextWigCode && (
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ad246d', background: '#fdf2f8', padding: '0.2rem 0.6rem', borderRadius: '50px', border: '1px dashed #fbcfe8' }}>
+                    {nextWigCode}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8c7895', fontSize: '1.5rem', fontWeight: 300, lineHeight: 1 }}
@@ -670,6 +688,87 @@ const WigmakerWigInventory: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {isConfirmModalOpen && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget && !isSubmitting) setIsConfirmModalOpen(false); }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999999,
+            background: 'rgba(30, 18, 36, 0.55)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem',
+            animation: 'cmFadeIn 0.18s ease',
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '24px',
+              boxShadow: '0 32px 80px rgba(173, 36, 109, 0.18), 0 8px 24px rgba(0,0,0,0.12)',
+              padding: '2rem',
+              maxWidth: '420px',
+              width: '100%',
+              border: '1px solid #ead7e8',
+              textAlign: 'center',
+              animation: 'cmSlideUp 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+          >
+            <div style={{
+              width: '64px', height: '64px', borderRadius: '50%',
+              background: '#fdf2f8', color: '#ad246d', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.2rem',
+              fontSize: '2rem'
+            }}>
+              <i className="bx bx-question-mark"></i>
+            </div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#3b2e43', margin: '0 0 0.5rem' }}>
+              Confirm Add Wig
+            </h2>
+            <p style={{ color: '#5d4d62', fontSize: '0.9rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>
+              Are you sure you want to add this wig to the inventory?
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setIsConfirmModalOpen(false)}
+                disabled={isSubmitting}
+                style={{
+                  height: '44px', borderRadius: '50px',
+                  border: '1.5px solid #ead7e8', background: '#fff',
+                  color: '#5d4d62', fontWeight: 700, fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeAddWig}
+                disabled={isSubmitting}
+                style={{
+                  height: '44px', borderRadius: '50px',
+                  border: 'none', background: 'linear-gradient(135deg, #ad246d 0%, #cf2f84 100%)',
+                  color: '#fff', fontWeight: 700, fontSize: '0.85rem',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  opacity: isSubmitting ? 0.75 : 1,
+                  boxShadow: '0 4px 12px rgba(173, 36, 109, 0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
+                }}
+              >
+                {isSubmitting ? (
+                  <>
+                    <i className="bx bx-loader-alt bx-spin" />
+                    Adding...
+                  </>
+                ) : 'Yes, Add Wig'}
+              </button>
+            </div>
           </div>
         </div>,
         document.body

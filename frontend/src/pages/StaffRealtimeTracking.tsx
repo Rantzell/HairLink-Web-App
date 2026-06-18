@@ -685,30 +685,7 @@ const StaffRealtimeTracking: React.FC = () => {
                             {wp.status === 'assigned' && (
                               <div className="tracking-action-col-wide" style={{ gap: '0.4rem', minWidth: '180px', alignItems: 'center' }}>
                                 {wp.materialDeliveryLink ? (
-                                  <>
-                                    <a href={wp.materialDeliveryLink} target="_blank" rel="noreferrer" className="tracking-link-btn" style={{ justifyContent: 'center', width: '100%' }}>
-                                      <i className='bx bx-link-external'></i> Hair Tracking
-                                    </a>
-                                    <button
-                                      onClick={() => handleOpenDeliveryLinkModal(wp.taskCode, wp.materialDeliveryLink || '')}
-                                      style={{
-                                        padding: '0.35rem 0.8rem',
-                                        fontSize: '0.7rem',
-                                        background: '#fff',
-                                        border: '1.5px solid #ead7e8',
-                                        color: '#ad246d',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        fontWeight: 800,
-                                        transition: 'all 0.2s ease',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                      }}
-                                    >
-                                      Update Link
-                                    </button>
-                                  </>
+                                  <span className="tracking-awaiting-text">Wig shipment in transit</span>
                                 ) : (
                                   <>
                                     <span className="tracking-awaiting-text" style={{ marginBottom: '0.2rem' }}>Ready for shipping</span>

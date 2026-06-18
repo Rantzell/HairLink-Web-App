@@ -134,6 +134,21 @@ const WigmakerHairBatchTracking: React.FC = () => {
                           <i className="bx bx-link-external"></i> Track Incoming Delivery
                         </a>
                       )}
+                      {/* Staff note */}
+                      {task.staffNote && (() => {
+                        // Extract actual note from "Batch X assigned by staff. Staff note: <note>"
+                        const raw: string = task.staffNote;
+                        const noteMatch = raw.match(/Staff note:\s*(.+)$/i);
+                        const displayNote = noteMatch ? noteMatch[1].trim() : raw;
+                        return (
+                          <div style={{ marginTop: '6px', display: 'inline-flex', alignItems: 'flex-start', gap: '5px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.3rem 0.65rem', maxWidth: '380px' }}>
+                            <i className="bx bx-note" style={{ color: '#d97706', fontSize: '0.85rem', marginTop: '1px', flexShrink: 0 }}></i>
+                            <span style={{ fontSize: '0.75rem', color: '#92400e', fontWeight: 600, lineHeight: 1.4 }}>
+                              <span style={{ fontWeight: 800, color: '#b45309' }}>Staff Note: </span>{displayNote}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 

@@ -78,9 +78,31 @@ router.get('/tasks', ...wmOnly, async (req, res) => {
       if (h.status === 'missing') donationStateMap[id].isMissing = true;
     }
 
+    const taskIds = tasks.map(t => t.id);
+
+    // Fetch the assignment status history (notes contain staff note)
+    const assignmentHistories = taskIds.length > 0
+      ? await prisma.statusHistory.findMany({
+          where: {
+            trackableType: WIG_TYPE,
+            trackableId: { in: taskIds },
+            status: 'assigned'
+          },
+          orderBy: { createdAt: 'asc' }
+        })
+      : [];
+
+    // Map: taskId -> first 'assigned' history notes (contains staff note)
+    const staffNoteMap: Record<number, string | null> = {};
+    for (const h of assignmentHistories) {
+      const id = h.trackableId as number;
+      if (!staffNoteMap[id]) staffNoteMap[id] = h.notes || null;
+    }
+
     const tasksWithRef = tasks.map(t => ({
       ...t,
       batchHairReference: `B${t.id}-${String(new Date(t.createdAt!).getMonth() + 1).padStart(2, '0')}-${new Date(t.createdAt!).getFullYear()}`,
+      staffNote: staffNoteMap[t.id] || null,
     }));
 
     res.json({ tasks: s(tasksWithRef), queuedCount: q, inProgressCount: p, completedCount: c, donationStateMap });
@@ -469,6 +491,63 @@ router.post('/wigs/create-free', ...wmOnly, upload.single('previewPhoto'), async
   }
 });
 
+// GET /internal-api/wigmaker/wigs/next-code
+router.get('/wigs/next-code', ...wmOnly, async (req, res) => {
+  try {
+    let parentTask: any = await prisma.wigProduction.findFirst({
+      where: {
+        wigmakerId: req.user!.id,
+        taskCode: { startsWith: 'WB ' },
+        NOT: { taskCode: { contains: '-W' } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    let childPrefix = '';
+    
+    if (!parentTask) {
+      // If no parent exists, simulate generation
+      const currentYear = new Date().getFullYear();
+      const prefix = `WB ${currentYear}-`;
+      const [wbRecs, wigRecs] = await Promise.all([
+        prisma.wigProduction.findMany({
+          where: { taskCode: { startsWith: `WB ${currentYear}-` }, NOT: { taskCode: { contains: '-W' } } },
+          select: { taskCode: true },
+        }),
+        prisma.wigProduction.findMany({
+          where: { taskCode: { startsWith: `WIG ${currentYear}-` }, NOT: { taskCode: { contains: '-W' } } },
+          select: { taskCode: true },
+        }),
+      ]);
+      const records = [...wbRecs, ...wigRecs];
+      let maxSeq = 0;
+      for (const record of records) {
+        const refString = record.taskCode;
+        if (!refString) continue;
+        const lastHyphen = refString.lastIndexOf('-');
+        if (lastHyphen === -1) continue;
+        const seqText = refString.slice(lastHyphen + 1);
+        if (/^\d+$/.test(seqText)) maxSeq = Math.max(maxSeq, parseInt(seqText, 10));
+      }
+      const nextParentCode = `${prefix}${(maxSeq + 1).toString().padStart(4, '0')}`;
+      const seqPart = nextParentCode.replace(/^(WB|WIG)\s+/i, '');
+      childPrefix = `WIG ${seqPart}-W`;
+    } else {
+      const seqPart = parentTask.taskCode.replace(/^(WB|WIG)\s+/i, '');
+      childPrefix = `WIG ${seqPart}-W`;
+    }
+
+    const existingCount = await prisma.wigProduction.count({
+      where: { taskCode: { startsWith: childPrefix } }
+    });
+    const childWigCode = `${childPrefix}${existingCount + 1}`;
+
+    res.json({ nextCode: childWigCode });
+  } catch (err) {
+    console.error('[Wigmaker API] Next code error:', err);
+    res.status(500).json({ error: 'Failed to generate next code' });
+  }
+});
 
 // GET /internal-api/wigmaker/wigs
 router.get('/wigs', ...wmOnly, async (req, res) => {
