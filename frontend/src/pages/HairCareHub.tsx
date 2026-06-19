@@ -119,7 +119,7 @@ const HairCareHub: React.FC = () => {
           },
           {
             id: 3,
-            title: 'Emotional Support &amp; Confidence During Treatment',
+            title: 'Emotional Support; Confidence During Treatment',
             description: 'Stories and encouragement from recipients of the Strand Up for Cancer community.',
             videoId: 'BXBXml8asT8', // User provided: Emotional support
             source: 'youtube',

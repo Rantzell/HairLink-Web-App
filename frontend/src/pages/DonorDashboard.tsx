@@ -294,9 +294,8 @@ const dashStyles = `
 /* PROGRESS TRACK */
 .hl-dash-progress-wrap {
   position: relative;
-  /* vertical space for the milestone stars that sit on top of the track */
-  padding: 20px 0 28px;
-  margin-bottom: 8px;
+  padding: 10px 0 0;
+  margin-bottom: 0;
 }
 
 .hl-dash-progress-track {
@@ -313,75 +312,56 @@ const dashStyles = `
   background: linear-gradient(90deg, #e8679a, #D63B8A);
   border-radius: 999px;
   transition: width 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
 }
 
-/* Glowing tip star — slides along the fill edge */
-.hl-dash-progress-star-indicator {
+/* Glowing tip badge — rides right at the leading edge of the fill */
+.hl-dash-progress-indicator {
   position: absolute;
   top: 50%;
-  /* translate(-50%,-50%) keeps the star centred on the fill edge */
+  /* Centred on the fill tip: half the badge width + half border = pulled back */
   transform: translate(-50%, -50%);
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   background: #ffffff;
-  border: 2px solid #D63B8A;
+  border: 2.5px solid #D63B8A;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #D63B8A;
+  color: #F59E0B;
   font-size: 1rem;
   transition: left 0.9s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 0 4px rgba(214,59,138,0.15), 0 2px 8px rgba(214,59,138,0.25);
+  box-shadow: 0 0 0 4px rgba(214,59,138,0.15), 0 2px 10px rgba(214,59,138,0.28);
   z-index: 3;
-}
-
-/* Milestone stars — each anchored at its exact % position ON the track */
-.hl-dash-milestone-star {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  z-index: 2;
   pointer-events: none;
 }
 
-.hl-dash-milestone-star .ms-dot {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #ddd;
-  border: 2px solid #fff;
+/* Milestone star row — sits BELOW the track */
+.hl-dash-milestone-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding: 0 2px;
+}
+
+.hl-dash-ms-star {
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.4s, border-color 0.4s;
-  font-size: 0.65rem;
-  color: transparent;
+  font-size: 1.25rem;
+  transition: color 0.45s ease, transform 0.3s ease;
+  color: #D6D3CD;
+  line-height: 1;
 }
 
-.hl-dash-milestone-star.reached .ms-dot {
-  background: #F59E0B;
-  border-color: #fff;
-  color: #fff;
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.18);
-}
-
-.hl-dash-milestone-star .ms-label {
-  position: absolute;
-  bottom: -20px;
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: #bbb;
-  white-space: nowrap;
-  transition: color 0.4s;
-}
-
-.hl-dash-milestone-star.reached .ms-label {
-  color: #D63B8A;
+.hl-dash-ms-star.reached {
+  color: #F59E0B;
+  transform: scale(1.12);
+  text-shadow: 0 0 6px rgba(245, 158, 11, 0.35);
 }
 
 /* BANNER */
@@ -1095,42 +1075,50 @@ const DonorDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Progress Bar with pixel-perfect milestone stars ON the track */}
+              {/* ─── Rewards Progress Bar ─── */}
               <div className="hl-dash-progress-wrap" aria-label={`Reward progress: ${points} of ${goal} points`}>
+
+                {/* Track + fill + moving indicator */}
                 <div className="hl-dash-progress-track">
-                  {/* Fill bar */}
+
+                  {/* Pink fill — width scales linearly: (points / 100) × 100% */}
                   <span
                     className="hl-dash-progress-fill"
                     style={{ width: `${percent}%` }}
                   />
 
-                  {/* Milestone dots at 10%, 20%, …, 100% — each is exactly 10 pts apart */}
-                  {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((milestone) => {
-                    const reached = points >= milestone;
-                    return (
-                      <span
-                        key={milestone}
-                        className={`hl-dash-milestone-star${reached ? ' reached' : ''}`}
-                        style={{ left: `${milestone}%` }}
-                        aria-label={`${milestone} points milestone${reached ? ' reached' : ''}`}
-                      >
-                        <span className="ms-dot">
-                          {reached && <i className="bx bxs-star" />}
-                        </span>
-                        <span className="ms-label">{milestone}</span>
-                      </span>
-                    );
-                  })}
-
-                  {/* Glowing tip star — sits exactly at the current progress edge */}
-                  {percent > 0 && percent < 100 && (
+                  {/* Moving badge — centred on the right edge of the fill.
+                      When points = 0 we hide it; when = 100 it sits at the far end. */}
+                  {percent > 0 && (
                     <span
-                      className="hl-dash-progress-star-indicator"
+                      className="hl-dash-progress-indicator"
                       style={{ left: `${percent}%` }}
+                      aria-hidden="true"
                     >
                       <i className="bx bxs-star" />
                     </span>
                   )}
+                </div>
+
+                {/* Milestone star row — 10 stars below the track, each = 10 pts.
+                    Lights up (orange) once currentPoints >= milestoneIndex × 10. */}
+                <div className="hl-dash-milestone-row" role="list" aria-label="Milestone stars">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((idx) => {
+                    const milestonePoints = idx * 10;
+                    const reached = points >= milestonePoints;
+                    return (
+                      <span
+                        key={idx}
+                        role="listitem"
+                        className={`hl-dash-ms-star${reached ? ' reached' : ''}`}
+                        aria-label={`${milestonePoints} points milestone${reached ? ' — reached' : ''}`}
+                      >
+                        {reached
+                          ? <i className="bx bxs-star" />
+                          : <i className="bx bx-star" />}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
