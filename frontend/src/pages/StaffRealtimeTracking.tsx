@@ -226,13 +226,13 @@ const StaffRealtimeTracking: React.FC = () => {
   // All batches — used for Hair Batch Donation Tracking (shows all assigned batches)
   const allBatchGroupsArray = Array.from(batchGroups.entries());
 
-  // Wigmaker tracking only shows batches once wigs have been shipped back to staff, and hides them once fully received/resolved
+  // Wigmaker tracking shows batches that have at least one shipped wig not yet received/resolved
   const batchGroupsArray = allBatchGroupsArray.filter(([, { wp }]) => {
-    if (['received', 'matched'].includes(wp.status)) return false;
     const children = wp.childWigs || [];
-    if (children.length === 0) return false;
-    const hasShippedOrReceived = children.some((w: any) => ['shipped', 'received', 'missing'].includes(w.status));
-    if (!hasShippedOrReceived) return false;
+    // Show if any child wig is shipped (in transit back to staff) but not yet received
+    const hasShipped = children.some((w: any) => w.status === 'shipped');
+    if (!hasShipped) return false;
+    // Hide once every shipped wig is resolved (received or missing)
     const allResolved = children.every((w: any) => ['received', 'missing'].includes(w.status));
     if (allResolved) return false;
     return true;
