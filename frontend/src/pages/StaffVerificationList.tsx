@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
@@ -270,8 +271,8 @@ const StaffVerificationList: React.FC = () => {
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </article>
 
-      {/* Proof image lightbox */}
-      {proofUrl && (
+      {/* Proof image lightbox — rendered via portal so it escapes overflow:hidden layout wrappers */}
+      {proofUrl && ReactDOM.createPortal(
         <div
           onClick={() => setProofUrl(null)}
           style={{
@@ -316,7 +317,8 @@ const StaffVerificationList: React.FC = () => {
           }}>
             Click outside or press ESC to close
           </p>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
