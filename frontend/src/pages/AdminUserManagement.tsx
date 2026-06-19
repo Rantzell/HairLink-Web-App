@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
@@ -277,8 +278,8 @@ const AdminUserManagement: React.FC = () => {
         />
       </article>
 
-      {/* Create/Edit User Modal */}
-      {isModalOpen && (
+      {/* Create/Edit User Modal — portalled to document.body so it's always viewport-centered */}
+      {isModalOpen && createPortal(
         <div
           className="amu-backdrop"
           onClick={e => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
@@ -466,7 +467,7 @@ const AdminUserManagement: React.FC = () => {
             </form>
           </div>
         </div>
-      )}
+      , document.body)}
       <ConfirmModal
         isOpen={showToggleConfirm}
         onClose={() => { setShowToggleConfirm(false); setPendingToggleUser(null); }}
