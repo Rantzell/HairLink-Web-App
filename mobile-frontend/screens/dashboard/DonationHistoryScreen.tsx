@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import api from '../../lib/api';
 import DonorCertificateScreen from './DonorCertificateScreen';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 interface DonationRecord {
   id: string;
@@ -128,7 +129,7 @@ function ScheduleDeliveryForm({
 
   const submit = async () => {
     if (!picked) {
-      Alert.alert('Pick a Date', 'Please choose the date you plan to send your hair donation.');
+      CustomAlert.alert('Pick a Date', 'Please choose the date you plan to send your hair donation.');
       return;
     }
     // Build local-midnight ISO — matches the website's localMidnight approach
@@ -136,19 +137,19 @@ function ScheduleDeliveryForm({
     // as the due day from 12:00 AM Manila time.
     const [y, m, d] = picked.split('-').map(Number);
     if (!y || !m || !d) {
-      Alert.alert('Invalid Date', 'Please use the YYYY-MM-DD format (e.g., 2026-06-20).');
+      CustomAlert.alert('Invalid Date', 'Please use the YYYY-MM-DD format (e.g., 2026-06-20).');
       return;
     }
     const localMidnight = new Date(y, m - 1, d);
     if (isNaN(localMidnight.getTime())) {
-      Alert.alert('Invalid Date', 'That date does not look right. Please try again.');
+      CustomAlert.alert('Invalid Date', 'That date does not look right. Please try again.');
       return;
     }
     // Same past-date guard as backend (which returns 422 anyway, but a friendly
     // upfront error is nicer than a generic axios error).
     const todayYmd = ymdForOffset(0);
     if (picked < todayYmd) {
-      Alert.alert('Past Date', 'Scheduled date cannot be in the past.');
+      CustomAlert.alert('Past Date', 'Scheduled date cannot be in the past.');
       return;
     }
 
@@ -160,14 +161,14 @@ function ScheduleDeliveryForm({
       onSaved(localMidnight.toISOString());
       setEditing(false);
       setPicked('');
-      Alert.alert(
+      CustomAlert.alert(
         'Delivery Date Saved',
         `We'll remind you on ${formatScheduledLong(localMidnight.toISOString())} to submit your tracking link.`,
       );
     } catch (err: any) {
       const msg =
         err.response?.data?.error || err.response?.data?.message || 'Failed to schedule delivery.';
-      Alert.alert('Error', msg);
+      CustomAlert.alert('Error', msg);
     } finally {
       setSaving(false);
     }
@@ -300,7 +301,7 @@ function DeliveryLinkForm({
 
   const submit = async () => {
     if (!validUrl) {
-      Alert.alert('Invalid Link', 'Please paste a valid tracking URL starting with http:// or https://');
+      CustomAlert.alert('Invalid Link', 'Please paste a valid tracking URL starting with http:// or https://');
       return;
     }
     setSaving(true);
@@ -308,10 +309,10 @@ function DeliveryLinkForm({
       await api.post(`/donations/${reference}/delivery-link`, { donor_delivery_link: link.trim() });
       onSaved(link.trim());
       setEditing(false);
-      Alert.alert('Saved', 'Delivery link submitted. Staff can now track your shipment.');
+      CustomAlert.alert('Saved', 'Delivery link submitted. Staff can now track your shipment.');
     } catch (err: any) {
       const msg = err.response?.data?.error || err.response?.data?.message || 'Failed to save link.';
-      Alert.alert('Error', msg);
+      CustomAlert.alert('Error', msg);
     } finally {
       setSaving(false);
     }

@@ -88,13 +88,15 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
       const mapped: Event[] = items.map((it) => {
         const dt = new Date(it.datetime);
         const time = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const localDate = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+        
         if (it.kind === 'event') {
           return {
             id: it.id,
             title: it.title,
             location: it.location || 'TBA',
             time,
-            date: it.date,
+            date: localDate,
             type: 'drive',
             accepted: true,
             status: it.status,
@@ -106,7 +108,7 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
           title: it.title || 'Hair Request',
           location: it.location || 'Medical Review',
           time,
-          date: it.date,
+          date: localDate,
           type: 'other',
           accepted: it.decision === 'Approved',
           status: it.decision || it.status,

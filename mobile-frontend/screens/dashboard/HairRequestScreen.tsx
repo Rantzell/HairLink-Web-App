@@ -21,6 +21,7 @@ import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated'
 import * as ImagePicker from 'expo-image-picker';
 import api from '../../lib/api';
 import RequestSuccessModal from '../../components/RequestSuccessModal';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 interface HairRequestScreenProps {
   onBack: () => void;
@@ -91,7 +92,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
     // delivery method, supporting document, AND reference photo are all
     // mandatory on the web (`!documents.length || !additionalPhoto`).
     if (!story.trim() || !hairLength || !wigColor || !docImage || !refImage) {
-      Alert.alert(
+      CustomAlert.alert(
         'Missing Information',
         'Please share your story, choose length & color, attach a supporting document, and add a reference picture.',
       );
@@ -151,7 +152,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
       }
     } catch (err: any) {
       console.error('Submission error:', err.response?.data || err.message);
-      Alert.alert('Submission Error', err.response?.data?.message || 'Failed to submit your request. Please try again.');
+      CustomAlert.alert('Submission Error', err.response?.data?.message || 'Failed to submit your request. Please try again.');
     } finally {
       setLoading(false);
       setLoadingLabel('Submitting...');

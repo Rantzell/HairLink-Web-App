@@ -24,6 +24,7 @@ import api from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 /**
  * Mobile Community feed — visual + behavioural parity with the web
@@ -186,7 +187,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
-      Alert.alert('Error', 'Could not load community feed.');
+      CustomAlert.alert('Error', 'Could not load community feed.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -218,7 +219,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'We need access to your photos to attach one.');
+      CustomAlert.alert('Permission needed', 'We need access to your photos to attach one.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -254,7 +255,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
   };
 
   const handleDeletePost = (post: any) => {
-    Alert.alert('Delete Post', 'Are you sure you want to delete this post? This cannot be undone.', [
+    CustomAlert.alert('Delete Post', 'Are you sure you want to delete this post? This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -265,7 +266,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
             setPosts((curr) => curr.filter((p) => p.id !== post.id));
             if (activePost?.id === post.id) setActivePost(null);
           } catch (e) {
-            Alert.alert('Error', 'Failed to delete post.');
+            CustomAlert.alert('Error', 'Failed to delete post.');
           }
         },
       },
@@ -273,7 +274,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
   };
 
   const handleDeleteComment = (comment: any) => {
-    Alert.alert('Delete Comment', 'Remove this comment? This cannot be undone.', [
+    CustomAlert.alert('Delete Comment', 'Remove this comment? This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -292,7 +293,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
               curr ? { ...curr, comments: (curr.comments || []).filter((c: any) => c.id !== comment.id) } : curr,
             );
           } catch (e) {
-            Alert.alert('Error', 'Failed to delete comment.');
+            CustomAlert.alert('Error', 'Failed to delete comment.');
           }
         },
       },
@@ -301,7 +302,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
 
   // Tapping the ⋯ on your own post.
   const openPostMenu = (post: any) => {
-    Alert.alert('Post options', undefined, [
+    CustomAlert.alert('Post options', undefined, [
       { text: 'Edit', onPress: () => openEditModal(post) },
       { text: 'Delete', style: 'destructive', onPress: () => handleDeletePost(post) },
       { text: 'Cancel', style: 'cancel' },
@@ -312,7 +313,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
     // Photo is now optional — backend (community.routes.ts) only requires
     // `content`. Only block when the body itself is empty.
     if (!newContent.trim()) {
-      Alert.alert('Body required', 'Write a short body before publishing.');
+      CustomAlert.alert('Body required', 'Write a short body before publishing.');
       return;
     }
 
@@ -349,7 +350,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
       setModalOpen(false);
     } catch (error) {
       console.error('Error saving post:', error);
-      Alert.alert('Error', editingPostId ? 'Failed to update post.' : 'Failed to publish post.');
+      CustomAlert.alert('Error', editingPostId ? 'Failed to update post.' : 'Failed to publish post.');
     } finally {
       setSubmitting(false);
     }
@@ -379,7 +380,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
       setReplyingToComment(null);
     } catch (error) {
       console.error('Error posting comment:', error);
-      Alert.alert('Error', 'Failed to post comment.');
+      CustomAlert.alert('Error', 'Failed to post comment.');
     } finally {
       setPostingComment(false);
     }

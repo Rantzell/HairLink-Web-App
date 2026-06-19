@@ -14,6 +14,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { buildArHtml } from './arHtml';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 // Fallback AR experience for devices that don't support ARCore Augmented Faces
 // (e.g. Galaxy A24). Uses MediaPipe FaceLandmarker in a WebView — same head
@@ -115,10 +116,10 @@ export default function WebViewARFallback({ onBack }: { onBack: () => void }) {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(path, { mimeType: 'image/jpeg', dialogTitle: 'Save AR Try-On' });
       } else {
-        Alert.alert('Saved', `Captured to ${path}`);
+        CustomAlert.alert('Saved', `Captured to ${path}`);
       }
     } catch (e: any) {
-      Alert.alert('Capture failed', e?.message ?? String(e));
+      CustomAlert.alert('Capture failed', e?.message ?? String(e));
     }
   };
 

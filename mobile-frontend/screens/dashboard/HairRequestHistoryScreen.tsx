@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import api from '../../lib/api';
 import RecipientTrackingDetailScreen from './RecipientTrackingDetailScreen';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 interface RequestRecord {
   id: string;
@@ -62,6 +63,8 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
   const [detailRef, setDetailRef] = useState<string | null>(null);
   const [confirmRef, setConfirmRef] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [targetConfirmRef, setTargetConfirmRef] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
 
   const fetchHistory = useCallback(async () => {
@@ -127,39 +130,19 @@ export default function HairRequestHistoryScreen({ onBack }: { onBack: () => voi
     try {
       await api.post(`/requests/${confirmRef}/confirm-received`);
       setConfirmRef(null);
-      Alert.alert('Confirmed', 'Thank you! Your wig request has been marked as received.');
+      CustomAlert.alert('Confirmed', 'Thank you! Your wig request has been marked as received.');
       fetchHistory();
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to confirm receipt.';
-      Alert.alert('Error', msg);
+      CustomAlert.alert('Error', msg);
     } finally {
       setConfirming(false);
     }
   };
 
   const confirmWigReceived = (reference: string) => {
-    Alert.alert(
-      'Confirm Wig Received',
-      'Please confirm that you have received your wig. This action cannot be undone and will complete your request.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Yes, I Received It', 
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await api.post(`/requests/${reference}/confirm-received`);
-              Alert.alert('Confirmed', 'Thank you! Your wig request has been marked as completed.');
-              fetchHistory();
-            } catch (err: any) {
-              const msg = err.response?.data?.message || 'Failed to confirm receipt.';
-              Alert.alert('Error', msg);
-              setLoading(false);
-            }
-          }
-        }
-      ]
-    );
+    setTargetConfirmRef(reference);
+    setConfirmOpen(true);
   };
 
   const filteredRequests = requests.filter((r) => {

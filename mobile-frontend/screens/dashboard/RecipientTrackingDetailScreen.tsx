@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
   modalActions: { flexDirection: 'row', gap: ms(10), width: '100%' },
   modalBtn: { flex: 1, paddingVertical: vs(12), borderRadius: ms(12), alignItems: 'center' },
   modalCancelBtn: { backgroundColor: '#EEE' },
-  modalCancelText: { color: '#666', fontWeight: '800', fontSize: ms(14) },
+  modalCancelText: { color: '#666', fontWeight: '800', fontSize: ms(14), textAlign: 'center' },
   modalConfirmBtn: { backgroundColor: '#2E7D32' },
-  modalConfirmText: { color: '#fff', fontWeight: '800', fontSize: ms(14) },
+  modalConfirmText: { color: '#fff', fontWeight: '800', fontSize: ms(14), textAlign: 'center' },
 });

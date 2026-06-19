@@ -41,6 +41,7 @@ import ARScreen from '../ar/ARScreen';
 import CommunityScreen from './CommunityScreen';
 import HairCareScreen from './HairCareScreen';
 import RewardsScreen from './RewardsScreen';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 interface DonorDashboardProps {
   onLogout?: () => void;
@@ -197,15 +198,15 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
   }, [showMonetary, showHairDonation, showCalendar, showNotifications, showHistory, showProfile, showCommunity, showHairCare, showRewards, fetchPoints, fetchUnreadCount]);
 
   const navPlaceholder = (screen: string) =>
-    Alert.alert('Coming Soon', `${screen} is coming soon!`);
+    CustomAlert.alert('Coming Soon', `${screen} is coming soon!`);
 
   const copyToClipboard = async () => {
     await Clipboard.setStringAsync(referralCode);
-    Alert.alert('Copied', `Referral code "${referralCode}" copied to clipboard!`);
+    CustomAlert.alert('Copied', `Referral code "${referralCode}" copied to clipboard!`);
   };
 
   const handleOpenURL = (url: string) => {
-    Linking.openURL(url).catch(err => Alert.alert('Error', 'Cannot open link'));
+    Linking.openURL(url).catch(err => CustomAlert.alert('Error', 'Cannot open link'));
   };
 
   if (showMonetary) {

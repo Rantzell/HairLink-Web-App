@@ -18,6 +18,7 @@ import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import { ms, vs } from '../../lib/scaling';
 import api from '../../lib/api';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 /**
  * Donor rewards screen — backed by the new milestone + voucher API.
@@ -87,11 +88,11 @@ export default function RewardsScreen({ onBack }: { onBack: () => void }) {
 
   const copyCode = async (code: string) => {
     await Clipboard.setStringAsync(code);
-    Alert.alert('Copied', `Voucher code ${code} copied to clipboard.`);
+    CustomAlert.alert('Copied', `Voucher code ${code} copied to clipboard.`);
   };
 
   const confirmRedeem = (voucher: Voucher) => {
-    Alert.alert(
+    CustomAlert.alert(
       'Redeem Voucher',
       `Mark ${voucher.code} as redeemed? This can't be undone — only do this when you're presenting the voucher to staff.`,
       [
@@ -103,12 +104,12 @@ export default function RewardsScreen({ onBack }: { onBack: () => void }) {
             setRedeeming(voucher.code);
             try {
               await api.post(`/rewards/vouchers/${voucher.code}/redeem`);
-              Alert.alert('Redeemed', 'Voucher has been marked as used.');
+              CustomAlert.alert('Redeemed', 'Voucher has been marked as used.');
               setDetail(null);
               fetchAll();
             } catch (err: any) {
               const msg = err?.response?.data?.error || 'Could not redeem voucher.';
-              Alert.alert('Redeem Failed', msg);
+              CustomAlert.alert('Redeem Failed', msg);
             } finally {
               setRedeeming(null);
             }

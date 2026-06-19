@@ -34,6 +34,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import api from '../../lib/api';
 import { supabase } from '../../lib/supabase';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 const { width } = Dimensions.get('window');
 
@@ -83,23 +84,23 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
 
     const doChangePassword = async () => {
         if (!oldPassword) {
-            Alert.alert('Missing field', 'Please enter your current password.');
+            CustomAlert.alert('Missing field', 'Please enter your current password.');
             return;
         }
         if (newPassword.length < 8) {
-            Alert.alert('Weak password', 'New password must be at least 8 characters.');
+            CustomAlert.alert('Weak password', 'New password must be at least 8 characters.');
             return;
         }
         if (!/[0-9]/.test(newPassword)) {
-            Alert.alert('Weak password', 'New password must contain a number.');
+            CustomAlert.alert('Weak password', 'New password must contain a number.');
             return;
         }
         if (!/[!@#$%^&*(),.?":{}|<>_]/.test(newPassword)) {
-            Alert.alert('Weak password', 'New password must contain a symbol.');
+            CustomAlert.alert('Weak password', 'New password must contain a symbol.');
             return;
         }
         if (newPassword !== confirmPassword) {
-            Alert.alert('Mismatch', 'Passwords do not match.');
+            CustomAlert.alert('Mismatch', 'Passwords do not match.');
             return;
         }
 
@@ -110,13 +111,13 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 password: oldPassword,
             });
             if (signInError) {
-                Alert.alert('Incorrect password', 'Your current password is wrong.');
+                CustomAlert.alert('Incorrect password', 'Your current password is wrong.');
                 return;
             }
 
             const { error } = await supabase.auth.updateUser({ password: newPassword });
             if (error) {
-                Alert.alert('Could not update password', error.message || 'Please try again.');
+                CustomAlert.alert('Could not update password', error.message || 'Please try again.');
                 return;
             }
 
@@ -124,9 +125,9 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
             setOldPassword('');
             setNewPassword('');
             setConfirmPassword('');
-            Alert.alert('Password changed', 'Your password has been updated successfully.');
+            CustomAlert.alert('Password changed', 'Your password has been updated successfully.');
         } catch (err: any) {
-            Alert.alert('Error', err?.message || 'An unexpected error occurred.');
+            CustomAlert.alert('Error', err?.message || 'An unexpected error occurred.');
         } finally {
             setIsChangingPassword(false);
         }
@@ -142,7 +143,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
             setDeleteConfirmText('');
             onLogout();
         } catch (err: any) {
-            Alert.alert(
+            CustomAlert.alert(
                 'Could not delete account',
                 err?.response?.data?.message || err?.message || 'Please try again.',
             );
@@ -191,7 +192,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 setHasRedeemed(!!(data.referredBy || data.referred_by || data.has_redeemed_code || data.hasRedeemedCode));
             }
         } catch (error: any) {
-            Alert.alert('Error', 'Failed to fetch profile. Please try again.');
+            CustomAlert.alert('Error', 'Failed to fetch profile. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -207,7 +208,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
             setShowReferralSuccess(true);
         } catch (error: any) {
             const msg = error.response?.data?.error || error.response?.data?.message || 'Invalid referral code.';
-            Alert.alert('Redeem Failed', msg);
+            CustomAlert.alert('Redeem Failed', msg);
         } finally {
             setIsRedeeming(false);
         }
@@ -229,12 +230,12 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 bio: bio || null,
             });
 
-            Alert.alert('Success', 'Profile updated successfully! ✨');
+            CustomAlert.alert('Success', 'Profile updated successfully! ✨');
             setEditMode(false);
             fetchProfile();
         } catch (error: any) {
             const msg = error.response?.data?.error || error.response?.data?.message || 'Failed to update profile.';
-            Alert.alert('Update Failed', msg);
+            CustomAlert.alert('Update Failed', msg);
         } finally {
             setUpdating(false);
         }
@@ -253,7 +254,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 uploadAvatar(result.assets[0].uri);
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to pick image');
+            CustomAlert.alert('Error', 'Failed to pick image');
         }
     };
 
@@ -282,10 +283,10 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
 
             const updatedUser = response.data?.user;
             setAvatarUrl(getAvatarUrl(updatedUser?.profile_photo_url || updatedUser?.profilePhotoUrl));
-            Alert.alert('Success', 'Profile picture updated! ✨');
+            CustomAlert.alert('Success', 'Profile picture updated! ✨');
         } catch (error: any) {
             console.error('Upload error:', error);
-            Alert.alert('Upload Error', 'Failed to upload image to server.');
+            CustomAlert.alert('Upload Error', 'Failed to upload image to server.');
         } finally {
             setUpdating(false);
         }
@@ -293,7 +294,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
 
     const copyReferral = async () => {
         await Clipboard.setStringAsync(referralCode);
-        Alert.alert('Copied', 'Referral code copied to clipboard!');
+        CustomAlert.alert('Copied', 'Referral code copied to clipboard!');
     };
 
     // Role switcher removed — keep `role` state because it still drives the

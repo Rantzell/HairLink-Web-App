@@ -11,6 +11,7 @@ import SignupScreen from "./screens/auth/SignupScreen";
 import VerificationScreen from "./screens/auth/VerificationScreen";
 import ResetPasswordScreen from "./screens/auth/ResetPasswordScreen";
 import SplashScreen from "./screens/SplashScreen";
+import GlobalAlertComponent from "./components/GlobalAlert";
 
 import { NavigationContainer } from "@react-navigation/native";
 
@@ -205,6 +206,7 @@ export default function App() {
       <ErrorBoundary>
         <NavigationContainer>
           {content}
+          <GlobalAlertComponent />
         </NavigationContainer>
       </ErrorBoundary>
     </SafeAreaProvider>

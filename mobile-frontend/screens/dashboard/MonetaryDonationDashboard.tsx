@@ -23,6 +23,7 @@ import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../lib/api';
 import DonationSuccessModal from '../../components/DonationSuccessModal';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 interface MonetaryDonationDashboardProps {
     onBack: () => void;
@@ -126,7 +127,7 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
       console.error('Donation error:', err?.message || err);
       const errorMsg = err?.message || 'Failed to submit donation.';
       setSubmitError(errorMsg);
-      Alert.alert('Donation Error', errorMsg);
+      CustomAlert.alert('Donation Error', errorMsg);
     } finally {
       setLoading(false);
     }

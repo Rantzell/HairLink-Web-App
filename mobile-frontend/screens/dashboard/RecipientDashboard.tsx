@@ -38,6 +38,7 @@ import HairRequestScreen from './HairRequestScreen';
 import HairRequestHistoryScreen from './HairRequestHistoryScreen';
 import CommunityScreen from './CommunityScreen';
 import HairCareScreen from './HairCareScreen';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 interface RecipientDashboardProps {
   onLogout?: () => void;
@@ -153,7 +154,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
     }
   }, []);
   const confirmWigReceived = (reference: string) => {
-    Alert.alert(
+    CustomAlert.alert(
       'Confirm Wig Received',
       'Please confirm that you have received your wig. This action cannot be undone and will complete your request.',
       [
@@ -163,11 +164,11 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           onPress: async () => {
             try {
               await api.post(`/requests/${reference}/confirm-received`);
-              Alert.alert('Success', 'Thank you! Your wig request is now complete.');
+              CustomAlert.alert('Success', 'Thank you! Your wig request is now complete.');
               fetchLatestRequest();
             } catch (err: any) {
               const msg = err.response?.data?.message || 'Failed to confirm receipt.';
-              Alert.alert('Error', msg);
+              CustomAlert.alert('Error', msg);
             }
           }
         }
@@ -213,11 +214,11 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
 
 
   const handleOpenURL = (url: string) => {
-    Linking.openURL(url).catch(err => Alert.alert('Error', 'Cannot open link'));
+    Linking.openURL(url).catch(err => CustomAlert.alert('Error', 'Cannot open link'));
   };
 
   const navPlaceholder = (screen: string) =>
-    Alert.alert('Coming Soon', `${screen} is coming soon!`);
+    CustomAlert.alert('Coming Soon', `${screen} is coming soon!`);
 
   if (showNotifications) {
     return (

@@ -23,6 +23,7 @@ import { Asset } from 'expo-asset';
 // `EncodingType.Base64` resolves on SDK 54 without crashing.
 import * as FileSystem from 'expo-file-system/legacy';
 import api from '../../lib/api';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 /**
  * Donor Certificate — "thank you" landing screen.
@@ -547,14 +548,14 @@ export default function DonorCertificateScreen({ reference, certificateNo, dateR
           UTI: 'com.adobe.pdf',
         });
       } else {
-        Alert.alert(
+        CustomAlert.alert(
           'Certificate Saved',
           `Your certificate PDF is ready. File:\n${uri}`,
         );
       }
     } catch (err: any) {
       console.error('Certificate PDF error:', err);
-      Alert.alert('Could not generate certificate', err?.message || 'Please try again.');
+      CustomAlert.alert('Could not generate certificate', err?.message || 'Please try again.');
     } finally {
       setDownloading(false);
     }

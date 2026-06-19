@@ -23,6 +23,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import DonationSuccessModal from '../../components/DonationSuccessModal';
 import api from '../../lib/api';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 /**
  * Donor Hair Donation form — visual + structural twin of the recipient
@@ -84,7 +85,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
     }, []);
 
     const handleImageSource = () => {
-        Alert.alert(
+        CustomAlert.alert(
             'Upload Photo',
             'Select the source of your hair photo',
             [
@@ -98,7 +99,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
     const takePhoto = async () => {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'We need camera access to take a photo of your donation.');
+            CustomAlert.alert('Permission Denied', 'We need camera access to take a photo of your donation.');
             return;
         }
         const result = await ImagePicker.launchCameraAsync({
@@ -112,7 +113,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
     const pickImageFromLibrary = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'We need access to your gallery to pick a photo.');
+            CustomAlert.alert('Permission Denied', 'We need access to your gallery to pick a photo.');
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -183,7 +184,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
             console.error('Submission error:', err?.message || err);
             const errorMsg = err?.message || 'An unexpected error occurred.';
             setSubmitError(errorMsg);
-            Alert.alert('Submission Error', errorMsg);
+            CustomAlert.alert('Submission Error', errorMsg);
         } finally {
             setLoading(false);
             setLoadingLabel('Submitting...');

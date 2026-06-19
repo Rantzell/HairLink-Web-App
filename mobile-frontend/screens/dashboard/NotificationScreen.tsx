@@ -243,7 +243,7 @@ export default function NotificationScreen({ onBack, onTrack, onOpenPost, role =
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
           {/* Spacer to keep the title centered (three-dot menu removed). */}
-          <View style={styles.iconBtn} />
+          <View style={{ width: ms(40) }} />
         </View>
       </LinearGradient>
 

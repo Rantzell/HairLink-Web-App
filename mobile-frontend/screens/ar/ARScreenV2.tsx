@@ -17,6 +17,7 @@ import { useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { FaceTrackerView, FaceData } from 'expo-face-tracker';
 import { buildArHtmlHybrid } from './arHtmlHybrid';
+import { CustomAlert } from '../../components/GlobalAlert';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const SHORT_HAIR_MODULE = require('../../assets/ar/ShortHair.glb');
@@ -144,10 +145,10 @@ export default function ARScreenV2({ onBack }: { onBack: () => void }) {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(path, { mimeType: 'image/png', dialogTitle: 'Save AR Try-On' });
       } else {
-        Alert.alert('Saved', `Captured to ${path}`);
+        CustomAlert.alert('Saved', `Captured to ${path}`);
       }
     } catch (e: any) {
-      Alert.alert('Capture failed', e?.message ?? String(e));
+      CustomAlert.alert('Capture failed', e?.message ?? String(e));
     }
   };
 
@@ -182,7 +183,7 @@ export default function ARScreenV2({ onBack }: { onBack: () => void }) {
           onPress={async () => {
             const res = await requestPermission();
             if (!res.granted && !res.canAskAgain) {
-              Alert.alert(
+              CustomAlert.alert(
                 'Permission blocked',
                 'Enable camera access in system Settings to use AR Try-On.',
                 [

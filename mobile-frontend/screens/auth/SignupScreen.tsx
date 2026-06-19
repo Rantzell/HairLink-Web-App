@@ -16,15 +16,16 @@ import { s, vs, ms } from '../../lib/scaling';
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import AuthStatusModal from "../../components/AuthStatusModal";
-import Animated, { 
-    FadeInDown, 
-    FadeInUp, 
-    FadeInRight, 
-    Layout, 
-    useSharedValue, 
-    useAnimatedStyle, 
-    withSpring 
+import Animated, {
+    FadeInDown,
+    FadeInUp,
+    FadeInRight,
+    Layout,
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring
 } from "react-native-reanimated";
 
 // Reusable animated button for tactile feedback
@@ -70,7 +71,7 @@ export default function SignupScreen({
     // The old mobile-only `city / barangay / address` fields were dropped
     // because the API never accepted them — they were silently discarded.
     const [role, setRole] = useState<"Donor" | "Recipient" | null>(null);
-    const [ageText, setAgeText] = useState("18");
+    const [ageText, setAgeText] = useState("");
     const [gender, setGender] = useState("Female");
     const [pickingGender, setPickingGender] = useState(false);
     const [firstName, setFirstName] = useState("");
@@ -90,11 +91,11 @@ export default function SignupScreen({
     // Per-rule booleans — mirror the backend's signupSchema regex rules
     // (≥8 chars · contains a number · contains a symbol). Same source of
     // truth as the website's `pwReqs` list in AuthPage.tsx.
-    const pwHasMin   = password.length >= 8;
-    const pwHasNum   = /[0-9]/.test(password);
-    const pwHasSym   = /[!@#$%^&*(),.?":{}|<>_]/.test(password);
-    const pwAllOk    = pwHasMin && pwHasNum && pwHasSym;
-    const pwMatches  = confirmPassword.length > 0 && confirmPassword === password;
+    const pwHasMin = password.length >= 8;
+    const pwHasNum = /[0-9]/.test(password);
+    const pwHasSym = /[!@#$%^&*(),.?":{}|<>_]/.test(password);
+    const pwAllOk = pwHasMin && pwHasNum && pwHasSym;
+    const pwMatches = confirmPassword.length > 0 && confirmPassword === password;
 
     // ── View mode ────────────────────────────────────────────────
     const [viewMode, setViewMode] = useState<"form" | "otp">("form");
@@ -221,10 +222,10 @@ export default function SignupScreen({
         });
         setSubmitting(false);
 
-        if (error) { 
+        if (error) {
             // Silently ignore rate limits during development if they specifically asked to remove the popup
             if (!error.message.includes("rate limit")) {
-                showError("Signup Failed", error.message); 
+                showError("Signup Failed", error.message);
                 return;
             }
             console.warn("Email Rate Limit Suppressed:", error.message);
@@ -266,20 +267,22 @@ export default function SignupScreen({
     // ── GENDER PICKER VIEW ──
     if (pickingGender) {
         return (
-            <LinearGradient colors={['#FAFAF9', '#FFE6F0']} style={styles.root}>
+            <LinearGradient colors={['#FAFAF9', '#FFF0F8', '#FFEBF5']} style={styles.root}>
                 <View style={styles.innerContainer}>
-                    <Text style={[styles.title, { marginBottom: 24 }]}>Select Gender</Text>
-                    {GENDERS.map((item) => (
-                        <TouchableOpacity
-                            key={item}
-                            style={styles.genderItem}
-                            onPress={() => { setGender(item); setPickingGender(false); }}
-                        >
-                            <Text style={styles.genderItemText}>{item}</Text>
-                        </TouchableOpacity>
-                    ))}
+                    <Text style={[styles.title, { marginBottom: 24, color: '#1a1a1a' }]}>Select Gender</Text>
+                    <BlurView intensity={60} tint="light" style={{ borderRadius: 24, overflow: "hidden", padding: 16, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.5)" }}>
+                        {GENDERS.map((item) => (
+                            <TouchableOpacity
+                                key={item}
+                                style={styles.genderItem}
+                                onPress={() => { setGender(item); setPickingGender(false); }}
+                            >
+                                <Text style={styles.genderItemText}>{item}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </BlurView>
                     <TouchableOpacity onPress={() => setPickingGender(false)} style={{ marginTop: 24, padding: 12 }}>
-                        <Text style={{ color: '#888', fontSize: 16, fontWeight: 'bold' }}>Cancel</Text>
+                        <Text style={{ color: '#1a1a1a', fontSize: 16, fontWeight: 'bold' }}>Cancel</Text>
                     </TouchableOpacity>
                 </View>
             </LinearGradient>
@@ -288,275 +291,285 @@ export default function SignupScreen({
 
 
     return (
-        <LinearGradient colors={['#FAFAF9', '#FFF0F8']} style={styles.root}>
-            <KeyboardAvoidingView 
-                behavior={Platform.OS === "ios" ? "padding" : "height"} 
+        <LinearGradient colors={['#FAFAF9', '#FFF0F8', '#FFEBF5']} style={styles.root}>
+            {/* Background ambient light effects */}
+            <View style={[StyleSheet.absoluteFill, { opacity: 1 }]} pointerEvents='none'>
+                <View style={{ position: 'absolute', top: -100, left: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: '#D63B8A', opacity: 0.15, transform: [{ scale: 2 }] }} />
+                <View style={{ position: 'absolute', bottom: -50, right: -100, width: 250, height: 250, borderRadius: 125, backgroundColor: '#FF2A85', opacity: 0.1, transform: [{ scale: 2 }] }} />
+            </View>
+
+            <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={{ flex: 1 }}
             >
                 <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + vs(20) }]}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Header */}
-                <View style={styles.header}>
-                    <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-                    <Text style={styles.title}>Welcome!</Text>
-                    <Text style={styles.subtitle}>Step {currentStep} of 2</Text>
-                </View>
+                    style={{ flex: 1 }}
+                    contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + vs(20) }]}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Header */}
+                    <View style={styles.header}>
+                        <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+                        <Text style={styles.title}>Welcome!</Text>
+                        <Text style={styles.subtitle}>Step {currentStep} of 2</Text>
+                        <View style={{ flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 16 }}>
+                            <View style={{ height: 4, width: 40, borderRadius: 2, backgroundColor: "#D63B8A" }} />
+                            <View style={{ height: 4, width: 40, borderRadius: 2, backgroundColor: currentStep === 2 ? "#D63B8A" : "rgba(255,255,255,0.2)" }} />
+                        </View>
+                    </View>
 
-                {currentStep === 1 ? (
-                    <Animated.View layout={Layout.springify()} entering={FadeInRight.delay(200)}>
-                        <View style={styles.glassCard}>
-                            <Text style={styles.sectionLabel}>ACCOUNT INFO</Text>
+                    {currentStep === 1 ? (
+                        <Animated.View layout={Layout.springify()} entering={FadeInRight.delay(200)}>
+                            <BlurView intensity={60} tint="light" style={styles.glassCard}>
+                                <Text style={styles.sectionLabel}>ACCOUNT INFO</Text>
 
-                            {/* First + Last name — matches the web's register form
+                                {/* First + Last name — matches the web's register form
                                 so the API gets clean first_name / last_name values
                                 instead of guessing from a single "Full Name" split. */}
-                            <View style={[styles.row, { gap: 12 }]}>
-                                <View style={[styles.inputBox, { flex: 1 }]}>
-                                    <Ionicons name="person-outline" size={18} color="#D63B8A" style={{ marginRight: 8 }} />
-                                    <TextInput
-                                        style={styles.input}
-                                        value={firstName}
-                                        onChangeText={setFirstName}
-                                        autoCapitalize="words"
-                                        placeholder="First Name"
-                                        placeholderTextColor="#A8A29E"
-                                    />
-                                </View>
-                                <View style={[styles.inputBox, { flex: 1 }]}>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={lastName}
-                                        onChangeText={setLastName}
-                                        autoCapitalize="words"
-                                        placeholder="Last Name"
-                                        placeholderTextColor="#A8A29E"
-                                    />
-                                </View>
-                            </View>
-
-                            {/* Email */}
-                            <View style={[styles.fieldWrap, { marginTop: 16 }]}>
-                                <View style={[styles.inputBox, {
-                                    borderColor: emailError ? '#e53e3e' : emailTouched && isEmailValid ? '#38a169' : '#FFD9EC',
-                                }]}>
-                                    <Ionicons name="mail-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
-                                    <TextInput
-                                        style={[styles.input, { flex: 1 }]}
-                                        keyboardType="email-address"
-                                        value={email}
-                                        onChangeText={(t) => { setEmail(t); setEmailTouched(true); }}
-                                        onBlur={() => setEmailTouched(true)}
-                                        autoCapitalize="none"
-                                        placeholder="Email Address"
-                                    />
-                                </View>
-                                {emailError && <Text style={styles.errorText}>Enter a valid email</Text>}
-                            </View>
-
-                            {/* Password */}
-                            <View style={[styles.fieldWrap, { marginTop: 16 }]}>
-                                <View style={[styles.inputBox, {
-                                    borderColor: password.length === 0
-                                        ? '#FFD9EC'
-                                        : pwAllOk ? '#38a169' : '#dd6b20',
-                                }]}>
-                                    <Ionicons name="lock-closed-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
-                                    <TextInput
-                                        style={styles.input}
-                                        secureTextEntry
-                                        value={password}
-                                        onChangeText={setPassword}
-                                        onFocus={() => setPasswordFocused(true)}
-                                        onBlur={() => setPasswordFocused(false)}
-                                        placeholder="Password"
-                                        placeholderTextColor="#A8A29E"
-                                    />
-                                </View>
-
-                                {/* Strength bar — kept; tiny, only when something's typed. */}
-                                {password.length > 0 && (
-                                    <View style={{ marginTop: 8 }}>
-                                        <View style={{ flexDirection: 'row', gap: 4 }}>
-                                            {[1, 2, 3].map((seg) => (
-                                                <View
-                                                    key={seg}
-                                                    style={{
-                                                        flex: 1,
-                                                        height: 4,
-                                                        borderRadius: 4,
-                                                        backgroundColor: pwStrength.level >= seg ? pwStrength.color : '#EEE',
-                                                    }}
-                                                />
-                                            ))}
-                                        </View>
+                                <View style={[styles.row, { gap: 12 }]}>
+                                    <View style={[styles.inputBox, { flex: 1 }]}>
+                                        <Ionicons name="person-outline" size={18} color="#D63B8A" style={{ marginRight: 8 }} />
+                                        <TextInput
+                                            style={styles.input}
+                                            value={firstName}
+                                            onChangeText={setFirstName}
+                                            autoCapitalize="words"
+                                            placeholder="First"
+                                            placeholderTextColor="#A8A29E"
+                                        />
                                     </View>
-                                )}
+                                    <View style={[styles.inputBox, { flex: 1 }]}>
+                                        <TextInput
+                                            style={styles.input}
+                                            value={lastName}
+                                            onChangeText={setLastName}
+                                            autoCapitalize="words"
+                                            placeholder="Last Name"
+                                            placeholderTextColor="#A8A29E"
+                                        />
+                                    </View>
+                                </View>
 
-                                {/* Requirement checklist — appears only while the
+                                {/* Email */}
+                                <View style={[styles.fieldWrap, { marginTop: 16 }]}>
+                                    <View style={[styles.inputBox, {
+                                        borderColor: emailError ? '#e53e3e' : emailTouched && isEmailValid ? '#38a169' : '#FFD9EC',
+                                    }]}>
+                                        <Ionicons name="mail-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
+                                        <TextInput
+                                            style={[styles.input, { flex: 1 }]}
+                                            keyboardType="email-address"
+                                            value={email}
+                                            onChangeText={(t) => { setEmail(t); setEmailTouched(true); }}
+                                            onBlur={() => setEmailTouched(true)}
+                                            autoCapitalize="none"
+                                            placeholder="Email Address"
+                                        />
+                                    </View>
+                                    {emailError && <Text style={styles.errorText}>Enter a valid email</Text>}
+                                </View>
+
+                                {/* Password */}
+                                <View style={[styles.fieldWrap, { marginTop: 16 }]}>
+                                    <View style={[styles.inputBox, {
+                                        borderColor: password.length === 0
+                                            ? '#FFD9EC'
+                                            : pwAllOk ? '#38a169' : '#dd6b20',
+                                    }]}>
+                                        <Ionicons name="lock-closed-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
+                                        <TextInput
+                                            style={styles.input}
+                                            secureTextEntry
+                                            value={password}
+                                            onChangeText={setPassword}
+                                            onFocus={() => setPasswordFocused(true)}
+                                            onBlur={() => setPasswordFocused(false)}
+                                            placeholder="Password"
+                                            placeholderTextColor="#A8A29E"
+                                        />
+                                    </View>
+
+                                    {/* Strength bar — kept; tiny, only when something's typed. */}
+                                    {password.length > 0 && (
+                                        <View style={{ marginTop: 8 }}>
+                                            <View style={{ flexDirection: 'row', gap: 4 }}>
+                                                {[1, 2, 3].map((seg) => (
+                                                    <View
+                                                        key={seg}
+                                                        style={{
+                                                            flex: 1,
+                                                            height: 4,
+                                                            borderRadius: 4,
+                                                            backgroundColor: pwStrength.level >= seg ? pwStrength.color : '#EEE',
+                                                        }}
+                                                    />
+                                                ))}
+                                            </View>
+                                        </View>
+                                    )}
+
+                                    {/* Requirement checklist — appears only while the
                                     password field is focused OR after the user has
                                     typed something but not yet satisfied every rule.
                                     Disappears once all three rules are green AND the
                                     user has tabbed away, so it doesn't clutter. */}
-                                {(passwordFocused || (password.length > 0 && !pwAllOk)) && (
-                                    <View style={styles.pwReqsBox}>
-                                        {[
-                                            { ok: pwHasMin, label: 'At least 8 characters' },
-                                            { ok: pwHasNum, label: 'Contains a number' },
-                                            { ok: pwHasSym, label: 'Contains a symbol' },
-                                        ].map((req) => (
-                                            <View key={req.label} style={styles.pwReqRow}>
-                                                <Ionicons
-                                                    name={req.ok ? 'checkmark-circle' : 'ellipse-outline'}
-                                                    size={14}
-                                                    color={req.ok ? '#16A34A' : '#A8A29E'}
-                                                />
-                                                <Text style={[styles.pwReqText, req.ok && { color: '#15803D', fontWeight: '700' }]}>
-                                                    {req.label}
-                                                </Text>
-                                            </View>
-                                        ))}
-                                    </View>
-                                )}
-                            </View>
-
-                            {/* Confirm Password */}
-                            <View style={[styles.fieldWrap, { marginTop: 16 }]}>
-                                <View style={[styles.inputBox, {
-                                    borderColor: confirmPassword.length === 0
-                                        ? '#FFD9EC'
-                                        : pwMatches ? '#38a169' : '#e53e3e',
-                                }]}>
-                                    <Ionicons name="shield-checkmark-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
-                                    <TextInput
-                                        style={styles.input}
-                                        secureTextEntry
-                                        value={confirmPassword}
-                                        onChangeText={setConfirmPassword}
-                                        placeholder="Confirm Password"
-                                        placeholderTextColor="#A8A29E"
-                                    />
-                                </View>
-                                {confirmPassword.length > 0 && !pwMatches && (
-                                    <Text style={styles.errorText}>Passwords don't match</Text>
-                                )}
-                            </View>
-
-                            <Text style={[styles.sectionLabel, { marginTop: 24 }]}>I WANT TO BE A...</Text>
-                            <View style={styles.roleGrid}>
-                                {(["Donor", "Recipient"] as const).map((r) => (
-                                    <TouchableOpacity 
-                                        key={r} 
-                                        style={[styles.roleCard, role === r && styles.roleCardActive]} 
-                                        onPress={() => setRole(r)}
-                                        activeOpacity={0.9}
-                                    >
-                                        <View style={[styles.roleIconBg, role === r && styles.roleIconBgActive]}>
-                                            <MaterialCommunityIcons 
-                                                name={r === 'Donor' ? 'heart-plus' : 'account-heart'} 
-                                                size={32} 
-                                                color={role === r ? '#fff' : '#E863A1'} 
-                                            />
+                                    {(passwordFocused || (password.length > 0 && !pwAllOk)) && (
+                                        <View style={styles.pwReqsBox}>
+                                            {[
+                                                { ok: pwHasMin, label: 'At least 8 characters' },
+                                                { ok: pwHasNum, label: 'Contains a number' },
+                                                { ok: pwHasSym, label: 'Contains a symbol' },
+                                            ].map((req) => (
+                                                <View key={req.label} style={styles.pwReqRow}>
+                                                    <Ionicons
+                                                        name={req.ok ? 'checkmark-circle' : 'ellipse-outline'}
+                                                        size={14}
+                                                        color={req.ok ? '#16A34A' : '#A8A29E'}
+                                                    />
+                                                    <Text style={[styles.pwReqText, req.ok && { color: '#15803D', fontWeight: '700' }]}>
+                                                        {req.label}
+                                                    </Text>
+                                                </View>
+                                            ))}
                                         </View>
-                                        <Text style={[styles.roleText, role === r && styles.roleTextActive]}>{r}</Text>
+                                    )}
+                                </View>
+
+                                {/* Confirm Password */}
+                                <View style={[styles.fieldWrap, { marginTop: 16 }]}>
+                                    <View style={[styles.inputBox, {
+                                        borderColor: confirmPassword.length === 0
+                                            ? '#FFD9EC'
+                                            : pwMatches ? '#38a169' : '#e53e3e',
+                                    }]}>
+                                        <Ionicons name="shield-checkmark-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
+                                        <TextInput
+                                            style={styles.input}
+                                            secureTextEntry
+                                            value={confirmPassword}
+                                            onChangeText={setConfirmPassword}
+                                            placeholder="Confirm Password"
+                                            placeholderTextColor="#A8A29E"
+                                        />
+                                    </View>
+                                    {confirmPassword.length > 0 && !pwMatches && (
+                                        <Text style={styles.errorText}>Passwords don't match</Text>
+                                    )}
+                                </View>
+
+                                <Text style={[styles.sectionLabel, { marginTop: 24 }]}>I WANT TO BE A...</Text>
+                                <View style={styles.roleGrid}>
+                                    {(["Donor", "Recipient"] as const).map((r) => (
+                                        <TouchableOpacity
+                                            key={r}
+                                            style={[styles.roleCard, role === r && styles.roleCardActive]}
+                                            onPress={() => setRole(r)}
+                                            activeOpacity={0.9}
+                                        >
+                                            <View style={[styles.roleIconBg, role === r && styles.roleIconBgActive]}>
+                                                <MaterialCommunityIcons
+                                                    name={r === 'Donor' ? 'heart-plus' : 'account-heart'}
+                                                    size={32}
+                                                    color={role === r ? '#fff' : '#E863A1'}
+                                                />
+                                            </View>
+                                            <Text style={[styles.roleText, role === r && styles.roleTextActive]}>{r}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <ScaleButton style={[styles.signUpBtn, { marginTop: 32 }]} onPress={handleNext}>
+                                    <Text style={styles.signUpBtnText}>Continue</Text>
+                                </ScaleButton>
+                            </BlurView>
+                        </Animated.View>
+                    ) : (
+                        <Animated.View layout={Layout.springify()} entering={FadeInRight.delay(200)}>
+                            <BlurView intensity={60} tint="light" style={styles.glassCard}>
+                                <Text style={styles.sectionLabel}>CONTACT & LOCATION</Text>
+
+                                {/* Phone */}
+                                <View style={styles.fieldWrap}>
+                                    <View style={styles.inputBox}>
+                                        <Ionicons name="call-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
+                                        <TextInput
+                                            style={styles.input}
+                                            keyboardType="phone-pad"
+                                            value={phone}
+                                            onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, ''))}
+                                            maxLength={11}
+                                            placeholder="Phone Number"
+                                        />
+                                    </View>
+                                </View>
+
+                                {/* Region (mirrors web's `region` field; e.g. NCR) */}
+                                <View style={[styles.fieldWrap, { marginTop: 16 }]}>
+                                    <View style={styles.inputBox}>
+                                        <Ionicons name="location-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
+                                        <TextInput
+                                            style={styles.input}
+                                            value={region}
+                                            onChangeText={setRegion}
+                                            placeholder="Region (e.g. NCR)"
+                                            placeholderTextColor="#A8A29E"
+                                        />
+                                    </View>
+                                </View>
+
+                                {/* Postal Code (mirrors web's `postal_code` field) */}
+                                <View style={[styles.fieldWrap, { marginTop: 16 }]}>
+                                    <View style={styles.inputBox}>
+                                        <Ionicons name="mail-unread-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
+                                        <TextInput
+                                            style={styles.input}
+                                            value={postalCode}
+                                            onChangeText={(t) => setPostalCode(t.replace(/[^0-9]/g, ''))}
+                                            keyboardType="number-pad"
+                                            maxLength={6}
+                                            placeholder="Postal Code"
+                                            placeholderTextColor="#A8A29E"
+                                        />
+                                    </View>
+                                </View>
+
+                                <View style={[styles.row, { marginTop: 16, gap: 12 }]}>
+                                    <View style={[styles.inputBox, { flex: 1 }]}>
+                                        <TextInput
+                                            style={styles.input}
+                                            value={ageText}
+                                            onChangeText={setAgeText}
+                                            keyboardType="number-pad"
+                                            placeholder="Age"
+                                        />
+                                    </View>
+                                    <TouchableOpacity
+                                        style={[styles.inputBox, { flex: 1.5, justifyContent: 'space-between' }]}
+                                        onPress={() => setPickingGender(true)}
+                                    >
+                                        <Text style={{ color: gender ? '#000' : '#888', fontSize: 15 }}>{gender || 'Gender'}</Text>
+                                        <Ionicons name="chevron-down" size={16} color="#D63B8A" />
                                     </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            <ScaleButton style={[styles.signUpBtn, { marginTop: 32 }]} onPress={handleNext}>
-                                <Text style={styles.signUpBtnText}>Continue</Text>
-                            </ScaleButton>
-                        </View>
-                    </Animated.View>
-                ) : (
-                    <Animated.View layout={Layout.springify()} entering={FadeInRight.delay(200)}>
-                        <View style={styles.glassCard}>
-                            <Text style={styles.sectionLabel}>CONTACT & LOCATION</Text>
-
-                            {/* Phone */}
-                            <View style={styles.fieldWrap}>
-                                <View style={styles.inputBox}>
-                                    <Ionicons name="call-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
-                                    <TextInput
-                                        style={styles.input}
-                                        keyboardType="phone-pad"
-                                        value={phone}
-                                        onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, ''))}
-                                        maxLength={11}
-                                        placeholder="Phone Number"
-                                    />
                                 </View>
-                            </View>
 
-                            {/* Region (mirrors web's `region` field; e.g. NCR) */}
-                            <View style={[styles.fieldWrap, { marginTop: 16 }]}>
-                                <View style={styles.inputBox}>
-                                    <Ionicons name="location-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
-                                    <TextInput
-                                        style={styles.input}
-                                        value={region}
-                                        onChangeText={setRegion}
-                                        placeholder="Region (e.g. NCR)"
-                                        placeholderTextColor="#A8A29E"
-                                    />
+                                <View style={{ flexDirection: 'row', gap: 12, marginTop: 32 }}>
+                                    <ScaleButton
+                                        style={[styles.signUpBtn, { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.05)' }]}
+                                        onPress={() => setCurrentStep(1)}
+                                    >
+                                        <Text style={[styles.signUpBtnText, { color: '#1a1a1a' }]}>Back</Text>
+                                    </ScaleButton>
+                                    <ScaleButton
+                                        style={[styles.signUpBtn, { flex: 2 }]}
+                                        onPress={handleSignUp}
+                                    >
+                                        {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.signUpBtnText}>Complete Sign Up</Text>}
+                                    </ScaleButton>
                                 </View>
-                            </View>
-
-                            {/* Postal Code (mirrors web's `postal_code` field) */}
-                            <View style={[styles.fieldWrap, { marginTop: 16 }]}>
-                                <View style={styles.inputBox}>
-                                    <Ionicons name="mail-unread-outline" size={20} color="#D63B8A" style={{ marginRight: 10 }} />
-                                    <TextInput
-                                        style={styles.input}
-                                        value={postalCode}
-                                        onChangeText={(t) => setPostalCode(t.replace(/[^0-9]/g, ''))}
-                                        keyboardType="number-pad"
-                                        maxLength={6}
-                                        placeholder="Postal Code"
-                                        placeholderTextColor="#A8A29E"
-                                    />
-                                </View>
-                            </View>
-
-                            <View style={[styles.row, { marginTop: 16, gap: 12 }]}>
-                                <View style={[styles.inputBox, { flex: 1 }]}>
-                                    <TextInput 
-                                        style={styles.input} 
-                                        value={ageText} 
-                                        onChangeText={setAgeText}
-                                        keyboardType="number-pad" 
-                                        placeholder="Age"
-                                    />
-                                </View>
-                                <TouchableOpacity
-                                    style={[styles.inputBox, { flex: 1.5, justifyContent: 'space-between' }]}
-                                    onPress={() => setPickingGender(true)}
-                                >
-                                    <Text style={{ color: gender ? '#000' : '#888', fontSize: 15 }}>{gender || 'Gender'}</Text>
-                                    <Ionicons name="chevron-down" size={16} color="#D63B8A" />
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={{ flexDirection: 'row', gap: 12, marginTop: 32 }}>
-                                <ScaleButton 
-                                    style={[styles.signUpBtn, { flex: 1, backgroundColor: '#EEE' }]} 
-                                    onPress={() => setCurrentStep(1)}
-                                >
-                                    <Text style={[styles.signUpBtnText, { color: '#888' }]}>Back</Text>
-                                </ScaleButton>
-                                <ScaleButton 
-                                    style={[styles.signUpBtn, { flex: 2 }]} 
-                                    onPress={handleSignUp}
-                                >
-                                    {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.signUpBtnText}>Complete Sign Up</Text>}
-                                </ScaleButton>
-                            </View>
-                        </View>
-                    </Animated.View>
-                )}
+                            </BlurView>
+                        </Animated.View>
+                    )}
 
                     <TouchableOpacity onPress={onSwitchToLogin} activeOpacity={0.8} style={styles.switchLink}>
                         <Text style={styles.switchLinkText}>Already have an account? <Text style={{ color: '#D63B8A' }}>Log In</Text></Text>
@@ -577,10 +590,10 @@ export default function SignupScreen({
 
 const styles = StyleSheet.create({
     root: { flex: 1 },
-    scrollContent: { 
-        flexGrow: 1, 
-        paddingHorizontal: ms(24), 
-        paddingBottom: vs(48) 
+    scrollContent: {
+        flexGrow: 1,
+        paddingHorizontal: ms(24),
+        paddingBottom: vs(48)
     },
     innerContainer: { flex: 1, paddingHorizontal: ms(24), justifyContent: 'center' },
 
@@ -591,33 +604,29 @@ const styles = StyleSheet.create({
     subtitle: { fontSize: 15, color: '#D63B8A', fontWeight: '800', textAlign: 'center', marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 },
 
     // Premium Card
-    glassCard: { 
-        backgroundColor: '#fff', 
-        borderRadius: 30, 
-        padding: 24, 
-        shadowColor: '#E863A1', 
-        shadowOffset: { width: 0, height: 10 }, 
-        shadowOpacity: 0.1, 
-        shadowRadius: 20, 
-        elevation: 5,
+    glassCard: {
+        backgroundColor: 'transparent',
+        borderRadius: 30,
+        padding: 24,
         borderWidth: 1,
-        borderColor: '#FFF0F5'
+        borderColor: 'rgba(255, 255, 255, 0.5)',
+        overflow: 'hidden'
     },
-    sectionLabel: { fontSize: 11, fontWeight: '900', color: '#999', letterSpacing: 1.5, marginBottom: 16 },
+    sectionLabel: { fontSize: 11, fontWeight: '900', color: '#A8A29E', letterSpacing: 1.5, marginBottom: 16 },
 
     // Form fields
     fieldWrap: { position: 'relative' },
-    inputBox: { 
+    inputBox: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1.5, 
-        borderColor: '#FFD9EC', 
-        borderRadius: 15, 
-        height: 56, 
-        paddingHorizontal: 16, 
-        backgroundColor: '#FFF9FB' 
+        borderWidth: 1.5,
+        borderColor: 'rgba(232, 99, 161, 0.2)',
+        borderRadius: 15,
+        height: 56,
+        paddingHorizontal: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.6)'
     },
-    input: { color: '#000', fontSize: 15, height: 56, flex: 1, fontWeight: '600' },
+    input: { color: '#1a1a1a', fontSize: 15, height: 56, flex: 1, fontWeight: '400' },
     errorText: { color: '#e53e3e', fontSize: 11, fontWeight: '700', marginTop: 4, marginLeft: 4 },
 
     // ── Password requirement checklist (shown on focus) ──
@@ -636,26 +645,26 @@ const styles = StyleSheet.create({
 
     // Role Selection
     roleGrid: { flexDirection: 'row', gap: 16 },
-    roleCard: { 
-        flex: 1, 
-        backgroundColor: '#FFF9FB', 
-        borderRadius: 20, 
-        paddingVertical: 20, 
+    roleCard: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.6)',
+        borderRadius: 20,
+        paddingVertical: 20,
         alignItems: 'center',
         borderWidth: 1.5,
-        borderColor: '#FFD9EC'
+        borderColor: 'rgba(232, 99, 161, 0.2)'
     },
-    roleCardActive: { 
-        backgroundColor: '#fff', 
+    roleCardActive: {
+        backgroundColor: '#fff',
         borderColor: '#D63B8A',
         shadowColor: '#D63B8A',
         shadowOpacity: 0.1,
         shadowRadius: 10,
         elevation: 3
     },
-    roleIconBg: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+    roleIconBg: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0, 0, 0, 0.05)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
     roleIconBgActive: { backgroundColor: '#D63B8A' },
-    roleText: { fontSize: 14, fontWeight: '800', color: '#999' },
+    roleText: { fontSize: 14, fontWeight: '800', color: '#A8A29E' },
     roleTextActive: { color: '#1a1a1a' },
 
     // Layout
@@ -665,13 +674,13 @@ const styles = StyleSheet.create({
     signUpBtn: { backgroundColor: '#D63B8A', height: 56, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
     signUpBtnText: { color: '#fff', fontWeight: '900', fontSize: 16 },
     switchLink: { alignSelf: 'center', marginTop: 24, padding: 8 },
-    switchLinkText: { color: '#888', fontWeight: '700', fontSize: 14 },
+    switchLinkText: { color: '#1a1a1a', fontWeight: '700', fontSize: 14 },
 
     // OTP
     iconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFF0F5', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 20 },
 
     // Gender picker items
-    genderItem: { padding: 16, width: '100%', borderBottomWidth: 1, borderBottomColor: '#FFD9EC', alignItems: 'center' },
-    genderItemText: { color: '#000', fontSize: 18, fontWeight: '700' },
+    genderItem: { padding: 16, width: '100%', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.1)', alignItems: 'center' },
+    genderItemText: { color: '#1a1a1a', fontSize: 18, fontWeight: '700' },
 });
 

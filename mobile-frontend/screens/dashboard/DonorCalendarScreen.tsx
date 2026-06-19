@@ -109,13 +109,14 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
       const mapped: Event[] = items.map((it) => {
         const dt = new Date(it.datetime);
         const time = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const localDate = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
         if (it.kind === 'event') {
           return {
             id: it.id,
             title: it.title,
             location: it.location || 'TBA',
             time,
-            date: it.date,
+            date: localDate,
             type: 'drive',
             accepted: true,
             status: it.status,
@@ -131,7 +132,7 @@ export default function DonorCalendarScreen({ onBack }: { onBack?: () => void })
           title: it.title,
           location: it.location || 'Manila Downtown YMCA (945 Sabino Padilla St., Sta. Cruz, Manila)',
           time,
-          date: it.date,
+          date: localDate,
           type: 'other',
           accepted: it.decision === 'Approved',
           status: it.decision || it.status,
