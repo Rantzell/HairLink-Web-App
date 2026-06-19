@@ -28,13 +28,25 @@ router.get('/posts', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const posts = await prisma.communityPost.findMany({
+      where: {
+        // Filter out orphaned posts whose author was deleted
+        user: { id: { not: '' } },
+      },
       include: {
         user: true,
         comments: {
-          where: { parentId: null },
+          where: {
+            parentId: null,
+            // Filter out comments whose author was deleted
+            user: { id: { not: '' } },
+          },
           include: {
             user: true,
-            replies: { include: { user: true }, orderBy: { createdAt: 'asc' } },
+            replies: {
+              where: { user: { id: { not: '' } } },
+              include: { user: true },
+              orderBy: { createdAt: 'asc' },
+            },
           },
           orderBy: { createdAt: 'asc' },
         },
