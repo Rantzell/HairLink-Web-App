@@ -7,6 +7,7 @@ import type { HairRequest } from '../types';
 import { getPublicUrl } from '../lib/storage';
 import ConfirmModal from '../components/ConfirmModal';
 import '../styles/RecipientTrackingDetail.css';
+import PageLoader from '../components/PageLoader';
 
 const RecipientTrackingDetail: React.FC = () => {
   const { reference } = useParams<{ reference: string }>();
@@ -56,8 +57,8 @@ const RecipientTrackingDetail: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="section-wrap">Loading...</div>;
-  if (!requestData) return <div className="section-wrap">Request not found.</div>;
+  if (loading) return <PageLoader message="Loading your request details..." />;
+  if (!requestData) return <PageLoader message="Loading your request details..." />;
 
   const fullName = requestData.user ? `${requestData.user.firstName} ${requestData.user.lastName}` : 'Recipient';
 

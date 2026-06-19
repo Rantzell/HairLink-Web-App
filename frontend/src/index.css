@@ -77,6 +77,18 @@ html {
 }
 
 /* ═══════════════════════════════════════════════
+   PAGE LOADER (PageLoader.tsx)
+═══════════════════════════════════════════════ */
+@keyframes hlSpinnerRotate {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes hlDotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.35); }
+}
+
+/* ═══════════════════════════════════════════════
    GLOBAL MODAL SYSTEM
    Shared keyframes and base classes used across
    all modal overlays in the application.

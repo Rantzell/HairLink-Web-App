@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
+import PageLoader from '../components/PageLoader';
 
 /** Returns today's datetime in YYYY-MM-DDTHH:mm format in Philippines Time (UTC+8) for min attribute */
 function todayMin(): string {
@@ -128,7 +129,7 @@ const AdminEvents: React.FC = () => {
     setEditingEvent(null);
   };
 
-  if (loading) return <div className="section-wrap">Loading events...</div>;
+  if (loading) return <PageLoader message="Loading events..." />;
 
   return (
     <section className="section-wrap reveal active admin-page">

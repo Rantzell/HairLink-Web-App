@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
+import PageLoader from '../components/PageLoader';
 
 interface Article {
   id: number;
@@ -198,10 +199,7 @@ const HairCareHub: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="loading-state" style={{ textAlign: 'center', padding: '5rem 0' }}>
-          <div className="loading-spinner" style={{ width: '40px', height: '40px', borderTopColor: '#ad246d' }}></div>
-          <p style={{ marginTop: '1.2rem', color: '#8c7d91', fontWeight: 500 }}>Fetching latest guides...</p>
-        </div>
+        <PageLoader message="Fetching latest guides..." />
       ) : (
         <>
           {activeTab === 'articles' ? (

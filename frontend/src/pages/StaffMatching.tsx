@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
 import '../styles/StaffMatching.css';
+import PageLoader from '../components/PageLoader';
 
 // Matching Logic (Mirroring the service)
 export function calculateCompatibility(
@@ -129,7 +130,7 @@ const StaffMatching: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="section-wrap">Loading matching data...</div>;
+  if (loading) return <PageLoader message="Loading matching data..." />;
 
   return (
     <section className="section-wrap reveal active staff-page">

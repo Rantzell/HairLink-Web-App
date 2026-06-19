@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import type { Donation } from '../types';
+import PageLoader from '../components/PageLoader';
 
 // Static demo removed
 
@@ -80,7 +81,7 @@ const DonorCertificate: React.FC = () => {
     });
   };
 
-  if (loading) return <div className="section-wrap">Loading...</div>;
+  if (loading) return <PageLoader message="Loading your certificate..." />;
 
   return (
     <section className="section-wrap donor-module-page reveal active staff-page" id="certificateRoot" style={{ padding: '1rem' }}>

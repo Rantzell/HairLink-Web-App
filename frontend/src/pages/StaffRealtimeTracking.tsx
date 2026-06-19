@@ -8,6 +8,7 @@ import type { Donation, HairRequest, User, WigProduction } from '../types';
 import { getPublicUrl, getProfilePhotoUrl } from '../lib/storage';
 
 import ConfirmModal from '../components/ConfirmModal';
+import PageLoader from '../components/PageLoader';
 
 const StaffRealtimeTracking: React.FC = () => {
   const { type } = useParams<{ type: 'donation' | 'recipient' | 'wigmaker' | 'batch-donation' }>();
@@ -341,7 +342,7 @@ const StaffRealtimeTracking: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="section-wrap">Loading tracking data...</div>;
+  if (loading) return <PageLoader message="Loading tracking data..." />;
 
   return (
     <section className="section-wrap reveal active staff-page tracking-page">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import apiClient from '../api/client';
 import { calculateCompatibility } from './StaffMatching';
+import PageLoader from '../components/PageLoader';
 
 const AdminMatching: React.FC = () => {
   const [data, setData] = useState<{
@@ -27,7 +28,7 @@ const AdminMatching: React.FC = () => {
     fetchMatching();
   }, []);
 
-  if (loading) return <div className="section-wrap">Loading matching oversight...</div>;
+  if (loading) return <PageLoader message="Loading matching oversight..." />;
 
   // Analysis Logic
   const pendingRequests = data.recipients.length;

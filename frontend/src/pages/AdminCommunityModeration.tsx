@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
+import PageLoader from '../components/PageLoader';
 
 const AdminCommunityModeration: React.FC = () => {
   const [data, setData] = useState<any>(null);
@@ -51,7 +52,7 @@ const AdminCommunityModeration: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="section-wrap">Loading community moderation...</div>;
+  if (loading) return <PageLoader message="Loading community moderation..." />;
   if (!data) return (
     <div className="section-wrap">
       <div className="admin-error-box">Error: Could not load community data.</div>

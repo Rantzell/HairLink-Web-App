@@ -5,6 +5,7 @@ import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
 import Pagination from '../components/Pagination';
+import PageLoader from '../components/PageLoader';
 
 const AdminUserManagement: React.FC = () => {
   const location = useLocation();
@@ -143,8 +144,8 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
-  if (loading && !data) return <div className="section-wrap">Loading user management...</div>;
-  if (!data) return <div className="section-wrap">Error: Could not load user registry. Please verify your connection.</div>;
+  if (loading && !data) return <PageLoader message="Loading user management..." />;
+  if (!data) return <PageLoader message="Loading user management..." />;
 
   const filteredUsers = data.users || [];
   const totalPages: number = data.totalPages || 1;

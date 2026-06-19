@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/Admin.css';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
+import PageLoader from '../components/PageLoader';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ExtendedHeroSettings { heading: string; subheading: string; ctaLabel: string; ghostLabel: string; pillText: string; floatBadgeText: string }
@@ -394,7 +395,7 @@ const AdminCMS: React.FC = () => {
     );
   };
 
-  if (loading) return <div className="section-wrap">Loading CMS...</div>;
+  if (loading) return <PageLoader message="Loading CMS content..." />;
 
   return (
     <section className="section-wrap reveal active admin-page admin-page-pad">

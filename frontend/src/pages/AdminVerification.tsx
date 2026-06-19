@@ -3,6 +3,7 @@ import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
+import PageLoader from '../components/PageLoader';
 
 const AdminVerification: React.FC = () => {
   const location = useLocation();
@@ -47,7 +48,7 @@ const AdminVerification: React.FC = () => {
     fetchAllQueues();
   }, []);
 
-  if (loading) return <div className="section-wrap">Aggregating verification queues...</div>;
+  if (loading) return <PageLoader message="Aggregating verification queues..." />;
 
   const currentItems = data[view];
 

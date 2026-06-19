@@ -5,6 +5,7 @@ import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import Pagination from '../components/Pagination';
 import { useAuth } from '../contexts/AuthContext';
+import PageLoader from '../components/PageLoader';
 
 const PAGE_SIZE = 10;
 
@@ -130,8 +131,8 @@ const AdminReports: React.FC = () => {
     toast.success('CSV downloaded successfully.');
   };
 
-  if (loading) return <div className="section-wrap">Aggregating system records...</div>;
-  if (!data) return <div className="section-wrap">Error: Could not generate system reports. Please check your connection.</div>;
+  if (loading) return <PageLoader message="Aggregating system records..." />;
+  if (!data) return <PageLoader message="Aggregating system records..." />;
 
   const ReportBrandHeader = () => {
     if (!isPrinting) return null;
@@ -537,12 +538,12 @@ const AdminReports: React.FC = () => {
       {/* Report type tab bar */}
       <div className="no-print" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
         {[
-          { key: 'donations', label: '📥 Intake Summary' },
-          { key: 'hair',      label: '✂️ Hair Inventory' },
-          { key: 'wigs',      label: '🧵 Wig Monitoring' },
-          { key: 'matching',  label: '🤝 Matching & Distribution' },
-          { key: 'monetary',  label: '💳 Monetary' },
-          { key: 'users',     label: '👥 User Engagement' },
+          { key: 'donations', label: ' Intake Summary' },
+          { key: 'hair',      label: ' Hair Inventory' },
+          { key: 'wigs',      label: ' Wig Monitoring' },
+          { key: 'matching',  label: ' Matching & Distribution' },
+          { key: 'monetary',  label: ' Monetary' },
+          { key: 'users',     label: ' User Engagement' },
         ].map(tab => (
           <button
             key={tab.key}

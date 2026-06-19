@@ -4,6 +4,7 @@ import apiClient from '../api/client';
 import { getPublicUrl } from '../lib/storage';
 import ConfirmModal from '../components/ConfirmModal';
 import '../styles/StaffVerificationDetail.css';
+import PageLoader from '../components/PageLoader';
 
 const StaffVerificationDetail: React.FC = () => {
   const { type, reference } = useParams<{ type: 'donor' | 'recipient' | 'monetary'; reference: string }>();
@@ -67,8 +68,8 @@ const StaffVerificationDetail: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="section-wrap">Loading...</div>;
-  if (!record) return <div className="section-wrap">Record not found.</div>;
+  if (loading) return <PageLoader message="Loading verification details..." />;
+  if (!record) return <PageLoader message="Loading verification details..." />;
 
   const isDonor = type === 'donor';
   const isMonetary = type === 'monetary';

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
+import PageLoader from '../components/PageLoader';
 
 const AdminInventory: React.FC = () => {
   const location = useLocation();
@@ -36,7 +37,7 @@ const AdminInventory: React.FC = () => {
 
   useEffect(() => { fetchInventory(); }, []);
 
-  if (loading) return <div className="section-wrap">Loading inventory oversight...</div>;
+  if (loading) return <PageLoader message="Loading inventory..." />;
   if (!data) return (
     <div className="section-wrap">
       <div className="admin-error-box">Error: Could not load inventory data.</div>

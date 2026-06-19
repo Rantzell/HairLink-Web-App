@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import apiClient from '../api/client';
 import Pagination from '../components/Pagination';
+import PageLoader from '../components/PageLoader';
 
 const PAGE_SIZE = 10;
 
@@ -39,9 +40,9 @@ const AdminOperations: React.FC = () => {
     fetchOps();
   }, []);
 
-  if (loading) return <div className="section-wrap">Loading operational oversight...</div>;
-  if (error) return <div className="section-wrap">Error: {error}</div>;
-  if (!data || !data.stats) return <div className="section-wrap">Error: Could not load operational tracking. Please check your connection.</div>;
+  if (loading) return <PageLoader message="Loading operational oversight..." />;
+  if (error) return <PageLoader message="Loading operational oversight..." />;
+  if (!data || !data.stats) return <PageLoader message="Loading operational oversight..." />;
 
   const opsRows = data.requests;
   const opsTotalPages = Math.ceil(opsRows.length / PAGE_SIZE);
