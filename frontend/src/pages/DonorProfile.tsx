@@ -1,6 +1,5 @@
 import toast from 'react-hot-toast';
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import PasswordInput from '../components/PasswordInput';
@@ -9,7 +8,6 @@ import ConfirmModal from '../components/ConfirmModal';
 
 const DonorProfile: React.FC = () => {
   const { user, updateUser } = useAuth();
-  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
@@ -17,9 +15,6 @@ const DonorProfile: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [otherReferral, setOtherReferral] = useState('');
   const [submittingReferral, setSubmittingReferral] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
   const [editData, setEditData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -191,26 +186,6 @@ const DonorProfile: React.FC = () => {
       toast.error(err.response?.data?.message || 'Invalid referral code.');
     } finally {
       setSubmittingReferral(false);
-    }
-  };
-
-  const doDeleteAccount = async () => {
-    if (deleteConfirmText !== 'DELETE') {
-      toast.error('Please type DELETE to confirm.');
-      return;
-    }
-    setIsDeleting(true);
-    try {
-      await apiClient.delete('/auth/account');
-      await supabase.auth.signOut();
-      toast.success('Your account has been permanently deleted.');
-      navigate('/', { replace: true });
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to delete account. Please try again.');
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
-      setDeleteConfirmText('');
     }
   };
 
@@ -413,7 +388,7 @@ const DonorProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Account Actions (Change Password / Delete) ── */}
+      {/* ── Account Actions ── */}
       <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
         <button
           type="button"
@@ -438,32 +413,6 @@ const DonorProfile: React.FC = () => {
           <i className='bx bx-lock-alt' />
           Change Password
         </button>
-
-        {user?.role !== 'admin' && (
-          <button
-            type="button"
-            onClick={() => { setDeleteConfirmText(''); setShowDeleteConfirm(true); }}
-            style={{
-              background: 'transparent',
-              color: '#dc2626',
-              border: 'none',
-              padding: '0',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              opacity: 0.75,
-              transition: 'opacity 0.15s',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.75'; }}
-          >
-            <i className='bx bx-trash' />
-            Delete My Account
-          </button>
-        )}
       </div>
 
       {/* ── Change Password Modal ── */}
@@ -567,55 +516,6 @@ const DonorProfile: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── Delete Account Confirmation Modal ── */}
-      {showDeleteConfirm && (
-        <div
-          onClick={e => { if (e.target === e.currentTarget && !isDeleting) { setShowDeleteConfirm(false); setDeleteConfirmText(''); } }}
-          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-        >
-          <div style={{ background: '#fff', borderRadius: '20px', padding: '2rem', maxWidth: '440px', width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.8rem' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#fef2f2', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                <i className='bx bxs-error-circle' style={{ fontSize: '1.5rem', color: '#dc2626' }} />
-              </div>
-              <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#111827' }}>Delete Account</h2>
-            </div>
-            <p style={{ margin: '0 0 0.75rem', fontSize: '0.88rem', color: '#4b5563', lineHeight: 1.6 }}>
-              This action is <strong>irreversible</strong>. Your account, all donations, history, and data will be permanently deleted.
-            </p>
-            <p style={{ margin: '0 0 0.6rem', fontSize: '0.85rem', color: '#374151', fontWeight: 600 }}>
-              Type <span style={{ color: '#dc2626', fontFamily: 'monospace' }}>DELETE</span> to confirm:
-            </p>
-            <input
-              type="text"
-              value={deleteConfirmText}
-              onChange={e => setDeleteConfirmText(e.target.value)}
-              placeholder="Type DELETE here"
-              disabled={isDeleting}
-              style={{ width: '100%', padding: '0.7rem 1rem', borderRadius: '10px', border: `1.5px solid ${deleteConfirmText === 'DELETE' ? '#dc2626' : '#e5e7eb'}`, fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box', marginBottom: '1rem', fontFamily: 'monospace', letterSpacing: '0.05em' }}
-            />
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button
-                type="button"
-                onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }}
-                disabled={isDeleting}
-                style={{ flex: 1, padding: '0.7rem', borderRadius: '50px', border: '1.5px solid #e5e7eb', background: '#fff', color: '#374151', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={doDeleteAccount}
-                disabled={isDeleting || deleteConfirmText !== 'DELETE'}
-                style={{ flex: 2, padding: '0.7rem', borderRadius: '50px', border: 'none', background: deleteConfirmText === 'DELETE' ? '#dc2626' : '#f3f4f6', color: deleteConfirmText === 'DELETE' ? '#fff' : '#9ca3af', fontWeight: 800, fontSize: '0.875rem', cursor: (isDeleting || deleteConfirmText !== 'DELETE') ? 'not-allowed' : 'pointer', transition: 'all 0.18s' }}
-              >
-                {isDeleting ? 'Deleting…' : 'Yes, Delete My Account'}
-              </button>
-            </div>
           </div>
         </div>
       )}

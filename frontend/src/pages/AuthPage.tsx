@@ -893,13 +893,23 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 <div className="hl-field">
                   <label className="hl-label">First Name</label>
                   <input className="hl-input" type="text" placeholder="Maria"
-                    value={reg.first_name} onChange={e => setReg({ ...reg, first_name: e.target.value })} required />
+                    value={reg.first_name}
+                    onChange={e => setReg({ ...reg, first_name: e.target.value.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50) })}
+                    maxLength={50}
+                    pattern="[A-Za-z\s'\-]+"
+                    title="Letters only (spaces, hyphens, and apostrophes allowed), max 50 characters."
+                    required />
                   {errors.first_name && <span className="hl-field-err">⚠ {errors.first_name[0]}</span>}
                 </div>
                 <div className="hl-field">
                   <label className="hl-label">Last Name</label>
                   <input className="hl-input" type="text" placeholder="Santos"
-                    value={reg.last_name} onChange={e => setReg({ ...reg, last_name: e.target.value })} required />
+                    value={reg.last_name}
+                    onChange={e => setReg({ ...reg, last_name: e.target.value.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50) })}
+                    maxLength={50}
+                    pattern="[A-Za-z\s'\-]+"
+                    title="Letters only (spaces, hyphens, and apostrophes allowed), max 50 characters."
+                    required />
                   {errors.last_name && <span className="hl-field-err">⚠ {errors.last_name[0]}</span>}
                 </div>
               </div>

@@ -133,13 +133,15 @@ const AdminReports: React.FC = () => {
   if (loading) return <div className="section-wrap">Aggregating system records...</div>;
   if (!data) return <div className="section-wrap">Error: Could not generate system reports. Please check your connection.</div>;
 
-  const ReportBrandHeader = () => (
-    <div className="admin-print-brand-header" style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'space-between', 
-      borderBottom: '3px solid #ad246d', 
-      paddingBottom: '1.5rem', 
+  const ReportBrandHeader = () => {
+    if (!isPrinting) return null;
+    return (
+    <div className="admin-print-brand-header" style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottom: '3px solid #ad246d',
+      paddingBottom: '1.5rem',
       marginBottom: '2rem',
       backgroundColor: '#fdf7fc',
       padding: '1.5rem 2rem',
@@ -157,7 +159,8 @@ const AdminReports: React.FC = () => {
         <img src="/assets/images/landing/logo.jpg" alt="SUFC Logo" style={{ height: '55px', objectFit: 'contain', borderRadius: '50%', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', border: '2px solid #fff' }} onError={(e) => (e.currentTarget.style.display = 'none')} />
       </div>
     </div>
-  );
+    );
+  };
 
   const renderReportContent = () => {
     switch(reportType) {

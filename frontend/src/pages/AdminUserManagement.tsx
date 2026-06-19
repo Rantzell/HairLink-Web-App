@@ -288,11 +288,27 @@ const AdminUserManagement: React.FC = () => {
               <div className="admin-form-two-col-sm">
                 <div className="form-group">
                   <label className="admin-form-label-sm">First Name</label>
-                  <input type="text" value={userForm.firstName} onChange={e => setUserForm({...userForm, firstName: e.target.value})} required />
+                  <input
+                    type="text"
+                    value={userForm.firstName}
+                    onChange={e => setUserForm({ ...userForm, firstName: e.target.value.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50) })}
+                    maxLength={50}
+                    pattern="[A-Za-z\s'\-]+"
+                    title="Letters only (spaces, hyphens, and apostrophes allowed), max 50 characters."
+                    required
+                  />
                 </div>
                 <div className="form-group">
                   <label className="admin-form-label-sm">Last Name</label>
-                  <input type="text" value={userForm.lastName} onChange={e => setUserForm({...userForm, lastName: e.target.value})} required />
+                  <input
+                    type="text"
+                    value={userForm.lastName}
+                    onChange={e => setUserForm({ ...userForm, lastName: e.target.value.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50) })}
+                    maxLength={50}
+                    pattern="[A-Za-z\s'\-]+"
+                    title="Letters only (spaces, hyphens, and apostrophes allowed), max 50 characters."
+                    required
+                  />
                 </div>
               </div>
               <div className="form-group">
