@@ -89,6 +89,7 @@ const CommunityFeed: React.FC = () => {
 
   const [posts, setPosts]           = useState<CommunityPost[]>([]);
   const [loading, setLoading]       = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [filter, setFilter]         = useState<FilterMode>('all');
   const [sort, setSort]             = useState<SortMode>('new');
   const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
@@ -110,11 +111,14 @@ const CommunityFeed: React.FC = () => {
   const [catOpen, setCatOpen] = useState(false);
 
   const fetchPosts = useCallback(async () => {
+    setFetchError(null);
     try {
       const res = await apiClient.get('/internal-api/community/posts');
       setPosts(res.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch posts', err);
+      const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Could not load posts.';
+      setFetchError(msg);
     } finally {
       setLoading(false);
     }
@@ -407,6 +411,15 @@ const CommunityFeed: React.FC = () => {
         {loading ? (
           <div className="cf-loading">
             <div className="cf-spinner" /><span>Loading community feed…</span>
+          </div>
+        ) : fetchError ? (
+          <div className="cf-empty">
+            <div className="cf-empty-icon">⚠️</div>
+            <p style={{ color: '#c0392b', fontWeight: 600 }}>Failed to load posts</p>
+            <p style={{ fontSize: '0.82rem', color: '#888', marginTop: '0.25rem' }}>{fetchError}</p>
+            <button className="cf-create-btn" style={{ marginTop: '1rem' }} onClick={fetchPosts}>
+              Try Again
+            </button>
           </div>
         ) : filteredPosts.length === 0 ? (
           <div className="cf-empty">
