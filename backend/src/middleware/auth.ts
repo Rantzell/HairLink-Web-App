@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { createLocalJWKSet, createRemoteJWKSet, jwtVerify, JWTPayload } from 'jose';
+import { createLocalJWKSet, createRemoteJWKSet, jwtVerify, JWTPayload, JSONWebKeySet } from 'jose';
 import prisma from '../config/database';
 
 export interface AuthUser {
@@ -33,7 +33,7 @@ async function loadJWKS(): Promise<void> {
     try {
       const res = await fetch(JWKS_URL);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const jwks = await res.json();
+      const jwks = await res.json() as JSONWebKeySet;
       localJWKS = createLocalJWKSet(jwks);
       console.log(`[Auth] JWKS loaded (${jwks.keys?.length ?? 0} key(s))`);
       return;
