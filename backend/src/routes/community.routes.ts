@@ -27,23 +27,20 @@ function serializePost(p: any) {
 router.get('/posts', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
+    // Get all valid user IDs so we can exclude orphaned posts/comments
+    const validUsers = await prisma.user.findMany({ select: { id: true } });
+    const validUserIds = validUsers.map((u) => u.id);
+
     const posts = await prisma.communityPost.findMany({
-      where: {
-        // Filter out orphaned posts whose author was deleted
-        user: { id: { not: '' } },
-      },
+      where: { userId: { in: validUserIds } },
       include: {
         user: true,
         comments: {
-          where: {
-            parentId: null,
-            // Filter out comments whose author was deleted
-            user: { id: { not: '' } },
-          },
+          where: { parentId: null, userId: { in: validUserIds } },
           include: {
             user: true,
             replies: {
-              where: { user: { id: { not: '' } } },
+              where: { userId: { in: validUserIds } },
               include: { user: true },
               orderBy: { createdAt: 'asc' },
             },
