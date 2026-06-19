@@ -113,6 +113,13 @@ const AdminUserManagement: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    if (isModalOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isModalOpen]);
+
   const handleSaveUser = (e: React.FormEvent) => {
     e.preventDefault();
     setShowSaveConfirm(true);
@@ -281,8 +288,20 @@ const AdminUserManagement: React.FC = () => {
       {/* Create/Edit User Modal — portalled to document.body so it's always viewport-centered */}
       {isModalOpen && createPortal(
         <div
-          className="amu-backdrop"
           onClick={e => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(10, 5, 18, 0.65)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            animation: 'amuFadeIn 0.2s ease',
+          }}
         >
           <div className="amu-modal">
 
