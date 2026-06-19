@@ -222,37 +222,30 @@ const RecipientRequest: React.FC = () => {
                 </div>
               </div>
 
-              {/* Uploaded files — same card style as Reference Picture */}
+              {/* Uploaded files — identical card style to Reference Picture */}
               {documents.length > 0 && (
                 <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                   {documents.map((doc, i) => {
                     const ext = (doc.name.split('.').pop() || '').toLowerCase();
                     const isImage = ['jpg','jpeg','png','webp'].includes(ext);
-                    const icon = isImage ? 'bx-image' : ext === 'pdf' ? 'bxs-file-pdf' : 'bx-file-blank';
-                    const sizeKb = Math.max(1, Math.round(doc.size / 1024));
+                    const icon = ext === 'pdf' ? 'bxs-file-pdf' : 'bx-file-blank';
                     return (
                       <div
                         key={i}
                         className="upload-box-mini has-content"
-                        style={{ cursor: 'default' }}
                         onClick={e => e.stopPropagation()}
+                        style={{ cursor: 'default' }}
                       >
                         <div className="upload-mini-success">
-                          <div className="mini-preview" style={{ background: '#fce4ec', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                          <div className="mini-preview">
                             {isImage
                               ? <img src={URL.createObjectURL(doc)} alt={doc.name} />
-                              : <i className={`bx ${icon}`} style={{ fontSize: '1.4rem', color: '#ad246d' }}></i>
+                              : <i className={`bx ${icon}`} style={{ fontSize: '1.6rem', color: '#D63B8A', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}></i>
                             }
                           </div>
                           <div className="mini-details">
-                            <strong title={doc.name}>{doc.name}</strong>
-                            <span style={{ fontSize: '0.7rem', color: '#8c7895' }}>{sizeKb} KB</span>
-                            <button
-                              type="button"
-                              onClick={() => removeDoc(i)}
-                            >
-                              Remove
-                            </button>
+                            <strong>{doc.name}</strong>
+                            <button type="button" onClick={() => removeDoc(i)}>Remove</button>
                           </div>
                         </div>
                       </div>
