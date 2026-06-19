@@ -60,7 +60,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   /** Fetch profile from public.users via our backend /auth/me
    * @param token - Optional explicit token to use (bypasses cached token for race-condition safety)
    */
-  const fetchProfile = async (token?: string, silent = false): Promise<User | null> => {
+  async function fetchProfile(token: string | undefined, silent: true): Promise<User | null>;
+  async function fetchProfile(token?: string, silent?: false): Promise<User>;
+  async function fetchProfile(token?: string, silent = false): Promise<User | null> {
     try {
       const config = token
         ? { headers: { Authorization: `Bearer ${token}` } }
