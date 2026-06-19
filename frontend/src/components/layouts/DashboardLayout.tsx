@@ -129,12 +129,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           { icon: 'bx bx-link',         label: 'Recipient Matching',     to: '/staff/matching' },
         ],
       },
-      {
-        label: 'System',
-        items: [
-          { icon: 'bx bx-bar-chart-alt-2', label: 'System Reports',   to: '/staff/reports?type=donations' },
-        ],
-      },
     ];
 
     const getTopbarTitle = () => {
@@ -149,7 +143,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       if (location.pathname.startsWith('/staff/hair-stock')) return 'Hair Stock Inventory';
       if (location.pathname.startsWith('/staff/wig-stock')) return 'Wig Stock Inventory';
       if (location.pathname.startsWith('/staff/matching')) return 'Recipient Matching Desk';
-      if (location.pathname.startsWith('/staff/reports')) return 'System Reports & Analytics';
       if (location.pathname.startsWith('/staff/profile')) return 'My Staff Profile';
       return 'Staff Workspace';
     };
@@ -693,7 +686,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <Link to="/staff/wig-stock" className={isActive('/staff/wig-stock') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Wigs</Link>
                   <Link to="/staff/hair-stock" className={isActive('/staff/hair-stock') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Hair</Link>
                   <Link to="/staff/matching" className={isActive('/staff/matching') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Matching</Link>
-                  <Link to="/staff/reports" className={isActive('/staff/reports') ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Reports</Link>
                 </>
               )}
 
