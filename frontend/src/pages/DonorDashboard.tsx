@@ -968,7 +968,6 @@ const DonorDashboard: React.FC = () => {
   const monetaryAmount = stats.breakdown?.monetaryAmount || 0;
 
   const percent = Math.min((points / goal) * 100, 100);
-  const filledStars = Math.min(Math.floor(points / 10), 10);
 
   // SVG Circular progress configurations
   const radius = 28;
