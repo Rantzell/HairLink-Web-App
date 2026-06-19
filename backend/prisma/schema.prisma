@@ -156,7 +156,7 @@ model CommunityPost {
   updatedAt DateTime            @updatedAt @map("updated_at")
   comments  CommunityComment[]
   likedBy   CommunityPostLike[]
-  user      User                @relation(fields: [userId], references: [id])
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("community_posts")
 }
@@ -173,7 +173,7 @@ model CommunityComment {
   parent    CommunityComment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies   CommunityComment[] @relation("CommentReplies")
   post      CommunityPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User               @relation(fields: [userId], references: [id])
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("community_comments")
 }
@@ -184,7 +184,7 @@ model CommunityPostLike {
   userId          String        @map("user_id") @db.Uuid
   createdAt       DateTime      @default(now()) @map("created_at")
   post            CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
-  user            User          @relation(fields: [userId], references: [id])
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([communityPostId, userId])
   @@map("community_post_likes")
