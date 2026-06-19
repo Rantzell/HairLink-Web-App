@@ -17,13 +17,13 @@ const DonorCertificate: React.FC = () => {
   const [selectedDonation, setSelectedDonation] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string>('');
-  const [rawDonations, setRawDonations] = useState<any[]>([]);
+
 
   useEffect(() => {
     const fetchDonations = async () => {
       try {
         const res = await apiClient.get('/internal-api/donations');
-        setRawDonations(res.data);
+
         const validDonations = res.data.filter((d: Donation) => 
           ['Received Hair', 'In Queue', 'In Progress', 'Completed', 'Wig Received'].includes(d.status)
         );
@@ -263,20 +263,6 @@ const DonorCertificate: React.FC = () => {
         ) : (
           <div className="note-box" style={{ padding: '2rem', textAlign: 'center', color: '#8c7895', fontSize: '0.8rem' }}>
             <p>No verified or completed donation record found. Submit a donation and wait for verification to view your certificate.</p>
-            {(rawDonations.length > 0 || errorMsg) && (
-              <div style={{ marginTop: '1rem', textAlign: 'left', background: '#fdf7fb', border: '1px solid #ead7e8', padding: '1rem', borderRadius: '8px', color: '#4d3f56', fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                <div style={{ fontWeight: 800, marginBottom: '0.5rem', color: '#ad246d' }}>DEBUG DIAGNOSTICS:</div>
-                {errorMsg && <div style={{ color: '#e03c3c', marginBottom: '0.5rem' }}>Error: {errorMsg}</div>}
-                <div>Raw donations count: {rawDonations.length}</div>
-                <div style={{ marginTop: '0.5rem', maxHeight: '150px', overflowY: 'auto' }}>
-                  {rawDonations.map((d: any) => (
-                    <div key={d.id} style={{ borderBottom: '1px solid #f2ebf4', padding: '0.2rem 0' }}>
-                      - Ref: {d.reference}, Status: {d.status}, CertNo: {d.certificateNo}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </article>
