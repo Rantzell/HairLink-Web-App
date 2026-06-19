@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   /** Fetch profile from public.users via our backend /auth/me
    * @param token - Optional explicit token to use (bypasses cached token for race-condition safety)
    */
-  const fetchProfile = async (token?: string): Promise<User | null> => {
+  const fetchProfile = async (token?: string, silent = false): Promise<User | null> => {
     try {
       const config = token
         ? { headers: { Authorization: `Bearer ${token}` } }
@@ -71,8 +71,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userData.profile_photo_url = getProfilePhotoUrl(userData.profile_photo_url) || userData.profile_photo_url;
       }
       return userData;
-    } catch {
-      return null;
+    } catch (err: any) {
+      if (silent) return null;
+      // Surface the real backend/network error to the caller
+      const msg = err?.response?.data?.error
+        || err?.response?.data?.message
+        || err?.message
+        || 'Could not reach the server. Please try again.';
+      throw { response: { data: { error: msg } } };
     }
   };
 
@@ -88,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       eventStarted = true;
       if (session?.user) {
         // Pass the token explicitly to avoid any race with the apiClient interceptor
-        const profile = await fetchProfile(session.access_token);
+        const profile = await fetchProfile(session.access_token, true);
         setUser(profile);
       } else {
         setUser(null);
@@ -127,7 +133,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // interceptor hasn't been updated by onAuthStateChange yet
     const token = loginData.session?.access_token;
     const profile = await fetchProfile(token);
-    if (!profile) throw { response: { data: { error: 'Profile not found. Please contact support.' } } };
 
     // First-login OTP check — skip for demo accounts
     const isDemo = email.endsWith('@hairlink.local');
@@ -165,7 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await supabase.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token });
             // Small delay to let onAuthStateChange fire and update currentToken in apiClient
             await new Promise(resolve => setTimeout(resolve, 100));
-            const profile = await fetchProfile(session.access_token);
+            const profile = await fetchProfile(session.access_token, true);
             if (!profile) {
               toast.success('Demo login succeeded but profile could not be loaded. Ensure the database migrations and triggers have run.');
               return;
@@ -189,8 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Fallback: try client-side sign-in using anon key
       const { data: _authData, error } = await supabase.auth.signInWithPassword(creds);
       if (error) throw error;
-      const profile = await fetchProfile();
-      if (!profile) throw new Error('Profile not found');
+      const profile = await fetchProfile(undefined, false);
       setUser(profile);
       window.location.replace(dashboardPath[profile.role] || '/donor/dashboard');
     } catch (err: any) {
@@ -275,7 +279,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // If confirmation is disabled (e.g. local dev), session is returned immediately
     const profile = await fetchProfile();
-    if (!profile) throw { response: { data: { error: 'Could not load profile after registration.' } } };
     setUser(profile);
     return { user: profile, redirect: dashboardPath[role] || '/donor/dashboard' };
   };
