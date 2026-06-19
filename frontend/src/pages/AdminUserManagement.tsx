@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import '../styles/Admin.css';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
@@ -111,6 +112,13 @@ const AdminUserManagement: React.FC = () => {
     }
     setIsModalOpen(true);
   };
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    if (isModalOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isModalOpen]);
 
   const handleSaveUser = (e: React.FormEvent) => {
     e.preventDefault();
@@ -277,6 +285,7 @@ const AdminUserManagement: React.FC = () => {
         />
       </article>
 
+<<<<<<< HEAD
       {/* Create/Edit User Modal */}
       {isModalOpen && (
         <div className="modal admin-modal-overlay">
@@ -309,69 +318,210 @@ const AdminUserManagement: React.FC = () => {
                     title="Letters only (spaces, hyphens, and apostrophes allowed), max 50 characters."
                     required
                   />
+=======
+      {/* Create/Edit User Modal — portalled to document.body so it's always viewport-centered */}
+      {isModalOpen && createPortal(
+        <div
+          onClick={e => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(10, 5, 18, 0.65)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            animation: 'amuFadeIn 0.2s ease',
+          }}
+        >
+          <div className="amu-modal">
+
+            {/* ── Branded top bar ── */}
+            <div className="amu-topbar">
+              <span className="amu-topbar-badge">
+                <i className={`bx ${editingUser ? 'bx-user-check' : 'bx-user-plus'}`} />
+                {editingUser ? 'Edit Account' : 'New Account'}
+              </span>
+              <button
+                type="button"
+                className="amu-close-btn"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Close"
+              >
+                <i className="bx bx-x" />
+              </button>
+            </div>
+
+            {/* ── Identity strip ── */}
+            <div className="amu-identity-strip">
+              <div className="amu-avatar">
+                {userForm.firstName
+                  ? `${userForm.firstName[0]}${userForm.lastName?.[0] || ''}`.toUpperCase()
+                  : <i className="bx bx-user" />
+                }
+              </div>
+              <div>
+                <p className="amu-identity-name">
+                  {userForm.firstName || userForm.lastName
+                    ? `${userForm.firstName} ${userForm.lastName}`.trim()
+                    : 'New User'}
+                </p>
+                <p className="amu-identity-email">
+                  {userForm.email || (editingUser ? editingUser.email : 'No email yet')}
+                </p>
+              </div>
+              <span className={`amu-role-pill amu-role-${userForm.role}`}>
+                {userForm.role === 'staff' ? 'Staff' :
+                 userForm.role === 'admin' ? 'Admin' :
+                 userForm.role === 'wigmaker' ? 'Wigmaker' :
+                 userForm.role === 'recipient' ? 'Recipient' : 'Donor'}
+              </span>
+            </div>
+
+            {/* ── Form body ── */}
+            <form onSubmit={handleSaveUser} className="amu-form-body">
+
+              <div className="amu-section-label">Personal Information</div>
+              <div className="amu-row-2">
+                <div className="amu-field">
+                  <label className="amu-lbl">First Name</label>
+                  <div className="amu-input-wrap">
+                    <i className="bx bx-user amu-input-icon" />
+                    <input
+                      className="amu-input"
+                      type="text"
+                      placeholder="Maria"
+                      value={userForm.firstName}
+                      onChange={e => setUserForm({...userForm, firstName: e.target.value})}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="amu-field">
+                  <label className="amu-lbl">Last Name</label>
+                  <div className="amu-input-wrap">
+                    <i className="bx bx-user amu-input-icon" />
+                    <input
+                      className="amu-input"
+                      type="text"
+                      placeholder="Santos"
+                      value={userForm.lastName}
+                      onChange={e => setUserForm({...userForm, lastName: e.target.value})}
+                      required
+                    />
+                  </div>
+>>>>>>> 95d1858c0182e725c7703767711528ec3c22428c
                 </div>
               </div>
-              <div className="form-group">
-                <label className="admin-form-label-sm">Email Address</label>
-                <input type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} required />
+
+              <div className="amu-field">
+                <label className="amu-lbl">Email Address</label>
+                <div className="amu-input-wrap">
+                  <i className="bx bx-envelope amu-input-icon" />
+                  <input
+                    className="amu-input"
+                    type="email"
+                    placeholder="user@example.com"
+                    value={userForm.email}
+                    onChange={e => setUserForm({...userForm, email: e.target.value})}
+                    required
+                  />
+                </div>
               </div>
+
               {!editingUser && (
-                <div className="form-group">
-                  <label className="admin-form-label-sm">Password</label>
-                  <input type="password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} placeholder="Default: password123" />
+                <div className="amu-field">
+                  <label className="amu-lbl">Password</label>
+                  <div className="amu-input-wrap">
+                    <i className="bx bx-lock-alt amu-input-icon" />
+                    <input
+                      className="amu-input"
+                      type="password"
+                      placeholder="Leave blank to use: password123"
+                      value={userForm.password}
+                      onChange={e => setUserForm({...userForm, password: e.target.value})}
+                    />
+                  </div>
                 </div>
               )}
-              <div className="form-group">
-                <label className="admin-form-label-sm">Assigned Role</label>
-                <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="admin-select">
-                  <option value="donor">Donor</option>
-                  <option value="recipient">Recipient</option>
-                  <option value="staff">Internal Staff</option>
-                  <option value="wigmaker">Wigmaker Partner</option>
-                  <option value="admin">System Administrator</option>
-                </select>
+
+              <div className="amu-divider" />
+              <div className="amu-section-label">Access & Permissions</div>
+
+              <div className="amu-field">
+                <label className="amu-lbl">Assigned Role</label>
+                <div className="amu-select-wrap">
+                  <i className="bx bx-shield amu-input-icon" />
+                  <select
+                    className="amu-select"
+                    value={userForm.role}
+                    onChange={e => setUserForm({...userForm, role: e.target.value})}
+                  >
+                    <option value="donor">Donor</option>
+                    <option value="recipient">Recipient</option>
+                    <option value="staff">Internal Staff</option>
+                    <option value="wigmaker">Wigmaker Partner</option>
+                    <option value="admin">System Administrator</option>
+                  </select>
+                  <i className="bx bx-chevron-down amu-chevron" />
+                </div>
               </div>
-              <div className="admin-modal-btns">
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  style={{
-                    flex: 1,
-                    padding: '0.6rem 1rem',
-                    borderRadius: '8px',
-                    background: '#ad246d',
-                    color: '#fff',
-                    border: 'none',
-                    fontWeight: 800,
-                    fontSize: '0.85rem',
-                    cursor: 'pointer',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
-                >
-                  {isSubmitting ? 'Saving...' : (editingUser ? 'Update Account' : 'Create Account')}
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)} 
-                  style={{
-                    flex: 1,
-                    padding: '0.6rem 1rem',
-                    borderRadius: '8px',
-                    background: '#fff',
-                    color: '#ad246d',
-                    border: '1.5px solid #ead7e8',
-                    fontWeight: 800,
-                    fontSize: '0.85rem',
-                    cursor: 'pointer'
-                  }}
+
+              {/* Role description card */}
+              <div className="amu-role-card">
+                <i className={`bx ${
+                  userForm.role === 'admin' ? 'bx-crown' :
+                  userForm.role === 'staff' ? 'bx-briefcase' :
+                  userForm.role === 'wigmaker' ? 'bx-scissors' :
+                  userForm.role === 'recipient' ? 'bx-heart' : 'bx-donate-heart'
+                } amu-role-card-icon`} />
+                <div>
+                  <p className="amu-role-card-name">
+                    {userForm.role === 'admin' ? 'System Administrator' :
+                     userForm.role === 'staff' ? 'Internal Staff' :
+                     userForm.role === 'wigmaker' ? 'Wigmaker Partner' :
+                     userForm.role === 'recipient' ? 'Recipient' : 'Donor'}
+                  </p>
+                  <p className="amu-role-card-desc">
+                    {userForm.role === 'admin' && 'Full system access — manages users, inventory, reports, and all operations.'}
+                    {userForm.role === 'staff' && 'Verifies donations and requests, matches recipients, and oversees inventory.'}
+                    {userForm.role === 'wigmaker' && 'Views and updates assigned wig production tasks and delivery status.'}
+                    {userForm.role === 'donor' && 'Submits hair donations and tracks their donation journey.'}
+                    {userForm.role === 'recipient' && 'Submits wig requests and monitors request status and delivery.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* ── Footer actions ── */}
+              <div className="amu-footer">
+                <button
+                  type="button"
+                  className="amu-btn-cancel"
+                  onClick={() => setIsModalOpen(false)}
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="amu-btn-save"
+                >
+                  {isSubmitting ? (
+                    <><i className="bx bx-loader-alt bx-spin" /> Saving…</>
+                  ) : editingUser ? (
+                    <><i className="bx bx-save" /> Save Changes</>
+                  ) : (
+                    <><i className="bx bx-user-plus" /> Create Account</>
+                  )}
                 </button>
               </div>
             </form>
           </div>
         </div>
-      )}
+      , document.body)}
       <ConfirmModal
         isOpen={showToggleConfirm}
         onClose={() => { setShowToggleConfirm(false); setPendingToggleUser(null); }}

@@ -162,13 +162,15 @@ const RecipientRequest: React.FC = () => {
             </label>
           </div>
 
-          {/* Redesigned Supporting Documents section — wider dropzone, clearer hierarchy */}
+          {/* Supporting Documents + Reference Picture */}
           <div className="rr-docs-section" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div className="rr-doc-block">
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <label className="upload-label-main" style={{ margin: 0 }}>
-                  Supporting Documents <span style={{ color: '#cf2f84' }}>*</span>
-                </label>
+              {/* Label row — asterisk is inline next to the title */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                  <span style={{ fontWeight: 800, color: '#4a3452', fontSize: '0.9rem' }}>Supporting Documents</span>
+                  <span style={{ color: '#cf2f84', fontSize: '0.9rem', lineHeight: 1 }}>*</span>
+                </div>
                 <span style={{ fontSize: '0.72rem', color: '#8c7895', fontWeight: 600 }}>
                   PDF, DOC, JPG, PNG · Max 10MB each
                 </span>
@@ -177,6 +179,7 @@ const RecipientRequest: React.FC = () => {
                 Upload medical certificates, clinical abstracts, or any document supporting your hair-loss diagnosis. You can attach multiple files.
               </p>
 
+              {/* Dropzone */}
               <div
                 className={`rr-doc-dropzone ${documents.length > 0 ? 'has-files' : ''}`}
                 onClick={() => docsInputRef.current?.click()}
@@ -211,7 +214,7 @@ const RecipientRequest: React.FC = () => {
                     <i className='bx bx-cloud-upload'></i>
                   </div>
                   <p style={{ margin: 0, fontWeight: 800, color: '#4a3452', fontSize: '0.95rem' }}>
-                    {documents.length > 0 ? 'Add more documents' : 'Click to upload or drag &amp; drop'}
+                    {documents.length > 0 ? 'Add more documents' : 'Click to upload or drag & drop'}
                   </p>
                   <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c7895' }}>
                     Your files are kept private and shared only with verifying staff.
@@ -219,27 +222,39 @@ const RecipientRequest: React.FC = () => {
                 </div>
               </div>
 
+              {/* Uploaded files — same card style as Reference Picture */}
               {documents.length > 0 && (
-                <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                   {documents.map((doc, i) => {
                     const ext = (doc.name.split('.').pop() || '').toLowerCase();
-                    const icon = ['jpg','jpeg','png','webp'].includes(ext) ? 'bx-image' : ext === 'pdf' ? 'bxs-file-pdf' : 'bx-file-blank';
+                    const isImage = ['jpg','jpeg','png','webp'].includes(ext);
+                    const icon = isImage ? 'bx-image' : ext === 'pdf' ? 'bxs-file-pdf' : 'bx-file-blank';
                     const sizeKb = Math.max(1, Math.round(doc.size / 1024));
                     return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', border: '1px solid #ead7e8', borderRadius: '10px', padding: '0.55rem 0.85rem' }}>
-                        <i className={`bx ${icon}`} style={{ fontSize: '1.25rem', color: '#ad246d', flexShrink: 0 }}></i>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4a3452', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={doc.name}>{doc.name}</div>
-                          <div style={{ fontSize: '0.7rem', color: '#8c7895' }}>{sizeKb} KB</div>
+                      <div
+                        key={i}
+                        className="upload-box-mini has-content"
+                        style={{ cursor: 'default' }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <div className="upload-mini-success">
+                          <div className="mini-preview" style={{ background: '#fce4ec', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                            {isImage
+                              ? <img src={URL.createObjectURL(doc)} alt={doc.name} />
+                              : <i className={`bx ${icon}`} style={{ fontSize: '1.4rem', color: '#ad246d' }}></i>
+                            }
+                          </div>
+                          <div className="mini-details">
+                            <strong title={doc.name}>{doc.name}</strong>
+                            <span style={{ fontSize: '0.7rem', color: '#8c7895' }}>{sizeKb} KB</span>
+                            <button
+                              type="button"
+                              onClick={() => removeDoc(i)}
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); removeDoc(i); }}
-                          aria-label={`Remove ${doc.name}`}
-                          style={{ background: 'transparent', border: 'none', color: '#8c7895', fontSize: '1.1rem', cursor: 'pointer', padding: '0.25rem', borderRadius: '6px' }}
-                        >
-                          <i className='bx bx-x'></i>
-                        </button>
                       </div>
                     );
                   })}
@@ -247,12 +262,14 @@ const RecipientRequest: React.FC = () => {
               )}
             </div>
 
-            {/* Reference photo — kept compact */}
+            {/* Reference photo */}
             <div className="rr-doc-block">
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <label className="upload-label-main" style={{ margin: 0 }}>
-                  Reference Picture <span style={{ color: '#cf2f84' }}>*</span>
-                </label>
+              {/* Label row — asterisk inline next to title */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                  <span style={{ fontWeight: 800, color: '#4a3452', fontSize: '0.9rem' }}>Reference Picture</span>
+                  <span style={{ color: '#cf2f84', fontSize: '0.9rem', lineHeight: 1 }}>*</span>
+                </div>
                 <span style={{ fontSize: '0.72rem', color: '#8c7895', fontWeight: 600 }}>JPG, PNG, WEBP</span>
               </div>
               <p style={{ margin: '0 0 0.75rem', fontSize: '0.78rem', color: '#665772', lineHeight: 1.5 }}>

@@ -1016,11 +1016,11 @@ const AdminCMS: React.FC = () => {
             {/* ── Detail Modal ── */}
             {selectedPartner && (
               <div
-                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'cmFadeIn 0.18s ease' }}
                 onClick={() => setSelectedPartner(null)}
               >
                 <div
-                  style={{ background: '#fff', borderRadius: '16px', padding: '2rem', maxWidth: '520px', width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,0.18)' }}
+                  style={{ background: '#fff', borderRadius: '16px', padding: '2rem', maxWidth: '520px', width: '100%', boxShadow: '0 20px 50px rgba(0,0,0,0.25), 0 10px 20px rgba(0,0,0,0.12)', animation: 'adminModalPop 0.25s ease-out' }}
                   onClick={e => e.stopPropagation()}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -1059,11 +1059,11 @@ const AdminCMS: React.FC = () => {
             {/* ── Edit Modal ── */}
             {editingPartner && (
               <div
-                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'cmFadeIn 0.18s ease' }}
                 onClick={() => setEditingPartner(null)}
               >
                 <div
-                  style={{ background: '#fff', borderRadius: '16px', padding: '2rem', maxWidth: '440px', width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,0.18)' }}
+                  style={{ background: '#fff', borderRadius: '16px', padding: '2rem', maxWidth: '440px', width: '100%', boxShadow: '0 20px 50px rgba(0,0,0,0.25), 0 10px 20px rgba(0,0,0,0.12)', animation: 'adminModalPop 0.25s ease-out' }}
                   onClick={e => e.stopPropagation()}
                 >
                   <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.05rem', fontWeight: 800 }}>Edit Partnership — {editingPartner.name}</h3>
