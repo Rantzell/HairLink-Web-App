@@ -117,7 +117,7 @@ const CommunityFeed: React.FC = () => {
       setPosts(res.data);
     } catch (err: any) {
       console.error('Failed to fetch posts', err);
-      const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Could not load posts.';
+      const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Could not load posts.';
       setFetchError(msg);
     } finally {
       setLoading(false);

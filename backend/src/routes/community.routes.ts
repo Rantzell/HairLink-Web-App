@@ -38,27 +38,36 @@ router.get('/posts', authenticate, async (req: Request, res: Response) => {
           },
           orderBy: { createdAt: 'asc' },
         },
-        likedBy: true,
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const result = posts.map((p) => {
-      try {
-        const likesCount = p.likedBy ? p.likedBy.length : 0;
-        const isLiked = p.likedBy ? p.likedBy.some((l) => l.userId === userId) : false;
-        const { likedBy, ...rest } = p;
-        return { ...serializePost(rest), likes: likesCount, is_liked: isLiked };
-      } catch (err) {
-        console.error(`[Community] Serialization error for post ${p.id}:`, err);
-        throw err;
+    // Fetch likes separately so a missing table doesn't crash the whole posts query
+    let likesMap: Record<string, { count: number; liked: boolean }> = {};
+    try {
+      const allLikes = await prisma.communityPostLike.findMany({
+        where: { communityPostId: { in: posts.map((p) => p.id) } },
+        select: { communityPostId: true, userId: true },
+      });
+      for (const like of allLikes) {
+        if (!likesMap[like.communityPostId]) likesMap[like.communityPostId] = { count: 0, liked: false };
+        likesMap[like.communityPostId].count++;
+        if (like.userId === userId) likesMap[like.communityPostId].liked = true;
       }
-    });
+    } catch (likesErr) {
+      console.warn('[Community] Could not fetch likes (table may not exist):', likesErr instanceof Error ? likesErr.message : likesErr);
+    }
+
+    const result = posts.map((p) => ({
+      ...serializePost(p),
+      likes: likesMap[p.id]?.count ?? 0,
+      is_liked: likesMap[p.id]?.liked ?? false,
+    }));
 
     res.json(result);
   } catch (err) {
     console.error('[Community] Posts error:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch posts',
       message: err instanceof Error ? err.message : String(err)
     });
