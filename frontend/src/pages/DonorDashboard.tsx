@@ -291,14 +291,16 @@ const dashStyles = `
 }
 
 /* PROGRESS BAR */
+/* PROGRESS TRACK */
 .hl-dash-progress-wrap {
   position: relative;
-  padding: 8px 0;
-  margin-bottom: 16px;
+  /* vertical space for the milestone stars that sit on top of the track */
+  padding: 20px 0 28px;
+  margin-bottom: 8px;
 }
 
 .hl-dash-progress-track {
-  height: 12px;
+  height: 10px;
   background: #EEEDE8;
   border-radius: 999px;
   position: relative;
@@ -308,45 +310,78 @@ const dashStyles = `
 .hl-dash-progress-fill {
   position: absolute;
   top: 0; left: 0; bottom: 0;
-  background: #D63B8A;
+  background: linear-gradient(90deg, #e8679a, #D63B8A);
   border-radius: 999px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.9s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Glowing tip star — slides along the fill edge */
 .hl-dash-progress-star-indicator {
   position: absolute;
   top: 50%;
+  /* translate(-50%,-50%) keeps the star centred on the fill edge */
   transform: translate(-50%, -50%);
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   background: #ffffff;
-  border: 1px solid #EEEDE8;
+  border: 2px solid #D63B8A;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #F59E0B;
-  font-size: 0.85rem;
-  transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  color: #D63B8A;
+  font-size: 1rem;
+  transition: left 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 0 4px rgba(214,59,138,0.15), 0 2px 8px rgba(214,59,138,0.25);
+  z-index: 3;
 }
 
-/* STARS ROW */
-.hl-dash-stars-row {
+/* Milestone stars — each anchored at its exact % position ON the track */
+.hl-dash-milestone-star {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
-  justify-content: space-between;
-  padding: 0 4px;
-  margin-bottom: 24px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+  pointer-events: none;
 }
 
-.hl-dash-stars-row i {
-  color: #E5E5E0;
-  font-size: 1.4rem;
-  transition: color 0.3s;
+.hl-dash-milestone-star .ms-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ddd;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.4s, border-color 0.4s;
+  font-size: 0.65rem;
+  color: transparent;
 }
 
-.hl-dash-stars-row i.filled {
-  color: #F59E0B;
+.hl-dash-milestone-star.reached .ms-dot {
+  background: #F59E0B;
+  border-color: #fff;
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.18);
+}
+
+.hl-dash-milestone-star .ms-label {
+  position: absolute;
+  bottom: -20px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #bbb;
+  white-space: nowrap;
+  transition: color 0.4s;
+}
+
+.hl-dash-milestone-star.reached .ms-label {
+  color: #D63B8A;
 }
 
 /* BANNER */
@@ -1060,30 +1095,43 @@ const DonorDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Progress Bar with Sliding Badge */}
-              <div className="hl-dash-progress-wrap" aria-label="Reward progress bar">
+              {/* Progress Bar with pixel-perfect milestone stars ON the track */}
+              <div className="hl-dash-progress-wrap" aria-label={`Reward progress: ${points} of ${goal} points`}>
                 <div className="hl-dash-progress-track">
+                  {/* Fill bar */}
                   <span
                     className="hl-dash-progress-fill"
                     style={{ width: `${percent}%` }}
-                  ></span>
-                  <span
-                    className="hl-dash-progress-star-indicator"
-                    style={{ left: `${percent}%` }}
-                  >
-                    <i className="bx bxs-star" style={{ fontSize: '0.95rem' }}></i>
-                  </span>
-                </div>
-              </div>
+                  />
 
-              {/* Row of 10 Stars */}
-              <div className="hl-dash-stars-row" aria-hidden="true">
-                {[...Array(10)].map((_, i) => (
-                  <i
-                    key={i}
-                    className={`bx ${i < filledStars ? 'bxs-star' : 'bx-star'} ${i < filledStars ? 'filled' : ''}`}
-                  ></i>
-                ))}
+                  {/* Milestone dots at 10%, 20%, …, 100% — each is exactly 10 pts apart */}
+                  {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((milestone) => {
+                    const reached = points >= milestone;
+                    return (
+                      <span
+                        key={milestone}
+                        className={`hl-dash-milestone-star${reached ? ' reached' : ''}`}
+                        style={{ left: `${milestone}%` }}
+                        aria-label={`${milestone} points milestone${reached ? ' reached' : ''}`}
+                      >
+                        <span className="ms-dot">
+                          {reached && <i className="bx bxs-star" />}
+                        </span>
+                        <span className="ms-label">{milestone}</span>
+                      </span>
+                    );
+                  })}
+
+                  {/* Glowing tip star — sits exactly at the current progress edge */}
+                  {percent > 0 && percent < 100 && (
+                    <span
+                      className="hl-dash-progress-star-indicator"
+                      style={{ left: `${percent}%` }}
+                    >
+                      <i className="bx bxs-star" />
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Ribbon info box */}
