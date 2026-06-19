@@ -697,3 +697,10 @@
         min-width: 500px;
     }
 }
+
+@media (max-width: 374px) {
+    .section-title-block h1 { font-size: 1.35rem; }
+    .form-section { padding: 1rem; }
+    .recipient-actions { gap: 0.4rem; }
+    .form-row { gap: 0.5rem; }
+}

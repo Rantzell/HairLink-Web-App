@@ -227,3 +227,24 @@
     text-decoration: none;
     background: #fff;
 }
+
+@media (max-width: 768px) {
+    .detail-grid { gap: 1.25rem; }
+    .detail-summary-card { padding: 1rem; }
+    .detail-form-actions { flex-wrap: wrap; }
+    .detail-btn { min-height: 44px; height: auto; padding: 0.6rem 1rem; }
+}
+
+@media (max-width: 640px) {
+    .detail-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .detail-file-preview-grid { gap: 0.65rem; }
+    .detail-file-preview-item { width: 90px; }
+    .detail-file-thumbnail { width: 90px; height: 90px; }
+    .detail-form-textarea { font-size: 16px; }
+}
+
+@media (max-width: 374px) {
+    .detail-file-preview-item { width: 75px; }
+    .detail-file-thumbnail { width: 75px; height: 75px; }
+    .detail-btn { font-size: 0.7rem; }
+}

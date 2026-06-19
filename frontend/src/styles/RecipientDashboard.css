@@ -645,3 +645,10 @@
     gap: 0.8rem;
   }
 }
+
+@media (max-width: 374px) {
+  .rc-content { padding: 0.85rem; }
+  .rc-hero { padding: 1rem; border-radius: 14px; }
+  .rc-topbar { padding: 0.5rem 0.85rem; }
+  .rc-stat-card { padding: 0.85rem; }
+}

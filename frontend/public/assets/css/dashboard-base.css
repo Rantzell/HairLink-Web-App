@@ -398,6 +398,28 @@ a {
     }
 }
 
+@media (max-width: 374px) {
+    .dash-main { width: 98vw; }
+    .section-wrap { padding: 0.75rem; }
+    .dash-nav { gap: 0.5rem; }
+    .soft-btn,
+    .ghost-btn { padding: 0.5rem 0.6rem; font-size: 0.78rem; }
+}
+
+/* Foldable open landscape */
+@media (min-width: 600px) and (max-width: 900px) and (orientation: landscape) {
+    .dash-main { width: 96vw; }
+    .section-wrap { padding: 0.9rem; }
+}
+
+/* Large desktop */
+@media (min-width: 1280px) {
+    .dash-main { width: min(1380px, 92vw); }
+}
+
+@media (min-width: 1600px) {
+    .dash-main { width: min(1560px, 90vw); }
+}
 
 /* Demo Fill Buttons */
 .demo-fill-btn {

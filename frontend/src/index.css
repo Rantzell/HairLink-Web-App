@@ -127,3 +127,28 @@ html {
   max-height: calc(100vh - 2rem);
   overflow-y: auto;
 }
+
+/* ── Global responsive utilities ── */
+@media (max-width: 640px) {
+  .hl-modal-overlay { padding: 0.5rem; }
+  .hl-modal-card { border-radius: 14px; max-height: calc(100vh - 1rem); }
+}
+
+@media (max-width: 374px) {
+  .hl-modal-overlay { padding: 0.25rem; }
+  .hl-modal-card { border-radius: 10px; }
+}
+
+/* Ensure inputs don't cause iOS zoom */
+@media (max-width: 480px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}

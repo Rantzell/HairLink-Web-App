@@ -262,3 +262,12 @@
         width: 100%;
     }
 }
+
+@media (max-width: 640px) {
+    .referral-box { padding: 1rem; }
+    .reward-card { padding: 1rem; }
+}
+
+@media (max-width: 374px) {
+    .reward-card h2 { font-size: 1.4rem; }
+}

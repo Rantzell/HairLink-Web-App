@@ -456,8 +456,10 @@ table tbody td {
 .data-table {
   background: #fff !important;
   border-radius: var(--r-lg) !important;
-  overflow: hidden !important;
+  /* overflow: hidden removed — prevents horizontal scroll on mobile */
   border: 1px solid var(--w200) !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 /* ──────────────────────────────────────────────

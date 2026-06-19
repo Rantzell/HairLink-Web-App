@@ -305,3 +305,24 @@
   margin-bottom: 1rem;
   opacity: 0.3;
 }
+
+@media (max-width: 768px) {
+  .staff-wig-bar { flex-direction: column; align-items: stretch; margin-bottom: 1rem; }
+  .staff-wig-tools { max-width: 100%; justify-content: stretch; flex-wrap: wrap; }
+  .staff-wig-search-wrapper { max-width: 100%; }
+  .staff-wig-filter-btn,
+  .staff-wig-print-btn,
+  .staff-wig-search-btn { min-height: 44px; height: auto; max-height: none; }
+}
+
+@media (max-width: 480px) {
+  .staff-wig-title { font-size: 1.15rem; }
+  .staff-wig-th,
+  .staff-wig-td { padding: 0.75rem 0.65rem; }
+  .staff-wig-search-input { font-size: 16px; }
+}
+
+@media (max-width: 374px) {
+  .staff-wig-th { font-size: 0.65rem; padding: 0.6rem 0.5rem; }
+  .staff-wig-td { padding: 0.6rem 0.5rem; font-size: 0.8rem; }
+}

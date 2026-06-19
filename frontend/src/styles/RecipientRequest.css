@@ -458,3 +458,19 @@
   border-color: #d986b3;
   background: #fdf7fb;
 }
+
+@media (max-width: 480px) {
+  .form-shell input[type="text"],
+  .form-shell input[type="tel"],
+  .form-shell input[type="email"],
+  .form-shell textarea,
+  .form-shell select { font-size: 16px; /* prevent iOS auto-zoom */ }
+  .submit-wrap .soft-btn { min-height: 44px; }
+  .delivery-method-card { min-height: 44px; }
+}
+
+@media (max-width: 374px) {
+  .form-shell { padding: 1rem; border-radius: 12px; }
+  .guidelines-box { padding: 1rem; border-radius: 12px; }
+  .donate-page .section-title-block h1 { font-size: 1.4rem; }
+}

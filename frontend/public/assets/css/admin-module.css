@@ -1521,3 +1521,16 @@
     }
 }
 
+@media (max-width: 374px) {
+    .admin-stat-grid,
+    .inv-summary-grid { grid-template-columns: 1fr; }
+    .admin-actions,
+    .admin-actions.two-col { grid-template-columns: 1fr; }
+    .admin-card,
+    .admin-block { padding: 0.65rem; }
+    .admin-queue-item { padding: 0.5rem; }
+    .admin-quick-btn { width: 100%; justify-content: center; }
+    .admin-table th,
+    .admin-table td { padding: 0.4rem 0.5rem; font-size: 0.8rem; }
+}
+

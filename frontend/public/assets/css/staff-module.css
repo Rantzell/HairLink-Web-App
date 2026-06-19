@@ -776,6 +776,27 @@
     }
 }
 
+@media (max-width: 640px) {
+    .staff-page { padding: 0 0.25rem; }
+    .staff-tools { flex-direction: column; align-items: stretch; }
+    .staff-tools input,
+    .staff-tools select { min-width: 0; width: 100%; }
+    .staff-action-link { padding: 0.65rem; min-height: 44px; }
+    .recipient-btn { min-height: 44px; }
+    .file-preview-item { width: 120px; }
+}
+
+@media (max-width: 374px) {
+    .staff-card,
+    .staff-block,
+    .stock-panel,
+    .match-layout,
+    .wig-options { padding: 0.65rem; }
+    .staff-table th, .staff-table td { padding: 0.4rem 0.3rem; font-size: 0.76rem; }
+    .file-preview-grid { grid-template-columns: 1fr; }
+    .file-preview-item { width: 100%; }
+}
+
 
 .stage-row > .stage { flex: 1; overflow: hidden; }
 

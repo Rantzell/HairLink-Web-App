@@ -198,3 +198,17 @@
   font-size: 0.75rem;
   margin: 0;
 }
+
+@media (max-width: 480px) {
+  .match-layout { gap: 1rem; }
+  .match-search-input { height: 44px; }
+  .recipient-btn { min-height: 44px; }
+  .wig-choose-btn { height: 44px; font-size: 0.82rem; }
+  .wig-option { padding: 1rem; }
+}
+
+@media (max-width: 374px) {
+  .match-title { font-size: 1rem; }
+  .wig-option { padding: 0.75rem; border-radius: 12px; }
+  .wig-score-value { font-size: 1.2rem; }
+}

@@ -126,3 +126,25 @@
   text-align: center;
   color: #8c7895;
 }
+
+/* Table scroll wrapper */
+.monetary-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.monetary-table {
+  min-width: 480px;
+}
+
+@media (max-width: 640px) {
+  .recipient-monetary-layout { gap: 1rem; margin-top: 1rem; }
+  .monetary-form-input,
+  .monetary-form-textarea { font-size: 16px; /* prevent iOS auto-zoom */ }
+  .monetary-submit-btn { min-height: 44px; }
+}
+
+@media (max-width: 374px) {
+  .monetary-table th,
+  .monetary-table td { padding: 0.65rem 0.5rem; font-size: 0.8rem; }
+}

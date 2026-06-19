@@ -2370,4 +2370,12 @@
 .table-wrap {
   overflow-x: auto;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 374px) {
+  .admin-page-title-lg { font-size: 1.5rem; }
+  .admin-page-title { font-size: 1rem; }
+  .admin-ops-stat-grid { grid-template-columns: 1fr; }
+  .admin-modal-box { padding: 1rem; width: 98%; max-width: 98vw; }
 }

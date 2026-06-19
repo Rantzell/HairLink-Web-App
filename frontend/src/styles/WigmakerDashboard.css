@@ -331,3 +331,19 @@
     padding: 0.75rem 0.6rem;
   }
 }
+
+@media (max-width: 480px) {
+  .dashboard-task-board { padding: 0.75rem; }
+  .dashboard-section-title-block { margin-bottom: 1rem; }
+  .dashboard-title { font-size: 1.2rem; }
+  .dashboard-filter-btn { min-height: 44px; }
+  .dashboard-open-task-btn { min-height: 44px; }
+}
+
+@media (max-width: 374px) {
+  .dashboard-status-cards { gap: 0.65rem; }
+  .dashboard-status-card { padding: 0.75rem; }
+  .dashboard-status-value { font-size: 1.25rem; }
+  .dashboard-th,
+  .dashboard-td { padding: 0.5rem 0.4rem; font-size: 0.78rem; }
+}

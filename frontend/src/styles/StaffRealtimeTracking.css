@@ -825,3 +825,21 @@
         padding: 1rem !important;
     }
 }
+
+@media (max-width: 480px) {
+    .tracking-page-title { font-size: 1.4rem; }
+    .tracking-active-badge { font-size: 0.72rem; padding: 0.4rem 0.8rem; }
+    .tracking-th { padding: 0.75rem 0.6rem; font-size: 0.68rem; }
+    .tracking-cell,
+    .tracking-cell-center,
+    .tracking-action-cell { padding: 0.65rem 0.6rem; }
+    .tracking-search-input { font-size: 16px; }
+    .batch-btn { min-height: 44px; height: auto; }
+    .tracking-batch-toggle-btn { min-height: 44px; }
+}
+
+@media (max-width: 374px) {
+    .tracking-page-title { font-size: 1.2rem; }
+    .tracking-progress-col { width: 100px; }
+    .avatar-preview { width: 44px; height: 44px; }
+}

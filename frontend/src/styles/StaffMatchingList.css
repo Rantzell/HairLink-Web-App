@@ -128,3 +128,27 @@
   color: #8c7895;
   font-style: italic;
 }
+
+@media (max-width: 768px) {
+  .matching-list-card { padding: 1.25rem; }
+  .matching-list-header { flex-direction: column; align-items: stretch; gap: 0.75rem; margin-bottom: 1.25rem; }
+  .matching-list-tools { flex-wrap: wrap; }
+  .matching-list-search-input { width: 100%; }
+  .matching-list-print-btn { min-height: 44px; }
+}
+
+@media (max-width: 480px) {
+  .matching-list-card { padding: 0.85rem; border-radius: 12px; }
+  .matching-list-title { font-size: 1.15rem; }
+  .matching-list-th,
+  .matching-list-td-name,
+  .matching-list-td-ref,
+  .matching-list-td,
+  .matching-list-td-date { padding: 0.75rem 0.65rem; }
+}
+
+@media (max-width: 374px) {
+  .matching-list-th { font-size: 0.65rem; }
+  .matching-list-td-name,
+  .matching-list-td { font-size: 0.8rem; }
+}

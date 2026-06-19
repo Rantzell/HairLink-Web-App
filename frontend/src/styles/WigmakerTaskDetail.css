@@ -1068,3 +1068,37 @@
   font-weight: 500;
 }
 
+/* ── Additional responsive breakpoints ── */
+@media (max-width: 768px) {
+  .task-detail-section { padding: 1rem 1.25rem; }
+  .task-detail-header-card { flex-direction: column; gap: 1rem; }
+  .task-detail-header-left { flex-wrap: wrap; }
+  .task-detail-back-btn { min-height: 44px; padding: 0.5rem 1rem; }
+  .task-detail-roadmap-card.horizontal { padding: 1rem; }
+  .task-detail-roadmap-steps.horizontal { flex-wrap: wrap; gap: 1.5rem; }
+  .task-detail-roadmap-steps.horizontal::before { display: none; }
+  .task-detail-roadmap-step.horizontal { flex: 0 0 calc(50% - 0.75rem); }
+  .task-detail-history-table-wrapper { overflow-x: auto; }
+  .task-detail-history-table { min-width: 480px; }
+}
+
+@media (max-width: 640px) {
+  .task-detail-section { padding: 0.75rem; }
+  .task-detail-assignment-card { padding: 1rem; border-radius: 14px; }
+  .task-detail-update-card { padding: 1rem; border-radius: 14px; }
+  .task-detail-roadmap-card { padding: 1rem; border-radius: 14px; }
+  .task-detail-history-card { padding: 1rem; border-radius: 14px; }
+  .task-detail-info-grid { grid-template-columns: 1fr; }
+  .task-detail-donor-accordion-btn { min-height: 44px; }
+  .task-detail-form-submit-btn { min-height: 44px; }
+  .task-detail-spec-options { flex-direction: column; }
+  .task-detail-donor-specs { flex-wrap: wrap; }
+}
+
+@media (max-width: 374px) {
+  .task-detail-section { padding: 0.5rem; }
+  .task-detail-roadmap-step.horizontal { flex: 0 0 calc(50% - 0.75rem); }
+  .task-detail-history-th,
+  .task-detail-history-td { padding: 0.6rem 0.5rem; font-size: 0.75rem; }
+}
+
