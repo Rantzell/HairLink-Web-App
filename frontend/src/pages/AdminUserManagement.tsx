@@ -285,40 +285,7 @@ const AdminUserManagement: React.FC = () => {
         />
       </article>
 
-<<<<<<< HEAD
-      {/* Create/Edit User Modal */}
-      {isModalOpen && (
-        <div className="modal admin-modal-overlay">
-          <div className="modal-content admin-modal-box">
-            <h2 className="admin-modal-title">
-              {editingUser ? 'Edit User Account' : 'Create New User Account'}
-            </h2>
-            <form onSubmit={handleSaveUser} className="admin-form-grid">
-              <div className="admin-form-two-col-sm">
-                <div className="form-group">
-                  <label className="admin-form-label-sm">First Name</label>
-                  <input
-                    type="text"
-                    value={userForm.firstName}
-                    onChange={e => setUserForm({ ...userForm, firstName: e.target.value.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50) })}
-                    maxLength={50}
-                    pattern="[A-Za-z\s'\-]+"
-                    title="Letters only (spaces, hyphens, and apostrophes allowed), max 50 characters."
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="admin-form-label-sm">Last Name</label>
-                  <input
-                    type="text"
-                    value={userForm.lastName}
-                    onChange={e => setUserForm({ ...userForm, lastName: e.target.value.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50) })}
-                    maxLength={50}
-                    pattern="[A-Za-z\s'\-]+"
-                    title="Letters only (spaces, hyphens, and apostrophes allowed), max 50 characters."
-                    required
-                  />
-=======
+
       {/* Create/Edit User Modal — portalled to document.body so it's always viewport-centered */}
       {isModalOpen && createPortal(
         <div
@@ -413,7 +380,7 @@ const AdminUserManagement: React.FC = () => {
                       required
                     />
                   </div>
->>>>>>> 95d1858c0182e725c7703767711528ec3c22428c
+
                 </div>
               </div>
 
