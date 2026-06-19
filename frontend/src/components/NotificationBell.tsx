@@ -24,23 +24,23 @@ function cleanMessage(message: string): string {
   return message?.replace(/\[postId:[a-zA-Z0-9_-]+\]/g, '').trim() ?? '';
 }
 
-/** Return the icon to display for each notification type */
+/** Return the boxicon class to display for each notification type */
 function getNotifIcon(n: Notification): string {
-  if (n.type === 'announcement') return '📢';
+  if (n.type === 'announcement') return 'bx-bullhorn';
   if (n.type === 'community') {
-    if (n.title.includes('liked')) return '❤️';
-    if (n.title.includes('comment')) return '💬';
-    if (n.title.includes('reply')) return '↩️';
-    return '💬';
+    if (n.title.includes('liked')) return 'bx-heart';
+    if (n.title.includes('comment')) return 'bx-message-rounded';
+    if (n.title.includes('reply')) return 'bx-reply';
+    return 'bx-message-rounded';
   }
-  if (n.type === 'donation') return '🌸';
-  if (n.type === 'request') return '💖';
-  if (n.type === 'wigmaker') return '🧵';
-  if (n.type === 'staff_donation') return '📦';
-  if (n.type === 'staff_request') return '📋';
-  if (n.type === 'event') return '📣';
-  if (n.type === 'pickup_ready') return '🎉';
-  return '🔔';
+  if (n.type === 'donation') return 'bx-donate-heart';
+  if (n.type === 'request') return 'bx-heart';
+  if (n.type === 'wigmaker') return 'bx-package';
+  if (n.type === 'staff_donation') return 'bx-package';
+  if (n.type === 'staff_request') return 'bx-clipboard';
+  if (n.type === 'event') return 'bx-calendar-event';
+  if (n.type === 'pickup_ready') return 'bx-check-circle';
+  return 'bx-bell';
 }
 
 const NotificationBell: React.FC = () => {
@@ -252,7 +252,7 @@ const NotificationBell: React.FC = () => {
                     onClick={() => handleNotifClick(n)}
                   >
                     <div className="notif-icon-wrap">
-                      <span className="notif-icon">{icon}</span>
+                      <i className={`bx ${icon} notif-icon`}></i>
                     </div>
                     <div className="notif-content">
                       <p className="notif-title">{n.title}</p>
@@ -286,7 +286,7 @@ const NotificationBell: React.FC = () => {
             </header>
             <main className="announcement-modal-body">
               <h2 className="announcement-modal-title">
-                {selectedAnnouncement.title.replace('📢 Announcement: ', '').replace('📢 ', '').replace('📣 New Event: ', '').replace('📣 ', '')}
+                {selectedAnnouncement.title.replace('Announcement: ', '').replace('New Event: ', '')}
               </h2>
               <p className="announcement-modal-date">
                 <i className='bx bx-calendar'></i> {new Date(selectedAnnouncement.created_at).toLocaleString()}

@@ -112,7 +112,7 @@ export async function addMilestonePoints(
       for (let i = 0; i < vouchersToIssue; i++) {
         await createNotification(
           user.id,
-          '🎉 You\'ve Won a Free Wig!',
+          'You\'ve Won a Free Wig!',
           `Congratulations! You reached ${MILESTONE_THRESHOLD} Star Points and earned a free-wig reward. Contact our partner wigmaker to claim your voucher. Check your dashboard for your voucher code.`,
           'reward',
         );

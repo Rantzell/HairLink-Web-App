@@ -90,18 +90,18 @@ export const notifyDonationStatus = async (userId: string, status: string, refer
   }
 
   const titles: Record<string, string> = {
-    'Approved': 'Donation Approved! 🌸',
-    'Verified': 'Donation Verified! ✅',
+    'Approved': 'Donation Approved!',
+    'Verified': 'Donation Verified!',
     'Rejected': 'Donation Update',
-    'Received Hair': 'Hair Received! ✨',
+    'Received Hair': 'Hair Received!',
     'In Queue': 'Production Update',
-    'In Progress': 'Wig in Making! 🧵',
-    'Completed': 'Wig Completed! 🎉',
+    'In Progress': 'Wig in Making!',
+    'Completed': 'Wig Completed!',
     'Wig Received': 'Delivery Confirmed',
-    'Submitted': 'Donation Submitted 📝',
+    'Submitted': 'Donation Submitted',
   };
 
-  const title = titles[status] || 'Donation Status Updated 🌸';
+  const title = titles[status] || 'Donation Status Updated';
   let message = `Your donation (${reference}) is now: ${status}. Thank you for your support!`;
   if (status === 'Verified') {
     message = `Your donation (${reference}) has been verified. You can now add your delivery tracking link on the tracking page.`;
@@ -116,17 +116,17 @@ export const notifyRequestStatus = async (userId: string, status: string, refere
   }
 
   const titles: Record<string, string> = {
-    'Approved': 'Request Approved! 💖',
-    'Verified': 'Request Verified! ✅',
+    'Approved': 'Request Approved!',
+    'Verified': 'Request Verified!',
     'Rejected': 'Request Update',
-    'Validated': 'Request Validated! ✅',
-    'In Production': 'Wig in Production 🧵',
-    'Matched': 'Wig Matched! ✨',
-    'In Transit': 'Wig on its Way! 🚚',
-    'Ready for Pickup': 'Wig Ready for Pickup! 📦',
-    'Arrived': 'Wig Arrived! 📦',
-    'Completed': 'Hope Delivered! 🌸',
-    'Submitted': 'Request Submitted 📝',
+    'Validated': 'Request Validated!',
+    'In Production': 'Wig in Production',
+    'Matched': 'Wig Matched!',
+    'In Transit': 'Wig on its Way!',
+    'Ready for Pickup': 'Wig Ready for Pickup!',
+    'Arrived': 'Wig Arrived!',
+    'Completed': 'Hope Delivered!',
+    'Submitted': 'Request Submitted',
   };
 
   const messages: Record<string, string> = {
@@ -139,11 +139,11 @@ export const notifyRequestStatus = async (userId: string, status: string, refere
     'In Transit': `Your wig for request (${reference}) is on its way! Check your tracking page for delivery details.`,
     'Ready for Pickup': `Your wig for request (${reference}) is ready for pickup at our Binondo office. Please visit during office hours to collect it.`,
     'Arrived': `Your wig for request (${reference}) has arrived! Please confirm receipt on your tracking page.`,
-    'Completed': `Your wig request (${reference}) is now complete. We hope your new wig brings you confidence and joy! 🌸`,
+    'Completed': `Your wig request (${reference}) is now complete. We hope your new wig brings you confidence and joy!`,
     'Rejected': `We're sorry, but your wig request (${reference}) could not be approved at this time. Please check the details or contact our team for more information.`,
   };
 
-  const title = titles[status] || 'Request Status Updated 💖';
+  const title = titles[status] || 'Request Status Updated';
   const message = messages[status] || `Your wig request (${reference}) is now: ${status}. We are with you on this journey.`;
   return createNotification(userId, title, message, 'request', `track:request:${reference}`);
 };
@@ -152,7 +152,7 @@ export const notifyWigmakerAssignment = async (wigmakerId: string, taskCode: str
   const noteText = staffNote ? ` Staff note: "${staffNote}"` : '';
   return createNotification(
     wigmakerId,
-    'New Task Assigned 🧵',
+    'New Task Assigned',
     `You have been assigned a new wig production task: ${taskCode}. Please check your dashboard.${noteText}`,
     'wigmaker'
   );
@@ -161,7 +161,7 @@ export const notifyWigmakerAssignment = async (wigmakerId: string, taskCode: str
 export const notifyWigmakerMaterialDelivery = async (wigmakerId: string, taskCode: string, trackingLink: string) => {
   return createNotification(
     wigmakerId,
-    'Hair Materials Shipped 📦',
+    'Hair Materials Shipped',
     `The staff has sent the materials for task ${taskCode}. Tracking link: ${trackingLink}`,
     'wigmaker'
   );
@@ -178,9 +178,9 @@ export const notifyCommunityInteraction = async (ownerId: string, actorName: str
   const message = `${actionText} [postId:${postId}]`;
 
   const title =
-    action === 'like'    ? '❤️ Someone liked your post' :
-    action === 'comment' ? '💬 New comment on your post' :
-                           '↩️ New reply to your comment';
+    action === 'like'    ? 'Someone liked your post' :
+    action === 'comment' ? 'New comment on your post' :
+                           'New reply to your comment';
 
   return createNotification(ownerId, title, message, 'community', `post:${postId}`);
 };
@@ -190,13 +190,13 @@ export const notifyReferralRedeemed = async (redeemerId: string, referrerId: str
   await Promise.all([
     createNotification(
       redeemerId,
-      'Referral Applied! 🌟',
+      'Referral Applied!',
       `Your referral code was applied successfully — you earned 3 stars. Thank you for spreading the word about HairLink!`,
       'referral',
     ),
     createNotification(
       referrerId,
-      'You Earned a Referral Reward! 🌟',
+      'You Earned a Referral Reward!',
       `${redeemerName || 'A new member'} used your referral code — you earned 5 stars. Keep sharing the love!`,
       'referral',
     ),
@@ -223,7 +223,7 @@ export const notifyAnnouncement = async (title: string, message: string, audienc
     await prisma.notifications.createMany({
       data: targetUsers.map((u) => ({
         user_id: u.id,
-        title: `📢 Announcement: ${title}`,
+        title: `Announcement: ${title}`,
         message,
         type: 'announcement',
         is_read: false,
@@ -248,7 +248,7 @@ export const notifyAllDonorsAndRecipients = async (title: string, message: strin
 
     const notificationData = targetUsers.map((user) => ({
       user_id: user.id,
-      title: `📢 Announcement: ${title}`,
+      title: `Announcement: ${title}`,
       message,
       type: 'announcement',
       is_read: false,
@@ -265,7 +265,7 @@ export const notifyAllDonorsAndRecipients = async (title: string, message: strin
 export const notifyMonetaryReceived = async (userId: string, amount: number, reference: string) => {
   return createNotification(
     userId,
-    'Donation Received 💖',
+    'Donation Received',
     `Thank you! Your monetary contribution of ₱${amount.toLocaleString()} (${reference}) has been successfully received and verified.`,
     'monetary',
   );
@@ -298,7 +298,7 @@ export const notifyAllUsers = async (title: string, message: string, type: strin
 export const notifyPickupReady = async (userId: string, reference: string) => {
   return createNotification(
     userId,
-    '🎉 Your Wig is Ready for Pick-up!',
+    'Your Wig is Ready for Pick-up!',
     `Your custom wig is now ready for collection at our Binondo office. Please visit during office hours to claim your wig. If you have any questions, feel free to contact our staff. Reference: ${reference}`,
     'pickup_ready'
   );
@@ -308,7 +308,7 @@ export const notifyNewEvent = async (eventTitle: string, eventDate: Date, eventL
   const when = eventDate.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
   const where = eventLocation ? ` at ${eventLocation}` : '';
   return notifyAllUsers(
-    `📣 New Event: ${eventTitle}`,
+    `New Event: ${eventTitle}`,
     `Mark your calendar — ${eventTitle} is happening on ${when}${where}.`,
     'event',
   );
@@ -321,7 +321,7 @@ export const notifyStaffNewDonation = async (donorName: string, reference: strin
     await prisma.notifications.createMany({
       data: staff.map((s) => ({
         user_id: s.id,
-        title: 'New Hair Donation 🌸',
+        title: 'New Hair Donation',
         message: `${donorName} has submitted a new hair donation (Ref: ${reference}).`,
         type: 'staff_donation',
         is_read: false,
@@ -339,7 +339,7 @@ export const notifyStaffNewRequest = async (recipientName: string, reference: st
     await prisma.notifications.createMany({
       data: staff.map((s) => ({
         user_id: s.id,
-        title: 'New Wig Request 💖',
+        title: 'New Wig Request',
         message: `${recipientName} has submitted a new wig request (Ref: ${reference}).`,
         type: 'staff_request',
         is_read: false,
@@ -357,7 +357,7 @@ export const notifyStaffNewMonetary = async (donorName: string, reference: strin
     await prisma.notifications.createMany({
       data: staff.map((s) => ({
         user_id: s.id,
-        title: 'New Monetary Donation 💰',
+        title: 'New Monetary Donation',
         message: `${donorName} has submitted a new monetary donation of ₱${amount.toLocaleString()} (Ref: ${reference}).`,
         type: 'staff_monetary',
         is_read: false,
@@ -375,7 +375,7 @@ export const notifyStaffWigmakerReceivedMaterial = async (taskCode: string, wigm
     await prisma.notifications.createMany({
       data: staff.map((s) => ({
         user_id: s.id,
-        title: 'Hair Batch Received 📦',
+        title: 'Hair Batch Received',
         message: `${wigmakerName} has confirmed receipt of materials for Task #${taskCode}.`,
         type: 'staff_wig_production',
         is_read: false,
@@ -393,7 +393,7 @@ export const notifyStaffWigmakerCompletedWig = async (taskCode: string, wigmaker
     await prisma.notifications.createMany({
       data: staff.map((s) => ({
         user_id: s.id,
-        title: 'Wig Batch Completed ✨',
+        title: 'Wig Batch Completed',
         message: `${wigmakerName} has completed Task #${taskCode} and shipped it back. Tracking: ${deliveryLink}`,
         type: 'staff_wig_production',
         is_read: false,
@@ -407,7 +407,7 @@ export const notifyStaffWigmakerCompletedWig = async (taskCode: string, wigmaker
 export const notifyWigmakerStaffReceivedWig = async (wigmakerId: string, taskCode: string) => {
   return createNotification(
     wigmakerId,
-    'Wig Received by Staff 🎉',
+    'Wig Received by Staff',
     `The staff has safely received the completed wig for Task #${taskCode}. Great job!`,
     'wigmaker'
   );
@@ -420,7 +420,7 @@ export const notifyStaffHairReceived = async (taskCode: string, batchRef: string
     await prisma.notifications.createMany({
       data: staff.map((s) => ({
         user_id: s.id,
-        title: '✅ Hair Received by Wigmaker',
+        title: 'Hair Received by Wigmaker',
         message: `${wigmakerName} confirmed receipt of hair donation ${donationReference} from batch ${batchRef} (Task #${taskCode}).`,
         type: 'staff_wig_production',
         is_read: false,
@@ -439,7 +439,7 @@ export const notifyStaffDeliveryScheduled = async (donorName: string, reference:
     await prisma.notifications.createMany({
       data: staff.map((s) => ({
         user_id: s.id,
-        title: 'Hair Delivery Scheduled 📅',
+        title: 'Hair Delivery Scheduled',
         message: `${donorName} scheduled to send their hair donation (${reference}) on ${when}.`,
         type: 'staff_donation',
         is_read: false,
@@ -453,7 +453,7 @@ export const notifyStaffDeliveryScheduled = async (donorName: string, reference:
 export const notifyDonorDeliveryDue = async (userId: string, reference: string) => {
   return createNotification(
     userId,
-    'Time to Send Your Hair Donation! 📦',
+    'Time to Send Your Hair Donation!',
     `Today is your scheduled date to send your hair donation (${reference}). Please proceed with the drop-off and submit your delivery tracking link on the tracking page.`,
     'donation'
   );
@@ -466,7 +466,7 @@ export const notifyStaffDeliveryDue = async (donorName: string, reference: strin
     await prisma.notifications.createMany({
       data: staff.map((s) => ({
         user_id: s.id,
-        title: 'Hair Delivery Due Today 📦',
+        title: 'Hair Delivery Due Today',
         message: `${donorName}'s hair donation (${reference}) is scheduled for delivery today. Watch for their tracking link.`,
         type: 'staff_donation',
         is_read: false,
@@ -484,7 +484,7 @@ export const notifyStaffMissingHair = async (taskCode: string, batchRef: string,
     await prisma.notifications.createMany({
       data: staff.map((s) => ({
         user_id: s.id,
-        title: '⚠️ Missing Hair Reported',
+        title: 'Missing Hair Reported',
         message: `${wigmakerName} reported that hair donation ${donationReference} is MISSING from batch ${batchRef} (Task #${taskCode}). Please investigate and re-send the missing hair.`,
         type: 'staff_wig_production',
         is_read: false,
