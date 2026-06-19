@@ -26,52 +26,76 @@ function serializePost(p: any) {
 // GET /internal-api/community/posts
 router.get('/posts', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
-    // Get all valid user IDs so we can exclude orphaned posts/comments
-    const validUsers = await prisma.user.findMany({ select: { id: true } });
-    const validUserIds = validUsers.map((u) => u.id);
+    const currentUserId = req.user!.id;
 
-    const posts = await prisma.communityPost.findMany({
-      where: { userId: { in: validUserIds } },
-      include: {
-        user: true,
-        comments: {
-          where: { parentId: null, userId: { in: validUserIds } },
-          include: {
-            user: true,
-            replies: {
-              where: { userId: { in: validUserIds } },
-              include: { user: true },
-              orderBy: { createdAt: 'asc' },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
+    // Fetch posts and comments WITHOUT relation includes to avoid Prisma UUID validation
+    // on orphaned rows (posts/comments whose author was deleted).
+    const [rawPosts, rawComments] = await Promise.all([
+      prisma.communityPost.findMany({ orderBy: { createdAt: 'desc' } }),
+      prisma.communityComment.findMany({ orderBy: { createdAt: 'asc' } }),
+    ]);
+
+    // Collect all unique user IDs referenced by posts and comments
+    const allUserIds = [...new Set([
+      ...rawPosts.map((p) => p.userId),
+      ...rawComments.map((c) => c.userId),
+    ])];
+
+    // Fetch only the users that actually exist — skips deleted accounts
+    const users = await prisma.user.findMany({
+      where: { id: { in: allUserIds } },
     });
+    const userMap: Record<string, typeof users[0]> = {};
+    for (const u of users) userMap[u.id] = u;
 
-    // Fetch likes separately so a missing table doesn't crash the whole posts query
+    // Fetch likes (graceful fallback if table missing)
     let likesMap: Record<string, { count: number; liked: boolean }> = {};
     try {
-      const allLikes = await prisma.communityPostLike.findMany({
-        where: { communityPostId: { in: posts.map((p) => p.id) } },
-        select: { communityPostId: true, userId: true },
-      });
-      for (const like of allLikes) {
-        if (!likesMap[like.communityPostId]) likesMap[like.communityPostId] = { count: 0, liked: false };
-        likesMap[like.communityPostId].count++;
-        if (like.userId === userId) likesMap[like.communityPostId].liked = true;
+      const postIds = rawPosts.map((p) => p.id);
+      if (postIds.length > 0) {
+        const allLikes = await prisma.communityPostLike.findMany({
+          where: { communityPostId: { in: postIds } },
+          select: { communityPostId: true, userId: true },
+        });
+        for (const like of allLikes) {
+          if (!likesMap[like.communityPostId]) likesMap[like.communityPostId] = { count: 0, liked: false };
+          likesMap[like.communityPostId].count++;
+          if (like.userId === currentUserId) likesMap[like.communityPostId].liked = true;
+        }
       }
     } catch (likesErr) {
-      console.warn('[Community] Could not fetch likes (table may not exist):', likesErr instanceof Error ? likesErr.message : likesErr);
+      console.warn('[Community] Could not fetch likes:', likesErr instanceof Error ? likesErr.message : likesErr);
     }
 
-    const result = posts.map((p) => ({
-      ...serializePost(p),
-      likes: likesMap[p.id]?.count ?? 0,
-      is_liked: likesMap[p.id]?.liked ?? false,
-    }));
+    // Build comment tree — skip comments whose author no longer exists
+    const commentsByPostId: Record<string, any[]> = {};
+    const commentById: Record<string, any> = {};
+
+    for (const c of rawComments) {
+      if (!userMap[c.userId]) continue; // skip orphaned comments
+      const node = { ...c, user: { ...userMap[c.userId], id: userMap[c.userId].id.toString() }, replies: [] as any[] };
+      commentById[c.id] = node;
+    }
+    for (const c of rawComments) {
+      if (!commentById[c.id]) continue;
+      if (c.parentId) {
+        if (commentById[c.parentId]) commentById[c.parentId].replies.push(commentById[c.id]);
+      } else {
+        if (!commentsByPostId[c.postId]) commentsByPostId[c.postId] = [];
+        commentsByPostId[c.postId].push(commentById[c.id]);
+      }
+    }
+
+    // Build result — skip posts whose author no longer exists
+    const result = rawPosts
+      .filter((p) => !!userMap[p.userId])
+      .map((p) => ({
+        ...p,
+        user: { ...userMap[p.userId], id: userMap[p.userId].id.toString() },
+        comments: commentsByPostId[p.id] ?? [],
+        likes: likesMap[p.id]?.count ?? 0,
+        is_liked: likesMap[p.id]?.liked ?? false,
+      }));
 
     res.json(result);
   } catch (err) {
