@@ -863,7 +863,19 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
             <h1 className="hl-form-h1">Create account</h1>
             <p className="hl-form-sub">Join HairLink and start making a difference.</p>
 
-            <form onSubmit={handleRegister}>
+            {/* Show a top-level error summary so nothing is hidden off-screen */}
+            {Object.keys(errors).length > 0 && (
+              <div style={{ background: '#fff0f0', border: '1px solid #f8b4b4', borderRadius: '10px', padding: '0.65rem 0.9rem', marginBottom: '0.75rem' }}>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: '#b91c1c', fontWeight: 600 }}>Please fix the following:</p>
+                <ul style={{ margin: '0.3rem 0 0', paddingLeft: '1.1rem' }}>
+                  {Object.values(errors).flat().map((msg, i) => (
+                    <li key={i} style={{ fontSize: '0.75rem', color: '#b91c1c' }}>{msg}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <form onSubmit={handleRegister} noValidate>
               {/* User type */}
               <div style={{ marginBottom: '0.6rem' }}>
                 <label className="hl-label" style={{ display: 'block', marginBottom: '0.3rem' }}>I am a…</label>
@@ -879,7 +891,6 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                         value={o.val}
                         checked={reg.userType === o.val}
                         onChange={e => setReg({ ...reg, userType: e.target.value })}
-                        required
                       />
                       <span className="hl-type-lbl">{o.lbl}</span>
                     </label>
@@ -895,10 +906,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                   <input className="hl-input" type="text" placeholder="Maria"
                     value={reg.first_name}
                     onChange={e => setReg({ ...reg, first_name: e.target.value.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50) })}
-                    maxLength={50}
-                    pattern="[A-Za-z\s'\-]+"
-                    title="Letters only (spaces, hyphens, and apostrophes allowed), max 50 characters."
-                    required />
+                    maxLength={50} />
                   {errors.first_name && <span className="hl-field-err">⚠ {errors.first_name[0]}</span>}
                 </div>
                 <div className="hl-field">
@@ -906,10 +914,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                   <input className="hl-input" type="text" placeholder="Santos"
                     value={reg.last_name}
                     onChange={e => setReg({ ...reg, last_name: e.target.value.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50) })}
-                    maxLength={50}
-                    pattern="[A-Za-z\s'\-]+"
-                    title="Letters only (spaces, hyphens, and apostrophes allowed), max 50 characters."
-                    required />
+                    maxLength={50} />
                   {errors.last_name && <span className="hl-field-err">⚠ {errors.last_name[0]}</span>}
                 </div>
               </div>
@@ -919,13 +924,13 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 <div className="hl-field">
                   <label className="hl-label">Region / Province</label>
                   <input className="hl-input" type="text" placeholder="Metro Manila"
-                    value={reg.region} onChange={e => setReg({ ...reg, region: e.target.value })} required />
+                    value={reg.region} onChange={e => setReg({ ...reg, region: e.target.value })} />
                   {errors.region && <span className="hl-field-err">⚠ {errors.region[0]}</span>}
                 </div>
                 <div className="hl-field">
                   <label className="hl-label">Postal Code</label>
                   <input className="hl-input" type="text" placeholder="1006"
-                    value={reg.postal_code} onChange={e => setReg({ ...reg, postal_code: e.target.value.replace(/\D/g,'') })} required />
+                    value={reg.postal_code} onChange={e => setReg({ ...reg, postal_code: e.target.value.replace(/\D/g,'') })} />
                   {errors.postal_code && <span className="hl-field-err">⚠ {errors.postal_code[0]}</span>}
                 </div>
               </div>
@@ -935,12 +940,12 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 <div className="hl-field">
                   <label className="hl-label">Age</label>
                   <input className="hl-input" type="number" placeholder="25"
-                    value={reg.age} onChange={e => setReg({ ...reg, age: e.target.value })} required />
+                    value={reg.age} onChange={e => setReg({ ...reg, age: e.target.value })} />
                   {errors.age && <span className="hl-field-err">⚠ {errors.age[0]}</span>}
                 </div>
                 <div className="hl-field">
                   <label className="hl-label">Gender</label>
-                  <select className="hl-input hl-select" value={reg.gender} onChange={e => setReg({ ...reg, gender: e.target.value })} required>
+                  <select className="hl-input hl-select" value={reg.gender} onChange={e => setReg({ ...reg, gender: e.target.value })}>
                     <option value="" disabled>Select…</option>
                     <option value="female">Female</option>
                     <option value="male">Male</option>
@@ -955,7 +960,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
               <div className="hl-field">
                 <label className="hl-label">Email Address</label>
                 <input className="hl-input" type="email" placeholder="you@example.com"
-                  value={reg.email} onChange={e => setReg({ ...reg, email: e.target.value })} required />
+                  value={reg.email} onChange={e => setReg({ ...reg, email: e.target.value })} />
                 {errors.email && <span className="hl-field-err">⚠ {errors.email[0]}</span>}
               </div>
 
@@ -971,25 +976,12 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                     value={reg.phone.replace('+63', '')}
                     onChange={e => {
                       let val = e.target.value.replace(/\D/g, '');
-                      // Handle pasted/typed country code or leading zero prefixes
-                      if (val.startsWith('639')) {
-                        val = val.slice(2);
-                      } else if (val.startsWith('09')) {
-                        val = val.slice(1);
-                      }
-                      
-                      // Enforce that the number must start with 9
-                      if (val.length > 0 && !val.startsWith('9')) {
-                        val = '';
-                      }
-                      
+                      if (val.startsWith('639')) val = val.slice(2);
+                      else if (val.startsWith('09')) val = val.slice(1);
+                      if (val.length > 0 && !val.startsWith('9')) val = '';
                       const d = val.slice(0, 10);
                       setReg({ ...reg, phone: d ? '+63' + d : '' });
                     }}
-                    required
-                    minLength={10}
-                    pattern="9[0-9]{9}"
-                    title="Mobile number must be exactly 10 digits starting with 9 (e.g. 9171234567)"
                   />
                 </div>
                 {errors.phone && <span className="hl-field-err">⚠ {errors.phone[0]}</span>}
@@ -1005,7 +997,6 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                     value={reg.password}
                     onChange={e => setReg({ ...reg, password: e.target.value })}
                     error={errors.password}
-                    required
                   />
                   {reg.password && (
                     <div className="hl-pw-reqs">
@@ -1025,7 +1016,6 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                     placeholder="Repeat password"
                     value={reg.password_confirmation}
                     onChange={e => setReg({ ...reg, password_confirmation: e.target.value })}
-                    required
                   />
                   {errors.password_confirmation && <span className="hl-field-err">⚠ {errors.password_confirmation[0]}</span>}
                   {reg.password_confirmation && (
@@ -1040,7 +1030,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
               </div>
 
               <button type="submit" className="hl-submit hl-submit-register" disabled={loading}>
-                Create Account
+                {loading ? 'Creating account…' : 'Create Account'}
               </button>
             </form>
           </div>
