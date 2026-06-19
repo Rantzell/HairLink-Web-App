@@ -279,77 +279,149 @@ const AdminUserManagement: React.FC = () => {
 
       {/* Create/Edit User Modal */}
       {isModalOpen && (
-        <div className="modal admin-modal-overlay">
-          <div className="modal-content admin-modal-box">
-            <h2 className="admin-modal-title">
-              {editingUser ? 'Edit User Account' : 'Create New User Account'}
-            </h2>
-            <form onSubmit={handleSaveUser} className="admin-form-grid">
-              <div className="admin-form-two-col-sm">
-                <div className="form-group">
-                  <label className="admin-form-label-sm">First Name</label>
-                  <input type="text" value={userForm.firstName} onChange={e => setUserForm({...userForm, firstName: e.target.value})} required />
+        <div
+          className="admin-modal-overlay"
+          onClick={e => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
+        >
+          <div className="amu-modal">
+
+            {/* ── Header ── */}
+            <div className="amu-modal-header">
+              <div className="amu-modal-header-icon">
+                <i className={`bx ${editingUser ? 'bx-user-check' : 'bx-user-plus'}`} />
+              </div>
+              <div className="amu-modal-header-text">
+                <h2 className="amu-modal-title">
+                  {editingUser ? 'Edit User Account' : 'Create New User'}
+                </h2>
+                <p className="amu-modal-subtitle">
+                  {editingUser
+                    ? `Editing account · ${editingUser.email}`
+                    : 'Add a new member to HairLink'}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="amu-modal-close"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Close"
+              >
+                <i className="bx bx-x" />
+              </button>
+            </div>
+
+            {/* ── Form ── */}
+            <form onSubmit={handleSaveUser} className="amu-modal-form">
+
+              {/* Name row */}
+              <div className="amu-form-two-col">
+                <div className="amu-field">
+                  <label className="amu-label">
+                    <i className="bx bx-user" /> First Name
+                  </label>
+                  <input
+                    className="amu-input"
+                    type="text"
+                    placeholder="e.g. Maria"
+                    value={userForm.firstName}
+                    onChange={e => setUserForm({...userForm, firstName: e.target.value})}
+                    required
+                  />
                 </div>
-                <div className="form-group">
-                  <label className="admin-form-label-sm">Last Name</label>
-                  <input type="text" value={userForm.lastName} onChange={e => setUserForm({...userForm, lastName: e.target.value})} required />
+                <div className="amu-field">
+                  <label className="amu-label">
+                    <i className="bx bx-user" /> Last Name
+                  </label>
+                  <input
+                    className="amu-input"
+                    type="text"
+                    placeholder="e.g. Santos"
+                    value={userForm.lastName}
+                    onChange={e => setUserForm({...userForm, lastName: e.target.value})}
+                    required
+                  />
                 </div>
               </div>
-              <div className="form-group">
-                <label className="admin-form-label-sm">Email Address</label>
-                <input type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} required />
+
+              {/* Email */}
+              <div className="amu-field">
+                <label className="amu-label">
+                  <i className="bx bx-envelope" /> Email Address
+                </label>
+                <input
+                  className="amu-input"
+                  type="email"
+                  placeholder="user@example.com"
+                  value={userForm.email}
+                  onChange={e => setUserForm({...userForm, email: e.target.value})}
+                  required
+                />
               </div>
+
+              {/* Password (create only) */}
               {!editingUser && (
-                <div className="form-group">
-                  <label className="admin-form-label-sm">Password</label>
-                  <input type="password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} placeholder="Default: password123" />
+                <div className="amu-field">
+                  <label className="amu-label">
+                    <i className="bx bx-lock-alt" /> Password
+                  </label>
+                  <input
+                    className="amu-input"
+                    type="password"
+                    placeholder="Leave blank for default: password123"
+                    value={userForm.password}
+                    onChange={e => setUserForm({...userForm, password: e.target.value})}
+                  />
                 </div>
               )}
-              <div className="form-group">
-                <label className="admin-form-label-sm">Assigned Role</label>
-                <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="admin-select">
-                  <option value="donor">Donor</option>
-                  <option value="recipient">Recipient</option>
-                  <option value="staff">Internal Staff</option>
-                  <option value="wigmaker">Wigmaker Partner</option>
-                  <option value="admin">System Administrator</option>
-                </select>
+
+              {/* Role */}
+              <div className="amu-field">
+                <label className="amu-label">
+                  <i className="bx bx-shield" /> Assigned Role
+                </label>
+                <div className="amu-select-wrap">
+                  <select
+                    className="amu-select"
+                    value={userForm.role}
+                    onChange={e => setUserForm({...userForm, role: e.target.value})}
+                  >
+                    <option value="donor">Donor</option>
+                    <option value="recipient">Recipient</option>
+                    <option value="staff">Internal Staff</option>
+                    <option value="wigmaker">Wigmaker Partner</option>
+                    <option value="admin">System Administrator</option>
+                  </select>
+                  <i className="bx bx-chevron-down amu-select-chevron" />
+                </div>
+                <p className="amu-field-hint">
+                  {userForm.role === 'admin' && 'Full system access including all management tools.'}
+                  {userForm.role === 'staff' && 'Can verify donations, match recipients, and manage inventory.'}
+                  {userForm.role === 'wigmaker' && 'Access to assigned wig production tasks.'}
+                  {userForm.role === 'donor' && 'Can submit hair donations and track progress.'}
+                  {userForm.role === 'recipient' && 'Can submit wig requests and track their status.'}
+                </p>
               </div>
-              <div className="admin-modal-btns">
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  style={{
-                    flex: 1,
-                    padding: '0.6rem 1rem',
-                    borderRadius: '8px',
-                    background: '#ad246d',
-                    color: '#fff',
-                    border: 'none',
-                    fontWeight: 800,
-                    fontSize: '0.85rem',
-                    cursor: 'pointer',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
-                >
-                  {isSubmitting ? 'Saving...' : (editingUser ? 'Update Account' : 'Create Account')}
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)} 
-                  style={{
-                    flex: 1,
-                    padding: '0.6rem 1rem',
-                    borderRadius: '8px',
-                    background: '#fff',
-                    color: '#ad246d',
-                    border: '1.5px solid #ead7e8',
-                    fontWeight: 800,
-                    fontSize: '0.85rem',
-                    cursor: 'pointer'
-                  }}
+
+              {/* Actions */}
+              <div className="amu-modal-actions">
+                <button
+                  type="button"
+                  className="amu-btn-ghost"
+                  onClick={() => setIsModalOpen(false)}
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="amu-btn-primary"
+                >
+                  {isSubmitting
+                    ? <><i className="bx bx-loader-alt bx-spin" /> Saving…</>
+                    : editingUser
+                      ? <><i className="bx bx-check" /> Update Account</>
+                      : <><i className="bx bx-user-plus" /> Create Account</>
+                  }
                 </button>
               </div>
             </form>

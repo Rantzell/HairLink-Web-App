@@ -1613,15 +1613,255 @@
 .admin-hair-color-label { color: #665772; }
 .admin-card-head-mb { margin-bottom: 1rem; }
 
+/* ── UserManagement Modal (AMU = Admin Modal User) ── */
+.amu-modal {
+  background: #fff;
+  border-radius: 24px;
+  width: 500px;
+  max-width: 95vw;
+  max-height: 92vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25), 0 10px 20px rgba(0, 0, 0, 0.12);
+  animation: adminModalPop 0.25s ease-out;
+}
+
+.amu-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.75rem 1.35rem;
+  background: linear-gradient(135deg, #fdf2f8 0%, #fff8fc 100%);
+  border-bottom: 1px solid #f0e4ef;
+  flex-shrink: 0;
+}
+
+.amu-modal-header-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ad246d 0%, #cf2f84 100%);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(173, 36, 109, 0.28);
+}
+
+.amu-modal-header-text { flex: 1; min-width: 0; }
+
+.amu-modal-title {
+  margin: 0 0 0.18rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1f1628;
+  letter-spacing: -0.01em;
+}
+
+.amu-modal-subtitle {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #a07eb0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.amu-modal-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid #ead7e8;
+  background: #fff;
+  color: #a07eb0;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+.amu-modal-close:hover {
+  background: #fdf2f8;
+  border-color: #ad246d;
+  color: #ad246d;
+}
+
+/* Form */
+.amu-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.5rem 1.75rem 1.75rem;
+  overflow-y: auto;
+}
+
+.amu-form-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.amu-field { display: flex; flex-direction: column; gap: 0.35rem; }
+
+.amu-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #ad246d;
+}
+.amu-label i { font-size: 0.85rem; }
+
+.amu-input {
+  width: 100%;
+  padding: 0.72rem 1rem;
+  border: 1.5px solid #ead7e8;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2d1f38;
+  background: #fff;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.amu-input::placeholder { color: #c4b0ce; font-weight: 400; }
+.amu-input:focus {
+  border-color: #ad246d;
+  box-shadow: 0 0 0 3px rgba(173, 36, 109, 0.08);
+}
+
+.amu-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.amu-select {
+  width: 100%;
+  padding: 0.72rem 2.4rem 0.72rem 1rem;
+  border: 1.5px solid #ead7e8;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d1f38;
+  background: #fff;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  font-family: inherit;
+}
+.amu-select:focus {
+  border-color: #ad246d;
+  box-shadow: 0 0 0 3px rgba(173, 36, 109, 0.08);
+}
+.amu-select-chevron {
+  position: absolute;
+  right: 0.9rem;
+  font-size: 1.1rem;
+  color: #b07ec0;
+  pointer-events: none;
+}
+
+.amu-field-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #a07eb0;
+  font-weight: 400;
+  line-height: 1.45;
+  min-height: 1.1em;
+}
+
+/* Actions */
+.amu-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.amu-btn-ghost {
+  height: 46px;
+  border-radius: 12px;
+  border: 1.5px solid #ead7e8;
+  background: #fff;
+  color: #5d4d62;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-family: inherit;
+}
+.amu-btn-ghost:hover {
+  border-color: #ad246d;
+  background: #fdf7fb;
+  color: #ad246d;
+}
+
+.amu-btn-primary {
+  height: 46px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #ad246d 0%, #cf2f84 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: opacity 0.18s, transform 0.15s;
+  box-shadow: 0 4px 14px rgba(173, 36, 109, 0.3);
+  font-family: inherit;
+}
+.amu-btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+.amu-btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 480px) {
+  .amu-form-two-col { grid-template-columns: 1fr; }
+  .amu-modal-actions { grid-template-columns: 1fr; }
+  .amu-modal-header { padding: 1.2rem 1.25rem 1rem; }
+  .amu-modal-form { padding: 1.2rem 1.25rem 1.5rem; }
+}
+
 /* ── UserManagement Modal ── */
+@keyframes adminModalPop {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
 .admin-modal-overlay {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 9999;
+  padding: 1rem;
+  animation: adminModalFade 0.18s ease;
+}
+@keyframes adminModalFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .admin-modal-box {
   background: #fff;
@@ -1629,6 +1869,8 @@
   border-radius: 20px;
   width: 450px;
   max-width: 90%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25), 0 10px 20px rgba(0, 0, 0, 0.12);
+  animation: adminModalPop 0.25s ease-out;
 }
 .admin-modal-title {
   font-size: 1.2rem;
