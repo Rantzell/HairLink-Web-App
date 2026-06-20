@@ -699,7 +699,8 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
     if (!reg.postal_code.trim()) errs.postal_code = ['Postal code is required.'];
     else if (!/^\d{4}$/.test(reg.postal_code.trim())) errs.postal_code = ['Postal code must be 4 digits.'];
     if (!reg.age) errs.age = ['Age is required.'];
-    else if (Number.isNaN(ageNum) || ageNum < 13 || ageNum > 120) errs.age = ['Enter a valid age (13–120).'];
+    else if (Number.isNaN(ageNum) || ageNum <= 0) errs.age = ['Age must be a positive number.'];
+    else if (ageNum > 100) errs.age = ['Age cannot exceed 100.'];
     if (!reg.gender) errs.gender = ['Please select a gender.'];
     if (!reg.email.trim()) errs.email = ['Email is required.'];
     else if (!emailRe.test(reg.email.trim())) errs.email = ['Enter a valid email address.'];
@@ -711,6 +712,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
     else {
       const issues: string[] = [];
       if (reg.password.length < 8) issues.push('At least 8 characters.');
+      if (!/[A-Z]/.test(reg.password)) issues.push('Must include an uppercase letter.');
       if (!/[0-9]/.test(reg.password)) issues.push('Must include a number.');
       if (!/[!@#$%^&*(),.?":{}|<>_]/.test(reg.password)) issues.push('Must include a symbol.');
       if (issues.length) errs.password = issues;
@@ -755,9 +757,10 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
 
   const pw = reg.password;
   const pwReqs = [
-    { label: 'At least 8 characters', ok: pw.length >= 8 },
-    { label: 'Contains a number',     ok: /[0-9]/.test(pw) },
-    { label: 'Contains a symbol',     ok: /[!@#$%^&*(),.?":{}|<>_]/.test(pw) },
+    { label: 'At least 8 characters',        ok: pw.length >= 8 },
+    { label: 'Contains an uppercase letter',  ok: /[A-Z]/.test(pw) },
+    { label: 'Contains a number',             ok: /[0-9]/.test(pw) },
+    { label: 'Contains a symbol',             ok: /[!@#$%^&*(),.?":{}|<>_]/.test(pw) },
   ];
 
   return (
@@ -930,7 +933,9 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 <div className="hl-field">
                   <label className="hl-label">Postal Code</label>
                   <input className="hl-input" type="text" placeholder="1006"
-                    value={reg.postal_code} onChange={e => setReg({ ...reg, postal_code: e.target.value.replace(/\D/g,'') })} />
+                    value={reg.postal_code}
+                    onChange={e => setReg({ ...reg, postal_code: e.target.value.replace(/\D/g,'').slice(0, 4) })}
+                    maxLength={4} />
                   {errors.postal_code && <span className="hl-field-err">⚠ {errors.postal_code[0]}</span>}
                 </div>
               </div>
@@ -940,7 +945,14 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 <div className="hl-field">
                   <label className="hl-label">Age</label>
                   <input className="hl-input" type="number" placeholder="25"
-                    value={reg.age} onChange={e => setReg({ ...reg, age: e.target.value })} />
+                    min={1} max={100}
+                    value={reg.age}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '' || (Number(val) >= 1 && Number(val) <= 100)) {
+                        setReg({ ...reg, age: val });
+                      }
+                    }} />
                   {errors.age && <span className="hl-field-err">⚠ {errors.age[0]}</span>}
                 </div>
                 <div className="hl-field">
