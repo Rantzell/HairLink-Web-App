@@ -161,7 +161,7 @@ export const notifyWigmakerAssignment = async (wigmakerId: string, taskCode: str
 export const notifyWigmakerMaterialDelivery = async (wigmakerId: string, taskCode: string, trackingLink: string) => {
   return createNotification(
     wigmakerId,
-    'Hair Materials Shipped',
+    'Hair Batch Shipped',
     `The staff has sent the materials for task ${taskCode}. Tracking link: ${trackingLink}`,
     'wigmaker'
   );
@@ -409,6 +409,15 @@ export const notifyWigmakerStaffReceivedWig = async (wigmakerId: string, taskCod
     wigmakerId,
     'Wig Received by Staff',
     `The staff has safely received the completed wig for Task #${taskCode}. Great job!`,
+    'wigmaker'
+  );
+};
+
+export const notifyWigmakerStaffReportedMissingWig = async (wigmakerId: string, taskCode: string) => {
+  return createNotification(
+    wigmakerId,
+    'Missing Wig Reported',
+    `The staff reported that the wig for Task #${taskCode} is missing from the shipment. Please check your records and contact the staff.`,
     'wigmaker'
   );
 };

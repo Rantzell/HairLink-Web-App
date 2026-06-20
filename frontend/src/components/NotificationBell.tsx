@@ -51,6 +51,8 @@ const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Notification | null>(null);
+  const [selectedWigmakerNotif, setSelectedWigmakerNotif] = useState<Notification | null>(null);
+  const [selectedStaffMissingNotif, setSelectedStaffMissingNotif] = useState<Notification | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
@@ -111,7 +113,10 @@ const NotificationBell: React.FC = () => {
         if (n.title.includes('New Monetary')) return { label: 'View Verification →', path: '/staff/verification/monetary' };
         return { label: 'View Monetary →', path: '/staff/verification/monetary' };
       }
-      if (n.type === 'staff_wig_production') return { label: 'View Tracking →', path: '/staff/tracking/batch-donation' };
+      if (n.type === 'staff_wig_production') {
+        if (n.title === 'Missing Hair Reported') return { label: 'View Notice →', path: '' };
+        return { label: 'View Tracking →', path: '/staff/tracking/batch-donation' };
+      }
       // If a reference is found, route to the appropriate staff page
       if (match) {
         const ref = match[1];
@@ -149,6 +154,9 @@ const NotificationBell: React.FC = () => {
 
     // ── Wigmaker role routing ──
     if (role === 'wigmaker') {
+      if (n.type === 'wigmaker' && n.title === 'Missing Wig Reported') {
+        return { label: 'View Notice →', path: '' };
+      }
       if (n.type === 'wigmaker') return { label: 'View Tasks →', path: '/wigmaker/hair-batch-tracking' };
       return null;
     }
@@ -184,6 +192,12 @@ const NotificationBell: React.FC = () => {
     const link = getNotifLink(n);
     if (n.type === 'announcement' || n.title.includes('Announcement:') || n.type === 'event' || n.title.includes('New Event:')) {
       setSelectedAnnouncement(n);
+      setIsOpen(false);
+    } else if (n.type === 'wigmaker' && n.title === 'Missing Wig Reported') {
+      setSelectedWigmakerNotif(n);
+      setIsOpen(false);
+    } else if (n.type === 'staff_wig_production' && n.title === 'Missing Hair Reported') {
+      setSelectedStaffMissingNotif(n);
       setIsOpen(false);
     } else if (link?.path) {
       setIsOpen(false);
@@ -298,6 +312,72 @@ const NotificationBell: React.FC = () => {
             <footer className="announcement-modal-footer">
               <button className="announcement-modal-btn-close" onClick={() => setSelectedAnnouncement(null)}>
                 Close
+              </button>
+            </footer>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {selectedWigmakerNotif && createPortal(
+        <div className="announcement-modal-overlay" onClick={() => setSelectedWigmakerNotif(null)}>
+          <div className="announcement-modal-card" onClick={e => e.stopPropagation()}>
+            <header className="announcement-modal-header">
+              <div className="announcement-modal-badge" style={{ background: '#ef4444' }}>
+                <i className='bx bx-error-circle'></i> Missing Wig Notice
+              </div>
+              <button className="announcement-modal-close" onClick={() => setSelectedWigmakerNotif(null)}>
+                <i className='bx bx-x'></i>
+              </button>
+            </header>
+            <main className="announcement-modal-body">
+              <h2 className="announcement-modal-title" style={{ color: '#dc2626' }}>
+                {selectedWigmakerNotif.title}
+              </h2>
+              <p className="announcement-modal-date">
+                <i className='bx bx-calendar'></i> {new Date(selectedWigmakerNotif.created_at).toLocaleString()}
+              </p>
+              <div className="announcement-modal-content" style={{ background: '#fef2f2', borderRadius: '12px', padding: '16px', border: '1px solid #fecaca' }}>
+                <i className='bx bx-info-circle' style={{ color: '#ef4444', marginRight: '8px' }}></i>
+                {selectedWigmakerNotif.message}
+              </div>
+            </main>
+            <footer className="announcement-modal-footer">
+              <button className="announcement-modal-btn-close" style={{ background: '#ef4444' }} onClick={() => setSelectedWigmakerNotif(null)}>
+                Acknowledged
+              </button>
+            </footer>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {selectedStaffMissingNotif && createPortal(
+        <div className="announcement-modal-overlay" onClick={() => setSelectedStaffMissingNotif(null)}>
+          <div className="announcement-modal-card" onClick={e => e.stopPropagation()}>
+            <header className="announcement-modal-header">
+              <div className="announcement-modal-badge" style={{ background: '#ef4444' }}>
+                <i className='bx bx-error-circle'></i> Missing Hair Notice
+              </div>
+              <button className="announcement-modal-close" onClick={() => setSelectedStaffMissingNotif(null)}>
+                <i className='bx bx-x'></i>
+              </button>
+            </header>
+            <main className="announcement-modal-body">
+              <h2 className="announcement-modal-title" style={{ color: '#dc2626' }}>
+                {selectedStaffMissingNotif.title}
+              </h2>
+              <p className="announcement-modal-date">
+                <i className='bx bx-calendar'></i> {new Date(selectedStaffMissingNotif.created_at).toLocaleString()}
+              </p>
+              <div className="announcement-modal-content" style={{ background: '#fef2f2', borderRadius: '12px', padding: '16px', border: '1px solid #fecaca' }}>
+                <i className='bx bx-info-circle' style={{ color: '#ef4444', marginRight: '8px' }}></i>
+                {selectedStaffMissingNotif.message}
+              </div>
+            </main>
+            <footer className="announcement-modal-footer">
+              <button className="announcement-modal-btn-close" style={{ background: '#ef4444' }} onClick={() => setSelectedStaffMissingNotif(null)}>
+                Acknowledged
               </button>
             </footer>
           </div>

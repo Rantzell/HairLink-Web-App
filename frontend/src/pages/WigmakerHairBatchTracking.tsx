@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import LoadingScreen from '../components/LoadingScreen';
@@ -12,6 +13,7 @@ const WigmakerHairBatchTracking: React.FC = () => {
   const [openBatches, setOpenBatches] = useState<Record<number, boolean>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<{ taskCode: string; batchRef: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [viewNoteModal, setViewNoteModal] = useState<{ note: string; batchRef: string } | null>(null);
 
   const toggleBatch = (taskId: number) =>
     setOpenBatches(prev => ({ ...prev, [taskId]: !prev[taskId] }));
@@ -194,7 +196,13 @@ const WigmakerHairBatchTracking: React.FC = () => {
                         </a>
                       )}
                       {task.staffNote && displayNote && (
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '0.2rem 0.6rem', maxWidth: '480px' }}>
+                        <div 
+                          onClick={() => setViewNoteModal({ note: displayNote, batchRef })}
+                          title="Click to view full note"
+                          style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '0.2rem 0.6rem', maxWidth: '480px', transition: 'all 0.2s ease' }}
+                          onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(0.95)'}
+                          onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}
+                        >
                           <i className="bx bx-note" style={{ color: '#d97706', fontSize: '0.82rem', flexShrink: 0 }}></i>
                           <span style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 600, lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             <span style={{ fontWeight: 800, color: '#b45309' }}>Staff Note: </span>{displayNote}
@@ -312,10 +320,10 @@ const WigmakerHairBatchTracking: React.FC = () => {
       )}
 
       {/* Delete confirm modal */}
-      {deleteConfirm && (
+      {deleteConfirm && createPortal(
         <div
           onClick={(e) => { if (e.target === e.currentTarget && !deleting) setDeleteConfirm(null); }}
-          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(30,18,36,0.55)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
         >
           <div style={{ background: '#fff', borderRadius: '20px', padding: '2rem', maxWidth: '400px', width: '100%', border: '1px solid #ead7e8', boxShadow: '0 24px 60px rgba(173,36,109,0.15)', textAlign: 'center' }}>
             <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#fff5f5', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.75rem' }}>
@@ -342,7 +350,59 @@ const WigmakerHairBatchTracking: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* View Note modal */}
+      {viewNoteModal && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setViewNoteModal(null); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s ease-out' }}
+        >
+          <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.15)', overflow: 'hidden' }}>
+            
+            {/* Header */}
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                  <i className="bx bx-note"></i>
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Staff Note</h3>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>Batch {viewNoteModal.batchRef}</div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setViewNoteModal(null)}
+                style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', transition: 'background 0.2s' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <i className="bx bx-x"></i>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div style={{ padding: '1.5rem', color: '#334155', fontSize: '0.95rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+              {viewNoteModal.note}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '1rem 1.5rem', background: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setViewNoteModal(null)}
+                style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#475569'; }}
+              >
+                Close
+              </button>
+            </div>
+            
+          </div>
+        </div>,
+        document.body
       )}
     </section>
   );

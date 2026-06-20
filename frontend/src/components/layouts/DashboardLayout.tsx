@@ -129,6 +129,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           { icon: 'bx bx-link',         label: 'Recipient Matching',     to: '/staff/matching' },
         ],
       },
+      {
+        label: 'Reports',
+        items: [
+          { icon: 'bx bx-bar-chart-alt-2', label: 'System Reports',      to: '/staff/reports' },
+        ],
+      },
     ];
 
     const getTopbarTitle = () => {
@@ -143,6 +149,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       if (location.pathname.startsWith('/staff/hair-stock')) return 'Hair Stock Inventory';
       if (location.pathname.startsWith('/staff/wig-stock')) return 'Wig Stock Inventory';
       if (location.pathname.startsWith('/staff/matching')) return 'Recipient Matching Desk';
+      if (location.pathname.startsWith('/staff/reports')) return 'System Reports';
       if (location.pathname.startsWith('/staff/profile')) return 'My Staff Profile';
       return 'Staff Workspace';
     };
