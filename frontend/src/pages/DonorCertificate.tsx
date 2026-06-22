@@ -16,7 +16,6 @@ const DonorCertificate: React.FC = () => {
   const [donations, setDonations] = useState<any[]>([]);
   const [selectedDonation, setSelectedDonation] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string>('');
 
 
   useEffect(() => {
@@ -41,8 +40,6 @@ const DonorCertificate: React.FC = () => {
         }
       } catch (err: any) {
         console.error('Failed to fetch donations for certificate', err);
-        const serverError = err.response?.data?.message || err.response?.data?.error || err.message || String(err);
-        setErrorMsg(serverError);
         setSelectedDonation(null);
       } finally {
         setLoading(false);
