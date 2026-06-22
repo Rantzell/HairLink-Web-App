@@ -354,6 +354,21 @@ const StaffRealtimeTracking: React.FC = () => {
     }
   };
 
+  const handleReceiveAllWigs = async (batchId: number, deliveryLink?: string) => {
+    setIsSubmitting(true);
+    try {
+      await apiClient.post(`/internal-api/staff/batches/${batchId}/receive-all`, {
+        delivery_tracking_link: deliveryLink
+      });
+      toast.success('Batch and all wigs marked as received!');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update batch');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) return <PageLoader message="Loading tracking data..." />;
 
   return (
@@ -708,7 +723,7 @@ const StaffRealtimeTracking: React.FC = () => {
                                   )}
                                   <button
                                     className="soft-btn"
-                                    onClick={() => triggerBatchAction(bd.map((d: any) => d.reference), 'Wig Received', deliveryLink || undefined)}
+                                    onClick={() => handleReceiveAllWigs(wpId, deliveryLink || undefined)}
                                     disabled={isSubmitting}
                                     style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800 }}
                                   >
