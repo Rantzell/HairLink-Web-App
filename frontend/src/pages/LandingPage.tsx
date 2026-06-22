@@ -1949,7 +1949,7 @@ const LandingPage: React.FC = () => {
             <span>HairLink</span>
           </Link>
           <nav className="hl-nav-links">
-            <a href="#home">Home</a>
+            <a href="#home" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Home</a>
             <a href="#services">How It Works</a>
             <a href="#about">About</a>
             <a href="#partners">Partners</a>
@@ -1963,7 +1963,7 @@ const LandingPage: React.FC = () => {
           </button>
         </div>
         <div className={`hl-drawer ${menuOpen ? 'open' : ''}`}>
-          <a href="#home" onClick={() => setMenuOpen(false)}>Home</a>
+          <a href="#home" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); setMenuOpen(false); }}>Home</a>
           <a href="#services" onClick={() => setMenuOpen(false)}>How It Works</a>
           <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
           <a href="#partners" onClick={() => setMenuOpen(false)}>Partners</a>
