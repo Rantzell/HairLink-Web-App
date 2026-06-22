@@ -229,15 +229,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
               <span className="sd-topbar-title">{getTopbarTitle()}</span>
 
-              {/* Search bar */}
-              <div className="sd-search">
-                <i className="bx bx-search" />
-                <input
-                  type="text"
-                  placeholder="Search…"
-                  aria-label="Search"
-                />
-              </div>
             </div>
 
             <div className="sd-topbar-right">
