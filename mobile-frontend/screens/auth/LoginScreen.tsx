@@ -52,7 +52,6 @@ export default function LoginScreen({
     const [canResend, setCanResend] = useState(false);
     const otpInputRef = React.useRef<TextInput>(null);
 
-    // ── Status Modal State ──────────────────────────────────────
     const [statusVisible, setStatusVisible] = useState(false);
     const [statusType, setStatusType] = useState<'error' | 'success'>('error');
     const [statusTitle, setStatusTitle] = useState("");
@@ -72,7 +71,6 @@ export default function LoginScreen({
         setStatusVisible(true);
     };
 
-    // ── Login ────────────────────────────────────────────────────
     const handleLogin = async () => {
         let valid = true;
         if (!email.trim()) { setEmailError("Required"); valid = false; } else setEmailError("");
@@ -97,7 +95,6 @@ export default function LoginScreen({
         }
     };
 
-    // ── Forgot password flow ─────────────────────────────────────
     const handleSendResetCode = async () => {
         if (!forgotEmail.trim()) { setForgotError("Please enter your email."); return; }
         setForgotLoading(true);
@@ -123,7 +120,6 @@ export default function LoginScreen({
         if (onPasswordRecovery) onPasswordRecovery();
     };
 
-    // ── Render Forgot Email View ────────────────────────────────
     if (viewMode === "forgot_email") {
         return (
             <LinearGradient colors={["#D63B8A", "#E863A1", "#FFF0F5"]} style={styles.root}>
@@ -180,7 +176,6 @@ export default function LoginScreen({
         );
     }
 
-    // ── Render Forgot OTP View ────────────────────────────────
     if (viewMode === "forgot_otp") {
         return (
             <LinearGradient colors={["#D63B8A", "#E863A1", "#FFF0F5"]} style={styles.root}>

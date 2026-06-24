@@ -388,7 +388,7 @@ const DonorProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Account Actions ── */}
+      {}
       <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
         <button
           type="button"
@@ -415,7 +415,7 @@ const DonorProfile: React.FC = () => {
         </button>
       </div>
 
-      {/* ── Change Password Modal ── */}
+      {}
       {showChangePasswordModal && (
         <div
           onClick={e => { if (e.target === e.currentTarget && !isChangingPassword) setShowChangePasswordModal(false); }}
@@ -525,7 +525,7 @@ const DonorProfile: React.FC = () => {
         <div className="ep-overlay" onClick={e => { if (e.target === e.currentTarget) setIsModalOpen(false); }}>
           <div className="ep-modal">
 
-            {/* ── Top bar ── */}
+            {}
             <div className="ep-topbar">
               <h2 className="ep-title">My profile</h2>
               <button className="ep-close" type="button" onClick={() => setIsModalOpen(false)} aria-label="Close">
@@ -533,7 +533,7 @@ const DonorProfile: React.FC = () => {
               </button>
             </div>
 
-            {/* ── Body: photo column + form column ── */}
+            {}
             <form id="ep-form" onSubmit={handleUpdate} className="ep-body">
 
               {/* Photo column */}
@@ -587,8 +587,6 @@ const DonorProfile: React.FC = () => {
                   <label className="ep-label">Email</label>
                   <input type="email" value={user?.email || ''} readOnly className="ep-input ep-input-readonly" />
                 </div>
-
-
 
                 <div className="ep-field">
                   <label className="ep-label">Phone number</label>
@@ -668,7 +666,7 @@ const DonorProfile: React.FC = () => {
               </div>
             </form>
 
-            {/* ── Footer ── */}
+            {}
             <div className="ep-footer">
               <button type="button" className="ep-btn-close" onClick={() => setIsModalOpen(false)}>
                 Close

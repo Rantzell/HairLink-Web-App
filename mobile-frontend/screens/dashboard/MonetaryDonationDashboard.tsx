@@ -53,7 +53,6 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [qrZoomOpen, setQrZoomOpen] = useState(false);
 
-    // ── Success Modal State ──────────────────────────────────────
     const [showSuccess, setShowSuccess] = useState(false);
     const [lastAmount, setLastAmount] = useState(0);
     // Monetary donations no longer award stars — no `earnedStars` state.
@@ -133,7 +132,6 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
     }
   };
 
-
     const insets = useSafeAreaInsets();
 
     return (
@@ -192,7 +190,7 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
                     </View>
                 </View>
 
-                {/* ── Amount ───────────────────────────────────────── */}
+                {}
                 <View style={styles.card}>
                     <Text style={styles.cardLabel}>Choose an amount</Text>
                     <View style={styles.amountGrid}>
@@ -229,7 +227,7 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
                     </View>
                 </View>
 
-                {/* ── Payment method ──────────────────────────────── */}
+                {}
                 <View style={styles.card}>
                     <Text style={styles.cardLabel}>Payment method</Text>
                     <View style={styles.segmented}>
@@ -292,7 +290,7 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
                     )}
                 </View>
 
-                {/* ── Donor info ──────────────────────────────────── */}
+                {}
                 <View style={styles.card}>
                     <Text style={styles.cardLabel}>Donor information</Text>
 

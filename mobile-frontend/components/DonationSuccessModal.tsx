@@ -14,23 +14,6 @@ import { BlurView } from 'expo-blur';
 import { s, vs, ms } from '../lib/scaling';
 import { useModalEntrance } from '../lib/modalAnimation';
 
-/**
- * Donation success modal — confirms a hair / monetary donation submission
- * and surfaces the estimated reward stars before staff verification.
- *
- * Animation language
- * ──────────────────
- * - Backdrop fades in fast (180ms, `Easing.out(Easing.cubic)`).
- * - Card pops with a tiny overshoot using `Easing.out(Easing.back(1.6))`
- *   for a snappy, deliberate motion. Total: 240ms.
- * - Icon does a single quick "stamp" on mount — scale 0 → 1.08 → 1 using
- *   `Easing.out(Easing.back(2))`, 280ms one-shot. No infinite loops.
- * - Star wedge slides in from the right with a 180ms `Easing.out.cubic`
- *   delayed by 120ms so it lands *after* the card settles.
- *
- * All easings are *out* curves on purpose — the request was explicitly no
- * ease-in-out and short durations.
- */
 interface DonationSuccessModalProps {
   visible: boolean;
   amount: number;
@@ -119,7 +102,7 @@ export default function DonationSuccessModal({
           ]}
         >
           <View style={styles.card}>
-            {/* ── Accent top bar (replaces the bulky overlapping heart) ── */}
+            {}
             <View style={[styles.accentBar, { backgroundColor: tint }]} />
 
             <View style={styles.cardBody}>
@@ -228,7 +211,6 @@ const styles = StyleSheet.create({
     padding: ms(24),
   },
 
-  // ── Card ──
   cardWrap: {
     width: '100%',
     maxWidth: ms(360),
@@ -254,7 +236,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // ── Icon chip ──
   iconChip: {
     width: ms(56),
     height: ms(56),
@@ -278,7 +259,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // ── Title + chip ──
   title: {
     fontSize: ms(22),
     fontWeight: '800',
@@ -302,7 +282,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  // ── Body ──
   bodyLine: {
     fontSize: ms(13.5),
     color: BRAND.inkSoft,
@@ -323,7 +302,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ── Reward strip ──
   rewardStrip: {
     width: '100%',
     flexDirection: 'row',
@@ -358,7 +336,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
 
-  // ── Buttons ──
   primaryBtn: {
     width: '100%',
     height: vs(46),

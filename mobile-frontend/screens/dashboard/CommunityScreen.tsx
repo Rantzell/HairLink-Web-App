@@ -46,7 +46,6 @@ interface CommunityScreenProps {
   openPostId?: string | null;
 }
 
-// ── topic helpers (mirror frontend/src/pages/CommunityFeed.tsx) ──
 const TOPIC_PREFIX = '[TOPIC:';
 const TOPIC_SUFFIX = ']';
 const CATEGORIES = ['Stories', 'Questions', 'Updates'] as const;
@@ -215,7 +214,6 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
     fetchPosts();
   };
 
-  // ── Create post ──
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -356,7 +354,6 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
     }
   };
 
-  // ── Comment + like — unchanged from previous design ──
   const handlePostComment = async () => {
     if (!commentContent.trim() || !activePost) return;
     setPostingComment(true);
@@ -404,7 +401,6 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
     }
   };
 
-  // ── Derived: filtered + sorted feed (mirrors the web) ──
   const filteredPosts = posts
     .filter((p) => {
       if (filter === 'all') return true;
@@ -418,7 +414,6 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
           - new Date(a.createdAt || a.created_at || 0).getTime()
     );
 
-  // ── Render one post card (web parity) ──
   const renderPost = ({ item, index }: { item: any; index: number }) => {
     const u = item.user || {};
     const first = u.firstName || u.first_name || '';
@@ -532,7 +527,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* ── Top bar ── */}
+      {}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="chevron-back" size={ms(24)} color="#1C1917" />
@@ -572,7 +567,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
           }
           ListHeaderComponent={
             <View>
-              {/* ── Hero ── */}
+              {}
               <View style={styles.hero}>
                 <Text style={styles.heroTitle}>Hairlink community</Text>
                 <Text style={styles.heroSub}>
@@ -585,7 +580,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
                 </TouchableOpacity>
               </View>
 
-              {/* ── Toolbar: filters + sort ── */}
+              {}
               <View style={styles.toolbar}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillScroll}>
                   {(['all', ...CATEGORIES] as const).map((f) => {
@@ -627,7 +622,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
         />
       </KeyboardAvoidingView>
 
-      {/* ── Create Post Modal ── */}
+      {}
       <Modal visible={modalOpen} animationType="slide" transparent onRequestClose={() => { setModalOpen(false); resetComposer(); }}>
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView style={styles.modalSheet} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -737,7 +732,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
         </View>
       </Modal>
 
-      {/* ── Comments Modal ── */}
+      {}
       <Modal visible={!!activePost} animationType="slide" transparent onRequestClose={() => setActivePost(null)}>
         <View style={styles.commentsOverlay}>
           <KeyboardAvoidingView style={styles.commentsSheet} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -849,7 +844,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
         </View>
       </Modal>
 
-      {/* ── Image lightbox ─────────────────────────────────────── */}
+      {}
       <Modal
         visible={!!zoomImageUri}
         transparent
@@ -889,7 +884,6 @@ const styles = StyleSheet.create({
 
   feedContent: { paddingBottom: vs(40) },
 
-  // ── Hero ──
   hero: {
     paddingHorizontal: ms(20),
     paddingTop: vs(22),
@@ -926,7 +920,6 @@ const styles = StyleSheet.create({
   },
   heroCtaText: { color: '#fff', fontWeight: '800', fontSize: ms(13), letterSpacing: 0.2 },
 
-  // ── Toolbar ──
   toolbar: {
     paddingTop: vs(2),
     paddingBottom: vs(10),
@@ -979,7 +972,6 @@ const styles = StyleSheet.create({
   },
   sortPillTextActive: { color: '#fff' },
 
-  // ── Empty state ──
   emptyState: {
     alignItems: 'center',
     paddingVertical: vs(60),
@@ -1009,7 +1001,6 @@ const styles = StyleSheet.create({
   },
   emptyCtaText: { color: '#fff', fontWeight: '800', fontSize: ms(13) },
 
-  // ── Post card ──
   postCard: {
     backgroundColor: '#fff',
     borderRadius: ms(18),
@@ -1118,7 +1109,6 @@ const styles = StyleSheet.create({
   },
   actionText: { fontSize: ms(12.5), fontWeight: '700', color: '#78716C' },
 
-  // ── Create-post modal ──
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(28,25,23,0.55)',
@@ -1255,7 +1245,6 @@ const styles = StyleSheet.create({
   publishBtnDisabled: { backgroundColor: '#E8C9DC', shadowOpacity: 0, elevation: 0 },
   publishBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(13) },
 
-  // ── Comments modal ──
   commentsOverlay: {
     flex: 1,
     backgroundColor: 'rgba(28,25,23,0.55)',

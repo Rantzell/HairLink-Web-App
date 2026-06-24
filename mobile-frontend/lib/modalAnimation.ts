@@ -1,35 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 
-/**
- * Shared modal entrance animation language for the mobile app.
- *
- * Direction (per product spec):
- * - Short — total motion ≤ ~320ms.
- * - No ease-in-out — all easings are OUT curves so the motion
- *   accelerates fast and settles. No symmetric "rubbery" feel.
- * - One-shot — never `withRepeat`. Infinite pulses are explicitly out.
- *
- * Returns three `Animated.Value`s the caller plugs into its modal:
- *   `backdrop`     — 0 → 1 opacity for the overlay
- *   `cardOpacity`  — 0 → 1 opacity for the card
- *   `cardScale`    — 0.92 → 1 scale with a tiny back-out overshoot
- *
- * Optional `iconScale` (0 → 1, OUT back) is also returned so the caller
- * can give its main icon a snappy "stamp" effect; ignore if not needed.
- *
- * Usage
- * ─────
- * ```tsx
- * const { backdrop, cardOpacity, cardScale, iconScale } = useModalEntrance(visible);
- * <Animated.View style={{ opacity: backdrop }}>
- *   <Animated.View style={{ opacity: cardOpacity, transform: [{ scale: cardScale }] }}>
- *     ...
- *     <Animated.View style={{ transform: [{ scale: iconScale }] }}>...icon</Animated.View>
- *   </Animated.View>
- * </Animated.View>
- * ```
- */
 export function useModalEntrance(visible: boolean) {
   const backdrop = useRef(new Animated.Value(0)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;

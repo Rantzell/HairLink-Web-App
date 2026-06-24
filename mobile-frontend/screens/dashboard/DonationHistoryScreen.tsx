@@ -64,7 +64,6 @@ const ScaleButton = ({ children, onPress, style }: any) => {
   );
 };
 
-// ── Date helpers (Asia/Manila for parity with the backend due-check) ──────
 // Backend computes "due" by comparing scheduled & today as YYYY-MM-DD in
 // Asia/Manila, so we use the same yardstick to decide which UI branch to show.
 const localYMD = (d: Date) => {
@@ -99,7 +98,6 @@ const formatScheduledLong = (scheduledIso?: string | null) => {
   });
 };
 
-// ── ScheduleDeliveryForm ──────────────────────────────────────────────────
 // Donor picks the date they plan to drop off the hair. POSTs the date
 // (as local-midnight ISO) to /donations/:reference/schedule-delivery so staff
 // get notified and the backend tracker can ping the donor on the due date.
@@ -181,7 +179,6 @@ function ScheduleDeliveryForm({
     }
   };
 
-  // ── Already scheduled, not editing — show the locked-in date + Reschedule ──
   if (scheduledAt && !editing) {
     return (
       <View style={styles.scheduleBox}>
@@ -207,7 +204,6 @@ function ScheduleDeliveryForm({
     );
   }
 
-  // ── Picking / editing the date ──
   return (
     <View style={styles.scheduleBox}>
       <View style={styles.scheduleHeader}>
@@ -280,7 +276,6 @@ function ScheduleDeliveryForm({
   );
 }
 
-// ── DeliveryLinkForm ──────────────────────────────────────────────────────
 // Mirrors the website's DonorTrackingDetail flow: input the courier tracking
 // URL, POST /donations/:reference/delivery-link, then show the saved link
 // with an "Open" button. Lives inline so each approved card carries its own
@@ -391,7 +386,6 @@ function DeliveryLinkForm({
   );
 }
 
-// ── Donation Roadmap ──────────────────────────────────────────────────────
 function DonationRoadmap({ histories }: { histories: StatusHistory[] }) {
   const [expanded, setExpanded] = useState(false);
   if (!histories || histories.length === 0) return null;
@@ -885,7 +879,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // ── Tracking-link form (matches website's DonorTrackingDetail) ───────
   trackingBox: {
     marginTop: vs(12),
     padding: ms(14),
@@ -960,7 +953,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   certificateBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(13), letterSpacing: 0.5 },
-  // ── Schedule-delivery form (mirrors website's schedule UI) ──────────
   scheduleBox: {
     marginTop: vs(12),
     padding: ms(14),

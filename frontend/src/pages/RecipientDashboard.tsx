@@ -167,7 +167,7 @@ const RecipientDashboard: React.FC = () => {
         </div>,
         document.body
       )}
-      {/* ── HERO WELCOME SECTION ── */}
+      {}
       <header className="rc-hero">
         <div className="rc-hero-left">
           <span className="rc-hero-badge">Welcome Back</span>
@@ -181,7 +181,7 @@ const RecipientDashboard: React.FC = () => {
         </div>
       </header>
 
-      {/* ── STATS / OVERVIEW CARDS ── */}
+      {}
       <div className="rc-stats-grid">
         {/* Card 1: Active Request Status */}
         <div className="rc-stat-card">
@@ -245,7 +245,7 @@ const RecipientDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* ── MY REQUEST JOURNEY ── */}
+      {}
       <div className="rc-action-section">
         <h2 className="rc-section-title">My Request Journey</h2>
         <div className="rc-action-grid">
@@ -293,7 +293,7 @@ const RecipientDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* ── RESOURCES & COMMUNITY ── */}
+      {}
       <div className="rc-action-section" style={{ marginTop: '1rem' }}>
         <h2 className="rc-section-title">Resources &amp; Community</h2>
         <div className="rc-action-grid">

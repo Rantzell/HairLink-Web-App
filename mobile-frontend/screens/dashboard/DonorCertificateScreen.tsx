@@ -25,29 +25,6 @@ import * as FileSystem from 'expo-file-system/legacy';
 import api from '../../lib/api';
 import { CustomAlert } from '../../components/GlobalAlert';
 
-/**
- * Donor Certificate — "thank you" landing screen.
- *
- * UX
- * ──
- * No more inline certificate preview. Instead the donor sees a warm
- * thank-you message + meta chips + a single Download PDF button. The
- * actual certificate lives in the generated PDF (via `expo-print`) and
- * exactly mirrors the website's `DonorCertificate.tsx` layout — same
- * two-logo header, "CERTIFICATE OF RECOGNITION" wordmark, serif name,
- * appreciation body, and 3-column footer.
- *
- * Why a PDF instead of a screen view
- * ──────────────────────────────────
- * The website's certificate IS the artefact — donors print or PDF-save
- * it. Re-implementing the same visual in mobile RN components was always
- * an approximation and broke the moment the donor wanted to share or
- * print. Generating a real PDF from HTML gives the donor:
- *   - The same look on every device.
- *   - A file they can email, AirDrop, or print directly.
- *   - Zero font drift between web and mobile (HTML uses Georgia, same
- *     fallback the web certificate uses).
- */
 interface Props {
   reference: string;
   certificateNo: string;
@@ -584,7 +561,7 @@ export default function DonorCertificateScreen({ reference, certificateNo, dateR
           </View>
         ) : (
           <>
-            {/* ── Hero: trophy chip + headline + body ── */}
+            {}
             <Animated.View
               style={[
                 styles.hero,
@@ -601,7 +578,7 @@ export default function DonorCertificateScreen({ reference, certificateNo, dateR
               </Text>
             </Animated.View>
 
-            {/* ── Meta chips ── */}
+            {}
             <View style={styles.metaCard}>
               <View style={styles.metaRow}>
                 <View style={styles.metaLeft}>
@@ -636,7 +613,7 @@ export default function DonorCertificateScreen({ reference, certificateNo, dateR
               </View>
             </View>
 
-            {/* ── Tip strip ── */}
+            {}
             <View style={styles.tipStrip}>
               <Feather name="download" size={ms(14)} color={BRAND.pink} />
               <Text style={styles.tipText}>
@@ -644,7 +621,7 @@ export default function DonorCertificateScreen({ reference, certificateNo, dateR
               </Text>
             </View>
 
-            {/* ── Primary CTA: real PDF generation + share ── */}
+            {}
             <TouchableOpacity
               onPress={handleDownloadPdf}
               disabled={downloading || !logosReady}
@@ -697,7 +674,6 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: ms(20), paddingTop: vs(28) },
   loadingContainer: { height: vs(400), justifyContent: 'center', alignItems: 'center' },
 
-  // ── Hero ──
   hero: {
     alignItems: 'center',
     marginBottom: vs(22),
@@ -735,7 +711,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ── Meta card ──
   metaCard: {
     backgroundColor: '#fff',
     borderRadius: ms(16),
@@ -780,7 +755,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F1ED',
   },
 
-  // ── Tip strip ──
   tipStrip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -800,7 +774,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // ── Primary CTA ──
   primaryBtn: {
     backgroundColor: BRAND.pink,
     height: vs(50),

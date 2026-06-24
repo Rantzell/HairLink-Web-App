@@ -52,7 +52,6 @@ const ScaleButton = ({ children, onPress, style }: any) => {
 export default function NotificationScreen({ onBack, onTrack, onOpenPost, role = 'Donor' }: { onBack?: () => void, onTrack?: () => void, onOpenPost?: (postId: string) => void, role?: 'Donor' | 'Recipient' }) {
   const isRecipient = role === 'Recipient';
 
-  // ── Role-themed palette ──────────────────────────────────────────────
   // Donor stays pink; Recipient stays light purple. Each role gets a
   // gradient pair (deep → soft) used for the header AND the icon circles.
   const theme = {
@@ -136,7 +135,6 @@ export default function NotificationScreen({ onBack, onTrack, onOpenPost, role =
     setExpandedId(expandedId === n.id ? null : n.id);
   };
 
-  // ── Time formatting ──────────────────────────────────────────────────
   const getRelativeTime = (dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
@@ -173,7 +171,6 @@ export default function NotificationScreen({ onBack, onTrack, onOpenPost, role =
     return acc;
   }, {});
 
-  // ── Per-type styling: icon glyph + accent dot color ────────────────────
   // The accent dot is the small colored marker on the right side of each card
   // (success/info/warning/danger semantics). The icon glyph is the symbol
   // inside the circular badge. Background uses the role's theme gradient.
@@ -230,7 +227,7 @@ export default function NotificationScreen({ onBack, onTrack, onOpenPost, role =
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <StatusBar style="light" />
 
-      {/* ── Header ───────────────────────────────────────── */}
+      {}
       <LinearGradient
         colors={[theme.deep, theme.soft]}
         start={{ x: 0, y: 0 }}
@@ -254,7 +251,7 @@ export default function NotificationScreen({ onBack, onTrack, onOpenPost, role =
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.deep} />
         }
       >
-        {/* ── Search Bar ────────────────────────────────── */}
+        {}
         <Animated.View entering={FadeInDown.delay(60)} style={styles.searchContainer}>
           <View style={[styles.searchBar, { borderColor: theme.ring }]}>
             <Ionicons name="search-outline" size={ms(18)} color={theme.soft} />
@@ -273,7 +270,7 @@ export default function NotificationScreen({ onBack, onTrack, onOpenPost, role =
           </View>
         </Animated.View>
 
-        {/* ── Loading / Empty States ───────────────────── */}
+        {}
         {loading && !refreshing && (
           <View style={{ marginTop: vs(100) }}>
             <ActivityIndicator size="large" color={theme.deep} />
@@ -292,7 +289,7 @@ export default function NotificationScreen({ onBack, onTrack, onOpenPost, role =
           </View>
         )}
 
-        {/* ── Date-grouped notification list ───────────── */}
+        {}
         {Object.keys(groupedNotifications).map((group, gIdx) => (
           <Animated.View key={group} entering={FadeIn.delay(180 + gIdx * 80)}>
             <Text style={styles.dateHeader}>{group}</Text>
@@ -367,7 +364,6 @@ export default function NotificationScreen({ onBack, onTrack, onOpenPost, role =
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
-  // ── Header ──────────────────────────────────────────
   header: {
     borderBottomLeftRadius: ms(28),
     borderBottomRightRadius: ms(28),
@@ -395,7 +391,6 @@ const styles = StyleSheet.create({
 
   scrollContent: { paddingBottom: vs(40) },
 
-  // ── Search ──────────────────────────────────────────
   searchContainer: { paddingHorizontal: ms(20), paddingTop: vs(20), marginBottom: vs(14) },
   searchBar: {
     flexDirection: 'row',
@@ -414,7 +409,6 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: ms(14), fontWeight: '600', color: '#333', paddingVertical: 0 },
 
-  // ── Tabs row ────────────────────────────────────────
   tabsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -448,7 +442,6 @@ const styles = StyleSheet.create({
   badgeTextActive: { color: '#fff' },
   markAllText: { fontSize: ms(12), fontWeight: '700' },
 
-  // ── Date headers ────────────────────────────────────
   dateHeader: {
     fontSize: ms(13),
     fontWeight: '700',
@@ -459,7 +452,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  // ── Notification cards ──────────────────────────────
   notificationCard: {
     backgroundColor: '#fff',
     marginHorizontal: ms(16),
@@ -545,7 +537,6 @@ const styles = StyleSheet.create({
     borderRadius: ms(2),
   },
 
-  // ── Empty state ─────────────────────────────────────
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',

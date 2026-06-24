@@ -132,8 +132,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
   const [upcomingEvent, setUpcomingEvent] = useState<{ title: string; location: string; date: string } | null>(null);
   const notificationsViewedRef = useRef(false); // Track if user has seen notifications
 
-
-
   const fetchPoints = useCallback(async () => {
     try {
       const [meRes, statsRes] = await Promise.all([
@@ -321,7 +319,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
     );
   }
 
-
   if (showCommunity) {
     return (
       <Animated.View
@@ -372,7 +369,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar style="light" />
-      {/* ── Header ─────────────────────────────────── */}
+      {}
       <View>
         <LinearGradient
           colors={['rgba(255, 102, 204, 0.88)', 'rgba(255, 153, 221, 0.88)']}
@@ -412,7 +409,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Hero ──────────────────────────────────── */}
+        {}
         <Animated.View entering={FadeInDown.springify().delay(100)}>
           <LinearGradient
             colors={['#FFF0F8', '#FFD6EF']}
@@ -431,7 +428,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </LinearGradient>
         </Animated.View>
 
-        {/* ── Star Points Card ──────────────────────── */}
+        {}
         <Animated.View entering={FadeInRight.springify().delay(200)} style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="star" size={20} color="#FF1493" />
@@ -467,7 +464,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </TouchableOpacity>
         </Animated.View>
 
-        {/* ── Referral ──────────────────────────────── */}
+        {}
         <Animated.View entering={FadeInRight.springify().delay(300)} style={styles.referralRow}>
           <Text style={styles.referralLabel}>Referral Code:</Text>
           <ScaleButton
@@ -481,7 +478,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </ScaleButton>
         </Animated.View>
 
-        {/* ── How It Works ──────────────────────────── */}
+        {}
         <Animated.View entering={FadeInDown.springify().delay(400)} style={styles.card}>
           <Text style={styles.sectionTitle}>How It Works</Text>
           <Text style={styles.sectionSubtitle}>
@@ -523,7 +520,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </View>
         </Animated.View>
 
-        {/* ── Hair Care Hub ────────────────────────── */}
+        {}
         <Animated.View entering={FadeInDown.springify().delay(450)} style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="sparkles" size={20} color="#FF1493" />
@@ -540,8 +537,8 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </ScaleButton>
         </Animated.View>
 
-        {/* ── Banner ─────────────────────────────────── */}
-        {/* ── About Us — image + card combined into one rounded panel ── */}
+        {}
+        {}
         <Animated.View
           entering={FadeInUp.springify().delay(500)}
           style={styles.aboutPanel}
@@ -578,7 +575,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </View>
         </Animated.View>
 
-        {/* ── Our Partners — clean section header + card grid ── */}
+        {}
         <View style={styles.partnersSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionEyebrow}>TRUSTED PARTNERS</Text>
@@ -608,7 +605,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </View>
         </View>
 
-        {/* ── Upcoming Events ────────────────────────── */}
+        {}
         <Animated.View entering={FadeInUp.springify().delay(800)} style={styles.eventsSection}>
           <TouchableOpacity activeOpacity={0.9} onPress={() => setShowCalendar(true)}>
             <LinearGradient
@@ -630,7 +627,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         </Animated.View>
       </ScrollView>
 
-      {/* ── Bottom Nav ────────────────────────────── */}
+      {}
       <View style={[styles.bottomNav, { paddingBottom: insets.bottom + ms(8), height: vs(78) + insets.bottom }]}>
         <ScaleButton style={styles.navItem} onPress={() => { }}>
           <Feather name="home" size={ms(26)} color="#e91e63" />
@@ -851,7 +848,6 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(13) },
 
-  // ── New About panel: one card containing image header + body + stats ──
   aboutPanel: {
     marginHorizontal: ms(14),
     marginBottom: vs(24),

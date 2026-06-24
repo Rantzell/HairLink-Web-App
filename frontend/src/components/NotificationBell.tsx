@@ -83,8 +83,6 @@ const NotificationBell: React.FC = () => {
 
   const handleToggle = () => setIsOpen(!isOpen);
 
-
-
   /** Check if a notification has a clickable link */
   const getNotifLink = (n: Notification): { label: string; path: string } | null => {
     if (n.type === 'announcement' || n.title.includes('Announcement:')) {
@@ -97,7 +95,6 @@ const NotificationBell: React.FC = () => {
     // Extract reference codes from the notification message
     const match = n.message.match(/\(((?:HD|WR|REQ|MD)[- ][A-Z0-9-]+)\)/i);
 
-    // ── Staff role routing ──
     if (role === 'staff') {
       // Staff donation notifications: "New Hair Donation" → verification, delivery-related → tracking
       if (n.type === 'staff_donation') {
@@ -134,7 +131,6 @@ const NotificationBell: React.FC = () => {
       return null;
     }
 
-    // ── Admin role routing ──
     if (role === 'admin') {
       if (n.type === 'staff_donation' || n.type === 'donation') return { label: 'View Verification →', path: '/admin/verification?view=donor' };
       if (n.type === 'staff_request' || n.type === 'request') return { label: 'View Verification →', path: '/admin/verification?view=recipient' };
@@ -152,7 +148,6 @@ const NotificationBell: React.FC = () => {
       return null;
     }
 
-    // ── Wigmaker role routing ──
     if (role === 'wigmaker') {
       if (n.type === 'wigmaker' && n.title === 'Missing Wig Reported') {
         return { label: 'View Notice →', path: '' };
@@ -161,7 +156,6 @@ const NotificationBell: React.FC = () => {
       return null;
     }
 
-    // ── Donor / Recipient routing (default) ──
     if (match) {
       const ref = match[1];
       if (ref.startsWith('HD-') || ref.startsWith('HD ')) return { label: 'View Tracking →', path: `/donor/tracking/${ref}` };
@@ -585,7 +579,6 @@ const NotificationBell: React.FC = () => {
           text-decoration: underline;
         }
 
-        /* ── Announcement Modal Styling ── */
         .announcement-modal-overlay {
           position: fixed;
           top: 0;

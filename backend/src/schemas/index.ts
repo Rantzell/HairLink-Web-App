@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// ── Auth ──
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
@@ -46,7 +45,6 @@ export const resetPasswordSchema = z.object({
   password_confirmation: z.string(),
 });
 
-// ── Donations ──
 export const donationCreateSchema = z.object({
   reference: z.string().min(1),
   hair_length: z.string().min(1),
@@ -71,7 +69,6 @@ export const scheduleDeliverySchema = z.object({
   scheduled_delivery_at: z.string().min(1),
 });
 
-// ── Hair Requests ──
 export const requestCreateSchema = z.object({
   reference: z.string().min(1),
   contact_number: z.string().optional(),
@@ -88,7 +85,6 @@ export const requestStatusSchema = z.object({
   status: z.string().min(1),
 });
 
-// ── Community ──
 export const postCreateSchema = z.object({
   content: z.string().min(1),
 });
@@ -98,7 +94,6 @@ export const commentCreateSchema = z.object({
   parent_id: z.string().uuid().optional(),
 });
 
-// ── Staff ──
 export const verificationStatusSchema = z.object({
   status: z.string().min(1),
   remarks: z.string().min(1),
@@ -126,8 +121,6 @@ export const provideMaterialDeliveryLinkSchema = z.object({
   material_delivery_link: z.string().url('Must be a valid URL').max(2048),
 });
 
-
-// ── Wigmaker ──
 export const taskUpdateSchema = z.object({
   status: z.enum(['assigned', 'processing', 'completed', 'shipped', 'received']),
   progressNotes: z.string().or(z.literal('')).optional().nullable(),
@@ -141,7 +134,6 @@ export const materialConfirmationSchema = z.object({
   notes: z.string().optional(),
 });
 
-// ── Profile ──
 export const profileUpdateSchema = z.object({
   first_name: z.string().min(1).max(50).regex(/^[A-Za-z\s'-]+$/, 'First name may only contain letters, spaces, hyphens, and apostrophes.'),
   last_name: z.string().min(1).max(50).regex(/^[A-Za-z\s'-]+$/, 'Last name may only contain letters, spaces, hyphens, and apostrophes.'),
@@ -155,7 +147,6 @@ export const profileUpdateSchema = z.object({
   gender: z.enum(['male', 'female', 'nonbinary', 'prefer_not_say']).optional().nullable(),
 });
 
-// ── Monetary Donations ──
 export const monetaryDonationSchema = z.object({
   amount: z.coerce.number().min(10),
   name: z.string().max(255).optional(),
@@ -165,12 +156,10 @@ export const monetaryDonationSchema = z.object({
   is_anonymous: z.string().optional().transform(v => v === '1'),
 });
 
-// ── Referrals ──
 export const referralCodeSchema = z.object({
   referral_code: z.string().min(1).max(20),
 });
 
-// ── Partnerships ──
 export const partnershipSchema = z.object({
   full_name: z.string().min(1).max(255),
   email: z.string().email(),
@@ -179,7 +168,6 @@ export const partnershipSchema = z.object({
   message: z.string().min(1),
 });
 
-// ── Events ──
 export const eventCreateSchema = z.object({
   event_title: z.string().min(1).max(255),
   event_date: z.string().min(1),

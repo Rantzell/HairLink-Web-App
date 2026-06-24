@@ -268,8 +268,6 @@ const StaffRealtimeTracking: React.FC = () => {
   const requestTotalPages = Math.ceil(sortedRequests.length / PAGE_SIZE);
   const pagedRequests = sortedRequests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-
-
   const doBatchStatusUpdate = async () => {
     setShowBatchActionConfirm(false);
     setIsSubmitting(true);
@@ -537,7 +535,7 @@ const StaffRealtimeTracking: React.FC = () => {
             <tbody>
               {isWigmaker ? (
                 <>
-                  {/* ── Wigmaker view: Batch Rows ONLY (WIG-XXXXXX) ── */}
+                  {}
                   {pagedBatchGroups.map(([wpId, { wp }]) => {
                     const isOpen = !!batchOpen[wpId];
                     const children = wp.childWigs || [];

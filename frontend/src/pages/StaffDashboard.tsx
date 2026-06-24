@@ -23,7 +23,6 @@ const StaffDashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  /* ── Fetch dashboard stats (unchanged logic) ── */
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -38,7 +37,6 @@ const StaffDashboard: React.FC = () => {
     fetchStats();
   }, []);
 
-  /* ── Stat cards config ── */
   const statCards = [
     {
       icon: 'bx bx-donate-heart',
@@ -91,7 +89,7 @@ const StaffDashboard: React.FC = () => {
         <p>Key staff tasks and live status at a glance.</p>
       </div>
 
-      {/* ── Stat cards ── */}
+      {}
       <div className="sd-stats-grid">
         {statCards.map((card) => (
           <div key={card.label} className="sd-stat-card">
@@ -111,7 +109,7 @@ const StaffDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* ── Verification Desk ── */}
+      {}
       <div className="sd-section-card">
         <div className="sd-section-head">
           <div className="sd-section-head-left">
@@ -150,7 +148,7 @@ const StaffDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Production & Inventory ── */}
+      {}
       <div className="sd-section-card">
         <div className="sd-section-head">
           <div className="sd-section-head-left">
@@ -213,7 +211,7 @@ const StaffDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Matching ── */}
+      {}
       <div className="sd-section-card">
         <div className="sd-section-head">
           <div className="sd-section-head-left">
@@ -236,7 +234,7 @@ const StaffDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Account Settings ── */}
+      {}
       <div className="sd-section-card">
         <div className="sd-section-head">
           <div className="sd-section-head-left">

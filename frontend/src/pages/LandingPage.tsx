@@ -3,16 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 
-/* ──────────────────────────────────────────────────────────────
-   Scoped styles — all classes prefixed "hl-" to avoid
-   any conflict with legacy CSS files.
-   ────────────────────────────────────────────────────────────── */
 const hlStyles = `
-/* ── Reset scope ── */
+
 .hl-root * { box-sizing: border-box; }
 .hl-root a { text-decoration: none; }
 
-/* ── Root wrapper ── */
 .hl-root {
   font-family: 'Inter', sans-serif;
   color: #1C1917;
@@ -20,9 +15,6 @@ const hlStyles = `
   min-height: 100vh;
 }
 
-/* ═══════════════════════════════════════════════════════
-   NAV
-═══════════════════════════════════════════════════════ */
 .hl-nav {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -182,9 +174,6 @@ const hlStyles = `
 }
 .hl-drawer a:hover, .hl-drawer button:hover { background: #F5F5F0; color: #1C1917; }
 
-/* ═══════════════════════════════════════════════════════
-   HERO — 3D layered composition
-═══════════════════════════════════════════════════════ */
 .hl-hero {
   min-height: 100vh;
   padding-top: 64px;
@@ -341,7 +330,6 @@ const hlStyles = `
   font-weight: 400;
 }
 
-/* ── Trust strip below CTAs ── */
 .hl-hero-trust {
   display: flex;
   align-items: center;
@@ -372,7 +360,6 @@ const hlStyles = `
 }
 .hl-hero-trust-text strong { color: #1C1917; font-weight: 700; }
 
-/* ── Hero visual — layered 3D composition ── */
 .hl-hero-visual {
   position: relative;
   display: flex;
@@ -677,7 +664,6 @@ const hlStyles = `
   font-weight: 500;
 }
 
-/* ── Stats strip ── */
 .hl-stats-strip {
   background: #fff;
   border-top: 1px solid #EEEDE8;
@@ -722,9 +708,6 @@ const hlStyles = `
   letter-spacing: 0.05em;
 }
 
-/* ═══════════════════════════════════════════════════════
-   SECTION BASE
-═══════════════════════════════════════════════════════ */
 .hl-section {
   padding: clamp(56px,7vw,96px) clamp(20px,4vw,56px);
 }
@@ -761,9 +744,6 @@ const hlStyles = `
   margin: 0;
 }
 
-/* ═══════════════════════════════════════════════════════
-   HOW IT WORKS
-═══════════════════════════════════════════════════════ */
 .hl-how {
   background: #FAFAF9;
 }
@@ -840,9 +820,6 @@ const hlStyles = `
 
 .hl-how-link:hover { gap: 0.5rem; }
 
-/* ═══════════════════════════════════════════════════════
-   EVENT COUNTDOWN
-═══════════════════════════════════════════════════════ */
 .hl-event {
   background: #292524;
   color: #fff;
@@ -949,9 +926,6 @@ const hlStyles = `
   box-shadow: 0 6px 22px rgba(214,59,138,.4);
 }
 
-/* ═══════════════════════════════════════════════════════
-   UPCOMING EVENTS — FEATURED + SECONDARY LAYOUT
-═══════════════════════════════════════════════════════ */
 .hl-upcoming-wrap {
   max-width: 1320px;
   margin: 0 auto;
@@ -1121,9 +1095,6 @@ const hlStyles = `
   color: #78716C;
 }
 
-/* ═══════════════════════════════════════════════════════
-   PAST EVENTS
-   ═══════════════════════════════════════════════════════ */
 .hl-past-events {
   background: #ffffff;
 }
@@ -1212,9 +1183,6 @@ const hlStyles = `
   margin: 0;
 }
 
-/* ═══════════════════════════════════════════════════════
-   ABOUT
-   ═══════════════════════════════════════════════════════ */
 .hl-about {
   background: #fff;
 }
@@ -1281,9 +1249,6 @@ const hlStyles = `
   color: #B52B72;
 }
 
-/* ═══════════════════════════════════════════════════════
-   PARTNERS
-═══════════════════════════════════════════════════════ */
 .hl-partners {
   background: #F5F5F0;
   padding: 5rem 0;
@@ -1417,9 +1382,6 @@ const hlStyles = `
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   CONTACT
-═══════════════════════════════════════════════════════ */
 .hl-contact {
   background: #FAFAF9;
 }
@@ -1533,9 +1495,6 @@ const hlStyles = `
 
 .hl-form-submit:disabled { opacity: 0.65; cursor: not-allowed; }
 
-/* ═══════════════════════════════════════════════════════
-   FOOTER
-═══════════════════════════════════════════════════════ */
 .hl-footer {
   background: #1C1917;
   color: #fff;
@@ -1626,7 +1585,6 @@ const hlStyles = `
   color: #57534E;
 }
 
-/* ── Social Icons ── */
 .hl-social-links {
   display: flex;
   gap: 0.6rem;
@@ -1653,9 +1611,6 @@ const hlStyles = `
   transform: translateY(-2px);
 }
 
-/* ═══════════════════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════════════════ */
 @media (max-width: 1100px) {
   .hl-hero-inner { grid-template-columns: 1fr; text-align: center; }
   .hl-hero-text { align-items: center; max-width: 600px; margin: 0 auto; }
@@ -1695,9 +1650,6 @@ const hlStyles = `
 }
 `;
 
-/* ─────────────────────────────────────────────
-   3D Pink Hair Strand Illustration (SVG)
-───────────────────────────────────────────── */
 export const HairStrand3D: React.FC = () => (
   <svg
     viewBox="0 0 360 450"
@@ -1768,46 +1720,46 @@ export const HairStrand3D: React.FC = () => (
       </linearGradient>
     </defs>
 
-    {/* ── Ambient glow ── */}
+    {}
     <ellipse cx="178" cy="225" rx="145" ry="195" fill="url(#hg-glow)" />
 
-    {/* ── SHADOW — dark blurred copy behind all strands ── */}
+    {}
     <g transform="translate(14,18)" opacity="0.3" style={{ filter: 'blur(8px)' }}>
       <path d="M 80,0 C 58,85 30,165 36,248 C 42,322 68,405 90,448" stroke="#260610" strokeWidth="22" strokeLinecap="round" />
       <path d="M 175,0 C 153,85 125,165 131,248 C 137,322 163,405 185,448" stroke="#260610" strokeWidth="14" strokeLinecap="round" />
       <path d="M 270,0 C 248,85 220,165 226,248 C 232,322 258,405 280,448" stroke="#260610" strokeWidth="22" strokeLinecap="round" />
     </g>
 
-    {/* ── BACK STRANDS (darkest, widest) ── */}
+    {}
     <path d="M 80,0 C 58,85 30,165 36,248 C 42,322 68,405 90,448" stroke="url(#hg-v1)" strokeWidth="20" strokeLinecap="round" />
     <path d="M 272,0 C 250,85 222,165 228,248 C 234,322 260,405 282,448" stroke="url(#hg-v1)" strokeWidth="20" strokeLinecap="round" />
 
-    {/* ── SECOND LAYER ── */}
+    {}
     <path d="M 100,0 C 78,85 50,165 56,248 C 62,322 88,405 110,448" stroke="url(#hg-v2)" strokeWidth="17" strokeLinecap="round" />
     <path d="M 252,0 C 230,85 202,165 208,248 C 214,322 240,405 262,448" stroke="url(#hg-v2)" strokeWidth="17" strokeLinecap="round" />
 
-    {/* ── THIRD LAYER ── */}
+    {}
     <path d="M 120,0 C 98,85 70,165 76,248 C 82,322 108,405 130,448" stroke="url(#hg-v3)" strokeWidth="15" strokeLinecap="round" />
     <path d="M 232,0 C 210,85 182,165 188,248 C 194,322 220,405 242,448" stroke="url(#hg-v3)" strokeWidth="15" strokeLinecap="round" />
 
-    {/* ── FOURTH LAYER ── */}
+    {}
     <path d="M 140,0 C 118,85 90,165 96,248 C 102,322 128,405 150,448" stroke="url(#hg-v4)" strokeWidth="13" strokeLinecap="round" />
     <path d="M 212,0 C 190,85 162,165 168,248 C 174,322 200,405 222,448" stroke="url(#hg-v4)" strokeWidth="13" strokeLinecap="round" />
 
-    {/* ── CENTER STRANDS (brightest, catching light) ── */}
+    {}
     <path d="M 158,0 C 136,85 108,165 114,248 C 120,322 146,405 168,448" stroke="url(#hg-v5)" strokeWidth="12" strokeLinecap="round" />
     <path d="M 194,0 C 172,85 144,165 150,248 C 156,322 182,405 204,448" stroke="url(#hg-v5)" strokeWidth="12" strokeLinecap="round" />
 
-    {/* ── HIGHLIGHT CENTER ── */}
+    {}
     <path d="M 176,0 C 154,85 126,165 132,248 C 138,322 164,405 186,448" stroke="url(#hg-v6)" strokeWidth="11" strokeLinecap="round" />
 
-    {/* ── THIN HIGHLIGHT STRANDS (shimmer / specular) ── */}
+    {}
     <path d="M 170,0 C 148,85 120,165 126,248 C 132,322 158,405 180,448"
       stroke="url(#hg-hi1)" strokeWidth="4" strokeLinecap="round" opacity="0.85" />
     <path d="M 183,0 C 161,85 133,165 139,248 C 145,322 171,405 193,448"
       stroke="url(#hg-hi2)" strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
 
-    {/* ── FINE ROOT DETAIL — subtle dark lines near top ── */}
+    {}
     <line x1="90" y1="0" x2="75" y2="60" stroke="#1A0410" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
     <line x1="130" y1="0" x2="112" y2="60" stroke="#1A0410" strokeWidth="1" strokeLinecap="round" opacity="0.3" />
     <line x1="175" y1="0" x2="158" y2="60" stroke="#1A0410" strokeWidth="1" strokeLinecap="round" opacity="0.3" />
@@ -1935,13 +1887,11 @@ const LandingPage: React.FC = () => {
   const fmtSecondaryDate = (d: string) =>
     new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-
-
   return (
     <div className="hl-root">
       <style>{hlStyles}</style>
 
-      {/* ── NAV ── */}
+      {}
       <header className="hl-nav" id="home">
         <div className="hl-nav-inner">
           <Link to="/" className="hl-logo">
@@ -1973,7 +1923,7 @@ const LandingPage: React.FC = () => {
         </div>
       </header>
 
-      {/* ── HERO ── */}
+      {}
       <section className="hl-hero">
         {/* Hair image as full-hero background */}
         <div className="hl-hero-bg-hair" />
@@ -2014,7 +1964,7 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* ── 3D Visual composition ── */}
+          {}
           <div className="hl-hero-visual">
             <div className="hl-hero-ribbon-deco">🎀</div>
             <div className="hl-hero-back-card" />
@@ -2033,9 +1983,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-
-
-      {/* ── HOW IT WORKS ── */}
+      {}
       <section className="hl-section hl-how" id="services">
         <div className="hl-section-inner">
           <div className="hl-how-head">
@@ -2057,7 +2005,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── EVENT COUNTDOWN ── */}
+      {}
       <section className="hl-event">
         <div className="hl-upcoming-wrap">
 
@@ -2069,7 +2017,7 @@ const LandingPage: React.FC = () => {
           ) : (
             <div className="hl-upcoming-grid">
 
-              {/* ── FEATURED EVENT (left / top) ── */}
+              {}
               {featuredEvent && (
                 <div className="hl-featured-event">
                   <span className="hl-event-badge">
@@ -2119,7 +2067,7 @@ const LandingPage: React.FC = () => {
                 </div>
               )}
 
-              {/* ── SECONDARY EVENTS (right / below) ── */}
+              {}
               {secondaryEvents.length > 0 && (
                 <div className="hl-secondary-events">
                   <p className="hl-secondary-heading">More Upcoming Events</p>
@@ -2155,7 +2103,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── PAST EVENTS ── */}
+      {}
       <section className="hl-section hl-past-events" id="past-events" style={{ background: '#ffffff' }}>
         <div className="hl-section-inner">
           <div className="hl-how-head" style={{ marginBottom: '3rem' }}>
@@ -2181,7 +2129,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── ABOUT ── */}
+      {}
       <section className="hl-section hl-about" id="about">
         <div className="hl-about-inner">
           <div className="hl-about-img-wrap">
@@ -2206,7 +2154,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── PARTNERS ── */}
+      {}
       <section className="hl-section hl-partners" id="partners">
         <div className="hl-section-inner">
           <div className="hl-partners-head">
@@ -2260,7 +2208,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── CONTACT ── */}
+      {}
       <section className="hl-section hl-contact" id="contact">
         <div className="hl-contact-inner">
           <div className="hl-contact-info">
@@ -2321,7 +2269,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
+      {}
       <footer className="hl-footer">
         <div className="hl-footer-inner">
           <div className="hl-footer-brand">

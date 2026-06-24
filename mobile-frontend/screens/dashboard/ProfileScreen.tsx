@@ -554,7 +554,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 </View>
             </ScrollView>
 
-            {/* ── Referral success modal ───────────────────────────── */}
+            {}
             <Modal
                 visible={showReferralSuccess}
                 transparent
@@ -587,7 +587,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 </View>
             </Modal>
 
-            {/* ── Change Password modal ──────────────────────────────── */}
+            {}
             <Modal
                 visible={showChangePassword}
                 transparent
@@ -684,7 +684,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 </KeyboardAvoidingView>
             </Modal>
 
-            {/* ── Delete Account confirmation modal ───────────────────── */}
+            {}
             <Modal
                 visible={showDeleteConfirm}
                 transparent
@@ -785,7 +785,6 @@ function InfoRow({ icon, label, value, isEdit, onChange, keyboardType, readOnly,
     );
 }
 
-// ── Loading skeleton ────────────────────────────────────────────
 // A shimmering placeholder that mirrors the profile layout so the
 // transition into the loaded view feels seamless.
 function SkeletonBlock({ width, height, radius = 8, style }: { width: number | string; height: number; radius?: number; style?: any }) {
@@ -948,7 +947,6 @@ const styles = StyleSheet.create({
     // Info Section
     infoSection: { marginBottom: vs(20) },
 
-    // ── New unified "Personal Details" card (replaces sectionRow + glassCard) ──
     detailsCard: {
         backgroundColor: '#fff',
         borderRadius: ms(22),
@@ -1100,7 +1098,6 @@ const styles = StyleSheet.create({
     },
     claimBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(14), letterSpacing: 1 },
 
-    // ── Referral success modal ──
     referralModalBackdrop: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',

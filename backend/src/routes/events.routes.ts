@@ -8,8 +8,6 @@ import { notifyNewEvent } from '../services/notification.service';
 
 const router = Router();
 
-// ── Helpers ──────────────────────────────────────────────────────────────
-
 const ADMIN_ROLES = ['admin', 'staff'];
 function requireAdmin(req: Request, res: Response): boolean {
   if (!req.user || !ADMIN_ROLES.includes(req.user.role)) {
@@ -56,8 +54,6 @@ async function backfillCompletedStatus(): Promise<void> {
     console.warn('[Events] backfill failed (non-fatal):', err);
   }
 }
-
-// ── Routes ───────────────────────────────────────────────────────────────
 
 /**
  * GET /api/events

@@ -6,7 +6,6 @@ import apiClient from '../api/client';
 import type { CommunityPost } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
-/* ─── topic helpers ──────────────────────────────────── */
 const TOPIC_PREFIX = '[TOPIC:';
 const TOPIC_SUFFIX = ']';
 
@@ -52,7 +51,6 @@ function stripMarkdown(text: string): string {
     .replace(/_(.+?)_/g, '$1');
 }
 
-/* ─── helpers ─────────────────────────────────────────── */
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -75,13 +73,9 @@ const ROLE_COLORS: Record<string, { bg: string; color: string; label: string }> 
 
 const CATEGORIES = ['Stories', 'Questions', 'Updates'];
 
-/* ─── types ──────────────────────────────────────────── */
 type SortMode = 'new' | 'top';
 type FilterMode = 'all' | string;
 
-/* ═══════════════════════════════════════════════════════
-   MAIN PAGE
-═══════════════════════════════════════════════════════ */
 const CommunityFeed: React.FC = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -227,7 +221,7 @@ const CommunityFeed: React.FC = () => {
   return (
     <div className="cf-root">
 
-      {/* ── HERO ── */}
+      {}
       <header className="cf-hero">
         <div className="cf-hero-inner">
           <div>
@@ -242,7 +236,7 @@ const CommunityFeed: React.FC = () => {
         </div>
       </header>
 
-      {/* ── FILTER / SORT BAR ── */}
+      {}
       <div className="cf-toolbar">
         <div className="cf-toolbar-inner">
           <div className="cf-filter-pills">
@@ -270,9 +264,9 @@ const CommunityFeed: React.FC = () => {
         </div>
       </div>
 
-      {/* ── FEED ── */}
+      {}
       <div className="cf-feed-wrap">
-        {/* ── CREATE POST INLINE FORM ── */}
+        {}
         {showCreateForm && (
           <div className="cf-card cf-create-post-card" ref={createPostRef} style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column' }}>
           <div className="cf-modal-head">
@@ -377,82 +371,7 @@ const CommunityFeed: React.FC = () => {
                   ref={fileRef}
                   type="file"
                   hidden
-                  accept="image/*"
-                  onChange={e => {
-                    const selectedFile = e.target.files?.[0];
-                    if (selectedFile) {
-                      if (selectedFile.size > 10 * 1024 * 1024) {
-                        toast.error('Image is too large. Max 10MB.');
-                        return;
-                      }
-                      setNewFile(selectedFile);
-                    } else {
-                      setNewFile(null);
-                    }
-                    if (fileRef.current) fileRef.current.value = '';
-                  }}
-                />
-
-                <button
-                  type="submit"
-                  className="cf-publish-btn"
-                  disabled={isSubmitting || !newContent.trim() || !newTitle.trim()}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                  </svg>
-                  {isSubmitting ? 'Publishing…' : 'Publish'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-        )}
-        {loading ? (
-          <div className="cf-loading">
-            <div className="cf-spinner" /><span>Loading community feed…</span>
-          </div>
-        ) : fetchError ? (
-          <div className="cf-empty">
-            <div className="cf-empty-icon">⚠️</div>
-            <p style={{ color: '#c0392b', fontWeight: 600 }}>Failed to load posts</p>
-            <p style={{ fontSize: '0.82rem', color: '#888', marginTop: '0.25rem' }}>{fetchError}</p>
-            <button className="cf-create-btn" style={{ marginTop: '1rem' }} onClick={fetchPosts}>
-              Try Again
-            </button>
-          </div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="cf-empty">
-            <div className="cf-empty-icon">💬</div>
-            <p>Be the first to share something with the community!</p>
-            <button className="cf-create-btn" style={{ marginTop: '1rem' }} onClick={() => setShowCreateForm(v => !v)}>
-              + Create Post
-            </button>
-          </div>
-        ) : (
-          filteredPosts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              currentUser={user}
-              onLike={() => handleLike(post.id)}
-              onComment={handleComment}
-              onEdit={handleEditPost}
-              onDelete={() => handleDeletePost(post.id)}
-              highlighted={highlightedPostId === post.id}
-              postRef={(el) => { postRefs.current[post.id] = el; }}
-            />
-          ))
-        )}
-
-      </div>
-    </div>
-  );
-};
-
-/* ═══════════════════════════════════════════════════════
-   POST CARD
-═══════════════════════════════════════════════════════ */
+                  accept="image
 const PostCard: React.FC<{
   post: CommunityPost;
   currentUser: any;

@@ -3,26 +3,6 @@ import { View, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-/**
- * Looping "movie" background for the auth screens.
- *
- * What it does
- * ────────────
- * - Two soft pink gradient orbs that drift independently
- * - A subtle dotted/blob layer (third orb) for depth
- * - Three pink ribbon glyphs that float up the screen on long loops
- *
- * Motion language
- * ───────────────
- * All looping animations use `Easing.inOut(Easing.sin)` because the
- * background is supposed to feel ambient and continuous (the user's
- * "no ease-in-out" rule was about *popup entrances* — different surface).
- * Loop durations are long (6–14s) so nothing distracts from the form.
- *
- * Use it as the FIRST child inside the screen container with
- * `pointerEvents="none"` (already set) so it doesn't intercept taps.
- */
-
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 const BRAND = {

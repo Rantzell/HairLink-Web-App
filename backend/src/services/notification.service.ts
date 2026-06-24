@@ -27,7 +27,6 @@ export const createNotification = async (
   }
 };
 
-// ── Notification audience filters ────────────────────────────────
 //
 // Centralized rules so every call site (donation.routes, staff.routes,
 // request.routes, ...) automatically follows them. Both functions return
