@@ -721,7 +721,7 @@ router.post('/wigs/:id/missing', ...staffOnly, async (req, res) => {
 // POST /internal-api/staff/batches/:id/receive-all
 router.post('/batches/:id/receive-all', ...staffOnly, async (req, res) => {
   try {
-    const batchId = parseInt(req.params.id);
+    const batchId = parseInt(req.params.id as string);
     const { delivery_tracking_link } = req.body;
 
     const batch = await prisma.wigProduction.findUnique({
@@ -782,13 +782,21 @@ router.post('/batches/:id/receive-all', ...staffOnly, async (req, res) => {
 // DELETE /internal-api/staff/batches/:id
 router.delete('/batches/:id', ...staffOnly, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const batch = await prisma.wigProduction.findUnique({
       where: { id },
-      include: { donations: true, childWigs: true }
+      include: { donations: true }
     });
 
     if (!batch) return res.status(404).json({ error: 'Batch not found' });
+
+    // Find child wigs by taskCode pattern
+    const seq = batch.taskCode.replace(/^(WB|WIG)\s+/i, '');
+    const childWigs = await prisma.wigProduction.findMany({
+      where: { taskCode: { startsWith: `WIG ${seq}-W` } },
+      select: { id: true }
+    });
+    const childIds = childWigs.map(w => w.id);
 
     // Unlink donations from this batch (keeps donation records intact, just removes the batch reference)
     if (batch.donations && batch.donations.length > 0) {
@@ -799,10 +807,20 @@ router.delete('/batches/:id', ...staffOnly, async (req, res) => {
       });
     }
 
-    // Delete batch status history
+    // Delete status history for the batch and its child wigs
     await prisma.statusHistory.deleteMany({
-      where: { trackableType: WIG_TYPE, trackableId: id }
+      where: { 
+        trackableType: WIG_TYPE, 
+        trackableId: { in: [id, ...childIds] } 
+      }
     });
+
+    // Delete the child wigs
+    if (childIds.length > 0) {
+      await prisma.wigProduction.deleteMany({
+        where: { id: { in: childIds } }
+      });
+    }
 
     // Delete the batch record itself
     await prisma.wigProduction.delete({ where: { id } });

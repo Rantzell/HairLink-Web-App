@@ -371,7 +371,79 @@ const CommunityFeed: React.FC = () => {
                   ref={fileRef}
                   type="file"
                   hidden
-                  accept="image
+                  accept="image/*"
+                  onChange={e => {
+                    const selectedFile = e.target.files?.[0];
+                    if (selectedFile) {
+                      if (selectedFile.size > 10 * 1024 * 1024) {
+                        toast.error('Image is too large. Max 10MB.');
+                        return;
+                      }
+                      setNewFile(selectedFile);
+                    } else {
+                      setNewFile(null);
+                    }
+                    if (fileRef.current) fileRef.current.value = '';
+                  }}
+                />
+
+                <button
+                  type="submit"
+                  className="cf-publish-btn"
+                  disabled={isSubmitting || !newContent.trim() || !newTitle.trim()}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                  {isSubmitting ? 'Publishing…' : 'Publish'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        )}
+        {loading ? (
+          <div className="cf-loading">
+            <div className="cf-spinner" /><span>Loading community feed…</span>
+          </div>
+        ) : fetchError ? (
+          <div className="cf-empty">
+            <div className="cf-empty-icon">⚠️</div>
+            <p style={{ color: '#c0392b', fontWeight: 600 }}>Failed to load posts</p>
+            <p style={{ fontSize: '0.82rem', color: '#888', marginTop: '0.25rem' }}>{fetchError}</p>
+            <button className="cf-create-btn" style={{ marginTop: '1rem' }} onClick={fetchPosts}>
+              Try Again
+            </button>
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="cf-empty">
+            <div className="cf-empty-icon">💬</div>
+            <p>Be the first to share something with the community!</p>
+            <button className="cf-create-btn" style={{ marginTop: '1rem' }} onClick={() => setShowCreateForm(v => !v)}>
+              + Create Post
+            </button>
+          </div>
+        ) : (
+          filteredPosts.map(post => (
+            <PostCard
+              key={post.id}
+              post={post}
+              currentUser={user}
+              onLike={() => handleLike(post.id)}
+              onComment={handleComment}
+              onEdit={handleEditPost}
+              onDelete={() => handleDeletePost(post.id)}
+              highlighted={highlightedPostId === post.id}
+              postRef={(el) => { postRefs.current[post.id] = el; }}
+            />
+          ))
+        )}
+
+      </div>
+    </div>
+  );
+};
+
 const PostCard: React.FC<{
   post: CommunityPost;
   currentUser: any;

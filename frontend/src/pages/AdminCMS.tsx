@@ -557,7 +557,300 @@ const AdminCMS: React.FC = () => {
                       </div>
                       <input
                         type="file"
-                        accept="image}
+                        accept="image/*"
+                        id={`upload-${key}`}
+                        className="admin-hidden"
+                        onChange={e => e.target.files?.[0] && handleImageUpload(key, e.target.files[0])}
+                      />
+                      <div className="admin-cms-upload-row">
+                        <button
+                          onClick={() => document.getElementById(`upload-${key}`)?.click()}
+                          disabled={uploadingKey === key}
+                          className="admin-cms-upload-btn"
+                        >
+                          {uploadingKey === key ? 'Uploading...' : 'Change'}
+                        </button>
+                        <button
+                          onClick={() => setImages(prev => ({ ...prev, [key]: '' }))}
+                          className="admin-cms-clear-btn"
+                          title="Reset to default"
+                        >
+                          <i className='bx bx-undo'></i>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {landingSection === 'partners' && (
+              <>
+                <h2 className="admin-cms-section-title">Landing Page Partners</h2>
+                <p style={{ fontSize: '0.85rem', color: '#78716C', marginBottom: '1.5rem' }}>
+                  Manage partner logos displayed on the landing page carousel. Add, remove, or reorder your partners.
+                </p>
+                {partnerLogos.map((partner, i) => (
+                  <div key={i} className="admin-cms-item-card" style={{ position: 'relative' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <p className="admin-cms-item-label">Partner {i + 1}</p>
+                      {partnerLogos.length > 1 && (
+                        <button
+                          onClick={() => removePartnerLogo(i)}
+                          className="admin-cms-clear-btn"
+                          title="Remove this partner"
+                          style={{ color: '#ef4444' }}
+                        >
+                          <i className='bx bx-trash'></i>
+                        </button>
+                      )}
+                    </div>
+                    <Field label="Partner Name" value={partner.name} onChange={v => updatePartnerLogo(i, 'name', v)} />
+                    <div className="admin-cms-img-preview" style={{ height: 140, marginTop: '0.5rem' }}>
+                      {partner.url ? (
+                        <img src={partner.url} alt={partner.name} className="admin-cms-img-preview-img" />
+                      ) : (
+                        <i className="bx bx-image admin-cms-img-placeholder-icon"></i>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id={`upload-partner-${i}`}
+                      className="admin-hidden"
+                      onChange={e => e.target.files?.[0] && handlePartnerLogoUpload(i, e.target.files[0])}
+                    />
+                    <div className="admin-cms-upload-row" style={{ marginTop: '0.5rem' }}>
+                      <button
+                        onClick={() => document.getElementById(`upload-partner-${i}`)?.click()}
+                        disabled={uploadingKey === `partner-${i}`}
+                        className="admin-cms-upload-btn"
+                      >
+                        {uploadingKey === `partner-${i}` ? 'Uploading...' : 'Change Image'}
+                      </button>
+                      <button
+                        onClick={() => updatePartnerLogo(i, 'url', '')}
+                        className="admin-cms-clear-btn"
+                        title="Clear image"
+                      >
+                        <i className='bx bx-undo'></i>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={addPartnerLogo}
+                  className="admin-btn-primary-full"
+                  style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                >
+                  <i className='bx bx-plus'></i> Add New Partner
+                </button>
+              </>
+            )}
+
+            {landingSection === 'typography' && (
+              <>
+                <h2 className="admin-cms-section-title">Typography</h2>
+                <div className="admin-cms-font-grid">
+                  <div>
+                    <label className="admin-cms-field-label">Headings Font</label>
+                    <select
+                      value={typography.headingFont}
+                      onChange={e => setTypography({ ...typography, headingFont: e.target.value })}
+                      className="admin-cms-font-select" style={{ fontFamily: typography.headingFont }}
+                    >
+                      {GOOGLE_FONTS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="admin-cms-field-label">Body Font</label>
+                    <select
+                      value={typography.bodyFont}
+                      onChange={e => setTypography({ ...typography, bodyFont: e.target.value })}
+                      className="admin-cms-font-select" style={{ fontFamily: typography.bodyFont }}
+                    >
+                      {GOOGLE_FONTS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'announcements' && (
+        <div className="admin-sidebar-layout">
+          <article className="admin-card-rounded">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <h2 className="admin-card-subtitle" style={{ margin: 0 }}><i className='bx bx-news'></i> Published Announcements</h2>
+              {selectedAnns.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    background: '#ef4444',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#dc2626'}
+                  onMouseOut={(e) => e.currentTarget.style.background = '#ef4444'}
+                >
+                  <i className='bx bx-trash' style={{ fontSize: '1rem' }}></i> Delete Selected ({selectedAnns.length})
+                </button>
+              )}
+            </div>
+            <div className="table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '40px', textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={announcements.length > 0 && selectedAnns.length === announcements.length}
+                        onChange={() => {
+                          if (selectedAnns.length === announcements.length) {
+                            setSelectedAnns([]);
+                          } else {
+                            setSelectedAnns(announcements.map(a => a.id));
+                          }
+                        }}
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                      />
+                    </th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Audience</th>
+                    <th>Author</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {announcements.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                        No announcements published yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    announcements.map(a => {
+                      const audienceMap: Record<string, string> = { all: 'All Users', donor: 'Donors', recipient: 'Recipients', staff: 'Staff', donor_recipient: 'Donors & Recipients' };
+                      const audienceLabel = audienceMap[a.targetAudience ?? 'all'] ?? 'All Users';
+                      const isSelected = selectedAnns.includes(a.id);
+                      return (
+                        <tr key={a.id} style={{ background: isSelected ? '#fff5f5' : 'transparent', transition: 'background 0.15s ease' }}>
+                          <td style={{ textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                setSelectedAnns(prev =>
+                                  prev.includes(a.id) ? prev.filter(id => id !== a.id) : [...prev, a.id]
+                                );
+                              }}
+                              style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                            />
+                          </td>
+                          <td><strong>{a.title}</strong></td>
+                          <td>{a.category}</td>
+                          <td>
+                            <span style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, background: '#fdf2f8', color: '#ad246d', border: '1px solid #f9cde8' }}>
+                              {audienceLabel}
+                            </span>
+                          </td>
+                          <td>{a.author}</td>
+                          <td>{new Date(a.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </article>
+          <aside>
+            <article className="admin-card-rounded">
+              <h3 className="admin-cms-card-title">New Announcement</h3>
+              <form onSubmit={handleCreateAnnouncement} className="admin-form-grid">
+                <div className="form-group">
+                  <label className="admin-form-label-sm">Title</label>
+                  <input type="text" value={announcementForm.title} onChange={e => setAnnouncementForm({ ...announcementForm, title: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="admin-form-label-sm">Category</label>
+                  <select value={announcementForm.category} onChange={e => setAnnouncementForm({ ...announcementForm, category: e.target.value })}>
+                    <option value="Care">Wig Care</option>
+                    <option value="Styling">Styling</option>
+                    <option value="Advocacy">Advocacy</option>
+                    <option value="Update">System Update</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="admin-form-label-sm">Target Audience</label>
+                  <select value={announcementForm.target_audience} onChange={e => setAnnouncementForm({ ...announcementForm, target_audience: e.target.value })}>
+                    <option value="all">All Users</option>
+                    <option value="donor">Donors Only</option>
+                    <option value="recipient">Recipients Only</option>
+                    <option value="staff">Staff Only</option>
+                    <option value="donor_recipient">Both Donors & Recipients</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="admin-form-label-sm">Content</label>
+                  <textarea rows={5} value={announcementForm.content} onChange={e => setAnnouncementForm({ ...announcementForm, content: e.target.value })} required></textarea>
+                </div>
+                <button type="submit" disabled={isSubmitting} className="admin-btn-primary-full">
+                  {isSubmitting ? 'Publishing...' : 'Publish'}
+                </button>
+              </form>
+            </article>
+          </aside>
+        </div>
+      )}
+
+      {activeTab === 'partnerships' && (() => {
+        const pendingInquiries = partnerships.filter(p => p.status === 'Pending');
+        const otherPartners = partnerships.filter(p => p.status !== 'Pending');
+        return (
+          <div className="admin-sidebar-layout">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {selectedPartners.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowPartnerDeleteConfirm(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      background: '#ef4444',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = '#dc2626'}
+                    onMouseOut={(e) => e.currentTarget.style.background = '#ef4444'}
+                  >
+                    <i className='bx bx-trash' style={{ fontSize: '1rem' }}></i> Delete Selected ({selectedPartners.length})
+                  </button>
+                </div>
+              )}
+
+              {/* ── Pending Inquiries ── */}
               {pendingInquiries.length > 0 && (
                 <article className="admin-card-rounded" style={{ borderLeft: '4px solid #f59e0b' }}>
                   <h2 className="admin-card-subtitle" style={{ color: '#92400e' }}>
