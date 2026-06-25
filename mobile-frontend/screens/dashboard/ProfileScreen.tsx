@@ -34,9 +34,27 @@ import Animated, {
 } from 'react-native-reanimated';
 import api from '../../lib/api';
 import { supabase } from '../../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { CustomAlert } from '../../components/GlobalAlert';
 
 const { width } = Dimensions.get('window');
+
+// Throwaway Supabase client used ONLY to verify the user's current password
+// during a password change. It never persists a session, refreshes tokens, or
+// emits auth-state changes — so verifying the old password can't disturb the
+// app's real login session (which previously caused a reload/sign-out churn
+// mid-change). Created lazily so app startup is unaffected.
+let pwVerifyClient: ReturnType<typeof createClient> | null = null;
+const getPwVerifyClient = () => {
+    if (!pwVerifyClient) {
+        pwVerifyClient = createClient(
+            process.env.EXPO_PUBLIC_SUPABASE_URL || '',
+            process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+            { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
+        );
+    }
+    return pwVerifyClient;
+};
 
 interface ProfileScreenProps {
     onBack: () => void;
@@ -66,11 +84,6 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const [otherReferralCode, setOtherReferralCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [showReferralSuccess, setShowReferralSuccess] = useState(false);
-
-    // Delete Account State
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [deleteConfirmText, setDeleteConfirmText] = useState('');
-    const [isDeleting, setIsDeleting] = useState(false);
 
     // Change Password State
     const [showChangePassword, setShowChangePassword] = useState(false);
@@ -103,18 +116,37 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
             CustomAlert.alert('Mismatch', 'Passwords do not match.');
             return;
         }
+        if (newPassword === oldPassword) {
+            CustomAlert.alert('Same password', 'Your new password must be different from your current one.');
+            return;
+        }
 
         setIsChangingPassword(true);
         try {
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-                email,
-                password: oldPassword,
-            });
-            if (signInError) {
-                CustomAlert.alert('Incorrect password', 'Your current password is wrong.');
+            // Resolve the account email reliably — the `email` state may be
+            // empty if the profile fetch hasn't populated yet.
+            let acctEmail = email;
+            if (!acctEmail) {
+                const { data: u } = await supabase.auth.getUser();
+                acctEmail = u?.user?.email || '';
+            }
+            if (!acctEmail) {
+                CustomAlert.alert('Error', 'Could not verify your account. Please sign out and sign in again.');
                 return;
             }
 
+            // Verify the current password on a throwaway client so the app's
+            // real session and auth listener are never disturbed.
+            const { error: verifyError } = await getPwVerifyClient().auth.signInWithPassword({
+                email: acctEmail,
+                password: oldPassword,
+            });
+            if (verifyError) {
+                CustomAlert.alert('Incorrect password', 'Your current password is incorrect.');
+                return;
+            }
+
+            // Update the password on the real (logged-in) session.
             const { error } = await supabase.auth.updateUser({ password: newPassword });
             if (error) {
                 CustomAlert.alert('Could not update password', error.message || 'Please try again.');
@@ -133,24 +165,6 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
         }
     };
 
-    const doDeleteAccount = async () => {
-        if (deleteConfirmText !== 'DELETE') return;
-        setIsDeleting(true);
-        try {
-            await api.delete('/auth/account');
-            await supabase.auth.signOut();
-            setShowDeleteConfirm(false);
-            setDeleteConfirmText('');
-            onLogout();
-        } catch (err: any) {
-            CustomAlert.alert(
-                'Could not delete account',
-                err?.response?.data?.message || err?.message || 'Please try again.',
-            );
-        } finally {
-            setIsDeleting(false);
-        }
-    };
 
     const insets = useSafeAreaInsets();
 
@@ -212,6 +226,25 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
         } finally {
             setIsRedeeming(false);
         }
+    };
+
+    // Re-seed the editable fields from the last-fetched profile. Used to
+    // restore the original values when the user cancels an edit, so the
+    // saved defaults always stay unless the user explicitly saves a change.
+    const resetFieldsFromProfile = () => {
+        if (!profile) return;
+        setEmail(profile.email || '');
+        const first = profile.firstName || profile.first_name || '';
+        const last = profile.lastName || profile.last_name || '';
+        setFullName(`${first} ${last}`.trim());
+        setPhone(profile.phone || '');
+        setAge(profile.age != null ? String(profile.age) : '');
+        setBio(profile.bio || '');
+    };
+
+    const handleCancelEdit = () => {
+        resetFieldsFromProfile();
+        setEditMode(false);
     };
 
     const handleUpdateProfile = async () => {
@@ -371,15 +404,42 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                                         Keep your contact info up to date.
                                     </Text>
                                 </View>
-                                <TouchableOpacity
-                                    style={[styles.detailsEditBtn, editMode && styles.detailsEditBtnSaving]}
-                                    onPress={() => editMode ? handleUpdateProfile() : setEditMode(true)}
-                                    disabled={updating}
-                                    activeOpacity={0.85}
-                                >
-                                    <Feather name={editMode ? "check" : "edit-3"} size={ms(13)} color="#fff" />
-                                    <Text style={styles.detailsEditBtnText}>{editMode ? 'Save' : 'Edit'}</Text>
-                                </TouchableOpacity>
+                                {editMode ? (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: ms(8) }}>
+                                        <TouchableOpacity
+                                            style={styles.detailsCancelBtn}
+                                            onPress={handleCancelEdit}
+                                            disabled={updating}
+                                            activeOpacity={0.85}
+                                        >
+                                            <Feather name="x" size={ms(13)} color="#78716C" />
+                                            <Text style={styles.detailsCancelBtnText}>Cancel</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.detailsEditBtn, styles.detailsEditBtnSaving]}
+                                            onPress={handleUpdateProfile}
+                                            disabled={updating}
+                                            activeOpacity={0.85}
+                                        >
+                                            {updating ? (
+                                                <ActivityIndicator size="small" color="#fff" />
+                                            ) : (
+                                                <Feather name="check" size={ms(13)} color="#fff" />
+                                            )}
+                                            <Text style={styles.detailsEditBtnText}>Save</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={styles.detailsEditBtn}
+                                        onPress={() => setEditMode(true)}
+                                        disabled={updating}
+                                        activeOpacity={0.85}
+                                    >
+                                        <Feather name="edit-3" size={ms(13)} color="#fff" />
+                                        <Text style={styles.detailsEditBtnText}>Edit</Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
 
                             {/* Fields live inside the same card now */}
@@ -541,15 +601,6 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                         <Text style={styles.logoutText}>Sign Out Account</Text>
                     </TouchableOpacity>
 
-                    {/* Delete Account Action */}
-                    <TouchableOpacity
-                        style={styles.deleteAccountBtn}
-                        onPress={() => { setDeleteConfirmText(''); setShowDeleteConfirm(true); }}
-                    >
-                        <Feather name="trash-2" size={ms(16)} color="#7F1D1D" />
-                        <Text style={styles.deleteAccountText}>Delete My Account</Text>
-                    </TouchableOpacity>
-
                     <View style={{ height: 100 }} />
                 </View>
             </ScrollView>
@@ -684,65 +735,6 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 </KeyboardAvoidingView>
             </Modal>
 
-            {/* ── Delete Account confirmation modal ───────────────────── */}
-            <Modal
-                visible={showDeleteConfirm}
-                transparent
-                animationType="fade"
-                onRequestClose={() => { if (!isDeleting) { setShowDeleteConfirm(false); setDeleteConfirmText(''); } }}
-            >
-                <View style={styles.referralModalBackdrop}>
-                    <Animated.View entering={FadeInUp.springify().damping(15)} style={styles.deleteModalCard}>
-                        <View style={styles.deleteModalIconWrap}>
-                            <Feather name="alert-triangle" size={ms(32)} color="#DC2626" />
-                        </View>
-                        <Text style={styles.deleteModalTitle}>Delete account?</Text>
-                        <Text style={styles.deleteModalBody}>
-                            This action is <Text style={{ fontWeight: '900' }}>irreversible</Text>. Your account,
-                            donations, history, and data will be permanently deleted.
-                        </Text>
-                        <Text style={styles.deleteModalHint}>
-                            Type <Text style={{ fontWeight: '900', color: '#DC2626' }}>DELETE</Text> to confirm.
-                        </Text>
-                        <TextInput
-                            value={deleteConfirmText}
-                            onChangeText={setDeleteConfirmText}
-                            placeholder="DELETE"
-                            placeholderTextColor="#9CA3AF"
-                            autoCapitalize="characters"
-                            autoCorrect={false}
-                            editable={!isDeleting}
-                            style={[
-                                styles.deleteModalInput,
-                                { borderColor: deleteConfirmText === 'DELETE' ? '#DC2626' : '#E5E7EB' },
-                            ]}
-                        />
-                        <View style={styles.deleteModalActions}>
-                            <TouchableOpacity
-                                style={[styles.deleteModalCancel, isDeleting && { opacity: 0.5 }]}
-                                onPress={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }}
-                                disabled={isDeleting}
-                            >
-                                <Text style={styles.deleteModalCancelText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.deleteModalConfirm,
-                                    (deleteConfirmText !== 'DELETE' || isDeleting) && { opacity: 0.5 },
-                                ]}
-                                onPress={doDeleteAccount}
-                                disabled={deleteConfirmText !== 'DELETE' || isDeleting}
-                            >
-                                {isDeleting ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Text style={styles.deleteModalConfirmText}>Delete Forever</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </Animated.View>
-                </View>
-            </Modal>
         </KeyboardAvoidingView>
     );
 }
@@ -1000,6 +992,23 @@ const styles = StyleSheet.create({
     detailsEditBtnSaving: {
         backgroundColor: '#16A34A',
         shadowColor: '#16A34A',
+    },
+    detailsCancelBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F5F2EF',
+        paddingHorizontal: ms(14),
+        paddingVertical: vs(7),
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: '#E7E5E4',
+    },
+    detailsCancelBtnText: {
+        color: '#78716C',
+        fontWeight: '800',
+        fontSize: ms(12),
+        marginLeft: ms(6),
+        letterSpacing: 0.3,
     },
     detailsEditBtnText: {
         color: '#fff',

@@ -639,7 +639,7 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
 
         <ScaleButton style={styles.navItem} onPress={() => setShowCalendar(true)}>
           <Ionicons name="calendar-outline" size={ms(26)} color="#888" />
-          <Text style={styles.navLabel}>Schedule</Text>
+          <Text style={styles.navLabel}>Calendar</Text>
         </ScaleButton>
 
         <ScaleButton

@@ -16,6 +16,7 @@ import {
   Pressable,
   Animated as RNAnimated,
   Easing,
+  BackHandler,
 } from 'react-native';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -181,10 +182,14 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
     try {
       const response = await api.get('/community/posts');
       setPosts(response.data);
-      if (activePost) {
-        const updated = response.data.find((p: any) => p.id === activePost.id);
-        if (updated) setActivePost(updated);
-      }
+      // Refresh the open post in-place — but ONLY if one is still open.
+      // Using a functional update (instead of reading `activePost` from a
+      // captured closure) means an in-flight request that resolves *after*
+      // the user closed the modal can never re-open it. `curr` is the live
+      // state at apply-time: null when closed → stays null.
+      setActivePost((curr: any) =>
+        curr ? (response.data.find((p: any) => p.id === curr.id) || curr) : curr,
+      );
     } catch (error) {
       console.error('Error fetching posts:', error);
       CustomAlert.alert('Error', 'Could not load community feed.');
@@ -192,7 +197,7 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
       setLoading(false);
       setRefreshing(false);
     }
-  }, [activePost]);
+  }, []);
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
@@ -239,6 +244,24 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
     setEditingPostId(null);
     setEditingExistingImage(null);
   };
+
+  // Android hardware back: close whichever overlay is on top (lightbox →
+  // category dropdown → composer → comments) before leaving the screen.
+  // Without this, pressing back while the comments modal was open behaved
+  // inconsistently and could snap back into the comment view. Returning
+  // `true` consumes the event so it never falls through to exit the app.
+  useEffect(() => {
+    const onHardwareBack = () => {
+      if (zoomImageUri) { setZoomImageUri(null); return true; }
+      if (catOpen) { setCatOpen(false); return true; }
+      if (modalOpen) { setModalOpen(false); resetComposer(); return true; }
+      if (activePost) { closeComments(); return true; }
+      onBack();
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
+    return () => sub.remove();
+  }, [zoomImageUri, catOpen, modalOpen, activePost, onBack]);
 
   // Open the composer pre-filled to edit an existing post.
   const openEditModal = (post: any) => {
@@ -354,6 +377,17 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Fully close the comments modal — clears the active post plus any
+  // in-progress reply/draft so reopening a post starts clean. Also marks a
+  // deep-linked post as consumed so a background posts refetch can never
+  // auto-reopen this modal after the user has dismissed it.
+  const closeComments = () => {
+    if (openPostId) consumedPostIdRef.current = String(openPostId);
+    setActivePost(null);
+    setReplyingToComment(null);
+    setCommentContent('');
   };
 
   // ── Comment + like — unchanged from previous design ──
@@ -738,13 +772,24 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
       </Modal>
 
       {/* ── Comments Modal ── */}
-      <Modal visible={!!activePost} animationType="slide" transparent onRequestClose={() => setActivePost(null)}>
+      <Modal visible={!!activePost} animationType="slide" transparent onRequestClose={closeComments}>
         <View style={styles.commentsOverlay}>
           <KeyboardAvoidingView style={styles.commentsSheet} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Comments</Text>
-              <TouchableOpacity onPress={() => setActivePost(null)} style={styles.modalClose}>
-                <Ionicons name="close" size={ms(22)} color="#1C1917" />
+            <View style={styles.sheetHandle} />
+            <View style={styles.commentsHeader}>
+              <View style={styles.commentsHeaderText}>
+                <Text style={styles.commentsTitle}>Comments</Text>
+                <Text style={styles.commentsCount}>
+                  {(activePost?.comments?.length || 0)}{' '}
+                  {(activePost?.comments?.length || 0) === 1 ? 'comment' : 'comments'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={closeComments}
+                style={styles.commentsCloseBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={ms(18)} color="#78716C" />
               </TouchableOpacity>
             </View>
 
@@ -834,14 +879,15 @@ export default function CommunityScreen({ onBack, openPostId }: CommunityScreenP
                 multiline
               />
               <TouchableOpacity
-                style={[styles.sendBtn, !commentContent.trim() && { opacity: 0.45 }]}
+                style={[styles.sendBtn, !commentContent.trim() && styles.sendBtnDisabled]}
                 onPress={handlePostComment}
                 disabled={!commentContent.trim() || postingComment}
+                activeOpacity={0.85}
               >
                 {postingComment ? (
-                  <ActivityIndicator size="small" color="#D63B8A" />
+                  <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Ionicons name="send" size={ms(18)} color="#D63B8A" />
+                  <Ionicons name="send" size={ms(16)} color="#fff" />
                 )}
               </TouchableOpacity>
             </View>
@@ -1263,9 +1309,40 @@ const styles = StyleSheet.create({
   },
   commentsSheet: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: ms(22),
-    borderTopRightRadius: ms(22),
-    height: '85%',
+    borderTopLeftRadius: ms(28),
+    borderTopRightRadius: ms(28),
+    height: '88%',
+    overflow: 'hidden',
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: ms(40),
+    height: vs(5),
+    borderRadius: 999,
+    backgroundColor: '#E7E5E4',
+    marginTop: vs(10),
+    marginBottom: vs(4),
+  },
+  commentsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: ms(20),
+    paddingTop: vs(8),
+    paddingBottom: vs(14),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F2EF',
+  },
+  commentsHeaderText: { flex: 1 },
+  commentsTitle: { fontSize: ms(17), fontWeight: '900', color: '#1C1917', letterSpacing: -0.3 },
+  commentsCount: { fontSize: ms(11.5), fontWeight: '600', color: '#A8A29E', marginTop: vs(1) },
+  commentsCloseBtn: {
+    width: ms(32),
+    height: ms(32),
+    borderRadius: ms(16),
+    backgroundColor: '#F5F2EF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   commentRow: { flexDirection: 'row' },
   commentAvatar: { width: ms(32), height: ms(32), borderRadius: ms(16), marginRight: ms(10) },
@@ -1293,25 +1370,36 @@ const styles = StyleSheet.create({
   replyBannerText: { fontSize: ms(12), color: '#D63B8A', fontWeight: '700', flex: 1 },
   commentInputRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     paddingHorizontal: ms(16),
     paddingTop: vs(10),
     borderTopWidth: 1,
     borderTopColor: '#F0EDE9',
+    backgroundColor: '#fff',
   },
   commentInput: {
     flex: 1,
-    backgroundColor: '#FAFAF9',
-    borderRadius: 999,
+    backgroundColor: '#F7F5F3',
+    borderRadius: ms(22),
     paddingHorizontal: ms(16),
-    paddingVertical: vs(9),
+    paddingTop: vs(10),
+    paddingBottom: vs(10),
     fontSize: ms(13.5),
     color: '#1C1917',
-    maxHeight: vs(90),
+    maxHeight: vs(110),
     borderWidth: 1,
-    borderColor: '#EEEDE8',
+    borderColor: '#ECE9E6',
   },
-  sendBtn: { marginLeft: ms(10), padding: ms(8) },
+  sendBtn: {
+    marginLeft: ms(10),
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    backgroundColor: '#D63B8A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendBtnDisabled: { backgroundColor: '#EBC7DA' },
 
   // Image lightbox
   lightboxBackdrop: {

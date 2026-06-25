@@ -365,6 +365,7 @@ export default function SignupScreen({
                                             onBlur={() => setEmailTouched(true)}
                                             autoCapitalize="none"
                                             placeholder="Email Address"
+                                            placeholderTextColor="#A8A29E"
                                         />
                                     </View>
                                     {emailError && <Text style={styles.errorText}>Enter a valid email</Text>}
@@ -500,6 +501,7 @@ export default function SignupScreen({
                                             onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, ''))}
                                             maxLength={11}
                                             placeholder="Phone Number"
+                                            placeholderTextColor="#A8A29E"
                                         />
                                     </View>
                                 </View>
@@ -542,6 +544,7 @@ export default function SignupScreen({
                                             onChangeText={setAgeText}
                                             keyboardType="number-pad"
                                             placeholder="Age"
+                                            placeholderTextColor="#A8A29E"
                                         />
                                     </View>
                                     <TouchableOpacity

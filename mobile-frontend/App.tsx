@@ -206,7 +206,7 @@ export default function App() {
       <ErrorBoundary>
         <NavigationContainer>
           {content}
-          <GlobalAlertComponent />
+          <GlobalAlertComponent themeRole={userRole} />
         </NavigationContainer>
       </ErrorBoundary>
     </SafeAreaProvider>

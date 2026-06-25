@@ -33,7 +33,22 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "monochromeImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFE4EE"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "da067742-7e15-4cdc-988a-25e0df39a83d"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/da067742-7e15-4cdc-988a-25e0df39a83d"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

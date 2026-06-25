@@ -676,7 +676,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
 
         <TouchableOpacity style={styles.navItem} onPress={() => setShowCalendar(true)}>
           <Ionicons name="calendar-outline" size={ms(24)} color="#888" />
-          <Text style={styles.navLabel} numberOfLines={1}>Schedule</Text>
+          <Text style={styles.navLabel} numberOfLines={1}>Calendar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={[styles.arButton, { width: ms(60), height: ms(60), borderRadius: ms(30) }]} onPress={async () => {

@@ -1,0 +1,36 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.facetracker'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.facetracker"
+  defaultConfig {
+    minSdkVersion 24
+    versionCode 1
+    versionName "1.0.0"
+  }
+}
+
+dependencies {
+  def cameraxVersion = "1.5.0-rc01"
+
+  // CameraX — preview surface + image analysis pipeline. We piggy-back on the
+  // same version expo-camera uses to avoid AndroidX resolution conflicts.
+  implementation "androidx.camera:camera-core:${cameraxVersion}"
+  implementation "androidx.camera:camera-camera2:${cameraxVersion}"
+  implementation "androidx.camera:camera-lifecycle:${cameraxVersion}"
+  implementation "androidx.camera:camera-view:${cameraxVersion}"
+
+  // ML Kit Face Detection — Google's drop-in face tracker. Bundled-model
+  // variant ships the TFLite weights inside the APK (no Play Services download
+  // on first use), at the cost of ~3 MB extra APK size. Worth it for offline.
+  implementation 'com.google.mlkit:face-detection:16.1.7'
+
+  implementation 'androidx.appcompat:appcompat:1.7.1'
+  implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
+  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+}

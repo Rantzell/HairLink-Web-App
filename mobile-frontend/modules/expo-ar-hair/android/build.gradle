@@ -1,0 +1,37 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.arhair'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.arhair"
+  defaultConfig {
+    minSdkVersion 24
+    versionCode 1
+    versionName "1.0.0"
+  }
+
+  buildFeatures {
+    viewBinding false
+  }
+}
+
+dependencies {
+  // ARCore — Google's AR runtime; provides Augmented Faces (468-vertex face mesh).
+  implementation 'com.google.ar:core:1.46.0'
+
+  // SceneView — modern Filament-based 3D engine for Android with first-class
+  // ARCore + glTF support. Replaces deprecated Sceneform. Loads our .glb hair
+  // models and renders them attached to the face mesh.
+  implementation 'io.github.sceneview:arsceneview:2.2.1'
+
+  // AndroidX lifecycle for camera permission + session lifecycle management
+  implementation 'androidx.appcompat:appcompat:1.7.1'
+  implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
+
+  // Kotlin coroutines for loading GLBs off the main thread
+  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+}

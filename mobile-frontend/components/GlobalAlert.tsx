@@ -34,8 +34,15 @@ export const CustomAlert = {
   },
 };
 
-export default function GlobalAlertComponent() {
+export default function GlobalAlertComponent({ themeRole }: { themeRole?: 'Donor' | 'Recipient' | null } = {}) {
   const [state, setState] = useState<AlertState>({ visible: false, title: '' });
+
+  // Role-based accent: recipients get purple, donors (and pre-login/unknown)
+  // get the brand pink. Applied to the default info icon + the primary button
+  // so every popup matches the signed-in user's role.
+  const isRecipient = themeRole === 'Recipient';
+  const brand = isRecipient ? '#B084CC' : '#D63B8A';
+  const brandSoft = isRecipient ? '#FDF7FB' : '#FFF0F8';
 
   const show = useCallback((title: string, message?: string, buttons?: AlertButton[]) => {
     setState({ visible: true, title, message, buttons });
@@ -66,8 +73,8 @@ export default function GlobalAlertComponent() {
   const isSuccess = state.title.toLowerCase().includes('success') || state.title.toLowerCase().includes('confirm') || state.title.toLowerCase().includes('redeem') || state.title.toLowerCase().includes('copied');
   
   let iconName: any = 'information-circle';
-  let iconColor = '#B084CC'; // Primary color
-  let iconBg = '#FDF7FB';
+  let iconColor = brand; // Role-based primary color
+  let iconBg = brandSoft;
 
   if (isError) {
     iconName = 'close-circle';
@@ -105,6 +112,7 @@ export default function GlobalAlertComponent() {
                 textStyle.push(styles.textDestructive);
               } else {
                 btnStyle.push(styles.btnPrimary);
+                btnStyle.push({ backgroundColor: brand });
                 textStyle.push(styles.textPrimary);
               }
 
