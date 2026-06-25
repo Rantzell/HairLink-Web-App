@@ -182,7 +182,15 @@ export default function SignupScreen({
         if (phone.length < 8 || phone.length > 11) { showError("Invalid Phone", "Phone number must be 8 to 11 digits."); return; }
         if (!role) { showError("Selection Required", "Please select a role (Donor or Recipient)."); return; }
 
-        const numericAge = parseInt(ageText) || 18;
+        const numericAge = ageText ? parseInt(ageText, 10) : 18;
+        if (ageText && (isNaN(numericAge) || numericAge < 7)) {
+            showError("Invalid Age", "Age must be at least 7.");
+            return;
+        }
+        if (ageText && numericAge > 120) {
+            showError("Invalid Age", "Age cannot exceed 120.");
+            return;
+        }
 
         setSubmitting(true);
 

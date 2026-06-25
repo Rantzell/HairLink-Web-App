@@ -656,7 +656,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
     if (!reg.postal_code.trim()) errs.postal_code = ['Postal code is required.'];
     else if (!/^\d{4}$/.test(reg.postal_code.trim())) errs.postal_code = ['Postal code must be 4 digits.'];
     if (!reg.age) errs.age = ['Age is required.'];
-    else if (Number.isNaN(ageNum) || ageNum <= 0) errs.age = ['Age must be a positive number.'];
+    else if (Number.isNaN(ageNum) || ageNum < 7) errs.age = ['Age must be at least 7.'];
     else if (ageNum > 100) errs.age = ['Age cannot exceed 100.'];
     if (!reg.gender) errs.gender = ['Please select a gender.'];
     if (!reg.email.trim()) errs.email = ['Email is required.'];
@@ -886,7 +886,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 <div className="hl-field">
                   <label className="hl-label">Age</label>
                   <input className="hl-input" type="number" placeholder="25"
-                    min={1} max={100}
+                    min={7} max={100}
                     value={reg.age}
                     onChange={e => {
                       const val = e.target.value;

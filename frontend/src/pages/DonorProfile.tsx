@@ -53,6 +53,17 @@ const DonorProfile: React.FC = () => {
         }
       }
     }
+    if (editData.age) {
+      const ageNum = parseInt(editData.age, 10);
+      if (Number.isNaN(ageNum) || ageNum < 7) {
+        toast.error('Age must be at least 7.');
+        return;
+      }
+      if (ageNum > 120) {
+        toast.error('Age cannot exceed 120.');
+        return;
+      }
+    }
     setShowConfirm(true);
   };
 
@@ -632,7 +643,7 @@ const DonorProfile: React.FC = () => {
                       value={editData.age}
                       onChange={e => setEditData({ ...editData, age: e.target.value })}
                       className="ep-input"
-                      min="1" max="120"
+                      min="7" max="120"
                       placeholder="Age"
                     />
                   </div>

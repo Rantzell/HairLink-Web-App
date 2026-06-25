@@ -21,7 +21,7 @@ export const registerSchema = z.object({
   country: z.string().max(255).optional(),
   region: z.string().max(255).optional(),
   postal_code: z.string().max(255).optional(),
-  age: z.coerce.number().int().min(1).max(120).optional().nullable(),
+  age: z.coerce.number().int().min(7).max(120).optional().nullable(),
   gender: z.enum(['male', 'female', 'nonbinary', 'prefer_not_say']).optional().nullable(),
   phone: z.string()
     .regex(/^\+639\d{9}$/, 'Mobile number must be exactly 10 digits starting with 9 after +63.')
@@ -143,7 +143,7 @@ export const profileUpdateSchema = z.object({
     .optional()
     .nullable(),
   bio: z.string().max(1000).optional().nullable(),
-  age: z.coerce.number().int().min(1).max(120).optional().nullable(),
+  age: z.coerce.number().int().min(7).max(120).optional().nullable(),
   gender: z.enum(['male', 'female', 'nonbinary', 'prefer_not_say']).optional().nullable(),
 });
 
