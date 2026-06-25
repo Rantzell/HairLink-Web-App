@@ -55,8 +55,8 @@ const DonorProfile: React.FC = () => {
     }
     if (editData.age) {
       const ageNum = parseInt(editData.age, 10);
-      if (Number.isNaN(ageNum) || ageNum < 7) {
-        toast.error('Age must be at least 7.');
+      if (Number.isNaN(ageNum) || ageNum < 14) {
+        toast.error('Age must be at least 14.');
         return;
       }
       if (ageNum > 120) {

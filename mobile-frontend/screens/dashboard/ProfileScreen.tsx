@@ -217,8 +217,8 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const handleUpdateProfile = async () => {
         if (age) {
             const parsedAge = parseInt(age, 10);
-            if (isNaN(parsedAge) || parsedAge < 7) {
-                CustomAlert.alert('Invalid Age', 'Age must be at least 7.');
+            if (isNaN(parsedAge) || parsedAge < 14) {
+                CustomAlert.alert('Invalid Age', 'Age must be at least 14.');
                 return;
             }
             if (parsedAge > 120) {

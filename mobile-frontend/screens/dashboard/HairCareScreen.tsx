@@ -51,7 +51,7 @@ const ARTICLES: Article[] = [
     excerpt: 'Keep your wig fresh and vibrant with our step-by-step cleaning process designed for synthetic fibers.',
     content: 'Synthetic wigs require specific care to maintain their style and longevity. Unlike human hair, synthetic fibers don\'t absorb oils, but they can collect dust and environmental pollutants.\n\n**The Washing Process:**\n\n1. **Detangle:** Before washing, gently comb out any tangles using a wide-tooth comb or your fingers. Always start from the ends and work your way up to the roots.\n\n2. **Cool Water Soak:** Fill a sink or basin with cool water. Never use hot water as it can damage the synthetic fibers. Add a small amount of synthetic wig shampoo.\n\n3. **Swish, Don\'t Scrub:** Submerge the wig and gently swish it in the water for a few minutes. Do not rub or scrub the fibers.\n\n4. **Rinse:** Rinse the wig thoroughly in cool, clean water until all soap is removed.\n\n5. **Conditioning:** Apply a synthetic wig conditioner to the ends (avoiding the roots/cap) and rinse again if the product requires it.\n\n6. **Drying:** Pat the wig dry with a soft towel. Do not wring or squeeze. Place it on a wig stand to air dry completely. Never brush a wet wig.',
     category: 'Care',
-    author: 'Venus Alinsod',
+    author: 'Strand Up for Cancer',
     readTime: 6,
     created_at: new Date().toISOString()
   },
@@ -61,7 +61,7 @@ const ARTICLES: Article[] = [
     excerpt: 'Learn the professional techniques to make your wig look like your natural hair every single time.',
     content: 'The key to a great wig is making it look like it\'s growing from your scalp. Here are our top styling secrets:\n\n1. **Pluck the Parting:** Most wigs come with a dense hairline. Gently plucking a few hairs from the part can create a more natural, realistic appearance.\n\n2. **Use Concealer:** Apply a small amount of skin-toned concealer or foundation to the lace or part line to mimic the color of your scalp.\n\n3. **Tame the Shine:** New synthetic wigs often have an unnatural shine. A light dusting of dry shampoo or translucent powder can give it a more natural matte finish.\n\n4. **Frame Your Face:** Don\'t be afraid to have a professional stylist trim the wig to better suit your face shape. Adding layers or bangs can make a huge difference.\n\n5. **Proper Placement:** Ensure the wig sits correctly on your natural hairline. Use a wig grip or velvet band to prevent it from sliding back during the day.',
     category: 'Styling',
-    author: 'Style Expert',
+    author: 'Strand Up for Cancer',
     readTime: 4,
     created_at: new Date().toISOString()
   },
@@ -71,7 +71,7 @@ const ARTICLES: Article[] = [
     excerpt: 'How to properly store your wigs during off-seasons to prevent tangling and shape loss.',
     content: 'Proper storage is just as important as proper washing. If you leave your wig sitting out, it can collect dust and lose its shape.\n\n- **Daily Storage:** Use a collapsible wig stand for wigs you wear frequently. This allows for air circulation.\n\n- **Long-term Storage:** For wigs you won\'t wear for a while, store them in their original box or a clean silk/satin bag.\n\n- **Keep it Cool:** Always store wigs in a cool, dry place away from direct sunlight, which can fade the color and weaken the fibers.\n\n- **Hairnets:** Use the hairnet that came with the wig to keep the fibers in place and prevent tangling during storage.',
     category: 'Storage',
-    author: 'Maintenance Pro',
+    author: 'Strand Up for Cancer',
     readTime: 3,
     created_at: new Date().toISOString()
   }

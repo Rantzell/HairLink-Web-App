@@ -183,8 +183,8 @@ export default function SignupScreen({
         if (!role) { showError("Selection Required", "Please select a role (Donor or Recipient)."); return; }
 
         const numericAge = ageText ? parseInt(ageText, 10) : 18;
-        if (ageText && (isNaN(numericAge) || numericAge < 7)) {
-            showError("Invalid Age", "Age must be at least 7.");
+        if (ageText && (isNaN(numericAge) || numericAge < 14)) {
+            showError("Invalid Age", "Age must be at least 14.");
             return;
         }
         if (ageText && numericAge > 120) {
