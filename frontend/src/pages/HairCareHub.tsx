@@ -65,7 +65,7 @@ const HairCareHub: React.FC = () => {
             excerpt: 'Keep your wig fresh and vibrant with our step-by-step cleaning process designed for synthetic fibers.',
             content: 'Synthetic wigs require specific care to maintain their style and longevity. Unlike human hair, synthetic fibers don\'t absorb oils, but they can collect dust and environmental pollutants.\n\n**The Washing Process:**\n\n1. **Detangle:** Before washing, gently comb out any tangles using a wide-tooth comb or your fingers. Always start from the ends and work your way up to the roots.\n\n2. **Cool Water Soak:** Fill a sink or basin with cool water. Never use hot water as it can damage the synthetic fibers. Add a small amount of synthetic wig shampoo.\n\n3. **Swish, Don\'t Scrub:** Submerge the wig and gently swish it in the water for a few minutes. Do not rub or scrub the fibers.\n\n4. **Rinse:** Rinse the wig thoroughly in cool, clean water until all soap is removed.\n\n5. **Conditioning:** Apply a synthetic wig conditioner to the ends (avoiding the roots/cap) and rinse again if the product requires it.\n\n6. **Drying:** Pat the wig dry with a soft towel. Do not wring or squeeze. Place it on a wig stand to air dry completely. Never brush a wet wig.',
             category: 'Care',
-            author: 'Venus Alinsod',
+            author: 'Strand Up for Cancer',
             readTime: 6,
             created_at: new Date().toISOString()
           },
@@ -75,7 +75,7 @@ const HairCareHub: React.FC = () => {
             excerpt: 'Learn the professional techniques to make your wig look like your natural hair every single time.',
             content: 'The key to a great wig is making it look like it\'s growing from your scalp. Here are our top styling secrets:\n\n1. **Pluck the Parting:** Most wigs come with a dense hairline. Gently plucking a few hairs from the part can create a more natural, realistic appearance.\n\n2. **Use Concealer:** Apply a small amount of skin-toned concealer or foundation to the lace or part line to mimic the color of your scalp.\n\n3. **Tame the Shine:** New synthetic wigs often have an unnatural shine. A light dusting of dry shampoo or translucent powder can give it a more natural matte finish.\n\n4. **Frame Your Face:** Don\'t be afraid to have a professional stylist trim the wig to better suit your face shape. Adding layers or bangs can make a huge difference.\n\n5. **Proper Placement:** Ensure the wig sits correctly on your natural hairline. Use a wig grip or velvet band to prevent it from sliding back during the day.',
             category: 'Styling',
-            author: 'Style Expert',
+            author: 'Strand Up for Cancer',
             readTime: 4,
             created_at: new Date().toISOString()
           },
@@ -85,7 +85,7 @@ const HairCareHub: React.FC = () => {
             excerpt: 'How to properly store your wigs during off-seasons to prevent tangling and shape loss.',
             content: 'Proper storage is just as important as proper washing. If you leave your wig sitting out, it can collect dust and lose its shape.\n\n- **Daily Storage:** Use a collapsible wig stand for wigs you wear frequently. This allows for air circulation.\n\n- **Long-term Storage:** For wigs you won\'t wear for a while, store them in their original box or a clean silk/satin bag.\n\n- **Keep it Cool:** Always store wigs in a cool, dry place away from direct sunlight, which can fade the color and weaken the fibers.\n\n- **Hairnets:** Use the hairnet that came with the wig to keep the fibers in place and prevent tangling during storage.',
             category: 'Storage',
-            author: 'Maintenance Pro',
+            author: 'Strand Up for Cancer',
             readTime: 3,
             created_at: new Date().toISOString()
           }
@@ -236,7 +236,9 @@ const HairCareHub: React.FC = () => {
                       <h3 className="article-title" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#3b2e43', marginBottom: '0.8rem' }}>{article.title}</h3>
                       <p className="article-excerpt" style={{ fontSize: '0.9rem', color: '#6b5b6d', lineHeight: 1.6 }}>{article.excerpt}</p>
                       <div className="article-footer" style={{ borderTop: '1px solid #fbf9fb', paddingTop: '1rem', marginTop: '1.2rem' }}>
-                        <div className="article-info">
+                        <div className="article-info" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#8c7d91' }}>
+                          <i className='bx bx-user' style={{ color: '#ad246d', fontSize: '0.95rem' }}></i>
+                          <span style={{ fontWeight: 600 }}>{article.author}</span>
                         </div>
                         <span style={{ color: '#ad246d', fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>Read Guide <i className='bx bx-right-arrow-alt'></i></span>
                       </div>
@@ -316,8 +318,11 @@ const HairCareHub: React.FC = () => {
             <div className="modal-body" style={{ padding: '0 2.5rem 2.5rem', overflowY: 'auto' }}>
               <div className="article-meta-info" style={{ border: 'none', background: '#fdfafd', padding: '1rem 1.5rem', borderRadius: '14px', margin: '1.5rem 0 2rem', display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <span className="category-badge" style={{ background: '#ad246d', color: '#fff', fontSize: '0.7rem', fontWeight: 800, padding: '0.3rem 0.8rem' }}>{selectedArticle.category}</span>
-                <span className="meta-item" style={{ fontSize: '0.85rem', color: '#8c7d91' }}>
-                   <i className='bx bx-time-five' style={{ marginRight: '0.3rem' }}></i> {selectedArticle.readTime} min read
+                <span className="meta-item" style={{ fontSize: '0.85rem', color: '#8c7d91', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                   <i className='bx bx-user' style={{ color: '#ad246d', fontSize: '1rem' }}></i> By {selectedArticle.author}
+                </span>
+                <span className="meta-item" style={{ fontSize: '0.85rem', color: '#8c7d91', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                   <i className='bx bx-time-five' style={{ color: '#ad246d', fontSize: '1rem' }}></i> {selectedArticle.readTime} min read
                 </span>
               </div>
               <div className="article-full-content" style={{ fontSize: '1rem', color: '#3b2e43' }}>
