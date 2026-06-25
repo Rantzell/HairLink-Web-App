@@ -72,7 +72,6 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
   const [loading, setLoading] = useState(true);
   const insets = useSafeAreaInsets();
 
-  // ── Fetch Calendar ──────────────────────────
   React.useEffect(() => {
     fetchCalendar();
   }, [viewDate]);
@@ -123,8 +122,6 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
     }
   };
 
-  // ── Dynamic Date Helpers ─────────────────────
-  
   const monthName = useMemo(() => {
     return viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
   }, [viewDate]);
@@ -185,7 +182,7 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* ── Compact top bar (replaces full-bleed purple gradient) ── */}
+      {}
       <View style={[styles.slimTopBar, { paddingTop: insets.top + vs(4) }]}>
         <TouchableOpacity onPress={onBack} style={styles.slimBackBtn}>
           <Ionicons name="chevron-back" size={ms(24)} color="#1C1917" />
@@ -215,7 +212,7 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
         </TouchableOpacity>
       </View>
 
-      {/* ── Compact calendar card on white ── */}
+      {}
       <View style={styles.calCard}>
         <Animated.View layout={Layout.springify()}>
           {showMonthView ? (
@@ -416,7 +413,6 @@ export default function RecipientCalendarScreen({ onBack }: { onBack?: () => voi
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAF9' },
 
-  // ── New compact top bar (replaces the full-bleed purple gradient) ──
   slimTopBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -467,7 +463,6 @@ const styles = StyleSheet.create({
     marginLeft: ms(8),
   },
 
-  // ── New compact calendar card ──
   calCard: {
     marginHorizontal: ms(14),
     marginTop: vs(12),
@@ -589,7 +584,6 @@ const styles = StyleSheet.create({
   timeText: { fontSize: ms(13), fontWeight: '800', color: '#1C1917', letterSpacing: -0.3 },
   ampmText: { fontSize: ms(9), fontWeight: '700', color: '#A8A29E', textTransform: 'uppercase', marginTop: vs(-1) },
 
-  // ── Clean event card: white surface, coloured icon chip, left accent stripe ──
   eventCard: {
     flex: 1,
     backgroundColor: '#fff',

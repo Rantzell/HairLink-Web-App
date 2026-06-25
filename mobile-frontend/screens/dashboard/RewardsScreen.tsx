@@ -379,7 +379,6 @@ const styles = StyleSheet.create({
 
   scrollContent: { paddingHorizontal: ms(16), paddingTop: vs(18) },
 
-  // ── Milestone card
   milestoneCard: {
     backgroundColor: '#fff',
     borderRadius: ms(22),
@@ -429,7 +428,6 @@ const styles = StyleSheet.create({
   },
   tipText: { fontSize: ms(11), color: '#C2185B', fontWeight: '800' },
 
-  // ── Voucher list
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -493,7 +491,6 @@ const styles = StyleSheet.create({
   voucherMetaItem: { flexDirection: 'row', alignItems: 'center', gap: ms(4) },
   voucherMetaText: { fontSize: ms(11), color: '#666', fontWeight: '700' },
 
-  // ── Modal
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

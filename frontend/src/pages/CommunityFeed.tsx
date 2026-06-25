@@ -6,7 +6,6 @@ import apiClient from '../api/client';
 import type { CommunityPost } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
-/* ─── topic helpers ──────────────────────────────────── */
 const TOPIC_PREFIX = '[TOPIC:';
 const TOPIC_SUFFIX = ']';
 
@@ -52,7 +51,6 @@ function stripMarkdown(text: string): string {
     .replace(/_(.+?)_/g, '$1');
 }
 
-/* ─── helpers ─────────────────────────────────────────── */
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -75,13 +73,9 @@ const ROLE_COLORS: Record<string, { bg: string; color: string; label: string }> 
 
 const CATEGORIES = ['Stories', 'Questions', 'Updates'];
 
-/* ─── types ──────────────────────────────────────────── */
 type SortMode = 'new' | 'top';
 type FilterMode = 'all' | string;
 
-/* ═══════════════════════════════════════════════════════
-   MAIN PAGE
-═══════════════════════════════════════════════════════ */
 const CommunityFeed: React.FC = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -227,7 +221,7 @@ const CommunityFeed: React.FC = () => {
   return (
     <div className="cf-root">
 
-      {/* ── HERO ── */}
+      {}
       <header className="cf-hero">
         <div className="cf-hero-inner">
           <div>
@@ -242,7 +236,7 @@ const CommunityFeed: React.FC = () => {
         </div>
       </header>
 
-      {/* ── FILTER / SORT BAR ── */}
+      {}
       <div className="cf-toolbar">
         <div className="cf-toolbar-inner">
           <div className="cf-filter-pills">
@@ -270,9 +264,9 @@ const CommunityFeed: React.FC = () => {
         </div>
       </div>
 
-      {/* ── FEED ── */}
+      {}
       <div className="cf-feed-wrap">
-        {/* ── CREATE POST INLINE FORM ── */}
+        {}
         {showCreateForm && (
           <div className="cf-card cf-create-post-card" ref={createPostRef} style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column' }}>
           <div className="cf-modal-head">
@@ -450,9 +444,6 @@ const CommunityFeed: React.FC = () => {
   );
 };
 
-/* ═══════════════════════════════════════════════════════
-   POST CARD
-═══════════════════════════════════════════════════════ */
 const PostCard: React.FC<{
   post: CommunityPost;
   currentUser: any;

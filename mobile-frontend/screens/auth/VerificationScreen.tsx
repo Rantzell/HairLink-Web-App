@@ -37,7 +37,6 @@ export default function VerificationScreen({
     const [canResend, setCanResend] = useState(false);
     const otpInputRef = useRef<TextInput>(null);
 
-    // ── Status Modal State ──────────────────────────────────────
     const [statusVisible, setStatusVisible] = useState(false);
     const [statusType, setStatusType] = useState<'error' | 'success'>('error');
     const [statusTitle, setStatusTitle] = useState("");

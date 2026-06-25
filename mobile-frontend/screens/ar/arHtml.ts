@@ -1,31 +1,4 @@
-/**
- * AR Try-On WebView — MediaPipe Face Landmarker head-pose pipeline.
- *
- * Key difference from the MindAR approach:
- *  - MindAR's `addAnchor()` gives you a face landmark's POSITION but no
- *    real head rotation matrix. The wig ends up stuck to the face plane.
- *  - MediaPipe's FaceLandmarker exposes `facialTransformationMatrixes` —
- *    a true 6-DoF head pose matrix (4x4) in metric cm. We parent the wig
- *    under that matrix, so it rotates with the *skull*, not the face.
- *
- * Pipeline:
- *  1. Own getUserMedia stream → <video>
- *  2. MediaPipe FaceLandmarker.detectForVideo() per frame → head pose
- *  3. three.js scene:
- *       headRoot (matrixAutoUpdate=off) ← head pose matrix
- *         ├── headOccluder (invisible ellipsoid, depthWrite only)
- *         │     → makes face video "occlude" the front of the wig
- *         ├── shortWig (sits at scalp center in head-local space)
- *         └── longWig
- *
- * Coordinate system: MediaPipe canonical face metric space (cm)
- *   +X = face's right     (viewer's left in selfie)
- *   +Y = up
- *   +Z = out of face (toward camera)
- *   Face origin = approximately between the eyes
- *   Scalp center top ≈ (0, +6cm, -2cm)
- *   Back of skull   ≈ (0,  0cm, -10cm)
- */
+
 
 const TEMPLATE = `<!DOCTYPE html>
 <html>
@@ -113,13 +86,11 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 
-// ─── Injected assets ─────────────────────────────────────────────────────────
 const SHORT_B64     = '__SHORT_B64__';
 const LONG_B64      = '__LONG_B64__';
 const INITIAL_STYLE = '__INITIAL_STYLE__';
 const INITIAL_COLOR = '__INITIAL_COLOR__';
 
-// ─── Tunables ────────────────────────────────────────────────────────────────
 // MediaPipe's facialTransformationMatrix assumes a virtual perspective camera
 // with this vertical FOV. Three.js camera must match for correct overlay.
 const VIRTUAL_CAMERA_FOV_Y = 63;
@@ -196,7 +167,6 @@ const FOREHEAD_PUSH_BACK = 1.5;
 // lower for a crisper outline. 0 = off (no edge halo).
 const WIG_EDGE_BLUR_PX = 0;
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 function b64ToArrayBuffer(b64) {
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
@@ -206,7 +176,6 @@ function b64ToArrayBuffer(b64) {
 function d2r(d) { return d * Math.PI / 180; }
 function r2d(r) { return r * 180 / Math.PI; }
 
-// ─── Status toast ────────────────────────────────────────────────────────────
 const statusEl = document.getElementById('status');
 let statusTimer;
 function showStatus(msg, persist) {
@@ -220,12 +189,10 @@ function showStatus(msg, persist) {
   if (!persist) statusTimer = setTimeout(() => statusEl.classList.remove('show'), 2400);
 }
 
-// ─── RN bridge ───────────────────────────────────────────────────────────────
 function send(payload) {
   try { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(payload)); } catch(e){}
 }
 
-// ─── Transform state ─────────────────────────────────────────────────────────
 let currentStyle = INITIAL_STYLE;
 let currentColor = INITIAL_COLOR;
 const models = {};
@@ -314,7 +281,6 @@ function toggleDebug() { /* no-op — panel removed */ }
 // (Face-width estimation removed — wig scale is now fixed per-GLB.
 //  Dynamic occluder sizing from face-oval landmarks is done inside main().)
 
-// ─── Main AR loop ────────────────────────────────────────────────────────────
 let currentFacing = 'user';
 let videoStream = null;
 let faceLandmarker = null;
@@ -328,7 +294,6 @@ async function main() {
     const fileset = await FilesetResolver.forVisionTasks(
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
     );
-    // ── Adaptive detection thresholds ──
     // Defaults are 0.5 — we lower everything to 0.3 so the model:
     //   • picks up faces at the edge of the frame (partially clipped)
     //   • keeps tracking through brief occlusions / fast head turns
@@ -397,7 +362,6 @@ async function main() {
     headRoot.visible = false;  // hide until first detection
     scene.add(headRoot);
 
-    // ── Live face-mesh depth occluder ──
     // A triangle fan over the face-oval landmarks (centroid at index 0 + the
     // 36 rim verts). Positions are rewritten every frame in the render loop
     // from the detected landmarks; indices are fixed. It writes depth only
@@ -422,7 +386,6 @@ async function main() {
     scene.add(faceMask);
     const maskRay = new THREE.Vector3();
 
-    // ── Load GLB wigs ──
     const loader = new GLTFLoader();
     // DRACO decoder — some GLBs (especially from Sketchfab / asset libraries)
     // are DRACO-compressed and silently fail to load without this.
@@ -481,7 +444,6 @@ async function main() {
           return;
         }
 
-        // ── Smart pivot selection ─────────────────────────────────────────────
         // For "tall" wigs (long hair, strands hanging far below the head cap)
         // the geometric center of the bbox is way below the actual head area.
         // Pivoting there makes the head-cap float far above the user's head
@@ -563,7 +525,6 @@ async function main() {
 
     send({ type: 'ready' });
 
-    // ── Render loop ──
     const video = document.getElementById('video');
     // Camera feed AND wig interior stay sharp — only the wig's outer edge gets a
     // soft colored halo (see applyEdgeFeather) to blend over the real hair.
@@ -571,7 +532,6 @@ async function main() {
     applyEdgeFeather();
     const tmpMatrix = new THREE.Matrix4();
 
-    // ── Head-pose smoothing ──
     // MediaPipe gives a fresh pose only on detection frames, and it's noisy, so
     // copying it straight to the wig makes it jitter / snap when you turn. We
     // decompose the latest pose into a TARGET (pos / rotation / scale) and, every
@@ -621,7 +581,6 @@ async function main() {
             headRoot.visible = true;
             framesSinceDetection = 0;
 
-            // ── Update the live face-mesh depth occluder ──
             // Map each face-oval landmark through the video's object-fit:cover
             // transform → screen NDC → unproject to a point at (just in front
             // of) the head depth. This builds a face-shaped depth mask that
@@ -710,7 +669,6 @@ async function main() {
     }
     frame();
 
-    // ── Resize ──
     window.addEventListener('resize', () => {
       renderer.setSize(window.innerWidth, window.innerHeight, false);
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -719,7 +677,6 @@ async function main() {
 
     // (Fitting controls removed — wig transforms are baked in FACTORY_TRANSFORM.)
 
-    // ── Camera flip ──
     window.__flipCamera = async function() {
       currentFacing = currentFacing === 'user' ? 'environment' : 'user';
       document.getElementById('stage').classList.toggle('mirror', currentFacing === 'user');
@@ -735,7 +692,6 @@ async function main() {
       }
     };
 
-    // ── Capture ──
     window.__capture = function() {
       try {
         renderer.render(scene, camera);
@@ -819,7 +775,6 @@ async function startCamera(facing) {
   await video.play();
 }
 
-// ─── Message router ──────────────────────────────────────────────────────────
 function handleMessage(raw) {
   let msg;
   try { msg = JSON.parse(raw); } catch(e) { return; }

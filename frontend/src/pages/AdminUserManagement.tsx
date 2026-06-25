@@ -286,7 +286,6 @@ const AdminUserManagement: React.FC = () => {
         />
       </article>
 
-
       {/* Create/Edit User Modal — portalled to document.body so it's always viewport-centered */}
       {isModalOpen && createPortal(
         <div
@@ -307,7 +306,7 @@ const AdminUserManagement: React.FC = () => {
         >
           <div className="amu-modal">
 
-            {/* ── Branded top bar ── */}
+            {}
             <div className="amu-topbar">
               <span className="amu-topbar-badge">
                 <i className={`bx ${editingUser ? 'bx-user-check' : 'bx-user-plus'}`} />
@@ -323,7 +322,7 @@ const AdminUserManagement: React.FC = () => {
               </button>
             </div>
 
-            {/* ── Identity strip ── */}
+            {}
             <div className="amu-identity-strip">
               <div className="amu-avatar">
                 {userForm.firstName
@@ -349,7 +348,7 @@ const AdminUserManagement: React.FC = () => {
               </span>
             </div>
 
-            {/* ── Form body ── */}
+            {}
             <form onSubmit={handleSaveUser} className="amu-form-body">
 
               <div className="amu-section-label">Personal Information</div>
@@ -463,7 +462,7 @@ const AdminUserManagement: React.FC = () => {
                 </div>
               </div>
 
-              {/* ── Footer actions ── */}
+              {}
               <div className="amu-footer">
                 <button
                   type="button"

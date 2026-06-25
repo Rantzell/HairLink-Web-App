@@ -706,10 +706,129 @@ router.post('/wigs/:id/missing', ...staffOnly, async (req, res) => {
     }
     await prisma.wigProduction.update({ where: { id: wigId }, data: { status: 'missing' } });
     await createStatusHistory(WIG_TYPE, wigId, 'missing', 'Staff reported this wig as missing from the shipment.');
+
+    // Notify the wigmaker
+    const { notifyWigmakerStaffReportedMissingWig } = await import('../services/notification.service');
+    await notifyWigmakerStaffReportedMissingWig(wig.wigmakerId, wig.taskCode);
+
     res.json({ message: 'Wig reported as missing.', success: true });
   } catch (err) {
     console.error('[Staff API] Missing wig error:', err);
     res.status(500).json({ error: 'Failed to report wig as missing' });
+  }
+});
+
+// POST /internal-api/staff/batches/:id/receive-all
+router.post('/batches/:id/receive-all', ...staffOnly, async (req, res) => {
+  try {
+    const batchId = parseInt(req.params.id as string);
+    const { delivery_tracking_link } = req.body;
+
+    const batch = await prisma.wigProduction.findUnique({
+      where: { id: batchId },
+      include: { donations: true }
+    });
+
+    if (!batch) return res.status(404).json({ message: 'Batch not found' });
+
+    const seq = batch.taskCode.replace(/^(WB|WIG)\s+/i, '');
+    const childWigs = await prisma.wigProduction.findMany({
+      where: { taskCode: { startsWith: `WIG ${seq}-W` }, status: { in: ['completed', 'shipped'] } }
+    });
+
+    const wigsToUpdate = [batch, ...childWigs].filter(w => ['assigned', 'processing', 'completed', 'shipped'].includes(w.status));
+
+    if (wigsToUpdate.length > 0) {
+      await prisma.wigProduction.updateMany({
+        where: { id: { in: wigsToUpdate.map(w => w.id) } },
+        data: { status: 'received' }
+      });
+
+      for (const w of wigsToUpdate) {
+        await createStatusHistory(WIG_TYPE, w.id, 'received', 'Staff confirmed receipt of all wigs in this batch.');
+      }
+    }
+
+    // Also update the donations' status to 'Wig Received'
+    if (batch.donations && batch.donations.length > 0) {
+      const donIds = batch.donations.map((d: any) => d.id);
+      await prisma.donation.updateMany({
+        where: { id: { in: donIds } },
+        data: { status: 'Wig Received', receivedWigAt: new Date() }
+      });
+
+      const { notifyDonationStatus } = await import('../services/notification.service');
+      for (const don of batch.donations) {
+        await createStatusHistory(DONATION_TYPE, don.id, 'Wig Received', 'All produced wigs have been received by staff.');
+        if (don.userId) {
+          await notifyDonationStatus(don.userId, 'Wig Received', don.reference!);
+        }
+      }
+    }
+
+    // Notify wigmaker for child wigs
+    const { notifyWigmakerStaffReceivedWig } = await import('../services/notification.service');
+    for (const cw of childWigs) {
+      await notifyWigmakerStaffReceivedWig(cw.wigmakerId, cw.taskCode);
+    }
+
+    res.json({ success: true, message: 'All wigs received successfully.' });
+  } catch (err) {
+    console.error('[Staff API] Receive all error:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// DELETE /internal-api/staff/batches/:id
+router.delete('/batches/:id', ...staffOnly, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    const batch = await prisma.wigProduction.findUnique({
+      where: { id },
+      include: { donations: true }
+    });
+
+    if (!batch) return res.status(404).json({ error: 'Batch not found' });
+
+    // Find child wigs by taskCode pattern
+    const seq = batch.taskCode.replace(/^(WB|WIG)\s+/i, '');
+    const childWigs = await prisma.wigProduction.findMany({
+      where: { taskCode: { startsWith: `WIG ${seq}-W` } },
+      select: { id: true }
+    });
+    const childIds = childWigs.map(w => w.id);
+
+    // Unlink donations from this batch (keeps donation records intact, just removes the batch reference)
+    if (batch.donations && batch.donations.length > 0) {
+      const donIds = batch.donations.map((d: any) => d.id);
+      await prisma.donation.updateMany({
+        where: { id: { in: donIds } },
+        data: { wigProductionId: null } as any
+      });
+    }
+
+    // Delete status history for the batch and its child wigs
+    await prisma.statusHistory.deleteMany({
+      where: { 
+        trackableType: WIG_TYPE, 
+        trackableId: { in: [id, ...childIds] } 
+      }
+    });
+
+    // Delete the child wigs
+    if (childIds.length > 0) {
+      await prisma.wigProduction.deleteMany({
+        where: { id: { in: childIds } }
+      });
+    }
+
+    // Delete the batch record itself
+    await prisma.wigProduction.delete({ where: { id } });
+
+    res.json({ success: true, message: 'Batch deleted successfully' });
+  } catch (err) {
+    console.error('[Staff API] Delete batch error:', err);
+    res.status(500).json({ error: 'Failed to delete batch' });
   }
 });
 

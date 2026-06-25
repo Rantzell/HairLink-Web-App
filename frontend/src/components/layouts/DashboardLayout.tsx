@@ -129,6 +129,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           { icon: 'bx bx-link',         label: 'Recipient Matching',     to: '/staff/matching' },
         ],
       },
+      {
+        label: 'Reports',
+        items: [
+          { icon: 'bx bx-bar-chart-alt-2', label: 'System Reports',      to: '/staff/reports' },
+        ],
+      },
     ];
 
     const getTopbarTitle = () => {
@@ -143,6 +149,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       if (location.pathname.startsWith('/staff/hair-stock')) return 'Hair Stock Inventory';
       if (location.pathname.startsWith('/staff/wig-stock')) return 'Wig Stock Inventory';
       if (location.pathname.startsWith('/staff/matching')) return 'Recipient Matching Desk';
+      if (location.pathname.startsWith('/staff/reports')) return 'System Reports';
       if (location.pathname.startsWith('/staff/profile')) return 'My Staff Profile';
       return 'Staff Workspace';
     };
@@ -154,7 +161,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
     return (
       <div className="sd-shell">
-        {/* ══════════════ SIDEBAR ══════════════ */}
+        {}
         <aside className={`sd-sidebar${sidebarOpen ? ' open' : ''}`}>
           {/* Brand */}
           <Link to="/staff/dashboard" className="sd-sidebar-brand" onClick={() => setSidebarOpen(false)}>
@@ -205,7 +212,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           onClick={() => setSidebarOpen(false)}
         />
 
-        {/* ══════════════ MAIN ══════════════ */}
+        {}
         <div className="sd-main">
           {/* Top header */}
           <header className="sd-topbar">
@@ -222,15 +229,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
               <span className="sd-topbar-title">{getTopbarTitle()}</span>
 
-              {/* Search bar */}
-              <div className="sd-search">
-                <i className="bx bx-search" />
-                <input
-                  type="text"
-                  placeholder="Search…"
-                  aria-label="Search"
-                />
-              </div>
             </div>
 
             <div className="sd-topbar-right">
@@ -244,7 +242,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </header>
 
-          {/* ── Page content ── */}
+          {}
           <main className="sd-content">
             {children}
           </main>
@@ -347,7 +345,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
     return (
       <div className="sd-shell">
-        {/* ══════════════ SIDEBAR ══════════════ */}
+        {}
         <aside className={`sd-sidebar${sidebarOpen ? ' open' : ''}`}>
           {/* Brand */}
           <Link to="/admin/dashboard" className="sd-sidebar-brand" onClick={() => setSidebarOpen(false)}>
@@ -398,7 +396,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           onClick={() => setSidebarOpen(false)}
         />
 
-        {/* ══════════════ MAIN ══════════════ */}
+        {}
         <div className="sd-main">
           {/* Top header */}
           <header className="sd-topbar">
@@ -427,7 +425,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </header>
 
-          {/* ── Page content ── */}
+          {}
           <main className="sd-content">
             {children}
           </main>
@@ -479,7 +477,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
     return (
       <div className="sd-shell">
-        {/* ══════════════ SIDEBAR ══════════════ */}
+        {}
         <aside className={`sd-sidebar${sidebarOpen ? ' open' : ''}`}>
           {/* Brand */}
           <Link to="/wigmaker/dashboard" className="sd-sidebar-brand" onClick={() => setSidebarOpen(false)}>
@@ -530,7 +528,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           onClick={() => setSidebarOpen(false)}
         />
 
-        {/* ══════════════ MAIN ══════════════ */}
+        {}
         <div className="sd-main">
           {/* Top header */}
           <header className="sd-topbar">
@@ -559,7 +557,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </header>
 
-          {/* ── Page content ── */}
+          {}
           <main className="sd-content">
             {children}
           </main>

@@ -104,7 +104,6 @@ export default function ARScreenV2({ onBack }: { onBack: () => void }) {
     });
   }, [assetsReady, shortB64, longB64]);
 
-  // ── Native -> WebView bridge ──────────────────────────────────────────
   // Each native onFace event is forwarded into the WebView's three.js loop.
   // We inject JavaScript directly rather than the postMessage round-trip
   // through onMessage, because at 30fps the round-trip latency was visibly
@@ -125,7 +124,6 @@ export default function ARScreenV2({ onBack }: { onBack: () => void }) {
     setErrorMsg(e.nativeEvent.message);
   };
 
-  // ── UI actions ────────────────────────────────────────────────────────
   const pickStyle = (s: StyleId) => { setStyle(s); post({ type: 'setStyle', value: s }); };
   const pickColor = (id: ColorId) => {
     setColorId(id);
@@ -161,7 +159,6 @@ export default function ARScreenV2({ onBack }: { onBack: () => void }) {
     } catch { /* ignore */ }
   };
 
-  // ── Permission gate ───────────────────────────────────────────────────
   if (!permission) {
     return (
       <View style={styles.container}>
@@ -249,7 +246,7 @@ export default function ARScreenV2({ onBack }: { onBack: () => void }) {
         </View>
       ) : null}
 
-      {/* ── UI chrome (top layer) ────────────────────────────────────── */}
+      {}
       <Pressable onPress={onBack} style={[styles.backBtn, { top: insets.top + 12 }]} hitSlop={10}>
         <Ionicons name="chevron-back" size={22} color="white" />
       </Pressable>

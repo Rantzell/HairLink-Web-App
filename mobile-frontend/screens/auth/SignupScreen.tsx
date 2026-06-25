@@ -64,7 +64,6 @@ export default function SignupScreen({
     onSwitchToLogin,
 }: SignupScreenProps) {
     const insets = useSafeAreaInsets();
-    // ── Form state ──────────────────────────────────────────────
     // Field set mirrors the website's RegisterData / backend signupSchema:
     //   first_name, last_name, email, password, phone, age, gender,
     //   country (defaults to PH), region, postal_code.
@@ -97,15 +96,12 @@ export default function SignupScreen({
     const pwAllOk = pwHasMin && pwHasNum && pwHasSym;
     const pwMatches = confirmPassword.length > 0 && confirmPassword === password;
 
-    // ── View mode ────────────────────────────────────────────────
     const [viewMode, setViewMode] = useState<"form" | "otp">("form");
 
-    // ── Email validation ─────────────────────────────────────────
     const [emailTouched, setEmailTouched] = useState(false);
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     const emailError = emailTouched && !isEmailValid;
 
-    // ── Password strength ────────────────────────────────────────
     const getPasswordStrength = (pw: string): { level: 0 | 1 | 2 | 3; label: string; color: string } => {
         if (pw.length === 0) return { level: 0, label: '', color: '#D1D1D1' };
         let score = 0;
@@ -119,13 +115,11 @@ export default function SignupScreen({
     };
     const pwStrength = getPasswordStrength(password);
 
-    // ── OTP bottom-sheet state ───────────────────────────────────
     const [otp, setOtp] = useState('');
     const [otpLoading, setOtpLoading] = useState(false);
     const [otpError, setOtpError] = useState('');
     const [pendingEmail, setPendingEmail] = useState('');
 
-    // ── Status Modal State ──────────────────────────────────────
     const [statusVisible, setStatusVisible] = useState(false);
     const [statusType, setStatusType] = useState<'error' | 'success'>('error');
     const [statusTitle, setStatusTitle] = useState("");
@@ -169,7 +163,6 @@ export default function SignupScreen({
         if (error) setOtpError(error.message);
     };
 
-    // ── Sign Up submit ───────────────────────────────────────────
     const handleSignUp = async () => {
         setEmailTouched(true);
         if (
@@ -189,7 +182,15 @@ export default function SignupScreen({
         if (phone.length < 8 || phone.length > 11) { showError("Invalid Phone", "Phone number must be 8 to 11 digits."); return; }
         if (!role) { showError("Selection Required", "Please select a role (Donor or Recipient)."); return; }
 
-        const numericAge = parseInt(ageText) || 18;
+        const numericAge = ageText ? parseInt(ageText, 10) : 18;
+        if (ageText && (isNaN(numericAge) || numericAge < 7)) {
+            showError("Invalid Age", "Age must be at least 7.");
+            return;
+        }
+        if (ageText && numericAge > 120) {
+            showError("Invalid Age", "Age cannot exceed 120.");
+            return;
+        }
 
         setSubmitting(true);
 
@@ -264,7 +265,6 @@ export default function SignupScreen({
         }
     };
 
-    // ── GENDER PICKER VIEW ──
     if (pickingGender) {
         return (
             <LinearGradient colors={['#FAFAF9', '#FFF0F8', '#FFEBF5']} style={styles.root}>
@@ -288,7 +288,6 @@ export default function SignupScreen({
             </LinearGradient>
         );
     }
-
 
     return (
         <LinearGradient colors={['#FAFAF9', '#FFF0F8', '#FFEBF5']} style={styles.root}>
@@ -632,7 +631,6 @@ const styles = StyleSheet.create({
     input: { color: '#1a1a1a', fontSize: 15, height: 56, flex: 1, fontWeight: '400' },
     errorText: { color: '#e53e3e', fontSize: 11, fontWeight: '700', marginTop: 4, marginLeft: 4 },
 
-    // ── Password requirement checklist (shown on focus) ──
     pwReqsBox: {
         marginTop: 10,
         paddingVertical: 10,

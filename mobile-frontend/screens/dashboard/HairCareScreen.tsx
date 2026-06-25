@@ -307,7 +307,7 @@ export default function HairCareScreen({ role = 'Donor', onBack }: HairCareScree
     <View style={[styles.container, { backgroundColor: themeBg }]}>
       <StatusBar style="light" />
 
-      {/* ── Premium Gradient Header ────────────────── */}
+      {}
       <LinearGradient
         colors={isRecipient ? [themeColor, themeMedium] : ['#FF66B2', '#FF1493']}
         start={{ x: 0, y: 0 }}
@@ -326,7 +326,7 @@ export default function HairCareScreen({ role = 'Donor', onBack }: HairCareScree
         </View>
       </LinearGradient>
 
-      {/* ── Tab Switcher ────────────────────────────── */}
+      {}
       <View style={styles.tabContainer}>
         <View style={styles.tabsWrapper}>
           <TouchableOpacity
@@ -472,7 +472,7 @@ export default function HairCareScreen({ role = 'Donor', onBack }: HairCareScree
           </View>
         )}
 
-        {/* ── Community Support Section ───────────────── */}
+        {}
         <Animated.View entering={FadeInDown.delay(300)} style={styles.supportShell}>
           <View style={[styles.supportIconBg, { backgroundColor: themePale }]}>
             <Ionicons name="help-circle-outline" size={ms(28)} color={themeColor} />
@@ -484,7 +484,7 @@ export default function HairCareScreen({ role = 'Donor', onBack }: HairCareScree
         </Animated.View>
       </ScrollView>
 
-      {/* ── Article Modal ───────────────────────────── */}
+      {}
       {selectedArticle && (
         <Modal
           visible={true}
@@ -541,7 +541,7 @@ export default function HairCareScreen({ role = 'Donor', onBack }: HairCareScree
         </Modal>
       )}
 
-      {/* ── Video Modal ─────────────────────────────── */}
+      {}
       {selectedVideo && (
         <Modal
           visible={true}

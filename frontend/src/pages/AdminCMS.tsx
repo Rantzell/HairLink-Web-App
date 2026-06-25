@@ -5,7 +5,6 @@ import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
 import PageLoader from '../components/PageLoader';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface ExtendedHeroSettings { heading: string; subheading: string; ctaLabel: string; ghostLabel: string; pillText: string; floatBadgeText: string }
 interface ServiceItem { title: string; description: string; ctaLabel: string }
 interface AboutSettings { heading: string; body: string }
@@ -16,7 +15,6 @@ interface TypographySettings { headingFont: string; bodyFont: string }
 
 const GOOGLE_FONTS = ['Inter', 'Poppins', 'Manrope', 'Nunito', 'Lato', 'Roboto', 'Playfair Display', 'Merriweather', 'Raleway', 'Montserrat'];
 
-// ─── Section input components ─────────────────────────────────────────────────
 const Field: React.FC<{ label: string; value: string; onChange: (v: string) => void; multiline?: boolean }> = ({ label, value, onChange, multiline }) => (
   <div className="admin-cms-field">
     <label className="admin-cms-field-label">{label}</label>
@@ -28,7 +26,6 @@ const Field: React.FC<{ label: string; value: string; onChange: (v: string) => v
   </div>
 );
 
-// ─── Main component ───────────────────────────────────────────────────────────
 const AdminCMS: React.FC = () => {
   type TabType = 'landing' | 'announcements' | 'partnerships';
   const [activeTab, setActiveTab] = useState<TabType>('landing');
@@ -406,9 +403,9 @@ const AdminCMS: React.FC = () => {
       </header>
 
       <div className="admin-cms-tab-row">
-        <button onClick={() => setActiveTab('landing')} className={`admin-cms-page-tab${activeTab === 'landing' ? ' active' : ''}`}>🏠 Landing Page</button>
-        <button onClick={() => setActiveTab('announcements')} className={`admin-cms-page-tab${activeTab === 'announcements' ? ' active' : ''}`}>📢 Announcements</button>
-        <button onClick={() => setActiveTab('partnerships')} className={`admin-cms-page-tab${activeTab === 'partnerships' ? ' active' : ''}`}>🤝 Partnerships</button>
+        <button onClick={() => setActiveTab('landing')} className={`admin-cms-page-tab${activeTab === 'landing' ? ' active' : ''}`}>Landing Page</button>
+        <button onClick={() => setActiveTab('announcements')} className={`admin-cms-page-tab${activeTab === 'announcements' ? ' active' : ''}`}>Announcements</button>
+        <button onClick={() => setActiveTab('partnerships')} className={`admin-cms-page-tab${activeTab === 'partnerships' ? ' active' : ''}`}>Partnerships</button>
       </div>
 
       {activeTab === 'landing' && (
@@ -418,15 +415,15 @@ const AdminCMS: React.FC = () => {
             {(['hero', 'services', 'about', 'footer', 'branding', 'images', 'partners', 'typography', 'pastEvents'] as LandingSection[]).map(sec => (
               <button key={sec} onClick={() => setLandingSection(sec)} className={`admin-cms-section-pill${landingSection === sec ? ' active' : ''}`}>
                 {{
-                  hero: '🎯 Hero',
-                  services: '⚙️ How It Works',
-                  about: 'ℹ️ About',
-                  footer: '🔻 Footer',
-                  branding: '🎨 Branding',
-                  images: '🖼️ Images',
-                  partners: '🤝 Partners',
-                  typography: '🔡 Fonts',
-                  pastEvents: '🎬 Past Highlights'
+                  hero: 'Hero',
+                  services: 'How It Works',
+                  about: 'About',
+                  footer: 'Footer',
+                  branding: 'Branding',
+                  images: 'Images',
+                  partners: 'Partners',
+                  typography: 'Fonts',
+                  pastEvents: 'Past Highlights'
                 }[sec]}
               </button>
             ))}
@@ -446,7 +443,7 @@ const AdminCMS: React.FC = () => {
           <div className="admin-card-rounded">
             {landingSection === 'hero' && (
               <>
-                <h2 className="admin-cms-section-title">🎯 Hero Section</h2>
+                <h2 className="admin-cms-section-title">Hero Section</h2>
                 <Field label="Main Heading (H1)" value={hero.heading} onChange={v => setHero({ ...hero, heading: v })} />
                 <Field label="Subheading / Tagline" value={hero.subheading} onChange={v => setHero({ ...hero, subheading: v })} />
                 <Field label="Pill Text (Top Label)" value={hero.pillText} onChange={v => setHero({ ...hero, pillText: v })} />
@@ -458,7 +455,7 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'services' && (
               <>
-                <h2 className="admin-cms-section-title">⚙️ How It Works — Header & Cards</h2>
+                <h2 className="admin-cms-section-title">How It Works — Header & Cards</h2>
                 <div className="admin-cms-item-card">
                   <p className="admin-cms-item-label">Section Header Info</p>
                   <Field label="Section Label" value={servicesHeader.label} onChange={v => setServicesHeader({ ...servicesHeader, label: v })} />
@@ -478,7 +475,7 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'pastEvents' && (
               <>
-                <h2 className="admin-cms-section-title">🎬 Past Events Highlights</h2>
+                <h2 className="admin-cms-section-title">Past Events Highlights</h2>
                 <div className="admin-cms-item-card">
                   <p className="admin-cms-item-label">Section Header Info</p>
                   <Field label="Section Label" value={pastEventsHeader.label} onChange={v => setPastEventsHeader({ ...pastEventsHeader, label: v })} />
@@ -498,7 +495,7 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'about' && (
               <>
-                <h2 className="admin-cms-section-title">ℹ️ About Section</h2>
+                <h2 className="admin-cms-section-title">About Section</h2>
                 <Field label="Section Heading" value={about.heading} onChange={v => setAbout({ ...about, heading: v })} />
                 <Field label="Body Paragraph" value={about.body} onChange={v => setAbout({ ...about, body: v })} multiline />
               </>
@@ -506,7 +503,7 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'footer' && (
               <>
-                <h2 className="admin-cms-section-title">🔻 Footer</h2>
+                <h2 className="admin-cms-section-title">Footer</h2>
                 <Field label="Organization Name" value={footer.orgName} onChange={v => setFooter({ ...footer, orgName: v })} />
                 <Field label="Address (use \\n for line break)" value={footer.address} onChange={v => setFooter({ ...footer, address: v })} multiline />
                 <Field label="Tagline" value={footer.tagline} onChange={v => setFooter({ ...footer, tagline: v })} multiline />
@@ -517,7 +514,7 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'branding' && (
               <>
-                <h2 className="admin-cms-section-title">🎨 Branding</h2>
+                <h2 className="admin-cms-section-title">Branding</h2>
                 <div className="admin-two-col-grid">
                   <div>
                     <label className="admin-cms-field-label">Primary Color</label>
@@ -544,7 +541,7 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'images' && (
               <>
-                <h2 className="admin-cms-section-title">🖼️ Images</h2>
+                <h2 className="admin-cms-section-title">Images</h2>
                 <div className="admin-cms-img-grid">
                   {(Object.keys(images) as (keyof ImagesSettings)[]).map(key => (
                     <div key={key} className="admin-hair-col">
@@ -589,7 +586,7 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'partners' && (
               <>
-                <h2 className="admin-cms-section-title">🤝 Landing Page Partners</h2>
+                <h2 className="admin-cms-section-title">Landing Page Partners</h2>
                 <p style={{ fontSize: '0.85rem', color: '#78716C', marginBottom: '1.5rem' }}>
                   Manage partner logos displayed on the landing page carousel. Add, remove, or reorder your partners.
                 </p>
@@ -653,7 +650,7 @@ const AdminCMS: React.FC = () => {
 
             {landingSection === 'typography' && (
               <>
-                <h2 className="admin-cms-section-title">🔡 Typography</h2>
+                <h2 className="admin-cms-section-title">Typography</h2>
                 <div className="admin-cms-font-grid">
                   <div>
                     <label className="admin-cms-field-label">Headings Font</label>
@@ -917,7 +914,7 @@ const AdminCMS: React.FC = () => {
                 </article>
               )}
 
-              {/* ── All Partnerships ── */}
+              {}
               <article className="admin-card-rounded">
                 <h2 className="admin-card-subtitle"><i className='bx bx-briefcase'></i> All Partnerships</h2>
                 <div className="table-wrap">
@@ -982,7 +979,7 @@ const AdminCMS: React.FC = () => {
               </article>
             </div>
 
-            {/* ── Sidebar ── */}
+            {}
             <aside>
               <article className="admin-card-rounded">
                 <h3 className="admin-cms-card-title">New Partnership</h3>
@@ -1014,7 +1011,7 @@ const AdminCMS: React.FC = () => {
               </article>
             </aside>
 
-            {/* ── Detail Modal ── */}
+            {}
             {selectedPartner && (
               <div
                 style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'cmFadeIn 0.18s ease' }}
@@ -1057,7 +1054,7 @@ const AdminCMS: React.FC = () => {
               </div>
             )}
 
-            {/* ── Edit Modal ── */}
+            {}
             {editingPartner && (
               <div
                 style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'cmFadeIn 0.18s ease' }}

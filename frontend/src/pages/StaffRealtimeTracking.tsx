@@ -134,6 +134,22 @@ const StaffRealtimeTracking: React.FC = () => {
     }
   };
 
+  const handleDeleteBatch = async (batchId: number) => {
+    if (!window.confirm("Are you sure you want to delete this batch? All associated donations will be returned to the queue.")) {
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await apiClient.delete(`/internal-api/staff/batches/${batchId}`);
+      toast.success('Batch deleted successfully!');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to delete batch');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const toggleSelection = (ref: string) => {
     setSelectedDonations(prev =>
       prev.includes(ref) ? prev.filter(r => r !== ref) : [...prev, ref]
@@ -226,16 +242,12 @@ const StaffRealtimeTracking: React.FC = () => {
   // All batches — used for Hair Batch Donation Tracking (shows all assigned batches)
   const allBatchGroupsArray = Array.from(batchGroups.entries());
 
-  // Wigmaker tracking shows batches that have at least one shipped wig not yet received/resolved
+  // Wigmaker tracking shows all batches that have at least one shipped wig (in transit or resolved)
   const batchGroupsArray = allBatchGroupsArray.filter(([, { wp }]) => {
     const children = wp.childWigs || [];
-    // Show if any child wig is shipped (in transit back to staff) but not yet received
-    const hasShipped = children.some((w: any) => w.status === 'shipped');
-    if (!hasShipped) return false;
-    // Hide once every shipped wig is resolved (received or missing)
-    const allResolved = children.every((w: any) => ['received', 'missing'].includes(w.status));
-    if (allResolved) return false;
-    return true;
+    // Show if any child wig has ever been shipped (in transit, received, or missing)
+    const hasShipped = children.some((w: any) => ['shipped', 'received', 'missing'].includes(w.status));
+    return hasShipped;
   });
   const batchTotalPages = Math.ceil(batchGroupsArray.length / PAGE_SIZE);
   const pagedBatchGroups = batchGroupsArray.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -255,12 +267,6 @@ const StaffRealtimeTracking: React.FC = () => {
 
   const requestTotalPages = Math.ceil(sortedRequests.length / PAGE_SIZE);
   const pagedRequests = sortedRequests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  const triggerBatchAction = (refs: string[], status: string, link?: string) => {
-    setPendingBatchRefs(refs);
-    setPendingBatchStatus({ status, link });
-    setShowBatchActionConfirm(true);
-  };
 
   const doBatchStatusUpdate = async () => {
     setShowBatchActionConfirm(false);
@@ -337,6 +343,21 @@ const StaffRealtimeTracking: React.FC = () => {
       fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to report wig as missing');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReceiveAllWigs = async (batchId: number, deliveryLink?: string) => {
+    setIsSubmitting(true);
+    try {
+      await apiClient.post(`/internal-api/staff/batches/${batchId}/receive-all`, {
+        delivery_tracking_link: deliveryLink
+      });
+      toast.success('Batch and all wigs marked as received!');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update batch');
     } finally {
       setIsSubmitting(false);
     }
@@ -514,15 +535,34 @@ const StaffRealtimeTracking: React.FC = () => {
             <tbody>
               {isWigmaker ? (
                 <>
-                  {/* ── Wigmaker view: Batch Rows ONLY (WIG-XXXXXX) ── */}
-                  {pagedBatchGroups.map(([wpId, { wp, donations: bd }]) => {
+                  {}
+                  {pagedBatchGroups.map(([wpId, { wp }]) => {
                     const isOpen = !!batchOpen[wpId];
-                    const stageLabel =
-                      wp.status === 'assigned' ? `Assigned to ${wp.wigmaker?.firstName || 'Wigmaker'}` :
-                        wp.status === 'processing' ? `Crafting by ${wp.wigmaker?.firstName || 'Wigmaker'}` :
-                          wp.status === 'completed' ? `Finished by ${wp.wigmaker?.firstName || 'Wigmaker'}` :
-                            wp.status === 'shipped' ? 'Awaiting Wig Delivery' :
-                              wp.status === 'received' ? 'Wig Received' : 'Completed';
+                    const children = wp.childWigs || [];
+                    const hasShipped = children.some((w: any) => w.status === 'shipped');
+                    const allResolved = children.length > 0 && children.every((w: any) => ['received', 'missing'].includes(w.status));
+
+                    let stageLabel = 'Completed';
+                    let isReceivedStage = false;
+                    let isShippedStage = false;
+
+                    if (allResolved) {
+                      stageLabel = 'Wig Received';
+                      isReceivedStage = true;
+                    } else if (hasShipped) {
+                      stageLabel = 'Awaiting Wig Delivery';
+                      isShippedStage = true;
+                    } else if (wp.status === 'completed') {
+                      stageLabel = `Finished by ${wp.wigmaker?.firstName || 'Wigmaker'}`;
+                    } else if (wp.status === 'processing') {
+                      stageLabel = `Crafting by ${wp.wigmaker?.firstName || 'Wigmaker'}`;
+                    } else if (wp.status === 'assigned') {
+                      stageLabel = `Assigned to ${wp.wigmaker?.firstName || 'Wigmaker'}`;
+                    } else if (wp.status === 'received') {
+                      stageLabel = 'Wig Received';
+                      isReceivedStage = true;
+                    }
+
                     return (
                       <React.Fragment key={`batch-${wpId}`}>
                         <tr className="tracking-row tracking-batch-main-row">
@@ -653,8 +693,8 @@ const StaffRealtimeTracking: React.FC = () => {
                           <td className="tracking-cell">
                             <div className="tracking-progress-col">
                               <div className="tracking-progress-status">
-                                <i className={`bx ${wp.status === 'received' ? 'bx-check-circle' : 'bx-sync bx-spin'}`}
-                                  style={{ color: wp.status === 'received' ? '#10b981' : '#ad246d' }}></i>
+                                <i className={`bx ${isReceivedStage ? 'bx-check-circle' : 'bx-sync bx-spin'}`}
+                                  style={{ color: isReceivedStage ? '#10b981' : '#ad246d' }}></i>
                                 {stageLabel}
                               </div>
                               {wp.updatedAt && (
@@ -666,23 +706,26 @@ const StaffRealtimeTracking: React.FC = () => {
                             </div>
                           </td>
                           <td className="tracking-action-cell">
-                            {wp.status === 'shipped' && (
-                              <div className="tracking-action-col">
-                                {wp.deliveryLink && (
-                                  <a href={wp.deliveryLink} target="_blank" rel="noreferrer" className="tracking-link-btn">
-                                    <i className='bx bx-link-external'></i> Wig Tracking
-                                  </a>
-                                )}
-                                <button
-                                  className="soft-btn"
-                                  onClick={() => triggerBatchAction(bd.map(d => d.reference), 'Wig Received', wp.deliveryLink || undefined)}
-                                  disabled={isSubmitting}
-                                  style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800 }}
-                                >
-                                  Confirm Batch Received
-                                </button>
-                              </div>
-                            )}
+                            {isShippedStage && !allResolved && (() => {
+                              const deliveryLink = wp.deliveryLink || children.find((w: any) => w.deliveryLink)?.deliveryLink;
+                              return (
+                                <div className="tracking-action-col">
+                                  {deliveryLink && (
+                                    <a href={deliveryLink} target="_blank" rel="noreferrer" className="tracking-link-btn">
+                                      <i className='bx bx-link-external'></i> Wig Tracking
+                                    </a>
+                                  )}
+                                  <button
+                                    className="soft-btn"
+                                    onClick={() => handleReceiveAllWigs(wpId, deliveryLink || undefined)}
+                                    disabled={isSubmitting}
+                                    style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800 }}
+                                  >
+                                    Confirm Batch Received All
+                                  </button>
+                                </div>
+                              );
+                            })()}
                             {wp.status === 'assigned' && (
                               <div className="tracking-action-col-wide" style={{ gap: '0.4rem', minWidth: '180px', alignItems: 'center' }}>
                                 {wp.materialDeliveryLink ? (
@@ -733,6 +776,32 @@ const StaffRealtimeTracking: React.FC = () => {
                                 <span className="tracking-awaiting-text">Wig Quality Checking...</span>
                               );
                             })()}
+                            {/* Delete button — only shown when batch is fully resolved */}
+                            {isReceivedStage && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteBatch(wpId)}
+                                disabled={isSubmitting}
+                                style={{
+                                  background: 'none',
+                                  border: '1px solid #fecaca',
+                                  color: '#ef4444',
+                                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                                  fontSize: '0.72rem',
+                                  padding: '0.3rem 0.65rem',
+                                  borderRadius: '50px',
+                                  fontWeight: 700,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  opacity: isSubmitting ? 0.5 : 1,
+                                  transition: 'all 0.2s'
+                                }}
+                                title="Delete this completed batch"
+                              >
+                                <i className="bx bx-trash"></i> Delete Batch
+                              </button>
+                            )}
                           </td>
                         </tr>
                         {isOpen && (() => {
@@ -827,12 +896,6 @@ const StaffRealtimeTracking: React.FC = () => {
                                                     <td style={{ padding: '0.75rem 1rem', borderBottom: '1px dashed #f2ebf4', verticalAlign: 'middle', minWidth: '160px' }}>
                                                       {w.status === 'shipped' ? (
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                          {w.deliveryLink && (
-                                                            <a href={w.deliveryLink} target="_blank" rel="noreferrer"
-                                                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>
-                                                              <i className='bx bx-link-external'></i> Track Shipment
-                                                            </a>
-                                                          )}
                                                           <div style={{ display: 'flex', gap: '6px' }}>
                                                             <button onClick={() => handleReceiveWig(w.id)} disabled={isSubmitting}
                                                               style={{ flex: 1, padding: '0.35rem 0.5rem', fontSize: '0.72rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
@@ -854,12 +917,6 @@ const StaffRealtimeTracking: React.FC = () => {
                                                         </span>
                                                       ) : (
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                          {w.deliveryLink && (
-                                                            <a href={w.deliveryLink} target="_blank" rel="noreferrer"
-                                                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>
-                                                              <i className='bx bx-link-external'></i> Track Shipment
-                                                            </a>
-                                                          )}
                                                           <span style={{ fontSize: '0.72rem', color: '#8c7895', fontWeight: 600 }}>Ready for Shipping</span>
                                                         </div>
                                                       )}
@@ -986,14 +1043,33 @@ const StaffRealtimeTracking: React.FC = () => {
                               })()}
                             </td>
                             <td className="tracking-action-cell">
-                              <button
-                                type="button"
-                                className="tracking-batch-toggle-btn"
-                                onClick={() => setBatchOpen(prev => ({ ...prev, [wpId]: !isOpen }))}
-                              >
-                                <i className={`bx ${isOpen ? 'bx-hide' : 'bx-show'}`}></i>
-                                {isOpen ? 'Hide Details' : 'View Details'}
-                              </button>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <button
+                                  type="button"
+                                  className="tracking-batch-toggle-btn"
+                                  onClick={() => setBatchOpen(prev => ({ ...prev, [wpId]: !isOpen }))}
+                                >
+                                  <i className={`bx ${isOpen ? 'bx-hide' : 'bx-show'}`}></i>
+                                  {isOpen ? 'Hide Details' : 'View Details'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteBatch(wpId)}
+                                  disabled={isSubmitting}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#ef4444',
+                                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                                    fontSize: '1.2rem',
+                                    padding: '4px',
+                                    opacity: isSubmitting ? 0.5 : 1
+                                  }}
+                                  title="Delete Batch"
+                                >
+                                  <i className="bx bx-trash"></i>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                           {isOpen && (

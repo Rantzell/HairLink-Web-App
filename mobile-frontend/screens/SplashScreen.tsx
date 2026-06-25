@@ -12,21 +12,6 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { s, vs, ms } from "../lib/scaling";
 
-/**
- * Branded loading / splash screen shown briefly before the landing page
- * (and as the loading state during auth checks). Mirrors the website’s
- * brand: cream backdrop with soft pink orbs, the pink-ribbon mark from
- * the LandingPage, and a serif “HairLink” wordmark.
- *
- * Behaviour
- * ─────────
- * - Plays a one-shot intro (ribbon scales/fades in, wordmark fades up).
- * - Then loops a gentle ribbon float + a sweeping pink shimmer under the
- *   wordmark to read as a loading indicator (no spinner — by design,
- *   matches the soft brand language).
- * - Calls `onDone` after `minDurationMs` so it never flashes too quickly.
- *   Parent decides when to actually unmount it (e.g. once auth resolves).
- */
 interface SplashScreenProps {
     /**
      * Fires once the intro animation has finished AND the optional
@@ -59,14 +44,12 @@ export default function SplashScreen({
     minDurationMs = 4000,
     tagline = "Strand Up for Cancer",
 }: SplashScreenProps) {
-    // ── Intro animations ──
     const ribbonScale = useRef(new Animated.Value(0.6)).current;
     const ribbonOpacity = useRef(new Animated.Value(0)).current;
     const wordmarkY = useRef(new Animated.Value(16)).current;
     const wordmarkOpacity = useRef(new Animated.Value(0)).current;
     const taglineOpacity = useRef(new Animated.Value(0)).current;
 
-    // ── Looping animations ──
     const ribbonFloat = useRef(new Animated.Value(0)).current;
     const ribbonRotate = useRef(new Animated.Value(0)).current;
     const shimmer = useRef(new Animated.Value(0)).current;

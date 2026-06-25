@@ -21,6 +21,12 @@ import api from '../../lib/api';
 import DonorCertificateScreen from './DonorCertificateScreen';
 import { CustomAlert } from '../../components/GlobalAlert';
 
+interface StatusHistory {
+  status: string;
+  createdAt: string;
+  notes?: string | null;
+}
+
 interface DonationRecord {
   id: string;
   type: 'hair' | 'monetary';
@@ -33,6 +39,7 @@ interface DonationRecord {
   // Donor-picked target delivery date (mirrors web's schedule-delivery flow).
   scheduledDeliveryAt?: string | null;
   certificateNo?: string | null;
+  statusHistories?: StatusHistory[];
 }
 
 // Reusable animated button for consistency
@@ -57,7 +64,6 @@ const ScaleButton = ({ children, onPress, style }: any) => {
   );
 };
 
-// ── Date helpers (Asia/Manila for parity with the backend due-check) ──────
 // Backend computes "due" by comparing scheduled & today as YYYY-MM-DD in
 // Asia/Manila, so we use the same yardstick to decide which UI branch to show.
 const localYMD = (d: Date) => {
@@ -92,7 +98,6 @@ const formatScheduledLong = (scheduledIso?: string | null) => {
   });
 };
 
-// ── ScheduleDeliveryForm ──────────────────────────────────────────────────
 // Donor picks the date they plan to drop off the hair. POSTs the date
 // (as local-midnight ISO) to /donations/:reference/schedule-delivery so staff
 // get notified and the backend tracker can ping the donor on the due date.
@@ -174,7 +179,6 @@ function ScheduleDeliveryForm({
     }
   };
 
-  // ── Already scheduled, not editing — show the locked-in date + Reschedule ──
   if (scheduledAt && !editing) {
     return (
       <View style={styles.scheduleBox}>
@@ -200,7 +204,6 @@ function ScheduleDeliveryForm({
     );
   }
 
-  // ── Picking / editing the date ──
   return (
     <View style={styles.scheduleBox}>
       <View style={styles.scheduleHeader}>
@@ -273,7 +276,6 @@ function ScheduleDeliveryForm({
   );
 }
 
-// ── DeliveryLinkForm ──────────────────────────────────────────────────────
 // Mirrors the website's DonorTrackingDetail flow: input the courier tracking
 // URL, POST /donations/:reference/delivery-link, then show the saved link
 // with an "Open" button. Lives inline so each approved card carries its own
@@ -384,6 +386,54 @@ function DeliveryLinkForm({
   );
 }
 
+function DonationRoadmap({ histories }: { histories: StatusHistory[] }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!histories || histories.length === 0) return null;
+
+  return (
+    <View style={styles.roadmapContainer}>
+      <TouchableOpacity 
+        style={styles.roadmapToggle} 
+        onPress={() => setExpanded(!expanded)}
+        activeOpacity={0.7}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="git-commit-outline" size={ms(16)} color="#D63B8A" />
+          <Text style={styles.roadmapToggleText}>Donation Roadmap</Text>
+        </View>
+        <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={ms(16)} color="#666" />
+      </TouchableOpacity>
+
+      {expanded && (
+        <View style={styles.roadmapList}>
+          {histories.map((h, i) => {
+            const isLast = i === histories.length - 1;
+            const d = new Date(h.createdAt);
+            const dateStr = isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            return (
+              <View key={i} style={styles.roadmapItem}>
+                <View style={styles.roadmapTimeline}>
+                  <View style={styles.roadmapDot} />
+                  {!isLast && <View style={styles.roadmapLine} />}
+                </View>
+                <View style={styles.roadmapContent}>
+                  <View style={styles.roadmapHeaderRow}>
+                    <Text style={styles.roadmapStatusText}>{h.status}</Text>
+                    <Text style={styles.roadmapDateText}>{dateStr}</Text>
+                  </View>
+                  <View style={styles.roadmapNoteBox}>
+                    <Text style={styles.roadmapNoteText}>{h.notes || `Status changed to ${h.status}`}</Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function DonationHistoryScreen({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -412,6 +462,7 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
         donorDeliveryLink: d.donorDeliveryLink || d.donor_delivery_link || null,
         scheduledDeliveryAt: d.scheduledDeliveryAt || d.scheduled_delivery_at || null,
         certificateNo: d.certificateNo || d.certificate_no || null,
+        statusHistories: d.statusHistories || [],
       }));
 
       const monetary: DonationRecord[] = (moneyRes.data || []).map((m: any) => ({
@@ -421,6 +472,7 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
         status: m.status || 'Submitted',
         createdAt: m.createdAt || m.created_at,
         reference: m.reference,
+        statusHistories: m.statusHistories || [],
       }));
 
       const merged = [...hair, ...monetary].sort((a, b) => {
@@ -690,6 +742,11 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
                            }}
                          />
                        )}
+
+                       {/* Donation Roadmap */}
+                       {item.statusHistories && item.statusHistories.length > 0 && (
+                         <DonationRoadmap histories={item.statusHistories} />
+                       )}
                      </>
                    )}
                 </Animated.View>
@@ -822,7 +879,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // ── Tracking-link form (matches website's DonorTrackingDetail) ───────
   trackingBox: {
     marginTop: vs(12),
     padding: ms(14),
@@ -897,7 +953,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   certificateBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(13), letterSpacing: 0.5 },
-  // ── Schedule-delivery form (mirrors website's schedule UI) ──────────
   scheduleBox: {
     marginTop: vs(12),
     padding: ms(14),
@@ -987,6 +1042,85 @@ const styles = StyleSheet.create({
     fontSize: ms(11),
     color: '#78716C',
     fontWeight: '600',
+  },
+
+  roadmapContainer: {
+    marginTop: vs(12),
+    backgroundColor: '#fff',
+    borderRadius: ms(12),
+    borderWidth: 1,
+    borderColor: '#FFF0F8',
+    overflow: 'hidden',
+  },
+  roadmapToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: ms(12),
+    backgroundColor: '#FFF0F8',
+  },
+  roadmapToggleText: {
+    fontSize: ms(14),
+    fontWeight: '800',
+    color: '#D63B8A',
+    marginLeft: ms(8),
+  },
+  roadmapList: {
+    padding: ms(12),
+    paddingTop: ms(8),
+    backgroundColor: '#fff',
+  },
+  roadmapItem: {
+    flexDirection: 'row',
+  },
+  roadmapTimeline: {
+    alignItems: 'center',
+    width: ms(20),
+    marginRight: ms(8),
+  },
+  roadmapDot: {
+    width: ms(10),
+    height: ms(10),
+    borderRadius: ms(5),
+    backgroundColor: '#D63B8A',
+    borderWidth: 2,
+    borderColor: '#fff',
+    marginTop: vs(2),
+    zIndex: 1,
+  },
+  roadmapLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#FFF0F8',
+    marginTop: vs(-4),
+    marginBottom: vs(-2),
+  },
+  roadmapContent: {
+    flex: 1,
+    paddingBottom: vs(16),
+  },
+  roadmapHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: vs(4),
+  },
+  roadmapStatusText: {
+    fontSize: ms(13),
+    fontWeight: '800',
+    color: '#D63B8A',
+  },
+  roadmapDateText: {
+    fontSize: ms(11),
+    color: '#999',
+  },
+  roadmapNoteBox: {
+    backgroundColor: '#FFF0F8',
+    padding: ms(8),
+    borderRadius: ms(8),
+  },
+  roadmapNoteText: {
+    fontSize: ms(12),
+    color: '#666',
   },
 });
 

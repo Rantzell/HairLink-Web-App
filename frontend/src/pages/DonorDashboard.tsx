@@ -1074,7 +1074,7 @@ const DonorDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* ─── Rewards Progress Bar ─── */}
+              {}
               <div className="hl-dash-progress-wrap" aria-label={`Reward progress: ${points} of ${goal} points`}>
 
                 {/* Track + fill + moving indicator */}
@@ -1326,7 +1326,7 @@ const DonorDashboard: React.FC = () => {
       </div>
     </div>
 
-    {/* ── Free Wig Milestone Modal ── */}
+    {}
     {showMilestoneModal && (
       <div
         style={{

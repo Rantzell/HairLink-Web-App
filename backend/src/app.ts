@@ -25,7 +25,6 @@ import rewardsRoutes from './routes/rewards.routes';
 
 const app = express();
 
-// ── Security ──
 app.use(helmet());
 const allowedOrigins = [
   'http://localhost:5173',
@@ -54,7 +53,6 @@ app.use(cors({
   credentials: true,
 }));
 
-// ── Rate Limiting ──
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000,
@@ -70,11 +68,9 @@ const authLimiter = rateLimit({
   message: { error: 'Too many auth attempts, please try again later.' },
 });
 
-// ── Body Parsing ──
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ── Routes ──
 app.get('/', (_req, res) => {
   res.json({ message: 'HairLink API is running', documentation: '/health' });
 });
@@ -117,7 +113,6 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ── Error Handler (MUST be last) ──
 app.use(errorHandler);
 
 export default app;

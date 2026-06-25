@@ -211,8 +211,6 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
     }
   }, [showCalendar, showNotifications, showMonetary, showProfile, showHairRequest, showHistory, showCommunity, showHairCare, fetchUnreadCount, fetchLatestRequest]);
 
-
-
   const handleOpenURL = (url: string) => {
     Linking.openURL(url).catch(err => CustomAlert.alert('Error', 'Cannot open link'));
   };
@@ -341,7 +339,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar style="light" />
-      {/* ── Header ─────────────────────────────────── */}
+      {}
       <View>
         <LinearGradient
           colors={['#9B6BBF', '#B084CC']}
@@ -381,7 +379,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Hero ──────────────────────────────────── */}
+        {}
         <Animated.View entering={FadeInDown.springify().delay(100)}>
           <LinearGradient
             colors={['#F5EEF8', '#E8DAEF']}
@@ -400,11 +398,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           </LinearGradient>
         </Animated.View>
 
-
-
-
-
-        {/* ── Status Tracker ────────────────────────── */}
+        {}
         <Animated.View entering={FadeInRight.springify().delay(200)} style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="time" size={20} color="#B084CC" />
@@ -517,7 +511,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           })()}
         </Animated.View>
 
-        {/* ── How It Works ──────────────────────────── */}
+        {}
         <Animated.View entering={FadeInDown.springify().delay(300)} style={styles.card}>
           <Text style={styles.sectionTitle}>How It Works</Text>
           <Text style={styles.sectionSubtitle}>
@@ -561,7 +555,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           </View>
         </Animated.View>
 
-        {/* ── Hair Care Hub ────────────────────────── */}
+        {}
         <Animated.View entering={FadeInDown.springify().delay(350)} style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="sparkles" size={20} color="#B084CC" />
@@ -578,7 +572,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           </TouchableOpacity>
         </Animated.View>
 
-        {/* ── About Us — image + body + stats in a single rounded panel ── */}
+        {}
         <Animated.View entering={FadeInUp.springify().delay(400)} style={styles.aboutPanel}>
           <View style={styles.aboutImageWrap}>
             <Image
@@ -611,7 +605,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           </View>
         </Animated.View>
 
-        {/* ── Our Partners ── */}
+        {}
         <View style={styles.partnersSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionEyebrow}>TRUSTED PARTNERS</Text>
@@ -641,7 +635,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           </View>
         </View>
 
-        {/* ── Upcoming Events ────────────────────────── */}
+        {}
         <Animated.View entering={FadeInUp.springify().delay(600)} style={styles.eventsSection}>
           <TouchableOpacity activeOpacity={0.9} onPress={() => setShowCalendar(true)}>
             <LinearGradient
@@ -667,7 +661,7 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
         </Animated.View>
       </ScrollView>
 
-      {/* ── Bottom Nav (light purple = recipient theme) ────────── */}
+      {}
       <View style={[styles.bottomNav, { paddingBottom: insets.bottom + ms(8), height: vs(78) + insets.bottom }]}>
         <TouchableOpacity style={styles.navItem}>
           <Feather name="home" size={ms(24)} color="#B084CC" />
@@ -816,7 +810,6 @@ const styles = StyleSheet.create({
   stepLabel: { fontSize: ms(14), color: '#aaa', fontWeight: '600' },
   stepLabelDone: { color: '#1a1a1a', fontWeight: '700' },
 
-  // ── Horizontal Stepper (new 3-step progress tracker) ──
   stepperWrap: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -915,7 +908,6 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(13) },
 
-  // ── New About panel: image header + body + stats (light-purple themed) ──
   aboutPanel: {
     marginHorizontal: ms(14),
     marginBottom: vs(24),

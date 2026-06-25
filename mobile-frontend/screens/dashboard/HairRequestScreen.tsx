@@ -178,7 +178,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
     >
       <StatusBar style="light" />
       
-      {/* ── Elite Header ──────────────────────────────── */}
+      {}
       <LinearGradient
         colors={['#9B6BBF', '#B084CC']}
         start={{ x: 0, y: 0 }}
@@ -204,7 +204,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* ── Your Journey Section ────────────────────── */}
+        {}
         <Animated.View entering={FadeInDown.delay(100)} style={styles.card}>
           <Text style={styles.cardTitle}>Your Journey</Text>
           <Text style={styles.instructions}>Please share with us your story/journey*</Text>
@@ -233,7 +233,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
           />
         </Animated.View>
 
-        {/* ── Documentation Section ───────────────────── */}
+        {}
         <Animated.View entering={FadeInDown.delay(200)} style={styles.card}>
           <Text style={styles.cardTitle}>Supporting Documents</Text>
           <Text style={styles.subLabel}>Upload medical certificate or diagnosis *</Text>
@@ -264,7 +264,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
           </TouchableOpacity>
         </Animated.View>
 
-        {/* ── Hair Information Section ────────────────── */}
+        {}
         <Animated.View entering={FadeInDown.delay(300)} style={styles.card}>
           <Text style={styles.cardTitle}>Hair Information</Text>
 
@@ -318,7 +318,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
           </View>
         </Animated.View>
 
-        {/* ── Delivery Method (matches the website's radio cards) ── */}
+        {}
         <Animated.View entering={FadeInDown.delay(400)} style={styles.card}>
           <Text style={styles.cardTitle}>Delivery Method</Text>
           <Text style={styles.fieldLabel}>How would you like to receive your wig? *</Text>
@@ -362,7 +362,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
           </View>
         </Animated.View>
 
-        {/* ── Submit Button ───────────────────────────── */}
+        {}
         <Animated.View entering={FadeInUp.delay(500)} style={styles.submitContainer}>
           <TouchableOpacity onPress={handleSubmit} activeOpacity={0.8} disabled={loading}>
             <LinearGradient
@@ -469,7 +469,6 @@ const styles = StyleSheet.create({
 
   fieldLabel: { fontSize: ms(14), fontWeight: '900', color: '#444', marginBottom: vs(12) },
 
-  // ── Option cards (Hair Length: main label + subtitle) ──
   optRow: { flexDirection: 'row', gap: ms(10) },
   optCard: {
     flex: 1,
@@ -517,7 +516,6 @@ const styles = StyleSheet.create({
   },
   optSubActive: { color: '#9B6BBF' },
 
-  // ── Color cards (Wig Color: swatch + name) ──
   colorCard: {
     flex: 1,
     paddingVertical: vs(12),
@@ -552,7 +550,6 @@ const styles = StyleSheet.create({
   },
   colorLabelActive: { color: '#7C3AED' },
 
-  // ── Personal details (read-only) ──
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -586,7 +583,6 @@ const styles = StyleSheet.create({
     marginLeft: ms(46),
   },
 
-  // ── Delivery method rows ──
   deliveryRow: {
     flexDirection: 'row',
     alignItems: 'center',

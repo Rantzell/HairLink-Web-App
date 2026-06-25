@@ -398,7 +398,6 @@ const styles = StyleSheet.create({
   statusPill: { alignSelf: 'flex-start', paddingHorizontal: ms(10), paddingVertical: vs(4), borderRadius: ms(10), marginTop: vs(4) },
   statusPillText: { fontSize: ms(10), fontWeight: '900', letterSpacing: 0.5 },
 
-  // ── Fulfillment method card ───────────────────────────────────────
   methodCard: {
     backgroundColor: '#fff',
     borderRadius: ms(20),

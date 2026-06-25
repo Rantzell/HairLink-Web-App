@@ -59,7 +59,6 @@ const RN = (msg) => {
   catch (e) { /* RN not available */ }
 };
 
-// ── Scene setup ──────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({
   canvas: document.getElementById('canvas'),
   alpha: true,
@@ -106,7 +105,6 @@ let currentStyle = INIT_STYLE;
 let currentColor = new THREE.Color(INIT_COLOR);
 let visibleOpacity = 0; // smoothly faded based on tracking state
 
-// ── GLB loading from base64 ──────────────────────────────────────────
 const loader = new GLTFLoader();
 const b64ToBuffer = (b64) => {
   const bin = atob(b64);
@@ -178,7 +176,6 @@ const setVisibleStyle = (style) => {
   }
 })();
 
-// ── Face pose driver ─────────────────────────────────────────────────
 // Smoothed target pose so the hair doesn't jitter on noisy ML Kit frames.
 const targetPos = new THREE.Vector3();
 const targetRot = new THREE.Euler();
@@ -222,7 +219,6 @@ const handleFaceLost = () => {
   targetOpacity = 0;
 };
 
-// ── Message bridge (RN -> WebView) ───────────────────────────────────
 const onRNMessage = (data) => {
   try {
     const msg = typeof data === 'string' ? JSON.parse(data) : data;
@@ -242,7 +238,6 @@ const onRNMessage = (data) => {
 window.addEventListener('message', (e) => onRNMessage(e.data));
 document.addEventListener('message', (e) => onRNMessage(e.data));
 
-// ── Render loop ──────────────────────────────────────────────────────
 const tick = () => {
   const k = 1 - SMOOTHING;
   hairRoot.position.lerp(targetPos, k);

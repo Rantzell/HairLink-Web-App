@@ -402,7 +402,6 @@ router.post('/wigs/create-free', ...wmOnly, upload.single('previewPhoto'), async
       return;
     }
 
-    // ── Find or create a standalone WB parent batch for this wigmaker ──
     // A "standalone" parent is one whose taskCode matches /^WB \d{4}-\d{4}$/
     // (no -W suffix) and belongs to this wigmaker. We always append to the
     // most recent one so that multiple wigs end up as W1, W2, W3... under

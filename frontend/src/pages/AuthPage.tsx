@@ -6,14 +6,10 @@ import PasswordInput from '../components/PasswordInput';
 
 const isDev = import.meta.env.DEV;
 
-/* ═══════════════════════════════════════════════════════════════
-   STYLES — classic sliding-overlay split-screen auth
-═══════════════════════════════════════════════════════════════ */
 const authStyles = `
 .hl-auth-root * { box-sizing: border-box; }
 .hl-auth-root a  { text-decoration: none; }
 
-/* ── Page wrapper ── */
 .hl-auth-root {
   flex: 1;
   min-height: calc(100vh - 64px);
@@ -24,9 +20,6 @@ const authStyles = `
   background: #FAFAF9;
 }
 
-/* ═══════════════════════════════════════════════
-   CARD — overflow:hidden is the magic
-═══════════════════════════════════════════════ */
 .hl-auth-main {
   position: relative;
   width: min(1060px, 96vw);
@@ -36,9 +29,6 @@ const authStyles = `
   box-shadow: 0 24px 64px rgba(0,0,0,.14), 0 4px 16px rgba(0,0,0,.06);
 }
 
-/* ═══════════════════════════════════════════════
-   FORM PANELS (white side)
-═══════════════════════════════════════════════ */
 .hl-form-box {
   position: absolute;
   top: 0;
@@ -73,10 +63,6 @@ const authStyles = `
   justify-content: flex-start;
   padding-top: clamp(1.5rem,3vw,2.25rem);
 }
-
-/* ═══════════════════════════════════════════════
-   DARK OVERLAY PANEL
-═══════════════════════════════════════════════ */
 
 /* The clipping wrapper — starts at LEFT covering 50% */
 .hl-overlay-wrap {
@@ -141,11 +127,6 @@ const authStyles = `
 /* RIGHT sub-panel — visible in ACTIVE (register) state */
 .hl-ov-right { right: 0; transform: translateX(0); }
 
-/* ═══════════════════════════════════════════════
-   ACTIVE STATE TRANSITIONS
-   Triggered by adding .active to .hl-auth-main
-═══════════════════════════════════════════════ */
-
 /* Login slides off to the right */
 .hl-auth-main.active .hl-login-box {
   transform: translateX(100%);
@@ -184,9 +165,6 @@ const authStyles = `
   transform: translateX(0);
 }
 
-/* ═══════════════════════════════════════════════
-   OVERLAY TEXT & BUTTON STYLES
-═══════════════════════════════════════════════ */
 .hl-ov-logo {
   display: flex;
   align-items: center;
@@ -257,9 +235,6 @@ const authStyles = `
   color: #fff;
 }
 
-/* ═══════════════════════════════════════════════
-   FORM INNER WRAPPER
-═══════════════════════════════════════════════ */
 .hl-form-inner {
   width: 100%;
   max-width: 400px;
@@ -267,7 +242,6 @@ const authStyles = `
   flex-direction: column;
 }
 
-/* ── Tabs ── */
 .hl-tabs {
   display: flex;
   border-bottom: 1.5px solid #EEEDE8;
@@ -293,7 +267,6 @@ const authStyles = `
   border-bottom-color: #D63B8A;
 }
 
-/* ── Heading ── */
 .hl-form-h1 {
   font-family: 'Outfit', sans-serif;
   font-size: 1.45rem;
@@ -309,7 +282,6 @@ const authStyles = `
   margin: 0 0 1.1rem;
 }
 
-/* ── Demo card ── */
 .hl-demo-card {
   background: #FFF0F8;
   border: 1px solid rgba(214,59,138,.2);
@@ -351,7 +323,6 @@ const authStyles = `
 .hl-demo-btn:hover { background: #D63B8A; color: #fff; border-color: #D63B8A; }
 .hl-demo-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* ── Field ── */
 .hl-field {
   display: flex;
   flex-direction: column;
@@ -396,10 +367,8 @@ const authStyles = `
   gap: 0.25rem;
 }
 
-/* ── Two column grid ── */
 .hl-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
 
-/* ── Phone input ── */
 .hl-phone-row {
   display: flex;
   align-items: stretch;
@@ -438,7 +407,6 @@ const authStyles = `
   font-family: 'Inter', sans-serif;
 }
 
-/* ── User type selector ── */
 .hl-type-row { display: flex; gap: 0.45rem; margin-bottom: 0.6rem; }
 .hl-type-opt  { flex: 1; }
 .hl-type-opt input { display: none; }
@@ -463,13 +431,11 @@ const authStyles = `
   background: #FFF0F8;
 }
 
-/* ── Password requirements ── */
 .hl-pw-reqs { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 3px 2px; }
 .hl-pw-req  { display: flex; align-items: center; gap: 4px; font-size: 0.66rem; font-weight: 500; color: #A8A29E; transition: color 0.18s; }
 .hl-pw-req.ok  { color: #4A7C59; }
 .hl-pw-req.bad { color: #B45454; }
 
-/* ── Forgot link ── */
 .hl-forgot {
   font-size: 0.75rem;
   color: #A8A29E;
@@ -481,7 +447,6 @@ const authStyles = `
 }
 .hl-forgot:hover { color: #D63B8A; }
 
-/* ── Submit button ── */
 .hl-submit {
   width: 100%;
   padding: 0.72rem;
@@ -513,7 +478,6 @@ const authStyles = `
   letter-spacing: 0.015em;
 }
 
-/* ── Full-screen loader ── */
 .hl-loader {
   position: fixed; inset: 0;
   background: rgba(250,250,249,.88);
@@ -535,7 +499,6 @@ const authStyles = `
 @keyframes hlspin { to { transform: rotate(360deg); } }
 .hl-loader-text { font-size: 0.84rem; color: #78716C; font-weight: 500; }
 
-/* ── Password input box (inside .hl-field) ── */
 .hl-auth-root .input-box { margin: 0 !important; }
 .hl-auth-root .input-box input {
   width: 100% !important;
@@ -557,9 +520,6 @@ const authStyles = `
 .hl-auth-root .input-wrapper { margin: 0 !important; }
 .hl-auth-root .ajax-error { font-size: 0.69rem !important; color: #B45454 !important; background: transparent !important; border: none !important; padding: 0 !important; margin-top: 2px !important; }
 
-/* ═══════════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════════ */
 @media (max-width: 700px) {
   .hl-auth-main {
     min-height: 100vh;
@@ -577,9 +537,6 @@ const authStyles = `
 }
 `;
 
-/* ═══════════════════════════════════════════════════════════════
-   COMPONENT
-═══════════════════════════════════════════════════════════════ */
 const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMode: _im = 'register' }) => {
   const { user, login, loginAs, register } = useAuth();
   const navigate = useNavigate();
@@ -699,7 +656,8 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
     if (!reg.postal_code.trim()) errs.postal_code = ['Postal code is required.'];
     else if (!/^\d{4}$/.test(reg.postal_code.trim())) errs.postal_code = ['Postal code must be 4 digits.'];
     if (!reg.age) errs.age = ['Age is required.'];
-    else if (Number.isNaN(ageNum) || ageNum < 13 || ageNum > 120) errs.age = ['Enter a valid age (13–120).'];
+    else if (Number.isNaN(ageNum) || ageNum < 7) errs.age = ['Age must be at least 7.'];
+    else if (ageNum > 100) errs.age = ['Age cannot exceed 100.'];
     if (!reg.gender) errs.gender = ['Please select a gender.'];
     if (!reg.email.trim()) errs.email = ['Email is required.'];
     else if (!emailRe.test(reg.email.trim())) errs.email = ['Enter a valid email address.'];
@@ -711,6 +669,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
     else {
       const issues: string[] = [];
       if (reg.password.length < 8) issues.push('At least 8 characters.');
+      if (!/[A-Z]/.test(reg.password)) issues.push('Must include an uppercase letter.');
       if (!/[0-9]/.test(reg.password)) issues.push('Must include a number.');
       if (!/[!@#$%^&*(),.?":{}|<>_]/.test(reg.password)) issues.push('Must include a symbol.');
       if (issues.length) errs.password = issues;
@@ -755,9 +714,10 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
 
   const pw = reg.password;
   const pwReqs = [
-    { label: 'At least 8 characters', ok: pw.length >= 8 },
-    { label: 'Contains a number',     ok: /[0-9]/.test(pw) },
-    { label: 'Contains a symbol',     ok: /[!@#$%^&*(),.?":{}|<>_]/.test(pw) },
+    { label: 'At least 8 characters',        ok: pw.length >= 8 },
+    { label: 'Contains an uppercase letter',  ok: /[A-Z]/.test(pw) },
+    { label: 'Contains a number',             ok: /[0-9]/.test(pw) },
+    { label: 'Contains a symbol',             ok: /[!@#$%^&*(),.?":{}|<>_]/.test(pw) },
   ];
 
   return (
@@ -775,12 +735,10 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
         </div>
       )}
 
-      {/* ── Card ── */}
+      {}
       <div className={`hl-auth-main${isReg ? ' active' : ''}`}>
 
-        {/* ─────────────────────────────────────────
-            LOGIN FORM (starts on the RIGHT)
-        ───────────────────────────────────────── */}
+        {}
         <div className="hl-form-box hl-login-box">
           <div className="hl-form-inner">
             {/* Tabs Removed */}
@@ -853,27 +811,13 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
           </div>
         </div>
 
-        {/* ─────────────────────────────────────────
-            REGISTER FORM (starts on the LEFT, hidden)
-        ───────────────────────────────────────── */}
+        {}
         <div className="hl-form-box hl-register-box">
           <div className="hl-form-inner">
             {/* Tabs Removed */}
 
             <h1 className="hl-form-h1">Create account</h1>
             <p className="hl-form-sub">Join HairLink and start making a difference.</p>
-
-            {/* Show a top-level error summary so nothing is hidden off-screen */}
-            {Object.keys(errors).length > 0 && (
-              <div style={{ background: '#fff0f0', border: '1px solid #f8b4b4', borderRadius: '10px', padding: '0.65rem 0.9rem', marginBottom: '0.75rem' }}>
-                <p style={{ margin: 0, fontSize: '0.78rem', color: '#b91c1c', fontWeight: 600 }}>Please fix the following:</p>
-                <ul style={{ margin: '0.3rem 0 0', paddingLeft: '1.1rem' }}>
-                  {Object.values(errors).flat().map((msg, i) => (
-                    <li key={i} style={{ fontSize: '0.75rem', color: '#b91c1c' }}>{msg}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
 
             <form onSubmit={handleRegister} noValidate>
               {/* User type */}
@@ -930,7 +874,9 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 <div className="hl-field">
                   <label className="hl-label">Postal Code</label>
                   <input className="hl-input" type="text" placeholder="1006"
-                    value={reg.postal_code} onChange={e => setReg({ ...reg, postal_code: e.target.value.replace(/\D/g,'') })} />
+                    value={reg.postal_code}
+                    onChange={e => setReg({ ...reg, postal_code: e.target.value.replace(/\D/g,'').slice(0, 4) })}
+                    maxLength={4} />
                   {errors.postal_code && <span className="hl-field-err">⚠ {errors.postal_code[0]}</span>}
                 </div>
               </div>
@@ -940,7 +886,14 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 <div className="hl-field">
                   <label className="hl-label">Age</label>
                   <input className="hl-input" type="number" placeholder="25"
-                    value={reg.age} onChange={e => setReg({ ...reg, age: e.target.value })} />
+                    min={7} max={100}
+                    value={reg.age}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '' || (Number(val) >= 1 && Number(val) <= 100)) {
+                        setReg({ ...reg, age: val });
+                      }
+                    }} />
                   {errors.age && <span className="hl-field-err">⚠ {errors.age[0]}</span>}
                 </div>
                 <div className="hl-field">
@@ -1036,9 +989,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
           </div>
         </div>
 
-        {/* ─────────────────────────────────────────
-            DARK OVERLAY (slides left ↔ right)
-        ───────────────────────────────────────── */}
+        {}
         <div className="hl-overlay-wrap">
           <div className="hl-overlay">
 
@@ -1082,7 +1033,7 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
       </div>
     </main>
 
-    {/* ── Forgot Password Modal ── */}
+    {}
     {showForgot && (
       <div
         onClick={e => { if (e.target === e.currentTarget && !forgotLoading) { setShowForgot(false); resetForgot(); } }}

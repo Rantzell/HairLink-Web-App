@@ -201,7 +201,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
         >
             <StatusBar style="light" />
 
-            {/* ── Brand-pink gradient header (matches recipient's purple header) ── */}
+            {}
             <LinearGradient
                 colors={['#E863A1', '#D63B8A']}
                 start={{ x: 0, y: 0 }}
@@ -229,7 +229,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                 contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(vs(40), insets.bottom + vs(20)) }]}
                 showsVerticalScrollIndicator={false}
             >
-                {/* ── Donation Story (same bullet-list + textarea as recipient) ── */}
+                {}
                 <Animated.View entering={FadeInDown.delay(100)} style={styles.card}>
                     <Text style={styles.cardTitle}>Donation Story</Text>
                     <Text style={styles.instructions}>Kindly describe the reason for your hair donation. *</Text>
@@ -256,7 +256,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                     />
                 </Animated.View>
 
-                {/* ── Proof of Hair (image upload — same UX as recipient docs) ── */}
+                {}
                 <Animated.View entering={FadeInDown.delay(200)} style={styles.card}>
                     <Text style={styles.cardTitle}>Proof of Hair</Text>
                     <Text style={styles.subLabel}>Upload a clear picture of the hair *</Text>
@@ -274,7 +274,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                     </TouchableOpacity>
                 </Animated.View>
 
-                {/* ── Hair Information — option cards + swatch cards (same as recipient) ── */}
+                {}
                 <Animated.View entering={FadeInDown.delay(300)} style={styles.card}>
                     <Text style={styles.cardTitle}>Hair Information</Text>
 
@@ -340,7 +340,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                     </TouchableOpacity>
                 </Animated.View>
 
-                {/* ── Shipping Logistics — address textarea ── */}
+                {}
                 <Animated.View entering={FadeInDown.delay(400)} style={styles.card}>
                     <Text style={styles.cardTitle}>Shipping Logistics</Text>
                     <Text style={styles.subLabel}>Where will you be sending from? *</Text>
@@ -355,8 +355,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                     />
                 </Animated.View>
 
-                {/* ── Delivery Details (read-only info — same drop-off the
-                       donor sees in DonationHistoryScreen after approval) ── */}
+                {}
                 <Animated.View entering={FadeInDown.delay(450)} style={styles.deliveryCard}>
                     <View style={styles.deliveryTitleRow}>
                         <Ionicons name="location" size={ms(16)} color="#D63B8A" />
@@ -376,7 +375,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                     </Text>
                 </Animated.View>
 
-                {/* ── Submit (same gradient pill as the recipient) ── */}
+                {}
                 <Animated.View entering={FadeInUp.delay(500)} style={styles.submitContainer}>
                     {submitError && (
                         <View style={styles.errorBanner}>
@@ -483,7 +482,6 @@ const styles = StyleSheet.create({
 
     fieldLabel: { fontSize: ms(14), fontWeight: '900', color: '#44403C', marginBottom: vs(12) },
 
-    // ── Option cards (Hair Length: label + subtitle) ──
     optRow: { flexDirection: 'row', gap: ms(10) },
     optCard: {
         flex: 1,
@@ -531,7 +529,6 @@ const styles = StyleSheet.create({
     },
     optSubActive: { color: '#D63B8A' },
 
-    // ── Color swatch cards ──
     colorCard: {
         flex: 1,
         paddingVertical: vs(12),
@@ -566,7 +563,6 @@ const styles = StyleSheet.create({
     },
     colorLabelActive: { color: '#B52B72' },
 
-    // ── Checkbox (chemically treated) ──
     checkRow: { flexDirection: 'row', alignItems: 'center', marginTop: vs(18) },
     checkBox: {
         width: ms(22),
@@ -581,7 +577,6 @@ const styles = StyleSheet.create({
     checkBoxActive: { backgroundColor: '#D63B8A', borderColor: '#D63B8A' },
     checkLabel: { flex: 1, fontSize: ms(13), color: '#44403C', fontWeight: '600', lineHeight: vs(19) },
 
-    // ── Upload button ──
     uploadBtn: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -598,7 +593,6 @@ const styles = StyleSheet.create({
     previewImg: { width: '100%', height: vs(200), resizeMode: 'cover' },
     uploadBtnText: { fontSize: ms(14), fontWeight: '800', color: '#D63B8A' },
 
-    // ── Personal details rows (read-only) ──
     profileRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -632,7 +626,6 @@ const styles = StyleSheet.create({
         marginLeft: ms(46),
     },
 
-    // ── Delivery info card (read-only) ──
     deliveryCard: {
         backgroundColor: '#FFF0F8',
         borderRadius: ms(16),
@@ -651,7 +644,6 @@ const styles = StyleSheet.create({
     deliveryLabel: { fontWeight: '800', color: '#1C1917' },
     deliveryLine: { fontSize: ms(12.5), color: '#44403C', lineHeight: ms(18), marginBottom: vs(4) },
 
-    // ── Submit ──
     submitContainer: { marginTop: vs(6) },
     errorBanner: {
         padding: ms(12),

@@ -53,6 +53,17 @@ const DonorProfile: React.FC = () => {
         }
       }
     }
+    if (editData.age) {
+      const ageNum = parseInt(editData.age, 10);
+      if (Number.isNaN(ageNum) || ageNum < 7) {
+        toast.error('Age must be at least 7.');
+        return;
+      }
+      if (ageNum > 120) {
+        toast.error('Age cannot exceed 120.');
+        return;
+      }
+    }
     setShowConfirm(true);
   };
 
@@ -388,7 +399,7 @@ const DonorProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Account Actions ── */}
+      {}
       <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
         <button
           type="button"
@@ -415,7 +426,7 @@ const DonorProfile: React.FC = () => {
         </button>
       </div>
 
-      {/* ── Change Password Modal ── */}
+      {}
       {showChangePasswordModal && (
         <div
           onClick={e => { if (e.target === e.currentTarget && !isChangingPassword) setShowChangePasswordModal(false); }}
@@ -525,7 +536,7 @@ const DonorProfile: React.FC = () => {
         <div className="ep-overlay" onClick={e => { if (e.target === e.currentTarget) setIsModalOpen(false); }}>
           <div className="ep-modal">
 
-            {/* ── Top bar ── */}
+            {}
             <div className="ep-topbar">
               <h2 className="ep-title">My profile</h2>
               <button className="ep-close" type="button" onClick={() => setIsModalOpen(false)} aria-label="Close">
@@ -533,7 +544,7 @@ const DonorProfile: React.FC = () => {
               </button>
             </div>
 
-            {/* ── Body: photo column + form column ── */}
+            {}
             <form id="ep-form" onSubmit={handleUpdate} className="ep-body">
 
               {/* Photo column */}
@@ -588,8 +599,6 @@ const DonorProfile: React.FC = () => {
                   <input type="email" value={user?.email || ''} readOnly className="ep-input ep-input-readonly" />
                 </div>
 
-
-
                 <div className="ep-field">
                   <label className="ep-label">Phone number</label>
                   <div style={{ display: 'flex', alignItems: 'stretch', border: '1.5px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
@@ -634,7 +643,7 @@ const DonorProfile: React.FC = () => {
                       value={editData.age}
                       onChange={e => setEditData({ ...editData, age: e.target.value })}
                       className="ep-input"
-                      min="1" max="120"
+                      min="7" max="120"
                       placeholder="Age"
                     />
                   </div>
@@ -668,7 +677,7 @@ const DonorProfile: React.FC = () => {
               </div>
             </form>
 
-            {/* ── Footer ── */}
+            {}
             <div className="ep-footer">
               <button type="button" className="ep-btn-close" onClick={() => setIsModalOpen(false)}>
                 Close

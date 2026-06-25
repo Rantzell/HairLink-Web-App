@@ -248,6 +248,17 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     };
 
     const handleUpdateProfile = async () => {
+        if (age) {
+            const parsedAge = parseInt(age, 10);
+            if (isNaN(parsedAge) || parsedAge < 7) {
+                CustomAlert.alert('Invalid Age', 'Age must be at least 7.');
+                return;
+            }
+            if (parsedAge > 120) {
+                CustomAlert.alert('Invalid Age', 'Age cannot exceed 120.');
+                return;
+            }
+        }
         try {
             setUpdating(true);
 
@@ -605,7 +616,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 </View>
             </ScrollView>
 
-            {/* ── Referral success modal ───────────────────────────── */}
+            {}
             <Modal
                 visible={showReferralSuccess}
                 transparent
@@ -638,7 +649,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 </View>
             </Modal>
 
-            {/* ── Change Password modal ──────────────────────────────── */}
+            {}
             <Modal
                 visible={showChangePassword}
                 transparent
@@ -735,6 +746,65 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 </KeyboardAvoidingView>
             </Modal>
 
+            {}
+            <Modal
+                visible={showDeleteConfirm}
+                transparent
+                animationType="fade"
+                onRequestClose={() => { if (!isDeleting) { setShowDeleteConfirm(false); setDeleteConfirmText(''); } }}
+            >
+                <View style={styles.referralModalBackdrop}>
+                    <Animated.View entering={FadeInUp.springify().damping(15)} style={styles.deleteModalCard}>
+                        <View style={styles.deleteModalIconWrap}>
+                            <Feather name="alert-triangle" size={ms(32)} color="#DC2626" />
+                        </View>
+                        <Text style={styles.deleteModalTitle}>Delete account?</Text>
+                        <Text style={styles.deleteModalBody}>
+                            This action is <Text style={{ fontWeight: '900' }}>irreversible</Text>. Your account,
+                            donations, history, and data will be permanently deleted.
+                        </Text>
+                        <Text style={styles.deleteModalHint}>
+                            Type <Text style={{ fontWeight: '900', color: '#DC2626' }}>DELETE</Text> to confirm.
+                        </Text>
+                        <TextInput
+                            value={deleteConfirmText}
+                            onChangeText={setDeleteConfirmText}
+                            placeholder="DELETE"
+                            placeholderTextColor="#9CA3AF"
+                            autoCapitalize="characters"
+                            autoCorrect={false}
+                            editable={!isDeleting}
+                            style={[
+                                styles.deleteModalInput,
+                                { borderColor: deleteConfirmText === 'DELETE' ? '#DC2626' : '#E5E7EB' },
+                            ]}
+                        />
+                        <View style={styles.deleteModalActions}>
+                            <TouchableOpacity
+                                style={[styles.deleteModalCancel, isDeleting && { opacity: 0.5 }]}
+                                onPress={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }}
+                                disabled={isDeleting}
+                            >
+                                <Text style={styles.deleteModalCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.deleteModalConfirm,
+                                    (deleteConfirmText !== 'DELETE' || isDeleting) && { opacity: 0.5 },
+                                ]}
+                                onPress={doDeleteAccount}
+                                disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+                            >
+                                {isDeleting ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.deleteModalConfirmText}>Delete Forever</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+                </View>
+            </Modal>
         </KeyboardAvoidingView>
     );
 }
@@ -777,7 +847,6 @@ function InfoRow({ icon, label, value, isEdit, onChange, keyboardType, readOnly,
     );
 }
 
-// ── Loading skeleton ────────────────────────────────────────────
 // A shimmering placeholder that mirrors the profile layout so the
 // transition into the loaded view feels seamless.
 function SkeletonBlock({ width, height, radius = 8, style }: { width: number | string; height: number; radius?: number; style?: any }) {
@@ -940,7 +1009,6 @@ const styles = StyleSheet.create({
     // Info Section
     infoSection: { marginBottom: vs(20) },
 
-    // ── New unified "Personal Details" card (replaces sectionRow + glassCard) ──
     detailsCard: {
         backgroundColor: '#fff',
         borderRadius: ms(22),
@@ -1109,7 +1177,6 @@ const styles = StyleSheet.create({
     },
     claimBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(14), letterSpacing: 1 },
 
-    // ── Referral success modal ──
     referralModalBackdrop: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
