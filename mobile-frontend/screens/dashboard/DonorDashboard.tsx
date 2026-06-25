@@ -443,9 +443,11 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </View>
 
           <View style={styles.progressBg}>
-            <View style={[styles.progressFill, { width: `${Math.min((starPoints / 100) * 100, 100)}%` }]} />
+            <View style={[styles.progressFill, { width: `${starPoints % 100}%` }]} />
           </View>
-          <Text style={styles.progressLabel}>{starPoints} / 100 pts — Free wig at 100!</Text>
+          <Text style={styles.progressLabel}>
+            {starPoints % 100} / 100 pts — {Math.floor(starPoints / 100) > 0 ? `You have ${Math.floor(starPoints / 100)} voucher(s) ready!` : 'Free wig at 100!'}
+          </Text>
 
           <View style={styles.starsRow}>
             {Array.from({ length: 9 }).map((_, i) => (

@@ -104,6 +104,10 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
             CustomAlert.alert('Weak password', 'New password must be at least 8 characters.');
             return;
         }
+        if (!/[A-Z]/.test(newPassword)) {
+            CustomAlert.alert('Weak password', 'New password must contain a capital letter.');
+            return;
+        }
         if (!/[0-9]/.test(newPassword)) {
             CustomAlert.alert('Weak password', 'New password must contain a number.');
             return;
@@ -248,14 +252,32 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     };
 
     const handleUpdateProfile = async () => {
+        const first = profile.firstName || profile.first_name || '';
+        const last = profile.lastName || profile.last_name || '';
+        const originalFullName = `${first} ${last}`.trim();
+        const originalPhone = profile.phone || '';
+        const originalAge = profile.age != null ? String(profile.age) : '';
+        const originalBio = profile.bio || '';
+
+        let formattedPhone = phone.trim();
+        if (formattedPhone.startsWith('09')) {
+            formattedPhone = '+63' + formattedPhone.substring(1);
+        }
+
+        if (
+            fullName.trim() === originalFullName &&
+            formattedPhone === originalPhone &&
+            age === originalAge &&
+            bio.trim() === originalBio
+        ) {
+            setEditMode(false);
+            return;
+        }
+
         if (age) {
             const parsedAge = parseInt(age, 10);
-            if (isNaN(parsedAge) || parsedAge < 7) {
-                CustomAlert.alert('Invalid Age', 'Age must be at least 7.');
-                return;
-            }
-            if (parsedAge > 120) {
-                CustomAlert.alert('Invalid Age', 'Age cannot exceed 120.');
+            if (isNaN(parsedAge) || parsedAge < 15 || parsedAge > 99) {
+                CustomAlert.alert('Invalid Age', 'Age must be between 15 and 99.');
                 return;
             }
         }
@@ -266,10 +288,12 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
             const firstName = names[0] || '';
             const lastName = names.slice(1).join(' ') || firstName;
 
+
+
             await api.post('/profile/', {
                 first_name: firstName,
                 last_name: lastName,
-                phone: phone,
+                phone: formattedPhone,
                 age: age ? parseInt(age, 10) : null,
                 bio: bio || null,
             });
@@ -278,7 +302,12 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
             setEditMode(false);
             fetchProfile();
         } catch (error: any) {
-            const msg = error.response?.data?.error || error.response?.data?.message || 'Failed to update profile.';
+            let msg = error.response?.data?.error || error.response?.data?.message || 'Failed to update profile.';
+            if (error.response?.data?.details) {
+                const details = error.response.data.details;
+                const messages = Object.values(details).flat();
+                if (messages.length > 0) msg = messages.join('\n');
+            }
             CustomAlert.alert('Update Failed', msg);
         } finally {
             setUpdating(false);
@@ -691,7 +720,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                             <TextInput
                                 value={newPassword}
                                 onChangeText={setNewPassword}
-                                placeholder="At least 8 chars, 1 number, 1 symbol"
+                                placeholder="Must have 8+ chars, capital, number, symbol"
                                 placeholderTextColor="#9CA3AF"
                                 secureTextEntry={!showNewPw}
                                 autoCapitalize="none"
@@ -746,65 +775,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                 </KeyboardAvoidingView>
             </Modal>
 
-            {}
-            <Modal
-                visible={showDeleteConfirm}
-                transparent
-                animationType="fade"
-                onRequestClose={() => { if (!isDeleting) { setShowDeleteConfirm(false); setDeleteConfirmText(''); } }}
-            >
-                <View style={styles.referralModalBackdrop}>
-                    <Animated.View entering={FadeInUp.springify().damping(15)} style={styles.deleteModalCard}>
-                        <View style={styles.deleteModalIconWrap}>
-                            <Feather name="alert-triangle" size={ms(32)} color="#DC2626" />
-                        </View>
-                        <Text style={styles.deleteModalTitle}>Delete account?</Text>
-                        <Text style={styles.deleteModalBody}>
-                            This action is <Text style={{ fontWeight: '900' }}>irreversible</Text>. Your account,
-                            donations, history, and data will be permanently deleted.
-                        </Text>
-                        <Text style={styles.deleteModalHint}>
-                            Type <Text style={{ fontWeight: '900', color: '#DC2626' }}>DELETE</Text> to confirm.
-                        </Text>
-                        <TextInput
-                            value={deleteConfirmText}
-                            onChangeText={setDeleteConfirmText}
-                            placeholder="DELETE"
-                            placeholderTextColor="#9CA3AF"
-                            autoCapitalize="characters"
-                            autoCorrect={false}
-                            editable={!isDeleting}
-                            style={[
-                                styles.deleteModalInput,
-                                { borderColor: deleteConfirmText === 'DELETE' ? '#DC2626' : '#E5E7EB' },
-                            ]}
-                        />
-                        <View style={styles.deleteModalActions}>
-                            <TouchableOpacity
-                                style={[styles.deleteModalCancel, isDeleting && { opacity: 0.5 }]}
-                                onPress={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }}
-                                disabled={isDeleting}
-                            >
-                                <Text style={styles.deleteModalCancelText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.deleteModalConfirm,
-                                    (deleteConfirmText !== 'DELETE' || isDeleting) && { opacity: 0.5 },
-                                ]}
-                                onPress={doDeleteAccount}
-                                disabled={deleteConfirmText !== 'DELETE' || isDeleting}
-                            >
-                                {isDeleting ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Text style={styles.deleteModalConfirmText}>Delete Forever</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </Animated.View>
-                </View>
-            </Modal>
+
         </KeyboardAvoidingView>
     );
 }

@@ -15,13 +15,14 @@ export const registerSchema = z.object({
   email: z.string().email().max(255),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one capital letter')
     .regex(/[0-9]/, 'Password must contain at least one number')
     .regex(/[!@#$%^&*(),.?":{}|<>_]/, 'Password must contain at least one symbol'),
   password_confirmation: z.string().optional(),
   country: z.string().max(255).optional(),
   region: z.string().max(255).optional(),
   postal_code: z.string().max(255).optional(),
-  age: z.coerce.number().int().min(7).max(120).optional().nullable(),
+  age: z.coerce.number().int().min(15).max(99).optional().nullable(),
   gender: z.enum(['male', 'female', 'nonbinary', 'prefer_not_say']).optional().nullable(),
   phone: z.string()
     .regex(/^\+639\d{9}$/, 'Mobile number must be exactly 10 digits starting with 9 after +63.')
@@ -40,6 +41,7 @@ export const resetPasswordSchema = z.object({
   email: z.string().email(),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one capital letter')
     .regex(/[0-9]/, 'Password must contain at least one number')
     .regex(/[!@#$%^&*(),.?":{}|<>_]/, 'Password must contain at least one symbol'),
   password_confirmation: z.string(),
@@ -143,7 +145,7 @@ export const profileUpdateSchema = z.object({
     .optional()
     .nullable(),
   bio: z.string().max(1000).optional().nullable(),
-  age: z.coerce.number().int().min(7).max(120).optional().nullable(),
+  age: z.coerce.number().int().min(15).max(99).optional().nullable(),
   gender: z.enum(['male', 'female', 'nonbinary', 'prefer_not_say']).optional().nullable(),
 });
 

@@ -56,14 +56,32 @@ export default function ResetPasswordScreen({ onPasswordUpdated }: ResetPassword
     };
     const pwStrength = getPasswordStrength(password);
 
+    const pwHasMin = password.length >= 8;
+    const pwHasCap = /[A-Z]/.test(password);
+    const pwHasNum = /[0-9]/.test(password);
+    const pwHasSym = /[!@#$%^&*(),.?":{}|<>_]/.test(password);
+    const pwAllOk = pwHasMin && pwHasCap && pwHasNum && pwHasSym;
+
     const handleUpdatePassword = async () => {
         setErrorMsg("");
         if (password !== confirmPassword) {
             setErrorMsg("Passwords do not match.");
             return;
         }
-        if (pwStrength.level < 2) {
-            setErrorMsg("Please choose a stronger password.");
+        if (!pwHasMin) {
+            setErrorMsg("Password must be at least 8 characters long.");
+            return;
+        }
+        if (!pwHasCap) {
+            setErrorMsg("Password must contain at least one capital letter.");
+            return;
+        }
+        if (!pwHasNum) {
+            setErrorMsg("Password must contain at least one number.");
+            return;
+        }
+        if (!pwHasSym) {
+            setErrorMsg("Password must contain at least one symbol.");
             return;
         }
 
@@ -115,7 +133,7 @@ export default function ResetPasswordScreen({ onPasswordUpdated }: ResetPassword
                                         secureTextEntry 
                                         value={password} 
                                         onChangeText={(t) => { setPassword(t); setErrorMsg(""); }} 
-                                        placeholder="Enter new password"
+                                        placeholder="Must have 8+ chars, capital, number, symbol"
                                         placeholderTextColor="#bbb"
                                     />
                                 </View>

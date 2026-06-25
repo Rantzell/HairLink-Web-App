@@ -708,7 +708,7 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
                            staff and pings the donor on the due day → only then does the
                            tracking-link form appear. "Approved" donations keep the
                            legacy direct-link flow so we don't break any in-flight ones. */}
-                       {item.reference && item.status.toLowerCase() === 'verified' && !isDeliveryDue(item.scheduledDeliveryAt) && (
+                       {item.reference && item.status.toLowerCase() === 'verified' && !item.donorDeliveryLink && !item.scheduledDeliveryAt && (
                          <ScheduleDeliveryForm
                            reference={item.reference}
                            scheduledAt={item.scheduledDeliveryAt}
@@ -728,7 +728,7 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
                            has arrived (Asia/Manila). */}
                        {item.reference && (
                          item.status.toLowerCase() === 'approved' ||
-                         (item.status.toLowerCase() === 'verified' && isDeliveryDue(item.scheduledDeliveryAt))
+                         (item.status.toLowerCase() === 'verified' && !!item.scheduledDeliveryAt)
                        ) && (
                          <DeliveryLinkForm
                            reference={item.reference}

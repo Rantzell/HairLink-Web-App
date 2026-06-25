@@ -307,11 +307,14 @@ router.post('/:reference/schedule-delivery', authenticate, validate(scheduleDeli
     }
 
     // Enforce working hours: scheduling is only allowed between 9 AM and 7 PM PHT
+    // BYPASSED: The user requested to bypass the 9am schedule restriction.
+    /*
     const phtHour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' })).getHours();
     if (phtHour < 9 || phtHour >= 19) {
       res.status(422).json({ error: 'Scheduling is only available during working hours (9:00 AM – 7:00 PM).' });
       return;
     }
+    */
 
     await prisma.donation.update({
       where: { id: donation.id },

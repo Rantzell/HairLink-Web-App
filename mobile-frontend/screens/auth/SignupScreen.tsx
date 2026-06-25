@@ -91,9 +91,10 @@ export default function SignupScreen({
     // (≥8 chars · contains a number · contains a symbol). Same source of
     // truth as the website's `pwReqs` list in AuthPage.tsx.
     const pwHasMin = password.length >= 8;
+    const pwHasCap = /[A-Z]/.test(password);
     const pwHasNum = /[0-9]/.test(password);
     const pwHasSym = /[!@#$%^&*(),.?":{}|<>_]/.test(password);
-    const pwAllOk = pwHasMin && pwHasNum && pwHasSym;
+    const pwAllOk = pwHasMin && pwHasCap && pwHasNum && pwHasSym;
     const pwMatches = confirmPassword.length > 0 && confirmPassword === password;
 
     const [viewMode, setViewMode] = useState<"form" | "otp">("form");
@@ -178,17 +179,13 @@ export default function SignupScreen({
             return;
         }
         if (!isEmailValid) { showError("Invalid Email", "Please enter a valid email address."); return; }
-        if (pwStrength.level < 2) { showError("Weak Password", "Add uppercase letters, numbers or symbols."); return; }
+        if (!pwAllOk) { showError("Weak Password", "Password must meet all requirements (8+ chars, capital letter, number, symbol)."); return; }
         if (phone.length < 8 || phone.length > 11) { showError("Invalid Phone", "Phone number must be 8 to 11 digits."); return; }
         if (!role) { showError("Selection Required", "Please select a role (Donor or Recipient)."); return; }
 
         const numericAge = ageText ? parseInt(ageText, 10) : 18;
-        if (ageText && (isNaN(numericAge) || numericAge < 7)) {
-            showError("Invalid Age", "Age must be at least 7.");
-            return;
-        }
-        if (ageText && numericAge > 120) {
-            showError("Invalid Age", "Age cannot exceed 120.");
+        if (ageText && (isNaN(numericAge) || numericAge < 15 || numericAge > 99)) {
+            showError("Invalid Age", "Age must be between 15 and 99.");
             return;
         }
 
@@ -254,7 +251,7 @@ export default function SignupScreen({
                 return;
             }
             if (!pwAllOk) {
-                showError("Weak Password", "Password must be 8+ characters, contain a number and a symbol.");
+                showError("Weak Password", "Password must be 8+ chars, contain a capital letter, a number and a symbol.");
                 return;
             }
             if (!pwMatches) {
@@ -269,7 +266,7 @@ export default function SignupScreen({
         return (
             <LinearGradient colors={['#FAFAF9', '#FFF0F8', '#FFEBF5']} style={styles.root}>
                 <View style={styles.innerContainer}>
-                    <Text style={[styles.title, { marginBottom: 24, color: '#1a1a1a' }]}>Select Gender</Text>
+                    <Text style={[styles.title, { marginBottom: 24, color: '#1a1a1a', textAlign: 'center' }]}>Select Gender</Text>
                     <BlurView intensity={60} tint="light" style={{ borderRadius: 24, overflow: "hidden", padding: 16, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.5)" }}>
                         {GENDERS.map((item) => (
                             <TouchableOpacity
@@ -281,7 +278,7 @@ export default function SignupScreen({
                             </TouchableOpacity>
                         ))}
                     </BlurView>
-                    <TouchableOpacity onPress={() => setPickingGender(false)} style={{ marginTop: 24, padding: 12 }}>
+                    <TouchableOpacity onPress={() => setPickingGender(false)} style={{ marginTop: 24, padding: 12, alignItems: 'center' }}>
                         <Text style={{ color: '#1a1a1a', fontSize: 16, fontWeight: 'bold' }}>Cancel</Text>
                     </TouchableOpacity>
                 </View>
@@ -418,6 +415,7 @@ export default function SignupScreen({
                                         <View style={styles.pwReqsBox}>
                                             {[
                                                 { ok: pwHasMin, label: 'At least 8 characters' },
+                                                { ok: pwHasCap, label: 'Contains a capital letter' },
                                                 { ok: pwHasNum, label: 'Contains a number' },
                                                 { ok: pwHasSym, label: 'Contains a symbol' },
                                             ].map((req) => (
@@ -528,7 +526,7 @@ export default function SignupScreen({
                                             value={postalCode}
                                             onChangeText={(t) => setPostalCode(t.replace(/[^0-9]/g, ''))}
                                             keyboardType="number-pad"
-                                            maxLength={6}
+                                            maxLength={4}
                                             placeholder="Postal Code"
                                             placeholderTextColor="#A8A29E"
                                         />
@@ -681,7 +679,7 @@ const styles = StyleSheet.create({
     iconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFF0F5', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 20 },
 
     // Gender picker items
-    genderItem: { padding: 16, width: '100%', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.1)', alignItems: 'center' },
+    genderItem: { padding: 16, width: '100%', borderBottomWidth: 1, borderBottomColor: 'rgba(0, 0, 0, 0.05)', alignItems: 'center' },
     genderItemText: { color: '#1a1a1a', fontSize: 18, fontWeight: '700' },
 });
 

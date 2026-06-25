@@ -19,6 +19,7 @@ import * as Clipboard from 'expo-clipboard';
 import { ms, vs } from '../../lib/scaling';
 import api from '../../lib/api';
 import { CustomAlert } from '../../components/GlobalAlert';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 /**
  * Donor rewards screen — backed by the new milestone + voucher API.
@@ -258,16 +259,14 @@ export default function RewardsScreen({ onBack }: { onBack: () => void }) {
                       <Ionicons name="calendar-outline" size={ms(13)} color="#888" />
                       <Text style={styles.voucherMetaText}>Issued {fmtDate(v.issuedAt)}</Text>
                     </View>
-                    <View style={styles.voucherMetaItem}>
-                      <Ionicons name="time-outline" size={ms(13)} color="#888" />
-                      <Text style={styles.voucherMetaText}>
-                        {v.status === 'redeemed'
-                          ? `Used ${fmtDate(v.redeemedAt)}`
-                          : v.expiresAt
-                            ? `Expires ${fmtDate(v.expiresAt)}`
-                            : 'No expiry'}
-                      </Text>
-                    </View>
+                    {v.status === 'redeemed' && (
+                      <View style={styles.voucherMetaItem}>
+                        <Ionicons name="time-outline" size={ms(13)} color="#888" />
+                        <Text style={styles.voucherMetaText}>
+                          Used {fmtDate(v.redeemedAt)}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 </TouchableOpacity>
               </Animated.View>
@@ -311,12 +310,7 @@ export default function RewardsScreen({ onBack }: { onBack: () => void }) {
                   <Text style={styles.modalMetaLabel}>Issued</Text>
                   <Text style={styles.modalMetaValue}>{fmtDate(detail.issuedAt)}</Text>
                 </View>
-                {detail.expiresAt && (
-                  <View style={styles.modalMetaRow}>
-                    <Text style={styles.modalMetaLabel}>Expires</Text>
-                    <Text style={styles.modalMetaValue}>{fmtDate(detail.expiresAt)}</Text>
-                  </View>
-                )}
+
                 {detail.redeemedAt && (
                   <View style={styles.modalMetaRow}>
                     <Text style={styles.modalMetaLabel}>Redeemed</Text>
@@ -332,23 +326,11 @@ export default function RewardsScreen({ onBack }: { onBack: () => void }) {
                 >
                   <Text style={styles.modalBtnGhostText}>Close</Text>
                 </TouchableOpacity>
-                {detail.status === 'active' && (
-                  <TouchableOpacity
-                    style={[styles.modalBtn, styles.modalBtnSolid, redeeming === detail.code && { opacity: 0.7 }]}
-                    onPress={() => confirmRedeem(detail)}
-                    disabled={redeeming === detail.code}
-                  >
-                    {redeeming === detail.code ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={styles.modalBtnSolidText}>Mark Redeemed</Text>
-                    )}
-                  </TouchableOpacity>
-                )}
               </View>
             </View>
           )}
         </View>
+        {detail && <ConfettiCannon count={150} origin={{x: -10, y: 0}} fallSpeed={2500} explosionSpeed={350} fadeOut={true} />}
       </Modal>
     </View>
   );

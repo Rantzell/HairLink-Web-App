@@ -96,12 +96,12 @@ export default function GlobalAlertComponent({ themeRole }: { themeRole?: 'Donor
           <Text style={styles.title}>{state.title}</Text>
           {!!state.message && <Text style={styles.message}>{state.message}</Text>}
           
-          <View style={styles.actions}>
+          <View style={[styles.actions, activeButtons.length > 2 && { flexDirection: 'column', alignItems: 'stretch' }]}>
             {activeButtons.map((btn, index) => {
               const isCancel = btn.style === 'cancel';
               const isDestructive = btn.style === 'destructive';
               
-              let btnStyle: any = [styles.btn];
+              let btnStyle: any = [styles.btn, activeButtons.length <= 2 && { flex: 1 }];
               let textStyle: any = [];
 
               if (isCancel) {
@@ -124,8 +124,8 @@ export default function GlobalAlertComponent({ themeRole }: { themeRole?: 'Donor
                   onPress={() => {
                     hide();
                     if (btn.onPress) {
-                      // Call on next tick to allow modal to close first
-                      setTimeout(btn.onPress, 10);
+                      // Call after animation finishes (200ms) to avoid iOS presentation race conditions
+                      setTimeout(btn.onPress, 300);
                     }
                   }}
                 >
@@ -191,7 +191,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   btn: {
-    flex: 1,
     paddingVertical: vs(12),
     borderRadius: ms(12),
     alignItems: 'center',
