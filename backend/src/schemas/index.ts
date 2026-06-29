@@ -10,8 +10,20 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   userType: z.enum(['donor', 'recipient']).optional(),
   role: z.enum(['donor', 'recipient']).optional(),
-  first_name: z.string().min(1).max(50).regex(/^[A-Za-z\s'-]+$/, 'First name may only contain letters, spaces, hyphens, and apostrophes.'),
-  last_name: z.string().min(1).max(50).regex(/^[A-Za-z\s'-]+$/, 'Last name may only contain letters, spaces, hyphens, and apostrophes.'),
+  first_name: z.string()
+    .min(2, 'First name must be at least 2 characters')
+    .max(50)
+    .regex(/^[A-Za-z\s'-]+$/, 'First name may only contain letters, spaces, hyphens, and apostrophes.')
+    .refine(val => !(val === val.toUpperCase() && /[A-Za-z]/.test(val)), {
+      message: 'First name cannot be all uppercase.'
+    }),
+  last_name: z.string()
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50)
+    .regex(/^[A-Za-z\s'-]+$/, 'Last name may only contain letters, spaces, hyphens, and apostrophes.')
+    .refine(val => !(val === val.toUpperCase() && /[A-Za-z]/.test(val)), {
+      message: 'Last name cannot be all uppercase.'
+    }),
   email: z.string().email().max(255),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
@@ -137,8 +149,20 @@ export const materialConfirmationSchema = z.object({
 });
 
 export const profileUpdateSchema = z.object({
-  first_name: z.string().min(1).max(50).regex(/^[A-Za-z\s'-]+$/, 'First name may only contain letters, spaces, hyphens, and apostrophes.'),
-  last_name: z.string().min(1).max(50).regex(/^[A-Za-z\s'-]+$/, 'Last name may only contain letters, spaces, hyphens, and apostrophes.'),
+  first_name: z.string()
+    .min(2, 'First name must be at least 2 characters')
+    .max(50)
+    .regex(/^[A-Za-z\s'-]+$/, 'First name may only contain letters, spaces, hyphens, and apostrophes.')
+    .refine(val => !(val === val.toUpperCase() && /[A-Za-z]/.test(val)), {
+      message: 'First name cannot be all uppercase.'
+    }),
+  last_name: z.string()
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50)
+    .regex(/^[A-Za-z\s'-]+$/, 'Last name may only contain letters, spaces, hyphens, and apostrophes.')
+    .refine(val => !(val === val.toUpperCase() && /[A-Za-z]/.test(val)), {
+      message: 'Last name cannot be all uppercase.'
+    }),
   phone: z.string()
     .regex(/^\+639\d{9}$/, 'Mobile number must be exactly 10 digits starting with 9 after +63.')
     .or(z.literal(''))

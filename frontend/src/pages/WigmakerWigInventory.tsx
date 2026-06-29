@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
+import ConfirmModal from '../components/ConfirmModal';
 import { getPublicUrl } from '../lib/storage';
 import '../styles/WigmakerTaskDetail.css';
 import '../styles/WigmakerDashboard.css';
@@ -36,6 +37,9 @@ const WigmakerWigInventory: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filter, setFilter] = useState<'all' | 'completed' | 'shipped' | 'received'>('all');
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [selectedDeleteIds, setSelectedDeleteIds] = useState<number[]>([]);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   // Add Wig Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -48,6 +52,10 @@ const WigmakerWigInventory: React.FC = () => {
   const [nextWigCode, setNextWigCode] = useState<string>('');
   const todayMin = React.useMemo(() => {
     return getPhilippinesDateTimeLocal();
+  }, []);
+  const yearMax = React.useMemo(() => {
+    const year = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric' }).format(new Date());
+    return `${year}-12-31T23:59`;
   }, []);
 
   const fetchWigs = async () => {
@@ -97,6 +105,41 @@ const WigmakerWigInventory: React.FC = () => {
       setSelectedWigIds([]);
     } else {
       setSelectedWigIds(readyWigs.map(w => w.id));
+    }
+  };
+
+  const toggleDeleteSelect = (id: number) => {
+    setSelectedDeleteIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllDelete = () => {
+    if (selectedDeleteIds.length === filteredWigsForDelete.length) {
+      setSelectedDeleteIds([]);
+    } else {
+      setSelectedDeleteIds(filteredWigsForDelete.map(w => w.id));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedDeleteIds.length === 0) return;
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    setIsSubmitting(true);
+    try {
+      await apiClient.delete('/internal-api/wigmaker/wigs/bulk-delete', { data: { wigIds: selectedDeleteIds } });
+      toast.success(`${selectedDeleteIds.length} wig(s) deleted successfully.`);
+      setSelectedDeleteIds([]);
+      setDeleteMode(false);
+      setIsDeleteConfirmOpen(false);
+      fetchWigs();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete wigs.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -183,10 +226,18 @@ const WigmakerWigInventory: React.FC = () => {
     return <div className="wigmaker-page staff-page">Loading wig inventory...</div>;
   }
 
-  const filteredWigs = wigs.filter(w => filter === 'all' || w.status === filter);
+  const WIG_MAKER_STATUSES = ['completed', 'shipped', 'received'];
+  // Wigs with any status beyond 'received' (e.g. matched, In Transit) are treated as 'received' for display
+  const displayStatus = (status: string) => WIG_MAKER_STATUSES.includes(status) ? status : 'received';
+
+  const filteredWigs = wigs.filter(w => {
+    const ds = displayStatus(w.status);
+    return filter === 'all' || ds === filter;
+  });
+  const filteredWigsForDelete = filteredWigs; // all visible rows are deletable
   const readyWigsCount = wigs.filter(w => w.status === 'completed').length;
   const shippedWigsCount = wigs.filter(w => w.status === 'shipped').length;
-  const receivedWigsCount = wigs.filter(w => w.status === 'received').length;
+  const receivedWigsCount = wigs.filter(w => displayStatus(w.status) === 'received').length;
 
   return (
     <section className="wigmaker-page reveal active staff-page" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
@@ -226,6 +277,27 @@ const WigmakerWigInventory: React.FC = () => {
             }}
           >
             <i className="bx bx-plus-circle"></i> Add Wig
+          </button>
+          <button
+            type="button"
+            onClick={() => { setDeleteMode(d => !d); setSelectedDeleteIds([]); }}
+            style={{
+              background: deleteMode ? '#ef4444' : '#fff',
+              color: deleteMode ? '#fff' : '#ef4444',
+              border: '1.5px solid #ef4444',
+              padding: '0.5rem 1.25rem',
+              borderRadius: '10px',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <i className={`bx ${deleteMode ? 'bx-x' : 'bx-trash'}`}></i>
+            {deleteMode ? 'Cancel' : 'Delete'}
           </button>
           <div style={{ background: '#fff', border: '1px solid #ead7e8', color: '#ad246d', fontWeight: 800, padding: '0.5rem 1.2rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '50px', textTransform: 'uppercase', boxShadow: '0 4px 12px rgba(73, 20, 52, 0.04)', whiteSpace: 'nowrap' }}>
             <span className="tracking-active-dot"></span>
@@ -343,12 +415,61 @@ const WigmakerWigInventory: React.FC = () => {
           </button>
         </div>
 
+        {/* Delete Action Bar */}
+        {deleteMode && selectedDeleteIds.length > 0 && (
+          <div style={{
+            position: 'sticky',
+            top: '20px',
+            zIndex: 100,
+            background: '#ef4444',
+            padding: '1rem 1.5rem',
+            borderRadius: '14px',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            color: '#fff',
+            boxShadow: '0 8px 24px rgba(239,68,68,0.3)',
+            animation: 'slideDown 0.3s ease'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ background: '#fff', color: '#ef4444', width: '28px', height: '28px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: '0.85rem' }}>
+                {selectedDeleteIds.length}
+              </div>
+              <span style={{ fontWeight: 800, fontSize: '0.95rem' }}>Wig(s) selected for deletion</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleDeleteSelected}
+              disabled={isSubmitting}
+              style={{ height: '38px', padding: '0 1.5rem', borderRadius: '8px', border: 'none', background: '#fff', color: '#ef4444', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
+            >
+              <i className="bx bx-trash"></i>
+              {isSubmitting ? 'Deleting...' : 'Delete Selected'}
+            </button>
+          </div>
+        )}
+
         <div className="task-table-wrap dashboard-task-table-wrap" style={{ background: '#fff', border: '1px solid #ead7e8', borderRadius: '16px', overflowX: 'auto', width: '100%', boxSizing: 'border-box' }}>
           <table className="task-table dashboard-task-table">
             <thead>
               <tr className="dashboard-tr-head">
                 <th className="dashboard-th" style={{ width: '50px', textAlign: 'center' }}>
-                  {filter === 'completed' && (
+                  {deleteMode ? (
+                    <div
+                      onClick={handleSelectAllDelete}
+                      style={{
+                        width: '20px', height: '20px', borderRadius: '4px', border: '2px solid #ef4444',
+                        background: selectedDeleteIds.length === filteredWigsForDelete.length && filteredWigsForDelete.length > 0 ? '#ef4444' : '#fff',
+                        display: 'grid', placeItems: 'center', cursor: 'pointer', margin: '0 auto'
+                      }}
+                    >
+                      {selectedDeleteIds.length === filteredWigsForDelete.length && filteredWigsForDelete.length > 0 && (
+                        <i className="bx bx-check" style={{ color: '#fff', fontSize: '0.9rem' }}></i>
+                      )}
+                    </div>
+                  ) : filter === 'completed' ? (
                     <div
                       onClick={() => handleSelectAll(filteredWigs)}
                       style={{
@@ -368,7 +489,7 @@ const WigmakerWigInventory: React.FC = () => {
                         <i className="bx bx-check" style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 800 }}></i>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </th>
                 <th className="dashboard-th" style={{ width: '80px' }}>Photo</th>
                 <th className="dashboard-th">Wig Code</th>
@@ -383,12 +504,25 @@ const WigmakerWigInventory: React.FC = () => {
                 filteredWigs.map(w => {
                   const isSelectable = w.status === 'completed';
                   const isChecked = selectedWigIds.includes(w.id);
+                  const isDeleteChecked = selectedDeleteIds.includes(w.id);
                   const photoUrl = w.preview_photo ? getPublicUrl('hairlink', w.preview_photo) : null;
 
                   return (
-                    <tr key={w.id} className="dashboard-tr-body" style={{ background: isChecked ? '#fff5f9' : 'none' }}>
+                    <tr key={w.id} className="dashboard-tr-body" style={{ background: isDeleteChecked ? '#fff1f1' : isChecked ? '#fff5f9' : 'none' }}>
                       <td className="dashboard-td" style={{ textAlign: 'center' }}>
-                        {isSelectable && (
+                        {deleteMode ? (
+                          <div
+                            onClick={() => toggleDeleteSelect(w.id)}
+                            style={{
+                              width: '20px', height: '20px', borderRadius: '4px',
+                              border: `2px solid ${isDeleteChecked ? '#ef4444' : '#ead7e8'}`,
+                              background: isDeleteChecked ? '#ef4444' : '#fff',
+                              display: 'grid', placeItems: 'center', cursor: 'pointer', margin: '0 auto', transition: 'all 0.15s ease'
+                            }}
+                          >
+                            {isDeleteChecked && <i className="bx bx-check" style={{ color: '#fff', fontSize: '0.9rem' }}></i>}
+                          </div>
+                        ) : isSelectable ? (
                           <div
                             onClick={() => toggleSelect(w.id)}
                             style={{
@@ -409,7 +543,7 @@ const WigmakerWigInventory: React.FC = () => {
                               <i className="bx bx-check" style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 800 }}></i>
                             )}
                           </div>
-                        )}
+                        ) : null}
                       </td>
                       <td className="dashboard-td">
                         <div style={{ width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden', border: '1.5px solid #ead7e8', background: '#fdf7fb' }}>
@@ -463,7 +597,7 @@ const WigmakerWigInventory: React.FC = () => {
                         </div>
                       </td>
                       <td className="dashboard-td">
-                        <StatusPill status={w.status} />
+                        <StatusPill status={displayStatus(w.status)} />
                       </td>
                       <td className="dashboard-td">
                         {w.deliveryLink ? (
@@ -640,6 +774,7 @@ const WigmakerWigInventory: React.FC = () => {
                     value={customDate}
                     onChange={e => setCustomDate(e.target.value)}
                     min={todayMin}
+                    max={yearMax}
                     className="task-detail-form-input-text"
                   />
                 </div>
@@ -773,6 +908,17 @@ const WigmakerWigInventory: React.FC = () => {
         </div>,
         document.body
       )}
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={executeDelete}
+        title="Delete Wigs"
+        message={`Are you sure you want to delete ${selectedDeleteIds.length} wig(s)? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

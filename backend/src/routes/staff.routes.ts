@@ -93,6 +93,22 @@ router.get('/monetary-donations', ...staffOnly, async (_req, res) => {
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
+// DELETE /internal-api/staff/monetary-donations
+// Bulk delete monetary donation records by array of IDs
+router.delete('/monetary-donations', ...staffOnly, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'No IDs provided.' });
+    }
+    const numericIds = ids.map(Number).filter(n => !isNaN(n));
+    await prisma.monetaryDonation.deleteMany({
+      where: { id: { in: numericIds } },
+    });
+    res.json({ deleted: numericIds.length });
+  } catch (err) { res.status(500).json({ error: 'Failed to delete.' }); }
+});
+
 // GET /internal-api/staff/verification/:type/:reference
 router.get('/verification/:type/:reference', ...staffOnly, async (req, res) => {
   try {
@@ -261,7 +277,7 @@ router.get('/realtime-tracking', ...staffOnly, async (_req, res) => {
     }
 
     const requests = await prisma.hairRequest.findMany({
-      where: { status: { in: ['Validated', 'In Production', 'Matched', 'In Transit', 'Arrived', 'Completed', 'Ready for Pickup', 'Pickup Confirmed'] } },
+      where: { status: { in: ['Validated', 'In Production', 'Matched', 'In Transit', 'Arrived', 'Ready for Pickup', 'Pickup Confirmed'] } },
       include: { user: true }, orderBy: { updatedAt: 'desc' },
     });
     res.json({ donations: s(donations), requests: s(requests), wigmakers: s(wigmakers), wigProductions: wpMap, batches, donationStateMap });
@@ -526,7 +542,7 @@ router.get('/hair-stock', ...staffOnly, async (_req, res) => {
 router.get('/wig-stock', ...staffOnly, async (_req, res) => {
   try {
     const wigs = await prisma.wigProduction.findMany({
-      where: { status: { in: ['completed', 'received'] } },
+      where: { status: 'received' },
       include: { donations: true } as any,
       orderBy: { updatedAt: 'desc' },
       take: 50

@@ -133,7 +133,7 @@ export const notifyRequestStatus = async (userId: string, status: string, refere
     'Validated': `Great news! Your wig request (${reference}) has been validated and approved. Please wait while we find and create the perfect wig for you. We will notify you once a matched wig is ready!`,
     'Approved': `Your wig request (${reference}) has been approved! We are now looking for the best wig match for you.`,
     'Verified': `Your wig request (${reference}) has been verified. Sit tight — we're working on finding the right wig for you!`,
-    'Matched': `Wonderful news! A wig has been matched to your request (${reference})! Your wig is being prepared for delivery.`,
+    'Matched': `Wonderful news! A wig has been matched to your request (${reference})! Your wig is being prepared for pickup.`,
     'In Production': `Your wig for request (${reference}) is now being crafted by our skilled wigmaker. We'll update you once it's ready!`,
     'In Transit': `Your wig for request (${reference}) is on its way! Check your tracking page for delivery details.`,
     'Ready for Pickup': `Your wig for request (${reference}) is ready for pickup at our Binondo office. Please visit during office hours to collect it.`,
@@ -169,17 +169,17 @@ export const notifyWigmakerMaterialDelivery = async (wigmakerId: string, taskCod
 export const notifyCommunityInteraction = async (ownerId: string, actorName: string, postId: string, action: 'comment' | 'like' | 'reply') => {
   const actionText =
     action === 'comment' ? `${actorName} commented on your post.` :
-    action === 'reply'   ? `${actorName} replied to your comment.` :
-                           `${actorName} liked your post.`;
+      action === 'reply' ? `${actorName} replied to your comment.` :
+        `${actorName} liked your post.`;
 
   // Embed postId in the message (the web client parses this) AND set the link
   // column (the mobile client uses this) so both can deep-link to the post.
   const message = `${actionText} [postId:${postId}]`;
 
   const title =
-    action === 'like'    ? 'Someone liked your post' :
-    action === 'comment' ? 'New comment on your post' :
-                           'New reply to your comment';
+    action === 'like' ? 'Someone liked your post' :
+      action === 'comment' ? 'New comment on your post' :
+        'New reply to your comment';
 
   return createNotification(ownerId, title, message, 'community', `post:${postId}`);
 };
@@ -208,11 +208,11 @@ export const notifyReferralRedeemed = async (redeemerId: string, referrerId: str
 export const notifyAnnouncement = async (title: string, message: string, audience: string = 'all') => {
   try {
     const roles: string[] =
-      audience === 'donor'     ? ['donor'] :
-      audience === 'recipient' ? ['recipient'] :
-      audience === 'staff'     ? ['staff'] :
-      audience === 'donor_recipient' ? ['donor', 'recipient'] :
-      ['donor', 'recipient', 'staff', 'wigmaker'];
+      audience === 'donor' ? ['donor'] :
+        audience === 'recipient' ? ['recipient'] :
+          audience === 'staff' ? ['staff'] :
+            audience === 'donor_recipient' ? ['donor', 'recipient'] :
+              ['donor', 'recipient', 'staff', 'wigmaker'];
 
     const targetUsers = await prisma.user.findMany({
       where: { role: { in: roles }, isActive: true },

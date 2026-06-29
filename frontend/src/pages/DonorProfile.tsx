@@ -6,6 +6,14 @@ import PasswordInput from '../components/PasswordInput';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
 
+const GENDER_LABELS: Record<string, string> = {
+  male: 'Male',
+  female: 'Female',
+  nonbinary: 'Non-binary',
+  prefer_not_say: 'Prefer not to say',
+};
+const formatGender = (g?: string | null) => g ? (GENDER_LABELS[g] ?? g) : 'Not set';
+
 const DonorProfile: React.FC = () => {
   const { user, updateUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -284,7 +292,7 @@ const DonorProfile: React.FC = () => {
               </div>
               <div className="detail-item">
                 <label className="detail-label">Gender</label>
-                <span className="detail-value capitalize">{user?.gender || 'Not set'}</span>
+                <span className="detail-value">{formatGender(user?.gender)}</span>
               </div>
             </div>
 
@@ -381,7 +389,7 @@ const DonorProfile: React.FC = () => {
           <article className="stats-card">
             <div className="stats-title-row">
               <i className='bx bxs-star-half'></i>
-              <h3>Impact Stats</h3>
+              <h3>Account Details</h3>
             </div>
             <div className="stats-list">
               <div className="stat-line">
@@ -399,7 +407,7 @@ const DonorProfile: React.FC = () => {
         </div>
       </div>
 
-      {}
+      { }
       <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
         <button
           type="button"
@@ -426,7 +434,7 @@ const DonorProfile: React.FC = () => {
         </button>
       </div>
 
-      {}
+      { }
       {showChangePasswordModal && (
         <div
           onClick={e => { if (e.target === e.currentTarget && !isChangingPassword) setShowChangePasswordModal(false); }}
@@ -439,11 +447,11 @@ const DonorProfile: React.FC = () => {
               </div>
               <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#111827' }}>Change Password</h2>
             </div>
-            
+
             <form onSubmit={doChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="ep-field" style={{ margin: 0 }}>
                 <label className="ep-label" style={{ fontWeight: 700 }}>Current password</label>
-                <PasswordInput 
+                <PasswordInput
                   id="cp-old-password"
                   placeholder="Enter current password"
                   value={passwordData.oldPassword || ''}
@@ -452,7 +460,7 @@ const DonorProfile: React.FC = () => {
               </div>
               <div className="ep-field" style={{ margin: 0 }}>
                 <label className="ep-label" style={{ fontWeight: 700 }}>New password</label>
-                <PasswordInput 
+                <PasswordInput
                   id="cp-new-password"
                   placeholder="Min 8 characters"
                   value={passwordData.password || ''}
@@ -475,7 +483,7 @@ const DonorProfile: React.FC = () => {
               </div>
               <div className="ep-field" style={{ margin: 0 }}>
                 <label className="ep-label" style={{ fontWeight: 700 }}>Confirm new password</label>
-                <PasswordInput 
+                <PasswordInput
                   id="cp-confirm-password"
                   placeholder="Repeat new password"
                   value={passwordData.confirmPassword || ''}
@@ -536,7 +544,7 @@ const DonorProfile: React.FC = () => {
         <div className="ep-overlay" onClick={e => { if (e.target === e.currentTarget) setIsModalOpen(false); }}>
           <div className="ep-modal">
 
-            {}
+            { }
             <div className="ep-topbar">
               <h2 className="ep-title">My profile</h2>
               <button className="ep-close" type="button" onClick={() => setIsModalOpen(false)} aria-label="Close">
@@ -544,7 +552,7 @@ const DonorProfile: React.FC = () => {
               </button>
             </div>
 
-            {}
+            { }
             <form id="ep-form" onSubmit={handleUpdate} className="ep-body">
 
               {/* Photo column */}
@@ -616,12 +624,12 @@ const DonorProfile: React.FC = () => {
                         } else if (val.startsWith('09')) {
                           val = val.slice(1);
                         }
-                        
+
                         // Enforce starting with 9
                         if (val.length > 0 && !val.startsWith('9')) {
                           val = '';
                         }
-                        
+
                         const d = val.slice(0, 10);
                         setEditData({ ...editData, phone: d ? '+63' + d : '' });
                       }}
@@ -677,7 +685,7 @@ const DonorProfile: React.FC = () => {
               </div>
             </form>
 
-            {}
+            { }
             <div className="ep-footer">
               <button type="button" className="ep-btn-close" onClick={() => setIsModalOpen(false)}>
                 Close

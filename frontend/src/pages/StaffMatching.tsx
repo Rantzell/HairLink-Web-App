@@ -121,7 +121,7 @@ const StaffMatching: React.FC = () => {
         request_reference: selectedRecipient.reference,
         wig_id: pendingWigId
       });
-      navigate('/staff/tracking');
+      navigate('/staff/tracking/recipient');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Matching failed');
     } finally {

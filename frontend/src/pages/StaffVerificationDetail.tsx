@@ -6,6 +6,14 @@ import ConfirmModal from '../components/ConfirmModal';
 import '../styles/StaffVerificationDetail.css';
 import PageLoader from '../components/PageLoader';
 
+const GENDER_LABELS: Record<string, string> = {
+  male: 'Male',
+  female: 'Female',
+  nonbinary: 'Non-binary',
+  prefer_not_say: 'Prefer not to say',
+};
+const formatGender = (g?: string | null) => g ? (GENDER_LABELS[g] ?? g) : 'N/A';
+
 const StaffVerificationDetail: React.FC = () => {
   const { type, reference } = useParams<{ type: 'donor' | 'recipient' | 'monetary'; reference: string }>();
   const navigate = useNavigate();
@@ -123,7 +131,7 @@ const StaffVerificationDetail: React.FC = () => {
                     </li>
                     <li className="detail-list-item">
                       <i className="bx bx-male-female detail-list-icon"></i>
-                      <span><strong>Gender:</strong> {record.gender || 'N/A'}</span>
+                      <span><strong>Gender:</strong> {formatGender(record.gender)}</span>
                     </li>
                     <li className="detail-list-item">
                       <i className="bx bx-ruler detail-list-icon"></i>

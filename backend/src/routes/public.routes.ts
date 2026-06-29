@@ -3,13 +3,24 @@ import prisma from '../config/database';
 
 const router = Router();
 
+function getStartOfTodayPH(): Date {
+  const d = new Date();
+  const manilaDateStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(d);
+  return new Date(`${manilaDateStr}T00:00:00+08:00`);
+}
+
 // GET /api/public/events/next
 // Returns the single closest upcoming event
 router.get('/events/next', async (_req, res) => {
   try {
     const nextEvent = await prisma.event.findFirst({
-      where: { date: { gte: new Date() } },
-      orderBy: { date: 'asc' }
+      where: { date: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' }
     });
     res.json(nextEvent);
   } catch (err) {
@@ -22,8 +33,8 @@ router.get('/events/next', async (_req, res) => {
 router.get('/events/upcoming', async (_req, res) => {
   try {
     const events = await prisma.event.findMany({
-      where: { date: { gte: new Date() } },
-      orderBy: { date: 'asc' },
+      where: { date: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
       take: 4,
     });
     res.json(events);

@@ -22,6 +22,12 @@ function todayMin(): string {
   return `${year}-${month}-${day}`;
 }
 
+/** Returns Dec 31 of the current year as YYYY-12-31 for max attribute on type="date" inputs */
+function yearMax(): string {
+  const year = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric' }).format(new Date());
+  return `${year}-12-31`;
+}
+
 const DonorTrackingDetail: React.FC = () => {
   const { reference } = useParams<{ reference: string }>();
   const [donation, setDonation] = useState<Donation | null>(null);
@@ -219,24 +225,16 @@ const DonorTrackingDetail: React.FC = () => {
                   <p style={{ fontSize: '0.8rem', color: '#8c7895', marginBottom: '0.5rem' }}>
                     Pick the date you plan to send your donated hair to us. We'll notify our staff right away, and on the day you choose, you'll be able to submit your delivery tracking link here.
                   </p>
-                  <p style={{ fontSize: '0.72rem', color: '#ad246d', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <i className='bx bx-time-five'></i> Scheduling is available during working hours only (9:00 AM – 7:00 PM).
-                  </p>
+
                   {(() => {
-                    const phtNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-                    const h = phtNow.getHours();
-                    const outsideHours = h < 9 || h >= 19;
-                    return outsideHours ? (
-                      <p style={{ fontSize: '0.8rem', color: '#e03c3c', display: 'flex', alignItems: 'center', gap: '4px', background: '#fef2f2', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #fee2e2' }}>
-                        <i className='bx bx-error-circle'></i> Scheduling is currently unavailable. Please come back between 9:00 AM and 7:00 PM.
-                      </p>
-                    ) : (
+                    return (
                       <form onSubmit={handleScheduleDelivery} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                         <input
                           type="date"
                           value={scheduleDate}
                           onChange={e => setScheduleDate(e.target.value)}
                           min={todayMin()}
+                          max={yearMax()}
                           required
                           style={{ flex: 1, minWidth: '160px', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #ead7e8', fontSize: '0.85rem' }}
                         />

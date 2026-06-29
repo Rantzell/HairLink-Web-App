@@ -620,6 +620,46 @@ router.post('/wigs/ship', ...wmOnly, async (req, res) => {
   }
 });
 
+// DELETE /internal-api/wigmaker/wigs/bulk-delete
+router.delete('/wigs/bulk-delete', ...wmOnly, async (req, res) => {
+  try {
+    const { wigIds } = req.body;
+    if (!wigIds || !Array.isArray(wigIds) || wigIds.length === 0) {
+      res.status(400).json({ message: 'No wigs selected for deletion.' });
+      return;
+    }
+
+    // Ensure all wigs belong to this wigmaker and are child wigs
+    const wigs = await prisma.wigProduction.findMany({
+      where: {
+        id: { in: wigIds },
+        wigmakerId: req.user!.id,
+        taskCode: { contains: '-W' }
+      }
+    });
+
+    if (wigs.length === 0) {
+      res.status(404).json({ message: 'No matching wigs found.' });
+      return;
+    }
+
+    const foundIds = wigs.map(w => w.id);
+
+    // Delete status histories first, then the wigs
+    await prisma.statusHistory.deleteMany({
+      where: { trackableType: WIG_TYPE, trackableId: { in: foundIds } }
+    });
+    await prisma.wigProduction.deleteMany({
+      where: { id: { in: foundIds } }
+    });
+
+    res.json({ message: `${foundIds.length} wig(s) deleted successfully.`, deletedIds: foundIds });
+  } catch (err) {
+    console.error('[Wigmaker API] Bulk delete wigs error:', err);
+    res.status(500).json({ error: 'Failed to delete wigs' });
+  }
+});
+
 // DELETE /internal-api/wigmaker/tasks/:taskCode
 router.delete('/tasks/:taskCode', ...wmOnly, async (req, res) => {
   try {

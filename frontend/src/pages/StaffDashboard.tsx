@@ -78,7 +78,7 @@ const StaffDashboard: React.FC = () => {
       color: 'green',
       label: 'Monetary Donations',
       value: stats.monetaryDonations,
-      sub: 'Pending review',
+      sub: '',
     },
   ];
 

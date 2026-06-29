@@ -1,9 +1,11 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import Pagination from '../components/Pagination';
+import ConfirmModal from '../components/ConfirmModal';
 import { getPublicUrl } from '../lib/storage';
 import '../styles/StaffVerificationList.css';
 
@@ -43,6 +45,9 @@ const StaffVerificationList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [currentPage, setCurrentPage]   = useState(1);
   const [proofUrl, setProofUrl]         = useState<string | null>(null);
+  const [selectedIds, setSelectedIds]   = useState<Set<number>>(new Set());
+  const [isDeleting, setIsDeleting]     = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const isMonetary = type === 'monetary';
 
@@ -100,6 +105,38 @@ const StaffVerificationList: React.FC = () => {
     if (url) setProofUrl(url);
   };
 
+  const allPageIds = pagedItems.map((i: any) => i.id as number);
+  const allPageSelected = allPageIds.length > 0 && allPageIds.every(id => selectedIds.has(id));
+
+  const toggleSelectAll = () => {
+    if (allPageSelected) {
+      setSelectedIds(prev => { const n = new Set(prev); allPageIds.forEach(id => n.delete(id)); return n; });
+    } else {
+      setSelectedIds(prev => { const n = new Set(prev); allPageIds.forEach(id => n.add(id)); return n; });
+    }
+  };
+
+  const toggleRow = (id: number) => {
+    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  };
+
+  const handleDeleteSelected = async () => {
+    setIsDeleting(true);
+    try {
+      await apiClient.delete('/internal-api/staff/monetary-donations', {
+        data: { ids: Array.from(selectedIds) },
+      });
+      toast.success(`${selectedIds.size} record${selectedIds.size > 1 ? 's' : ''} deleted.`);
+      setItems(prev => prev.filter((i: any) => !selectedIds.has(i.id)));
+      setSelectedIds(new Set());
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to delete.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   return (
     <div className="section-wrap reveal active staff-page">
       <article className="staff-block">
@@ -138,20 +175,27 @@ const StaffVerificationList: React.FC = () => {
                 <option>Rejected</option>
               </select>
             )}
-            {isMonetary && (
-              <span style={{
-                padding: '0.3rem 0.8rem',
-                background: '#fdf2f8',
-                border: '1px solid #f9cde8',
-                borderRadius: '20px',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                color: '#ad246d',
-                whiteSpace: 'nowrap',
-              }}>
-                <i className="bx bx-lock-alt" style={{ marginRight: '4px' }}></i>
-                View Only
-              </span>
+            {isMonetary && selectedIds.size > 0 && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{
+                  padding: '0.35rem 0.9rem',
+                  background: '#fef2f2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '20px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  color: '#dc2626',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <i className="bx bx-trash"></i>
+                Delete ({selectedIds.size})
+              </button>
             )}
           </div>
         </div>
@@ -162,6 +206,15 @@ const StaffVerificationList: React.FC = () => {
               <tr>
                 {isMonetary ? (
                   <>
+                    <th className="tracking-table-th" style={{ width: '36px', paddingRight: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={allPageSelected}
+                        onChange={toggleSelectAll}
+                        style={{ cursor: 'pointer', accentColor: '#ad246d' }}
+                        title="Select all on this page"
+                      />
+                    </th>
                     <th className="tracking-table-th">Reference</th>
                     <th className="tracking-table-th">Donor</th>
                     <th className="tracking-table-th">Email</th>
@@ -184,7 +237,7 @@ const StaffVerificationList: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={isMonetary ? 7 : hasReview ? 5 : 4} className="tracking-table-loading">
+                  <td colSpan={isMonetary ? 8 : hasReview ? 5 : 4} className="tracking-table-loading">
                     <i className='bx bx-loader-alt bx-spin tracking-table-loading-icon'></i>
                     Loading {isMonetary ? 'monetary records' : 'verification queue'}…
                   </td>
@@ -192,7 +245,15 @@ const StaffVerificationList: React.FC = () => {
               ) : pagedItems.length > 0 ? (
                 pagedItems.map((item: any) =>
                   isMonetary ? (
-                    <tr key={item.id} className="tracking-table-row">
+                    <tr key={item.id} className={`tracking-table-row${selectedIds.has(item.id) ? ' selected' : ''}`}>
+                      <td className="tracking-table-td" style={{ width: '36px', paddingRight: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(item.id)}
+                          onChange={() => toggleRow(item.id)}
+                          style={{ cursor: 'pointer', accentColor: '#ad246d' }}
+                        />
+                      </td>
                       <td className="tracking-table-td">
                         <strong className="tracking-table-td-bold">{item.referenceNumber || '—'}</strong>
                       </td>
@@ -258,7 +319,7 @@ const StaffVerificationList: React.FC = () => {
                 )
               ) : (
                 <tr>
-                  <td colSpan={isMonetary ? 7 : hasReview ? 5 : 4} className="tracking-table-empty">
+                  <td colSpan={isMonetary ? 8 : hasReview ? 5 : 4} className="tracking-table-empty">
                     <i className='bx bx-file-find tracking-table-empty-icon'></i>
                     No items match your search or filter criteria.
                   </td>
@@ -320,6 +381,16 @@ const StaffVerificationList: React.FC = () => {
         </div>,
         document.body
       )}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteSelected}
+        title="Delete Monetary Records"
+        message={`Are you sure you want to permanently delete ${selectedIds.size} monetary donation record${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+        isConfirming={isDeleting}
+      />
     </div>
   );
 };

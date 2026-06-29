@@ -648,10 +648,15 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
     const ageNum = parseInt(reg.age, 10);
 
     if (!reg.userType) errs.userType = ['Please choose Donor or Recipient.'];
+    const isAllCaps = (val: string) => val.trim().length > 0 && val === val.toUpperCase() && /[a-zA-Z]/.test(val);
+
     if (!reg.first_name.trim()) errs.first_name = ['First name is required.'];
-    else if (reg.first_name.trim().length < 2) errs.first_name = ['First name is too short.'];
+    else if (reg.first_name.trim().length < 2) errs.first_name = ['First name must be at least 2 characters.'];
+    else if (isAllCaps(reg.first_name)) errs.first_name = ['First name cannot be all uppercase.'];
+
     if (!reg.last_name.trim()) errs.last_name = ['Last name is required.'];
-    else if (reg.last_name.trim().length < 2) errs.last_name = ['Last name is too short.'];
+    else if (reg.last_name.trim().length < 2) errs.last_name = ['Last name must be at least 2 characters.'];
+    else if (isAllCaps(reg.last_name)) errs.last_name = ['Last name cannot be all uppercase.'];
     if (!reg.region.trim()) errs.region = ['Region / province is required.'];
     if (!reg.postal_code.trim()) errs.postal_code = ['Postal code is required.'];
     else if (!/^\d{4}$/.test(reg.postal_code.trim())) errs.postal_code = ['Postal code must be 4 digits.'];

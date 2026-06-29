@@ -108,6 +108,10 @@
     border-top: 1px solid #f2ebf4;
 }
 
+.tracking-table-row.selected {
+    background: #fdf2f8;
+}
+
 .tracking-table-td {
     padding: 1.2rem 1rem;
 }

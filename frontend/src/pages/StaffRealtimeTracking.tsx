@@ -535,7 +535,7 @@ const StaffRealtimeTracking: React.FC = () => {
             <tbody>
               {isWigmaker ? (
                 <>
-                  {}
+                  { }
                   {pagedBatchGroups.map(([wpId, { wp }]) => {
                     const isOpen = !!batchOpen[wpId];
                     const children = wp.childWigs || [];
@@ -570,31 +570,7 @@ const StaffRealtimeTracking: React.FC = () => {
                             <div className="tracking-batch-layer-icon"><i className="bx bx-layer"></i></div>
                           </td>
                           <td className="tracking-cell">
-                            {(() => {
-                              const latestPhoto = (wp.statusHistories || [])
-                                .find((h: any) => h.metadata?.preview_photo);
-                              const photoUrl = latestPhoto ? getPublicUrl('hairlink', latestPhoto.metadata.preview_photo) : null;
-                              return photoUrl ? (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <a href={photoUrl} target="_blank" rel="noreferrer"
-                                    style={{
-                                      display: 'block',
-                                      borderRadius: '8px',
-                                      overflow: 'hidden',
-                                      width: '42px',
-                                      height: '42px',
-                                      border: wp.status === 'completed' ? '2px solid #10b981' : '2px solid #f1a8cf',
-                                      boxShadow: wp.status === 'completed' ? '0 2px 6px rgba(16,185,129,0.15)' : '0 2px 6px rgba(173,36,109,0.15)',
-                                      flexShrink: 0
-                                    }}
-                                  >
-                                    <img src={photoUrl} alt="Progress" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                  </a>
-                                </div>
-                              ) : (
-                                <div className="tracking-batch-pkg-cell"><i className="bx bx-package"></i></div>
-                              );
-                            })()}
+                            <div className="tracking-batch-pkg-cell"><i className="bx bx-package"></i></div>
                           </td>
                           <td className="tracking-cell">
                             <div className="tracking-ref-col">
@@ -894,7 +870,15 @@ const StaffRealtimeTracking: React.FC = () => {
                                                       </div>
                                                     </td>
                                                     <td style={{ padding: '0.75rem 1rem', borderBottom: '1px dashed #f2ebf4', verticalAlign: 'middle', minWidth: '160px' }}>
-                                                      {w.status === 'shipped' ? (
+                                                      {w.status === 'received' ? (
+                                                        <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                          <i className='bx bx-check-circle' style={{ fontSize: '0.9rem' }}></i> Received
+                                                        </span>
+                                                      ) : w.status === 'missing' ? (
+                                                        <span style={{ fontSize: '0.72rem', color: '#dc2626', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                          <i className='bx bx-error-circle' style={{ fontSize: '0.9rem' }}></i> Missing
+                                                        </span>
+                                                      ) : (
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                           <div style={{ display: 'flex', gap: '6px' }}>
                                                             <button onClick={() => handleReceiveWig(w.id)} disabled={isSubmitting}
@@ -906,18 +890,6 @@ const StaffRealtimeTracking: React.FC = () => {
                                                               <i className='bx bx-x'></i> Missing
                                                             </button>
                                                           </div>
-                                                        </div>
-                                                      ) : w.status === 'received' ? (
-                                                        <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                                          <i className='bx bx-check-circle' style={{ fontSize: '0.9rem' }}></i> Received
-                                                        </span>
-                                                      ) : w.status === 'missing' ? (
-                                                        <span style={{ fontSize: '0.72rem', color: '#dc2626', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                                          <i className='bx bx-error-circle' style={{ fontSize: '0.9rem' }}></i> Missing
-                                                        </span>
-                                                      ) : (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                          <span style={{ fontSize: '0.72rem', color: '#8c7895', fontWeight: 600 }}>Ready for Shipping</span>
                                                         </div>
                                                       )}
                                                     </td>
@@ -954,10 +926,7 @@ const StaffRealtimeTracking: React.FC = () => {
                       }, 0);
                       const stageLabel =
                         wp.status === 'assigned' ? `Waiting for ${wp.wigmaker?.firstName || 'wigmaker'} to receive hair` :
-                          wp.status === 'processing' ? `Hair received by ${wp.wigmaker?.firstName || 'wigmaker'}` :
-                            wp.status === 'completed' ? `Wigs finished by ${wp.wigmaker?.firstName || 'wigmaker'}` :
-                              wp.status === 'shipped' ? 'Finished wigs in transit' :
-                                wp.status === 'received' ? 'Finished wigs received by staff' : 'Batch in progress';
+                          'Hair received by ' + (wp.wigmaker?.firstName || 'wigmaker');
 
                       return (
                         <React.Fragment key={`donation-batch-${wpId}`}>
@@ -1092,8 +1061,8 @@ const StaffRealtimeTracking: React.FC = () => {
                                       {bd.map(d => {
                                         const dState = (data.donationStateMap as any)[d.id];
                                         const dReceived = dState?.wigmakerReceived;
-                                        const dMissing  = dState?.isMissing;
-                                        const dPending  = !dReceived && !dMissing;
+                                        const dMissing = dState?.isMissing;
+                                        const dPending = !dReceived && !dMissing;
                                         return (
                                           <tr key={d.id} style={{ background: dMissing ? '#fff5f5' : 'transparent' }}>
                                             <td><code className="tracking-inner-ref">{d.reference}</code></td>

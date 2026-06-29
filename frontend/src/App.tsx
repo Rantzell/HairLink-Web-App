@@ -48,6 +48,7 @@ import AdminMatching from './pages/AdminMatching';
 import AdminVerification from './pages/AdminVerification';
 import AdminCMS from './pages/AdminCMS';
 import { Toaster } from 'react-hot-toast';
+import ErrorPage from './pages/ErrorPage';
 
 function App() {
   return (
@@ -77,7 +78,7 @@ function App() {
                    <Route path="profile" element={<DonorProfile />} />
                    <Route path="monetary" element={<MonetaryDonation />} />
                    <Route path="community" element={<CommunityFeed />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  <Route path="*" element={<Navigate to="/404" replace />} />
                 </Routes>
               </DashboardLayout>
             </ProtectedRoute>
@@ -96,7 +97,7 @@ function App() {
                    <Route path="monetary" element={<MonetaryDonation />} />
                    <Route path="community" element={<CommunityFeed />} />
                    <Route path="haircare" element={<HairCareHub />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  <Route path="*" element={<Navigate to="/404" replace />} />
                 </Routes>
               </DashboardLayout>
             </ProtectedRoute>
@@ -117,7 +118,7 @@ function App() {
                   <Route path="profile" element={<DonorProfile />} /> {/* Staff uses same profile UI */}
                   <Route path="community" element={<CommunityFeed />} />
                   <Route path="reports" element={<AdminReports />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  <Route path="*" element={<Navigate to="/404" replace />} />
                 </Routes>
               </DashboardLayout>
             </ProtectedRoute>
@@ -135,7 +136,7 @@ function App() {
                   <Route path="wig-inventory" element={<WigmakerWigInventory />} />
                   <Route path="profile" element={<DonorProfile />} />
                   <Route path="community" element={<CommunityFeed />} />
-                  <Route path="*" element={<Navigate to="/wigmaker/dashboard" replace />} />
+                  <Route path="*" element={<Navigate to="/404" replace />} />
                 </Routes>
               </DashboardLayout>
             </ProtectedRoute>
@@ -159,14 +160,20 @@ function App() {
                   <Route path="cms" element={<AdminCMS />} />
                   <Route path="profile" element={<DonorProfile />} />
                   <Route path="reports" element={<AdminReports />} />
-                  <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+                  <Route path="*" element={<Navigate to="/404" replace />} />
                 </Routes>
               </DashboardLayout>
             </ProtectedRoute>
           } />
 
+
+          {/* Explicit Error Routes */}
+          <Route path="/401" element={<ErrorPage code={401} />} />
+          <Route path="/403" element={<ErrorPage code={403} />} />
+          <Route path="/404" element={<ErrorPage code={404} />} />
+
           {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<ErrorPage code={404} />} />
         </Routes>
       </Router>
     </AuthProvider>

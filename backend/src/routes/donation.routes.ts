@@ -296,25 +296,6 @@ router.post('/:reference/schedule-delivery', authenticate, validate(scheduleDeli
     }
 
     const scheduledAt = new Date(req.body.scheduled_delivery_at);
-    
-    // Compare date-only (allow same-day scheduling)
-    const now = new Date();
-    const todayDate = new Date(now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }));
-    const scheduledDate = new Date(scheduledAt.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }));
-    if (scheduledDate < todayDate) {
-      res.status(422).json({ error: 'Scheduled date cannot be in the past.' });
-      return;
-    }
-
-    // Enforce working hours: scheduling is only allowed between 9 AM and 7 PM PHT
-    // BYPASSED: The user requested to bypass the 9am schedule restriction.
-    /*
-    const phtHour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' })).getHours();
-    if (phtHour < 9 || phtHour >= 19) {
-      res.status(422).json({ error: 'Scheduling is only available during working hours (9:00 AM – 7:00 PM).' });
-      return;
-    }
-    */
 
     await prisma.donation.update({
       where: { id: donation.id },

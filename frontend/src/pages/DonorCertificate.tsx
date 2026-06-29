@@ -5,6 +5,11 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Donation } from '../types';
 import PageLoader from '../components/PageLoader';
 
+import sigJanelle from '../assets/sig_janelle.png';
+import sigJhoana from '../assets/sig_jhoana.png';
+import sigVenus from '../assets/sig_venus.png';
+import sigHonorio from '../assets/sig_honorio.png';
+
 // Static demo removed
 
 const DonorCertificate: React.FC = () => {
@@ -176,8 +181,14 @@ const DonorCertificate: React.FC = () => {
                 <div className="cert-signatures-grid-new">
                   {/* Row 1 Left */}
                   <div className="sig-col">
-                    <div className="sig-img-wrap">
-                      <img src="/assets/images/landing/sig_janelle.png" alt="Signature of Ma. Janelle D. Yeo" />
+                    <div className="sig-img-wrap" style={{ position: 'relative' }} onContextMenu={e => e.preventDefault()}>
+                      <img 
+                        src={sigJanelle} 
+                        alt="Signature of Ma. Janelle D. Yeo" 
+                        draggable={false} 
+                        style={{ pointerEvents: 'none', userSelect: 'none' }} 
+                      />
+                      <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'transparent' }} />
                     </div>
                     <div className="sig-line-new"></div>
                     <div className="sig-name-new">Ma. Janelle D. Yeo</div>
@@ -187,8 +198,14 @@ const DonorCertificate: React.FC = () => {
 
                   {/* Row 1 Right */}
                   <div className="sig-col">
-                    <div className="sig-img-wrap">
-                      <img src="/assets/images/landing/sig_jhoana.png" alt="Signature of Ma. Jhoana D. Yeo" />
+                    <div className="sig-img-wrap" style={{ position: 'relative' }} onContextMenu={e => e.preventDefault()}>
+                      <img 
+                        src={sigJhoana} 
+                        alt="Signature of Ma. Jhoana D. Yeo" 
+                        draggable={false} 
+                        style={{ pointerEvents: 'none', userSelect: 'none' }} 
+                      />
+                      <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'transparent' }} />
                     </div>
                     <div className="sig-line-new"></div>
                     <div className="sig-name-new">Ma. Jhoana D. Yeo</div>
@@ -198,8 +215,14 @@ const DonorCertificate: React.FC = () => {
 
                   {/* Row 2 Left */}
                   <div className="sig-col">
-                    <div className="sig-img-wrap">
-                      <img src="/assets/images/landing/sig_venus.png" alt="Signature of Venus May Alinsod" />
+                    <div className="sig-img-wrap" style={{ position: 'relative' }} onContextMenu={e => e.preventDefault()}>
+                      <img 
+                        src={sigVenus} 
+                        alt="Signature of Venus May Alinsod" 
+                        draggable={false} 
+                        style={{ pointerEvents: 'none', userSelect: 'none' }} 
+                      />
+                      <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'transparent' }} />
                     </div>
                     <div className="sig-line-new"></div>
                     <div className="sig-name-new">Venus May Alinsod</div>
@@ -209,8 +232,14 @@ const DonorCertificate: React.FC = () => {
 
                   {/* Row 2 Right */}
                   <div className="sig-col">
-                    <div className="sig-img-wrap">
-                      <img src="/assets/images/landing/sig_honorio.png" alt="Signature of Dr. Honorio T. Tan" />
+                    <div className="sig-img-wrap" style={{ position: 'relative' }} onContextMenu={e => e.preventDefault()}>
+                      <img 
+                        src={sigHonorio} 
+                        alt="Signature of Dr. Honorio T. Tan" 
+                        draggable={false} 
+                        style={{ pointerEvents: 'none', userSelect: 'none' }} 
+                      />
+                      <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'transparent' }} />
                     </div>
                     <div className="sig-line-new"></div>
                     <div className="sig-name-new">Dr. Honorio T. Tan</div>

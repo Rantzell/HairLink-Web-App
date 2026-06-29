@@ -45,6 +45,10 @@ const WigmakerTaskDetail: React.FC = () => {
   const todayMin = useMemo(() => {
     return getPhilippinesDateTimeLocal();
   }, []);
+  const yearMax = useMemo(() => {
+    const year = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric' }).format(new Date());
+    return `${year}-12-31T23:59`;
+  }, []);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showMaterialConfirm, setShowMaterialConfirm] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
@@ -441,6 +445,7 @@ const WigmakerTaskDetail: React.FC = () => {
                       value={customDate}
                       onChange={e => setCustomDate(e.target.value)}
                       min={todayMin}
+                      max={yearMax}
                       className="task-detail-form-input-text"
                     />
                   </div>

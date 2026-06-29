@@ -26,6 +26,12 @@ function todayMin(): string {
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
+/** Returns Dec 31 of the current year in YYYY-12-31T23:59 format for max attribute */
+function yearMax(): string {
+  const year = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric' }).format(new Date());
+  return `${year}-12-31T23:59`;
+}
+
 const AdminEvents: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -151,7 +157,7 @@ const AdminEvents: React.FC = () => {
             </div>
             <div className="form-group">
               <label className="admin-form-label">Date & Time *</label>
-              <input type="datetime-local" value={form.date} onChange={e => setForm({...form, date: e.target.value})} min={todayMin()} required />
+              <input type="datetime-local" value={form.date} onChange={e => setForm({...form, date: e.target.value})} min={todayMin()} max={yearMax()} required />
             </div>
           </div>
           <div className="form-group">
