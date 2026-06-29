@@ -318,7 +318,7 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
             </View>
           </View>
           <View style={styles.storyBox}>
-            <Text style={styles.storyText}>"{data.story || 'No story provided'}"</Text>
+            <Text style={styles.storyText}>&quot;{data.story || 'No story provided'}&quot;</Text>
           </View>
         </Animated.View>
       </ScrollView>

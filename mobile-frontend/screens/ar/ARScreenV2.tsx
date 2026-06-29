@@ -15,6 +15,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+// eslint-disable-next-line import/no-unresolved
 import { FaceTrackerView, FaceData } from 'expo-face-tracker';
 import { buildArHtmlHybrid } from './arHtmlHybrid';
 import { CustomAlert } from '../../components/GlobalAlert';

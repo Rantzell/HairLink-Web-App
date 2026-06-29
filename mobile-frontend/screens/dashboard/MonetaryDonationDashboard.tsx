@@ -137,7 +137,7 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
     return (
         <KeyboardAvoidingView 
             style={[styles.container, { backgroundColor: themeBg, paddingTop: insets.top }]}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? ms(0) : ms(20)}
         >
             <StatusBar style="light" />
@@ -350,7 +350,7 @@ export default function MonetaryDonationDashboard({ onBack, onSuccess, role = 'D
                     <View style={styles.anonRow}>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.anonTitle}>Donate anonymously</Text>
-                            <Text style={styles.anonSub}>Your name won't appear in public lists</Text>
+                            <Text style={styles.anonSub}>Your name won&apos;t appear in public lists</Text>
                         </View>
                         <Switch
                             trackColor={{ false: '#E3E5E8', true: themeLight }}

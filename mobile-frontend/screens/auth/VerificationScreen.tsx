@@ -112,7 +112,7 @@ export default function VerificationScreen({
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
             style={{ flex: 1 }}
         >
             <LinearGradient
@@ -140,7 +140,7 @@ export default function VerificationScreen({
                             Verify Account
                         </Animated.Text>
                         <Animated.Text entering={FadeInUp.delay(300)} style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", textAlign: "center", lineHeight: 20, maxWidth: '90%', marginTop: 8 }}>
-                            Can't find the email? Check your <Text style={{ fontWeight: '900', color: '#fff' }}>Spam</Text> or <Text style={{ fontWeight: '900', color: '#fff' }}>Junk</Text> folder. It might be hiding there!
+                            Can&apos;t find the email? Check your <Text style={{ fontWeight: '900', color: '#fff' }}>Spam</Text> or <Text style={{ fontWeight: '900', color: '#fff' }}>Junk</Text> folder. It might be hiding there!
                         </Animated.Text>
 
                         {/* Enhanced OTP Card */}

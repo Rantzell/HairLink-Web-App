@@ -286,45 +286,40 @@ export default function RewardsScreen({ onBack }: { onBack: () => void }) {
           {detail && (
             <View style={styles.modalCard}>
               <View style={styles.modalIconWrap}>
-                <MaterialCommunityIcons name="ticket-percent" size={ms(40)} color="#FF1493" />
+                <MaterialCommunityIcons name="gift" size={ms(38)} color="#D63B8A" />
               </View>
-              <Text style={styles.modalTitle}>Free Wig Voucher</Text>
-              <View style={[styles.statusBadge, statusStyle(detail.status).bg && { backgroundColor: statusStyle(detail.status).bg, marginTop: vs(6) }]}>
-                <Text style={[styles.statusText, { color: statusStyle(detail.status).text }]}>
-                  {detail.status.toUpperCase()}
-                </Text>
-              </View>
+              <Text style={styles.modalTitle}>Wig Reward Unlocked</Text>
+              
+              <Text style={styles.modalDesc}>
+                Thank you for your generosity. You&apos;ve reached <Text style={{fontWeight: '700'}}>100 Star Points</Text> and earned a complimentary HairLink wig as a token of our appreciation.
+              </Text>
 
               <TouchableOpacity
                 style={styles.codeBox}
                 activeOpacity={0.85}
                 onPress={() => copyCode(detail.code)}
               >
+                <Text style={styles.codeLabel}>VOUCHER REFERENCE</Text>
                 <Text style={styles.codeText}>{detail.code}</Text>
-                <Ionicons name="copy-outline" size={ms(18)} color="#C2185B" />
+                <Text style={styles.codeHint}>Please keep this reference for verification.</Text>
               </TouchableOpacity>
-              <Text style={styles.codeHint}>Tap to copy</Text>
 
-              <View style={styles.modalMetaList}>
-                <View style={styles.modalMetaRow}>
-                  <Text style={styles.modalMetaLabel}>Issued</Text>
-                  <Text style={styles.modalMetaValue}>{fmtDate(detail.issuedAt)}</Text>
+              <View style={styles.infoBox}>
+                <View style={styles.infoHeader}>
+                  <Ionicons name="information-circle-outline" size={ms(16)} color="#D63B8A" />
+                  <Text style={styles.infoTitle}>How to redeem your wig</Text>
                 </View>
-
-                {detail.redeemedAt && (
-                  <View style={styles.modalMetaRow}>
-                    <Text style={styles.modalMetaLabel}>Redeemed</Text>
-                    <Text style={styles.modalMetaValue}>{fmtDate(detail.redeemedAt)}</Text>
-                  </View>
-                )}
+                <Text style={styles.infoText}>
+                  Please contact our partner wigmaker and present your voucher reference above. Our team will guide you through fitting and personalisation so your custom wig matches your preferences.
+                </Text>
               </View>
 
               <View style={styles.modalActions}>
                 <TouchableOpacity
-                  style={[styles.modalBtn, styles.modalBtnGhost]}
+                  style={styles.saveBtn}
                   onPress={() => setDetail(null)}
                 >
-                  <Text style={styles.modalBtnGhostText}>Close</Text>
+                  <Text style={styles.saveBtnText}>Acknowledge & Save Voucher</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -485,44 +480,65 @@ const styles = StyleSheet.create({
     maxWidth: ms(360),
     backgroundColor: '#fff',
     borderRadius: ms(24),
-    padding: ms(22),
+    padding: ms(24),
     alignItems: 'center',
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalIconWrap: {
-    width: ms(64), height: ms(64), borderRadius: ms(32),
-    backgroundColor: '#FFF0F8',
+    width: ms(60), height: ms(60), borderRadius: ms(30),
+    backgroundColor: '#FCE4EC',
     alignItems: 'center', justifyContent: 'center',
     marginBottom: vs(12),
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  modalTitle: { fontSize: ms(18), fontWeight: '900', color: '#1a1a1a' },
+  modalTitle: { fontSize: ms(20), fontWeight: '900', color: '#1a1a1a', marginBottom: vs(8), textAlign: 'center' },
+  modalDesc: { fontSize: ms(13), color: '#6b7280', textAlign: 'center', lineHeight: ms(20), marginBottom: vs(20) },
 
   codeBox: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: ms(8),
-    backgroundColor: '#FFF0F8',
-    borderWidth: 1,
-    borderColor: '#FFD6EF',
+    backgroundColor: '#FDF2F8',
+    borderWidth: 1.5,
+    borderColor: '#D63B8A',
     borderStyle: 'dashed',
-    borderRadius: ms(14),
-    paddingVertical: vs(14),
+    borderRadius: ms(12),
+    paddingVertical: vs(16),
     paddingHorizontal: ms(18),
-    marginTop: vs(16),
+    marginBottom: vs(20),
     width: '100%',
   },
-  codeText: { fontSize: ms(18), fontWeight: '900', color: '#C2185B', letterSpacing: 1 },
-  codeHint: { fontSize: ms(11), color: '#999', fontWeight: '700', marginTop: vs(6) },
+  codeLabel: { fontSize: ms(10), fontWeight: '700', color: '#D63B8A', letterSpacing: 0.8, marginBottom: vs(4) },
+  codeText: { fontSize: ms(20), fontWeight: '900', color: '#1a1a1a', letterSpacing: 2 },
+  codeHint: { fontSize: ms(10), color: '#8c7895', marginTop: vs(6) },
 
-  modalMetaList: { width: '100%', marginTop: vs(16), gap: vs(8) },
-  modalMetaRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  modalMetaLabel: { fontSize: ms(12), color: '#888', fontWeight: '700' },
-  modalMetaValue: { fontSize: ms(12), color: '#1a1a1a', fontWeight: '900' },
+  infoBox: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: ms(12),
+    padding: ms(16),
+    width: '100%',
+    marginBottom: vs(20),
+  },
+  infoHeader: { flexDirection: 'row', alignItems: 'center', gap: ms(6), marginBottom: vs(6) },
+  infoTitle: { fontSize: ms(12), fontWeight: '800', color: '#374151' },
+  infoText: { fontSize: ms(12), color: '#6b7280', lineHeight: ms(18) },
 
-  modalActions: { flexDirection: 'row', gap: ms(10), marginTop: vs(20), width: '100%' },
-  modalBtn: { flex: 1, paddingVertical: vs(12), borderRadius: ms(12), alignItems: 'center' },
-  modalBtnGhost: { backgroundColor: '#FFF0F8', borderWidth: 1, borderColor: '#FFD6EF' },
-  modalBtnGhostText: { color: '#C2185B', fontWeight: '900', fontSize: ms(13) },
-  modalBtnSolid: { backgroundColor: '#FF1493' },
-  modalBtnSolidText: { color: '#fff', fontWeight: '900', fontSize: ms(13) },
+  modalActions: { width: '100%' },
+  saveBtn: { 
+    width: '100%', 
+    paddingVertical: vs(14), 
+    borderRadius: ms(24), 
+    alignItems: 'center',
+    backgroundColor: '#D63B8A',
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  saveBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(14) },
 });

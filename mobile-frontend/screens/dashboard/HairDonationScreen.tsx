@@ -24,6 +24,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import DonationSuccessModal from '../../components/DonationSuccessModal';
 import api from '../../lib/api';
 import { CustomAlert } from '../../components/GlobalAlert';
+import CameraModal from '../../components/CameraModal';
 
 /**
  * Donor Hair Donation form — visual + structural twin of the recipient
@@ -54,6 +55,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
     const [loadingLabel, setLoadingLabel] = useState('Submitting...');
     const [showSuccess, setShowSuccess] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [showCamera, setShowCamera] = useState(false);
 
     // Read-only profile snapshot (matches the recipient's Personal Details
     // card pattern — kept in sync with /auth/me, surfaced as static rows).
@@ -89,25 +91,11 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
             'Upload Photo',
             'Select the source of your hair photo',
             [
-                { text: 'Take Photo', onPress: takePhoto },
+                { text: 'Take Photo', onPress: () => setShowCamera(true) },
                 { text: 'Choose from Gallery', onPress: pickImageFromLibrary },
                 { text: 'Cancel', style: 'cancel' },
             ],
         );
-    };
-
-    const takePhoto = async () => {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-            CustomAlert.alert('Permission Denied', 'We need camera access to take a photo of your donation.');
-            return;
-        }
-        const result = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 0.8,
-        });
-        if (!result.canceled) setProofImage(result.assets[0].uri);
     };
 
     const pickImageFromLibrary = async () => {
@@ -195,8 +183,8 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
 
     return (
         <KeyboardAvoidingView
-            style={[styles.container, { paddingTop: insets.top }]}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={ms(80)}
         >
             <StatusBar style="light" />
@@ -206,7 +194,7 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                 colors={['#E863A1', '#D63B8A']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={styles.header}
+                style={[styles.header, { paddingTop: insets.top + vs(15), paddingBottom: vs(15) }]}
             >
                 <TouchableOpacity onPress={onBack} style={styles.backBtn}>
                     <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -406,6 +394,12 @@ export default function HairDonationScreen({ onBack, onSuccess }: HairDonationSc
                     if (onSuccess) onSuccess();
                     else onBack();
                 }}
+            />
+            
+            <CameraModal 
+                visible={showCamera} 
+                onClose={() => setShowCamera(false)} 
+                onPictureTaken={(uri) => setProofImage(uri)} 
             />
         </KeyboardAvoidingView>
     );

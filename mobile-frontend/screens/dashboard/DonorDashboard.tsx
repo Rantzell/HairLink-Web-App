@@ -9,7 +9,9 @@ import {
   Image,
   Alert,
   Linking,
+  Modal,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
@@ -131,6 +133,12 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
   const [unreadCount, setUnreadCount] = useState(0);
   const [upcomingEvent, setUpcomingEvent] = useState<{ title: string; location: string; date: string } | null>(null);
   const notificationsViewedRef = useRef(false); // Track if user has seen notifications
+  
+  // Voucher unlock logic
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [unseenVoucher, setUnseenVoucher] = useState<any>(null);
+
+  const insets = useSafeAreaInsets();
 
   const fetchPoints = useCallback(async () => {
     try {
@@ -147,9 +155,38 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         setStarPoints(meRes.data.starPoints || meRes.data.star_points || 0);
       }
     } catch (err) {
-      console.log('Error fetching user data:', err);
+      console.log('Error fetching stats:', err);
     }
   }, []);
+
+  const fetchVouchers = useCallback(async () => {
+    try {
+      const res = await api.get('/rewards/vouchers');
+      const activeVouchers = res.data.filter((v: any) => v.status === 'active');
+      if (activeVouchers.length > 0) {
+        // Sort by newest first
+        activeVouchers.sort((a: any, b: any) => new Date(b.earned_at).getTime() - new Date(a.earned_at).getTime());
+        const latest = activeVouchers[0];
+
+        // Check if we've shown it before
+        const hasSeen = await AsyncStorage.getItem(`seen_voucher_${latest.id}`);
+        if (!hasSeen) {
+          setUnseenVoucher(latest);
+          setShowMilestoneModal(true);
+        }
+      }
+    } catch (err) {
+      console.log('Error fetching vouchers:', err);
+    }
+  }, []);
+
+  const dismissMilestoneModal = async () => {
+    if (unseenVoucher) {
+      await AsyncStorage.setItem(`seen_voucher_${unseenVoucher.id}`, 'true');
+    }
+    setShowMilestoneModal(false);
+    setUnseenVoucher(null);
+  };
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -183,15 +220,15 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
     fetchPoints();
     fetchUnreadCount();
     fetchUpcomingEvent();
-  }, [fetchPoints, fetchUnreadCount, fetchUpcomingEvent]);
+    fetchVouchers();
+  }, [fetchPoints, fetchUnreadCount, fetchUpcomingEvent, fetchVouchers]);
 
   useEffect(() => {
-    // Only re-fetch unread count when returning from other screens, not notifications
-    if (!showMonetary && !showHairDonation && !showCalendar && !showNotifications && !showHistory && !showProfile && !showCommunity && !showHairCare && !showRewards) {
-      fetchPoints();
-      if (!notificationsViewedRef.current) {
-        fetchUnreadCount();
-      }
+    // Re-fetch notifications & vouchers if returning from a sub-screen
+    if (!showCalendar && !showNotifications && !showMonetary && !showProfile && !showHairDonation && !showHistory && !showCommunity && !showHairCare && !showRewards) {
+      fetchUnreadCount();
+      fetchVouchers();
+      notificationsViewedRef.current = false;
     }
   }, [showMonetary, showHairDonation, showCalendar, showNotifications, showHistory, showProfile, showCommunity, showHairCare, showRewards, fetchPoints, fetchUnreadCount]);
 
@@ -364,12 +401,9 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
     );
   }
 
-  const insets = useSafeAreaInsets();
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar style="light" />
-      {}
       <View>
         <LinearGradient
           colors={['rgba(255, 102, 204, 0.88)', 'rgba(255, 153, 221, 0.88)']}
@@ -409,7 +443,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {}
         <Animated.View entering={FadeInDown.springify().delay(100)}>
           <LinearGradient
             colors={['#FFF0F8', '#FFD6EF']}
@@ -428,7 +461,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </LinearGradient>
         </Animated.View>
 
-        {}
         <Animated.View entering={FadeInRight.springify().delay(200)} style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="star" size={20} color="#FF1493" />
@@ -466,7 +498,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </TouchableOpacity>
         </Animated.View>
 
-        {}
         <Animated.View entering={FadeInRight.springify().delay(300)} style={styles.referralRow}>
           <Text style={styles.referralLabel}>Referral Code:</Text>
           <ScaleButton
@@ -480,7 +511,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </ScaleButton>
         </Animated.View>
 
-        {}
         <Animated.View entering={FadeInDown.springify().delay(400)} style={styles.card}>
           <Text style={styles.sectionTitle}>How It Works</Text>
           <Text style={styles.sectionSubtitle}>
@@ -522,7 +552,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </View>
         </Animated.View>
 
-        {}
         <Animated.View entering={FadeInDown.springify().delay(450)} style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="sparkles" size={20} color="#FF1493" />
@@ -539,8 +568,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </ScaleButton>
         </Animated.View>
 
-        {}
-        {}
         <Animated.View
           entering={FadeInUp.springify().delay(500)}
           style={styles.aboutPanel}
@@ -551,7 +578,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
               style={styles.aboutImage}
               resizeMode="cover"
             />
-            {/* Soft gradient scrim so the section pill reads cleanly */}
             <LinearGradient
               colors={['transparent', 'rgba(28,25,23,0.55)']}
               style={styles.aboutImageScrim}
@@ -577,7 +603,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </View>
         </Animated.View>
 
-        {}
         <View style={styles.partnersSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionEyebrow}>TRUSTED PARTNERS</Text>
@@ -598,8 +623,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
                 <View style={styles.partnerLogoBox}>
                   <Image source={p.img} style={styles.partnerImg} />
                 </View>
-                {/* Allow up to 2 lines so longer names don't truncate
-                    with an ellipsis in narrow columns. */}
                 <Text style={styles.partnerName} numberOfLines={2}>{p.name}</Text>
                 <Text style={styles.partnerTag} numberOfLines={1}>{p.tag}</Text>
               </ScaleButton>
@@ -607,7 +630,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
           </View>
         </View>
 
-        {}
         <Animated.View entering={FadeInUp.springify().delay(800)} style={styles.eventsSection}>
           <TouchableOpacity activeOpacity={0.9} onPress={() => setShowCalendar(true)}>
             <LinearGradient
@@ -629,7 +651,47 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         </Animated.View>
       </ScrollView>
 
-      {}
+      {/* Wig Reward Unlocked Modal */}
+      <Modal
+        visible={showMilestoneModal}
+        transparent
+        animationType="fade"
+        onRequestClose={dismissMilestoneModal}
+      >
+        <View style={styles.modalBackdrop}>
+          {unseenVoucher && (
+            <View style={styles.modalCard}>
+              <View style={styles.modalIconWrap}>
+                <Ionicons name="gift" size={ms(34)} color="#D63B8A" />
+              </View>
+              <Text style={styles.modalTitle}>Wig Reward Unlocked! 🎉</Text>
+              <Text style={styles.modalDesc}>
+                Thank you for your generous donations! You have earned a custom wig reward.
+              </Text>
+
+              <View style={styles.voucherBox}>
+                <View style={styles.voucherHeader}>
+                  <Ionicons name="ticket" size={ms(16)} color="#D63B8A" />
+                  <Text style={styles.voucherTitle}>{unseenVoucher.voucher_type === 'free_wig' ? 'Free Custom Wig' : 'Discount Voucher'}</Text>
+                </View>
+                <View style={styles.codeContainer}>
+                  <Text style={styles.codeText}>{unseenVoucher.code}</Text>
+                </View>
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.saveBtn}
+                  onPress={dismissMilestoneModal}
+                >
+                  <Text style={styles.saveBtnText}>Awesome!</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      </Modal>
+
       <View style={[styles.bottomNav, { paddingBottom: insets.bottom + ms(8), height: vs(78) + insets.bottom }]}>
         <ScaleButton style={styles.navItem} onPress={() => { }}>
           <Feather name="home" size={ms(26)} color="#e91e63" />
@@ -644,8 +706,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
         <ScaleButton
           style={[styles.arButton, { width: ms(64), height: ms(64), borderRadius: ms(32) }]}
           onPress={async () => {
-            // Try the native HairLink AR app first (real face tracking + GLB / USDZ wig).
-            // Falls back to the in-Expo camera preview if the native app isn't installed.
             const opened = await launchNativeAR();
             if (!opened) setShowAR(true);
           }}
@@ -669,7 +729,6 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F0F5' },
-
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -686,109 +745,26 @@ const styles = StyleSheet.create({
     elevation: 6,
     marginBottom: vs(8),
   },
-  logoImage: { 
-    width: ms(48), 
-    height: ms(48), 
-    resizeMode: 'contain',
-    borderRadius: ms(24),
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
-  },
+  logoImage: { width: ms(48), height: ms(48), resizeMode: 'contain', borderRadius: ms(24), overflow: 'hidden', backgroundColor: 'transparent' },
   headerGreeting: { fontSize: ms(12), color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
   headerRole: { fontSize: ms(17), color: '#fff', fontWeight: '900' },
-  notificationBtn: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius: ms(20), padding: ms(6),
-    width: ms(42), height: ms(42),
-    alignItems: 'center', justifyContent: 'center',
-  },
-  notificationBadgeHeader: {
-    position: 'absolute',
-    top: -ms(4),
-    right: -ms(6),
-    backgroundColor: '#FF1493',
-    borderRadius: ms(10),
-    minWidth: ms(18),
-    height: ms(18),
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: ms(4),
-    borderWidth: ms(2),
-    borderColor: '#FF66B2',
-  },
+  notificationBtn: { backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: ms(20), padding: ms(6), width: ms(42), height: ms(42), alignItems: 'center', justifyContent: 'center' },
+  notificationBadgeHeader: { position: 'absolute', top: -ms(4), right: -ms(6), backgroundColor: '#FF1493', borderRadius: ms(10), minWidth: ms(18), height: ms(18), justifyContent: 'center', alignItems: 'center', paddingHorizontal: ms(4), borderWidth: ms(2), borderColor: '#FF66B2' },
   notificationBadgeText: { color: '#fff', fontSize: ms(10), fontWeight: '900' },
-
   scrollContent: { paddingBottom: vs(110) },
-
-  heroCard: {
-    margin: ms(14),
-    borderRadius: ms(22),
-    padding: ms(22),
-    shadowColor: '#FF1493',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  heroTitle: {
-    fontSize: ms(26),
-    fontWeight: '900',
-    color: '#1a1a1a',
-    lineHeight: vs(32),
-    marginBottom: vs(6),
-  },
+  heroCard: { margin: ms(14), borderRadius: ms(22), padding: ms(22), shadowColor: '#FF1493', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 5 },
+  heroTitle: { fontSize: ms(26), fontWeight: '900', color: '#1a1a1a', lineHeight: vs(32), marginBottom: vs(6) },
   heroSubtitle: { fontSize: ms(13), color: '#FF1493', fontWeight: '700', marginBottom: vs(18) },
-  heroCTA: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FF66B2',
-    paddingHorizontal: ms(22),
-    paddingVertical: vs(10),
-    borderRadius: ms(22),
-    shadowColor: '#FF1493',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
-  },
+  heroCTA: { alignSelf: 'flex-start', backgroundColor: '#FF66B2', paddingHorizontal: ms(22), paddingVertical: vs(10), borderRadius: ms(22), shadowColor: '#FF1493', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 5 },
   heroCTAText: { color: '#fff', fontWeight: '800', fontSize: ms(14) },
-
-  card: {
-    backgroundColor: '#fff',
-    marginHorizontal: ms(14),
-    marginBottom: vs(14),
-    borderRadius: ms(20),
-    padding: ms(18),
-    shadowColor: '#FF1493',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-  },
+  card: { backgroundColor: '#fff', marginHorizontal: ms(14), marginBottom: vs(14), borderRadius: ms(20), padding: ms(18), shadowColor: '#FF1493', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: vs(14), justifyContent: 'space-between' },
   cardTitle: { fontSize: ms(16), fontWeight: '800', color: '#1a1a1a', flex: 1 },
-  historyBtnSmall: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF0F8',
-    paddingHorizontal: ms(8),
-    paddingVertical: vs(4),
-    borderRadius: ms(8),
-    marginRight: ms(10),
-  },
-  historyBtnTextSmall: {
-    fontSize: ms(11),
-    fontWeight: '800',
-    color: '#FF1493',
-    marginLeft: ms(4),
-  },
-  pointsBadge: {
-    fontSize: ms(14), fontWeight: '800', color: '#FF1493',
-    backgroundColor: '#FFF0F8', paddingHorizontal: ms(10),
-    paddingVertical: vs(4), borderRadius: ms(12),
-  },
-
+  historyBtnSmall: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF0F8', paddingHorizontal: ms(8), paddingVertical: vs(4), borderRadius: ms(8), marginRight: ms(10) },
+  historyBtnTextSmall: { fontSize: ms(11), fontWeight: '800', color: '#FF1493', marginLeft: ms(4) },
+  pointsBadge: { fontSize: ms(14), fontWeight: '800', color: '#FF1493', backgroundColor: '#FFF0F8', paddingHorizontal: ms(10), paddingVertical: vs(4), borderRadius: ms(12) },
   progressBg: { backgroundColor: '#F0F0F0', height: vs(8), borderRadius: ms(8), marginBottom: vs(6) },
-  progressFill: { backgroundColor: '#FF66CC', height: vs(8), borderRadius: ms(8) },
+  progressFill: { backgroundColor: '#B084CC', height: vs(8), borderRadius: ms(8) },
   progressLabel: { fontSize: ms(11), color: '#999', fontWeight: '600', marginBottom: vs(12) },
   viewRewardsBtn: {
     flexDirection: 'row',
@@ -1142,4 +1118,86 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4, shadowRadius: 10, elevation: 8,
   },
+
+  // Missing Modal Styles
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: ms(20),
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: ms(360),
+    backgroundColor: '#fff',
+    borderRadius: ms(24),
+    padding: ms(24),
+    alignItems: 'center',
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalIconWrap: {
+    width: ms(60), height: ms(60), borderRadius: ms(30),
+    backgroundColor: '#FCE4EC',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: vs(12),
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  modalTitle: { fontSize: ms(20), fontWeight: '900', color: '#1a1a1a', marginBottom: vs(8), textAlign: 'center' },
+  modalDesc: { fontSize: ms(13), color: '#6b7280', textAlign: 'center', lineHeight: ms(20), marginBottom: vs(20) },
+  voucherBox: {
+    width: '100%',
+    backgroundColor: '#FDF2F8',
+    borderRadius: ms(12),
+    padding: ms(16),
+    marginBottom: vs(24),
+    borderWidth: 1,
+    borderColor: '#FBCFE8',
+  },
+  voucherHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: ms(6),
+    marginBottom: vs(8),
+  },
+  voucherTitle: {
+    fontSize: ms(12),
+    fontWeight: '700',
+    color: '#D63B8A',
+  },
+  codeContainer: {
+    backgroundColor: '#fff',
+    paddingVertical: vs(12),
+    borderRadius: ms(8),
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#D63B8A',
+    borderStyle: 'dashed',
+  },
+  codeText: {
+    fontSize: ms(18),
+    fontWeight: '900',
+    color: '#1a1a1a',
+    letterSpacing: 2,
+  },
+  modalActions: { width: '100%' },
+  saveBtn: { 
+    width: '100%', 
+    paddingVertical: vs(14), 
+    borderRadius: ms(24), 
+    alignItems: 'center',
+    backgroundColor: '#D63B8A',
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  saveBtnText: { fontSize: ms(14), fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
 });

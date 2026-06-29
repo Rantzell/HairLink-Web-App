@@ -172,8 +172,8 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
 
   return (
     <KeyboardAvoidingView 
-        style={[styles.container, { paddingTop: insets.top }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? ms(0) : ms(20)}
     >
       <StatusBar style="light" />
@@ -183,7 +183,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
         colors={['#9B6BBF', '#B084CC']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={styles.header}
+        style={[styles.header, { paddingTop: insets.top + vs(15), paddingBottom: vs(15) }]}
       >
         <TouchableOpacity onPress={onBack} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={28} color="#fff" />

@@ -11,6 +11,7 @@ import {
   Alert,
   TextInput,
   Linking,
+  Modal,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -63,6 +64,9 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
   // Real upcoming event (same source as the donor dashboard: GET /events/next)
   const [upcomingEvent, setUpcomingEvent] = useState<{ title: string; location: string; date: string } | null>(null);
   const notificationsViewedRef = React.useRef(false);
+  const [pickupModal, setPickupModal] = useState<any>(null);
+  
+  const insets = useSafeAreaInsets();
 
   const ScaleButton = ({ children, onPress, style }: any) => {
     const scale = useSharedValue(1);
@@ -132,10 +136,27 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
       const response = await api.get('/notifications');
       const unread = response.data.filter((n: any) => !n.is_read).length;
       setUnreadCount(unread);
+
+      const unreadPickup = response.data.find(
+        (n: any) => n.type === 'pickup_ready' && !n.is_read
+      );
+      if (unreadPickup) {
+        setPickupModal(unreadPickup);
+      }
     } catch (err) {
       console.log('Error fetching unread count:', err);
     }
   }, []);
+
+  const dismissPickupModal = async () => {
+    if (!pickupModal) return;
+    try {
+      await api.put(`/notifications/${pickupModal.id}/read`);
+    } catch {
+      // non-fatal
+    }
+    setPickupModal(null);
+  };
 
   const fetchLatestRequest = React.useCallback(async () => {
     try {
@@ -333,8 +354,6 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
       </Animated.View>
     );
   }
-
-  const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -660,6 +679,42 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
+
+      {/* Pick-up Ready Modal */}
+      <Modal
+        visible={!!pickupModal}
+        transparent
+        animationType="fade"
+        onRequestClose={dismissPickupModal}
+      >
+        <View style={styles.modalBackdrop}>
+          {pickupModal && (
+            <View style={styles.modalCard}>
+              <View style={[styles.modalIconWrap, { backgroundColor: '#FFD6EF' }]}>
+                <Ionicons name="storefront" size={ms(34)} color="#D63B8A" />
+              </View>
+              <Text style={styles.modalTitle}>Your Wig is Ready! 🎉</Text>
+              <Text style={styles.modalDesc}>{pickupModal.message}</Text>
+
+              <View style={styles.infoBox}>
+                <View style={styles.infoHeader}>
+                  <Ionicons name="time-outline" size={ms(16)} color="#D63B8A" />
+                  <Text style={styles.infoTitle}>Notified: {new Date(pickupModal.created_at).toLocaleString()}</Text>
+                </View>
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.saveBtn}
+                  onPress={dismissPickupModal}
+                >
+                  <Text style={styles.saveBtnText}>Acknowledge</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      </Modal>
 
       {}
       <View style={[styles.bottomNav, { paddingBottom: insets.bottom + ms(8), height: vs(78) + insets.bottom }]}>
@@ -1179,4 +1234,60 @@ const styles = StyleSheet.create({
   },
   dashboardConfirmBtnText: { color: '#fff', fontWeight: '900', fontSize: ms(13), letterSpacing: 0.5 },
 
+  // Modal Styles for Pick-up Ready
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: ms(20),
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: ms(360),
+    backgroundColor: '#fff',
+    borderRadius: ms(24),
+    padding: ms(24),
+    alignItems: 'center',
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalIconWrap: {
+    width: ms(60), height: ms(60), borderRadius: ms(30),
+    backgroundColor: '#FCE4EC',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: vs(12),
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  modalTitle: { fontSize: ms(20), fontWeight: '900', color: '#1a1a1a', marginBottom: vs(8), textAlign: 'center' },
+  modalDesc: { fontSize: ms(13), color: '#6b7280', textAlign: 'center', lineHeight: ms(20), marginBottom: vs(20) },
+
+  infoBox: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: ms(12),
+    padding: ms(16),
+    width: '100%',
+    marginBottom: vs(20),
+  },
+  infoHeader: { flexDirection: 'row', alignItems: 'center', gap: ms(6) },
+  infoTitle: { fontSize: ms(12), fontWeight: '800', color: '#6b7280' },
+
+  modalActions: { width: '100%' },
+  saveBtn: { 
+    width: '100%', 
+    paddingVertical: vs(14), 
+    borderRadius: ms(24), 
+    alignItems: 'center',
+    backgroundColor: '#D63B8A',
+    shadowColor: '#D63B8A',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  saveBtnText: { color: '#fff', fontWeight: '800', fontSize: ms(14) },
 });

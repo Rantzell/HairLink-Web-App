@@ -124,7 +124,7 @@ export default function LoginScreen({
         return (
             <LinearGradient colors={["#D63B8A", "#E863A1", "#FFF0F5"]} style={styles.root}>
                 <KeyboardAvoidingView 
-                    behavior={Platform.OS === "ios" ? "padding" : "height"} 
+                    behavior={Platform.OS === "ios" ? "padding" : undefined} 
                     style={{ flex: 1 }}
                 >
                 <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + vs(20) }]} bounces={false} keyboardShouldPersistTaps="handled">
@@ -137,7 +137,7 @@ export default function LoginScreen({
 
                         <Animated.Text entering={FadeInUp.delay(200)} style={styles.premiumTitle}>Forgot Password?</Animated.Text>
                         <Animated.Text entering={FadeInUp.delay(300)} style={styles.premiumSubtitle}>
-                            Enter your email address and we'll send a 6-digit code to reset your password.
+                            Enter your email address and we&apos;ll send a 6-digit code to reset your password.
                         </Animated.Text>
 
                         <Animated.View entering={FadeInUp.delay(500)} style={styles.premiumCard}>
@@ -180,7 +180,7 @@ export default function LoginScreen({
         return (
             <LinearGradient colors={["#D63B8A", "#E863A1", "#FFF0F5"]} style={styles.root}>
                 <KeyboardAvoidingView 
-                    behavior={Platform.OS === "ios" ? "padding" : "height"} 
+                    behavior={Platform.OS === "ios" ? "padding" : undefined} 
                     style={{ flex: 1 }}
                 >
                 <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + vs(20) }]} bounces={false} keyboardShouldPersistTaps="handled">
@@ -193,7 +193,7 @@ export default function LoginScreen({
 
                         <Animated.Text entering={FadeInUp.delay(200)} style={styles.premiumTitle}>Verify Code</Animated.Text>
                         <Animated.Text entering={FadeInUp.delay(300)} style={styles.premiumSubtitle}>
-                            We've sent a 6-digit code to <Text style={{fontWeight: '900', color: '#fff'}}>{forgotEmail}</Text>
+                            We&apos;ve sent a 6-digit code to <Text style={{fontWeight: '900', color: '#fff'}}>{forgotEmail}</Text>
                         </Animated.Text>
 
                         <Animated.View 
@@ -263,7 +263,7 @@ export default function LoginScreen({
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
             style={[styles.root, { paddingTop: insets.top }]}
         >
             {/* Looping "movie" background — drifting pink orbs + slowly
@@ -279,7 +279,7 @@ export default function LoginScreen({
                     </View>
 
                     <Text style={styles.title}>Welcome!</Text>
-                    <Text style={styles.subtitle}>join us by signing up and let's get started!</Text>
+                    <Text style={styles.subtitle}>join us by signing up and let&apos;s get started!</Text>
 
                     {/* Email */}
                     <Text style={styles.fieldLabel}>Email</Text>
@@ -329,7 +329,7 @@ export default function LoginScreen({
                     {/* Switch to Sign Up */}
                     <TouchableOpacity onPress={onSwitchToSignup} activeOpacity={0.8} style={styles.signupLink}>
                         <Text style={styles.signupLinkText}>
-                            Don't have an account? <Text style={styles.signupLinkBold}>Sign up</Text>
+                            Don&apos;t have an account? <Text style={styles.signupLinkBold}>Sign up</Text>
                         </Text>
                     </TouchableOpacity>
                 </View>

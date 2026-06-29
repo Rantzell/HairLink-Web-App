@@ -180,7 +180,11 @@ export default function SignupScreen({
         }
         if (!isEmailValid) { showError("Invalid Email", "Please enter a valid email address."); return; }
         if (!pwAllOk) { showError("Weak Password", "Password must meet all requirements (8+ chars, capital letter, number, symbol)."); return; }
-        if (phone.length < 8 || phone.length > 11) { showError("Invalid Phone", "Phone number must be 8 to 11 digits."); return; }
+        const phoneClean = phone.trim();
+        if (!/^(09|9)\d{8,9}$/.test(phoneClean)) { 
+            showError("Invalid Phone", "Phone number must start with 09 or 9 and be 10 or 11 digits long."); 
+            return; 
+        }
         if (!role) { showError("Selection Required", "Please select a role (Donor or Recipient)."); return; }
 
         const numericAge = ageText ? parseInt(ageText, 10) : 18;
@@ -452,7 +456,7 @@ export default function SignupScreen({
                                         />
                                     </View>
                                     {confirmPassword.length > 0 && !pwMatches && (
-                                        <Text style={styles.errorText}>Passwords don't match</Text>
+                                        <Text style={styles.errorText}>Passwords don&apos;t match</Text>
                                     )}
                                 </View>
 

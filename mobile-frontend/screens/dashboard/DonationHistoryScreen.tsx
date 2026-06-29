@@ -703,32 +703,10 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
                           </Text>
                        </View>
 
-                       {/* Verified donations now go through a schedule-first flow that
-                           mirrors the website: pick a delivery date → backend notifies
-                           staff and pings the donor on the due day → only then does the
-                           tracking-link form appear. "Approved" donations keep the
-                           legacy direct-link flow so we don't break any in-flight ones. */}
-                       {item.reference && item.status.toLowerCase() === 'verified' && !item.donorDeliveryLink && !item.scheduledDeliveryAt && (
-                         <ScheduleDeliveryForm
-                           reference={item.reference}
-                           scheduledAt={item.scheduledDeliveryAt}
-                           onSaved={(newIso) => {
-                             setDonations((prev) =>
-                               prev.map((d) =>
-                                 d.id === item.id ? { ...d, scheduledDeliveryAt: newIso } : d,
-                               ),
-                             );
-                           }}
-                         />
-                       )}
-
-                       {/* Tracking link form — same flow as the website's DonorTrackingDetail.
-                           Shown when (a) status is "approved" (legacy path) or
-                           (b) status is "verified" AND the donor-picked delivery date
-                           has arrived (Asia/Manila). */}
+                       {/* Verified donations can now directly submit the tracking link, bypassing the scheduling step. */}
                        {item.reference && (
                          item.status.toLowerCase() === 'approved' ||
-                         (item.status.toLowerCase() === 'verified' && !!item.scheduledDeliveryAt)
+                         item.status.toLowerCase() === 'verified'
                        ) && (
                          <DeliveryLinkForm
                            reference={item.reference}

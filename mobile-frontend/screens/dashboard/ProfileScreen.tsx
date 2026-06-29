@@ -380,7 +380,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     return (
         <KeyboardAvoidingView 
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? ms(0) : ms(20)}
         >
             <StatusBar style="light" />
