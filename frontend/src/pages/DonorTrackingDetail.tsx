@@ -179,18 +179,35 @@ const DonorTrackingDetail: React.FC = () => {
             <h3 style={{ margin: 0 }}>Donation Roadmap</h3>
           </div>
           <ul className="timeline" style={{ paddingLeft: '0.5rem', listStyle: 'none' }}>
-            {donation.statusHistories?.map((history, i) => (
-              <li key={i} className="timeline-item" style={{ borderLeft: '2px solid #f2ebf4', paddingLeft: '1.5rem', paddingBottom: '1.25rem', position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '-7px', top: 0, width: '12px', height: '12px', background: '#ad246d', borderRadius: '50%', border: '2px solid #fff' }}></div>
-                <div className="timeline-meta" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                  <strong style={{ fontSize: '0.9rem', color: '#ad246d' }}>{history.status}</strong>
-                  <time style={{ fontSize: '0.75rem', color: '#8c7895' }}>{new Date(history.createdAt).toLocaleString()}</time>
-                </div>
-                <div className="timeline-desc" style={{ background: '#fdf7fb', padding: '0.6rem 0.8rem', borderRadius: '8px', border: '1px solid #f2ebf4', fontSize: '0.85rem', color: '#4d3f56' }}>
-                  {history.notes || `Status changed to ${history.status}`}
-                </div>
-              </li>
-            ))}
+            {(() => {
+              const status = (donation.status || '').toLowerCase();
+              let currentStep = 0;
+              if (['verified', 'matched'].includes(status)) currentStep = 1;
+              if (['received hair', 'in progress', 'in transit'].includes(status)) currentStep = 2;
+              if (['completed', 'wig received'].includes(status)) currentStep = 3;
+
+              const steps = [
+                { title: 'Submitted', desc: 'Your donation form is under review.' },
+                { title: 'Verified', desc: 'Your donation is approved. Please schedule delivery.' },
+                { title: 'Received', desc: 'We have safely received your hair donation.' },
+                { title: 'Completed', desc: 'Your donation has been used to craft a wig.' },
+              ];
+
+              return steps.map((step, i) => {
+                const isDone = currentStep >= i;
+                return (
+                  <li key={i} className="timeline-item" style={{ borderLeft: i === steps.length - 1 ? 'none' : '2px solid #f2ebf4', paddingLeft: '1.5rem', paddingBottom: '1.25rem', position: 'relative', marginLeft: i === steps.length - 1 ? '2px' : '0' }}>
+                    <div style={{ position: 'absolute', left: i === steps.length - 1 ? '-9px' : '-7px', top: 0, width: '12px', height: '12px', background: isDone ? '#ad246d' : '#e2d8e5', borderRadius: '50%', border: '2px solid #fff' }}></div>
+                    <div className="timeline-meta" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                      <strong style={{ fontSize: '0.9rem', color: isDone ? '#ad246d' : '#8c7895' }}>{step.title}</strong>
+                    </div>
+                    <div className="timeline-desc" style={{ background: isDone ? '#fdf7fb' : '#fff', padding: '0.6rem 0.8rem', borderRadius: '8px', border: '1px solid #f2ebf4', fontSize: '0.85rem', color: isDone ? '#4d3f56' : '#8c7895' }}>
+                      {step.desc}
+                    </div>
+                  </li>
+                );
+              });
+            })()}
           </ul>
 
           {donation.status === 'Verified' && !deliveryDue && (

@@ -10,7 +10,9 @@ import {
   TextInput,
   Alert,
   Linking,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s, vs, ms } from '../../lib/scaling';
@@ -114,6 +116,7 @@ function ScheduleDeliveryForm({
   const [saving, setSaving] = useState(false);
   // Currently-selected YYYY-MM-DD (local). Empty until the donor picks.
   const [picked, setPicked] = useState('');
+  const [showPicker, setShowPicker] = useState(false);
 
   const presets: { label: string; daysFromToday: number }[] = [
     { label: 'Today', daysFromToday: 0 },
@@ -237,16 +240,57 @@ function ScheduleDeliveryForm({
 
       {/* Manual entry — donors with a date further out can type it in directly */}
       <Text style={styles.scheduleSubLabel}>Or enter a date (YYYY-MM-DD)</Text>
-      <TextInput
-        style={styles.scheduleInput}
-        value={picked}
-        onChangeText={setPicked}
-        placeholder="2026-06-20"
-        placeholderTextColor="#bbb"
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="numbers-and-punctuation"
-      />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: ms(10) }}>
+        <TextInput
+          style={[styles.scheduleInput, { flex: 1, marginBottom: 0 }]}
+          value={picked}
+          onChangeText={setPicked}
+          placeholder="2026-06-20"
+          placeholderTextColor="#bbb"
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="numbers-and-punctuation"
+        />
+        {Platform.OS === 'android' ? (
+          <TouchableOpacity
+            style={{ padding: ms(12), backgroundColor: '#F9E6F0', borderRadius: ms(10) }}
+            onPress={() => setShowPicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={ms(20)} color="#AD246D" />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={{ padding: ms(12), backgroundColor: '#F9E6F0', borderRadius: ms(10) }}
+            onPress={() => setShowPicker(!showPicker)}
+          >
+            <Ionicons name="calendar-outline" size={ms(20)} color="#AD246D" />
+          </TouchableOpacity>
+        )}
+      </View>
+      
+      {showPicker && (
+        <View style={Platform.OS === 'ios' ? { marginTop: vs(10), alignItems: 'flex-start' } : {}}>
+          <DateTimePicker
+            value={(() => {
+              const [y, m, d] = picked.split('-').map(Number);
+              if (y && m && d) return new Date(y, m - 1, d);
+              return new Date();
+            })()}
+            mode="date"
+            display="default"
+            minimumDate={new Date()}
+            onChange={(event, selectedDate) => {
+              if (Platform.OS === 'android') setShowPicker(false);
+              if (selectedDate) {
+                const y = selectedDate.getFullYear();
+                const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const d = String(selectedDate.getDate()).padStart(2, '0');
+                setPicked(`${y}-${m}-${d}`);
+              }
+            }}
+          />
+        </View>
+      )}
 
       <View style={styles.scheduleActions}>
         {scheduledAt && (
@@ -703,22 +747,42 @@ export default function DonationHistoryScreen({ onBack }: { onBack: () => void }
                           </Text>
                        </View>
 
-                       {/* Verified donations can now directly submit the tracking link, bypassing the scheduling step. */}
                        {item.reference && (
                          item.status.toLowerCase() === 'approved' ||
                          item.status.toLowerCase() === 'verified'
                        ) && (
-                         <DeliveryLinkForm
-                           reference={item.reference}
-                           initialLink={item.donorDeliveryLink}
-                           onSaved={(link) => {
-                             setDonations((prev) =>
-                               prev.map((d) =>
-                                 d.id === item.id ? { ...d, donorDeliveryLink: link } : d,
-                               ),
-                             );
-                           }}
-                         />
+                         <View>
+                           <ScheduleDeliveryForm
+                             reference={item.reference}
+                             scheduledAt={item.scheduledDeliveryAt}
+                             onSaved={(isoDate) => {
+                               setDonations((prev) =>
+                                 prev.map((d) =>
+                                   d.id === item.id ? { ...d, scheduledDeliveryAt: isoDate } : d
+                                 )
+                               );
+                             }}
+                           />
+                           
+                           {/* Only show tracking link form if delivery is scheduled for today or past, or if already has a link */}
+                           {(item.donorDeliveryLink || (item.scheduledDeliveryAt && (() => {
+                             const todayStr = new Date().toLocaleDateString('en-CA');
+                             const scheduledStr = new Date(item.scheduledDeliveryAt).toLocaleDateString('en-CA');
+                             return scheduledStr <= todayStr;
+                           })())) && (
+                             <DeliveryLinkForm
+                               reference={item.reference}
+                               initialLink={item.donorDeliveryLink}
+                               onSaved={(link) => {
+                                 setDonations((prev) =>
+                                   prev.map((d) =>
+                                     d.id === item.id ? { ...d, donorDeliveryLink: link } : d,
+                                   ),
+                                 );
+                               }}
+                             />
+                           )}
+                         </View>
                        )}
 
                        {/* Donation Roadmap */}

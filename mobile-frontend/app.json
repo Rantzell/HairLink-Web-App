@@ -16,7 +16,8 @@
         {
           "cameraPermission": "HairLink uses your camera to let you preview wig styles on yourself in AR Try-On."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "orientation": "portrait",
     "userInterfaceStyle": "light",

@@ -127,11 +127,7 @@ export default function NotificationScreen({ onBack, onTrack, onOpenPost, role =
       onOpenPost(link.slice('post:'.length));
       return;
     }
-    if (link.startsWith('track:') && onTrack) {
-      onTrack();
-      return;
-    }
-    // No deep-link → just expand/collapse the message.
+    // Track links are handled by the Track button itself, so just expand/collapse the message here.
     setExpandedId(expandedId === n.id ? null : n.id);
   };
 

@@ -8,7 +8,10 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  TextInput,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ms, vs } from '../../lib/scaling';
@@ -72,12 +75,63 @@ export default function DonorTrackingDetailScreen({ reference, onBack }: Props) 
     fetchDetail();
   }, [fetchDetail]);
 
+  const [scheduleDate, setScheduleDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
+  
+  const [deliveryLink, setDeliveryLink] = useState('');
+  const [isSubmittingLink, setIsSubmittingLink] = useState(false);
+
+  useEffect(() => {
+    if (data?.donorDeliveryLink) setDeliveryLink(data.donorDeliveryLink);
+  }, [data]);
+
+  const handleScheduleDelivery = async () => {
+    if (!scheduleDate) return;
+    setIsScheduling(true);
+    try {
+      const localMidnight = new Date(scheduleDate.getFullYear(), scheduleDate.getMonth(), scheduleDate.getDate());
+      await api.post(`/donations/${reference}/schedule-delivery`, {
+        scheduled_delivery_at: localMidnight.toISOString(),
+      });
+      fetchDetail();
+      setScheduleDate(null);
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.error || err.response?.data?.message || 'Failed to schedule delivery');
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
+  const handleSubmitLink = async () => {
+    if (!deliveryLink.trim()) return;
+    setIsSubmittingLink(true);
+    try {
+      await api.post(`/donations/${reference}/delivery-link`, { 
+        donor_delivery_link: deliveryLink 
+      });
+      Alert.alert('Success', 'Delivery tracking link submitted successfully!');
+      fetchDetail();
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.message || 'Failed to submit link');
+    } finally {
+      setIsSubmittingLink(false);
+    }
+  };
+
   const fullName = data?.user
     ? `${data.user.firstName || ''} ${data.user.lastName || ''}`.trim() || data.user.name || 'Donor'
     : 'Donor';
 
   const tint = data ? statusTint(data.status) : null;
   const canTrack = !!data?.donorDeliveryLink && data?.status !== 'Cancelled';
+
+  const scheduledAt = data?.scheduledDeliveryAt ? new Date(data.scheduledDeliveryAt) : null;
+  const deliveryDue = !!scheduledAt && (() => {
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const scheduledStr = scheduledAt.toLocaleDateString('en-CA');
+    return scheduledStr <= todayStr;
+  })();
 
   if (loading || !data) {
     return (
@@ -165,27 +219,158 @@ export default function DonorTrackingDetailScreen({ reference, onBack }: Props) 
             <MaterialCommunityIcons name="source-branch" size={ms(20)} color="#AD246D" />
             <Text style={styles.cardTitle}>Donation Roadmap</Text>
           </View>
-          {data.statusHistories && data.statusHistories.length > 0 ? (
-            data.statusHistories.map((h, i) => (
-              <View key={i} style={styles.timelineItem}>
-                <View style={styles.timelineDot} />
-                <View style={styles.timelineContent}>
-                  <View style={styles.timelineMeta}>
-                    <Text style={styles.timelineStatus}>{h.status}</Text>
-                    <Text style={styles.timelineTime}>{new Date(h.createdAt).toLocaleString()}</Text>
+          {(() => {
+            const status = (data.status || '').toLowerCase();
+            let currentStep = 0;
+            if (['verified', 'matched'].includes(status)) currentStep = 1;
+            if (['received hair', 'in progress', 'in transit'].includes(status)) currentStep = 2;
+            if (['completed', 'wig received'].includes(status)) currentStep = 3;
+
+            const steps = [
+              { title: 'Submitted', desc: 'Your donation form is under review.' },
+              { title: 'Verified', desc: 'Your donation is approved. Please schedule delivery.' },
+              { title: 'Received', desc: 'We have safely received your hair donation.' },
+              { title: 'Completed', desc: 'Your donation has been used to craft a wig.' },
+            ];
+
+            return (
+              <View style={{ marginTop: vs(10) }}>
+                {steps.map((step, i) => {
+                  const isDone = currentStep >= i;
+                  return (
+                    <View key={i} style={styles.timelineItem}>
+                      <View style={[styles.timelineDot, isDone ? { backgroundColor: '#AD246D' } : { backgroundColor: '#F9E6F0' }]} />
+                      <View style={[styles.timelineContent, i === steps.length - 1 && { borderLeftColor: 'transparent' }]}>
+                        <View style={styles.timelineMeta}>
+                          <Text style={[styles.timelineStatus, !isDone && { color: '#8C7895' }]}>{step.title}</Text>
+                        </View>
+                        <View style={[styles.timelineDesc, !isDone && { backgroundColor: '#fff', borderColor: '#F9E6F0' }]}>
+                          <Text style={[styles.timelineDescText, !isDone && { color: '#8C7895' }]}>
+                            {step.desc}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          })()}
+        </Animated.View>
+
+        {data.status === 'Verified' && !deliveryDue && (
+          <Animated.View entering={FadeInUp.delay(200).springify()} style={[styles.card, { backgroundColor: '#FDF7FB', borderColor: '#AD246D', borderWidth: 1.5, borderStyle: 'dashed' }]}>
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons name="calendar-check" size={ms(24)} color="#AD246D" />
+              <Text style={styles.cardTitle}>{scheduledAt ? 'Delivery Date Scheduled' : 'Schedule Your Hair Delivery'}</Text>
+            </View>
+            {scheduledAt && !scheduleDate ? (
+              <View>
+                <Text style={[styles.timelineDescText, { marginBottom: vs(12) }]}>
+                  You're scheduled to send your hair donation on <Text style={{ color: '#AD246D', fontWeight: 'bold' }}>{scheduledAt.toLocaleDateString()}</Text>.
+                  On that day, this section will let you submit your delivery tracking link.
+                </Text>
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: '#AD246D' }]}
+                  onPress={() => setScheduleDate(scheduledAt)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.actionBtnText}>Reschedule</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View>
+                <Text style={[styles.timelineDescText, { marginBottom: vs(12) }]}>
+                  Pick the date you plan to send your donated hair to us. On the day you choose, you'll be able to submit your delivery tracking link.
+                </Text>
+                {Platform.OS === 'android' ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: ms(10), marginBottom: vs(10) }}>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ead7e8' }]}
+                      onPress={() => setShowDatePicker(true)}
+                    >
+                      <Text style={[styles.actionBtnText, { color: '#AD246D' }]}>{scheduleDate ? scheduleDate.toLocaleDateString() : 'Select Date'}</Text>
+                    </TouchableOpacity>
+                    {showDatePicker && (
+                      <DateTimePicker
+                        value={scheduleDate || new Date()}
+                        mode="date"
+                        display="default"
+                        minimumDate={new Date()}
+                        onChange={(event, selectedDate) => {
+                          setShowDatePicker(false);
+                          if (selectedDate) setScheduleDate(selectedDate);
+                        }}
+                      />
+                    )}
                   </View>
-                  <View style={styles.timelineDesc}>
-                    <Text style={styles.timelineDescText}>
-                      {h.notes || `Status changed to ${h.status}`}
-                    </Text>
+                ) : (
+                  <View style={{ marginBottom: vs(10), alignItems: 'flex-start' }}>
+                    <DateTimePicker
+                      value={scheduleDate || new Date()}
+                      mode="date"
+                      display="default"
+                      minimumDate={new Date()}
+                      onChange={(event, selectedDate) => {
+                        if (selectedDate) setScheduleDate(selectedDate);
+                      }}
+                    />
                   </View>
+                )}
+                
+                <View style={{ flexDirection: 'row', gap: ms(10) }}>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: '#AD246D', opacity: !scheduleDate || isScheduling ? 0.7 : 1 }]}
+                    onPress={handleScheduleDelivery}
+                    disabled={!scheduleDate || isScheduling}
+                    activeOpacity={0.85}
+                  >
+                    {isScheduling ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.actionBtnText}>Confirm Date</Text>}
+                  </TouchableOpacity>
+                  {scheduledAt && (
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: '#8c7895' }]}
+                      onPress={() => setScheduleDate(null)}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.actionBtnText}>Cancel</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
-            ))
-          ) : (
-            <Text style={styles.emptyHint}>No status updates yet.</Text>
-          )}
-        </Animated.View>
+            )}
+          </Animated.View>
+        )}
+
+        {data.status === 'Verified' && deliveryDue && (
+          <Animated.View entering={FadeInUp.delay(200).springify()} style={[styles.card, { backgroundColor: '#FDF7FB', borderColor: '#AD246D', borderWidth: 1.5, borderStyle: 'dashed' }]}>
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons name="package-variant-closed" size={ms(24)} color="#AD246D" />
+              <Text style={styles.cardTitle}>Submit Tracking Link</Text>
+            </View>
+            <Text style={[styles.timelineDescText, { marginBottom: vs(12) }]}>
+              Today is your scheduled delivery date! Please provide the tracking URL from your courier (e.g., Grab, Lalamove, LBC) so our staff can monitor the arrival.
+            </Text>
+            <View style={{ gap: vs(10) }}>
+              <TextInput
+                style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: '#ead7e8', padding: ms(12), borderRadius: ms(10), fontSize: ms(14) }}
+                placeholder="https://tracking-link.com/..."
+                value={deliveryLink}
+                onChangeText={setDeliveryLink}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: '#AD246D', opacity: !deliveryLink.trim() || isSubmittingLink ? 0.7 : 1 }]}
+                onPress={handleSubmitLink}
+                disabled={!deliveryLink.trim() || isSubmittingLink}
+                activeOpacity={0.85}
+              >
+                {isSubmittingLink ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.actionBtnText}>{data.donorDeliveryLink ? 'Update Link' : 'Submit Link'}</Text>}
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        )}
       </ScrollView>
     </View>
   );

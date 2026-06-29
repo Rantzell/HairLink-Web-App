@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import api from '../../lib/api';
 import RequestSuccessModal from '../../components/RequestSuccessModal';
 import { CustomAlert } from '../../components/GlobalAlert';
+import CameraModal from '../../components/CameraModal';
 
 interface HairRequestScreenProps {
   onBack: () => void;
@@ -44,6 +45,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
   const [loading, setLoading] = useState(false);
   const [loadingLabel, setLoadingLabel] = useState('Submitting...');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showCamera, setShowCamera] = useState<'doc' | 'ref' | null>(null);
 
   // Read-only profile data shown in the "Personal Details" card
   // (mirrors the web's profile-pulled inputs at the top of the form).
@@ -74,11 +76,28 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
     loadProfile();
   }, []);
 
-  const pickImage = async (type: 'doc' | 'ref') => {
+  const handleImageSource = (type: 'doc' | 'ref') => {
+    CustomAlert.alert(
+      'Upload Photo',
+      'Select the source of your document or photo',
+      [
+        { text: 'Take Photo', onPress: () => setShowCamera(type) },
+        { text: 'Choose from Gallery', onPress: () => pickImageFromLibrary(type) },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  };
+
+  const pickImageFromLibrary = async (type: 'doc' | 'ref') => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      CustomAlert.alert('Permission Denied', 'We need access to your gallery to pick a photo.');
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      quality: 0.7,
+      quality: 0.8,
     });
 
     if (!result.canceled) {
@@ -239,7 +258,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
           <Text style={styles.subLabel}>Upload medical certificate or diagnosis *</Text>
           <Text style={styles.hint}>Any proof that verifies the donee as a patient.</Text>
           
-          <TouchableOpacity style={styles.uploadBtn} onPress={() => pickImage('doc')}>
+          <TouchableOpacity style={styles.uploadBtn} onPress={() => handleImageSource('doc')}>
             {docImage ? (
               <Image source={{ uri: docImage }} style={styles.previewImg} />
             ) : (
@@ -252,7 +271,7 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
 
           <Text style={[styles.subLabel, { marginTop: 20 }]}>Additional Picture for reference *</Text>
           <Text style={styles.hint}>To help us gain a clearer understanding of your condition.</Text>
-          <TouchableOpacity style={styles.uploadBtn} onPress={() => pickImage('ref')}>
+          <TouchableOpacity style={styles.uploadBtn} onPress={() => handleImageSource('ref')}>
             {refImage ? (
               <Image source={{ uri: refImage }} style={styles.previewImg} />
             ) : (
@@ -379,12 +398,24 @@ export default function HairRequestScreen({ onBack, onSuccess }: HairRequestScre
 
       </ScrollView>
 
+      {/* Success Modal */}
       <RequestSuccessModal 
         visible={showSuccess}
         onClose={() => {
           setShowSuccess(false);
           onSuccess();
         }}
+      />
+      
+      {/* Camera Modal */}
+      <CameraModal 
+          visible={!!showCamera} 
+          onClose={() => setShowCamera(null)} 
+          onPictureTaken={(uri) => {
+              if (showCamera === 'doc') setDocImage(uri);
+              else if (showCamera === 'ref') setRefImage(uri);
+              setShowCamera(null);
+          }} 
       />
     </KeyboardAvoidingView>
   );

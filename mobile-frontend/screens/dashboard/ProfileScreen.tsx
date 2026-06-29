@@ -24,6 +24,8 @@ import * as Clipboard from 'expo-clipboard';
 import Animated, {
     FadeInDown,
     FadeInUp,
+    FadeInRight,
+    FadeOutRight,
     Layout,
     useSharedValue,
     useAnimatedStyle,
@@ -421,9 +423,6 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                                 </TouchableOpacity>
                             </View>
                             <Text style={styles.userName}>{fullName || 'User Name'}</Text>
-                            <View style={styles.idChip}>
-                                <Text style={styles.idChipText}>#{profile?.id ? profile.id.substring(0, 8) : '0000'}</Text>
-                            </View>
                         </Animated.View>
                 </LinearGradient>
 
@@ -438,25 +437,30 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                     <View style={styles.infoSection}>
                         <View style={styles.detailsCard}>
                             <View style={styles.detailsCardHeader}>
-                                <View>
+                                <View style={{ flex: 1, paddingRight: ms(8) }}>
                                     <Text style={styles.detailsCardTitle}>Personal Details</Text>
                                     <Text style={styles.detailsCardSub}>
                                         Keep your contact info up to date.
                                     </Text>
                                 </View>
                                 {editMode ? (
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: ms(8) }}>
+                                    <Animated.View 
+                                        entering={FadeInRight.springify()} 
+                                        exiting={FadeOutRight.springify()}
+                                        layout={Layout.springify()}
+                                        style={{ flexDirection: 'row', alignItems: 'center', gap: ms(6) }}
+                                    >
                                         <TouchableOpacity
-                                            style={styles.detailsCancelBtn}
+                                            style={[styles.detailsCancelBtn, { paddingHorizontal: ms(10) }]}
                                             onPress={handleCancelEdit}
                                             disabled={updating}
                                             activeOpacity={0.85}
                                         >
-                                            <Feather name="x" size={ms(13)} color="#78716C" />
+                                            <Feather name="x" size={ms(12)} color="#78716C" />
                                             <Text style={styles.detailsCancelBtnText}>Cancel</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
-                                            style={[styles.detailsEditBtn, styles.detailsEditBtnSaving]}
+                                            style={[styles.detailsEditBtn, styles.detailsEditBtnSaving, { paddingHorizontal: ms(10) }]}
                                             onPress={handleUpdateProfile}
                                             disabled={updating}
                                             activeOpacity={0.85}
@@ -464,21 +468,27 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                                             {updating ? (
                                                 <ActivityIndicator size="small" color="#fff" />
                                             ) : (
-                                                <Feather name="check" size={ms(13)} color="#fff" />
+                                                <Feather name="check" size={ms(12)} color="#fff" />
                                             )}
                                             <Text style={styles.detailsEditBtnText}>Save</Text>
                                         </TouchableOpacity>
-                                    </View>
+                                    </Animated.View>
                                 ) : (
-                                    <TouchableOpacity
-                                        style={styles.detailsEditBtn}
-                                        onPress={() => setEditMode(true)}
-                                        disabled={updating}
-                                        activeOpacity={0.85}
+                                    <Animated.View 
+                                        entering={FadeInRight.springify()} 
+                                        exiting={FadeOutRight.springify()}
+                                        layout={Layout.springify()}
                                     >
-                                        <Feather name="edit-3" size={ms(13)} color="#fff" />
-                                        <Text style={styles.detailsEditBtnText}>Edit</Text>
-                                    </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.detailsEditBtn}
+                                            onPress={() => setEditMode(true)}
+                                            disabled={updating}
+                                            activeOpacity={0.85}
+                                        >
+                                            <Feather name="edit-3" size={ms(13)} color="#fff" />
+                                            <Text style={styles.detailsEditBtnText}>Edit</Text>
+                                        </TouchableOpacity>
+                                    </Animated.View>
                                 )}
                             </View>
 
@@ -720,7 +730,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                             <TextInput
                                 value={newPassword}
                                 onChangeText={setNewPassword}
-                                placeholder="Must have 8+ chars, capital, number, symbol"
+                                placeholder="Enter new password"
                                 placeholderTextColor="#9CA3AF"
                                 secureTextEntry={!showNewPw}
                                 autoCapitalize="none"
@@ -732,6 +742,26 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
                                 <Feather name={showNewPw ? 'eye-off' : 'eye'} size={ms(16)} color="#6B7280" />
                             </TouchableOpacity>
                         </View>
+                        {newPassword.length > 0 && (() => {
+                            const missing = [];
+                            if (newPassword.length < 8) missing.push('8+ chars');
+                            if (!/[A-Z]/.test(newPassword)) missing.push('capital letter');
+                            if (!/[0-9]/.test(newPassword)) missing.push('number');
+                            if (!/[^A-Za-z0-9]/.test(newPassword)) missing.push('symbol');
+                            
+                            if (missing.length === 0) {
+                                return (
+                                    <Text style={{ fontSize: ms(10), color: '#10B981', marginBottom: vs(8), paddingHorizontal: ms(4), marginTop: vs(-2), fontWeight: '600' }}>
+                                        Password meets all requirements!
+                                    </Text>
+                                );
+                            }
+                            return (
+                                <Text style={{ fontSize: ms(10), color: '#EF4444', marginBottom: vs(8), paddingHorizontal: ms(4), marginTop: vs(-2) }}>
+                                    Missing: {missing.join(', ')}
+                                </Text>
+                            );
+                        })()}
 
                         <Text style={styles.changePwFieldLabel}>Confirm new password</Text>
                         <View style={styles.changePwField}>
