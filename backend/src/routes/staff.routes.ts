@@ -46,8 +46,8 @@ router.get('/dashboard', ...staffOnly, async (_req, res) => {
       prisma.donation.count({ where: { status: 'Submitted' } }),
       prisma.hairRequest.count({ where: { status: 'Submitted' } }),
       prisma.donation.count({ where: { status: 'Received Hair' } }),
-      prisma.wigProduction.count({ where: { status: { in: ['assigned', 'processing'] } } }),
-      prisma.wigProduction.count({ where: { status: 'completed' } }),
+      prisma.wigProduction.count({ where: { status: { in: ['assigned', 'processing', 'shipped'] }, taskCode: { contains: '-W' } } }),
+      prisma.wigProduction.count({ where: { status: { in: ['completed', 'received'] }, taskCode: { contains: '-W' } } }),
       prisma.monetaryDonation.count({ where: { status: 'Submitted' } }),
     ]);
     res.json({ pendingDonations: pd, pendingRequests: pr, totalStock: ts, productionCount: pc, wigStockCount: ws, monetaryDonations: md });
@@ -479,16 +479,46 @@ router.post('/match-wig', ...staffOnly, validate(matchWigSchema), async (req, re
 router.get('/hair-stock', ...staffOnly, async (_req, res) => {
   try {
     const dons = await prisma.donation.findMany({ where: { status: 'Received Hair' } });
-    const stock: Record<string, Record<string, number>> = { Short: { Black: 0, Brown: 0, Light: 0 }, Medium: { Black: 0, Brown: 0, Light: 0 }, Long: { Black: 0, Brown: 0, Light: 0 } };
+    const stock: Record<string, Record<string, number>> = { Short: { Black: 0, Brown: 0, Light: 0 }, Long: { Black: 0, Brown: 0, Light: 0 } };
+
+    // Normalize any length string (e.g. "12 inches", "short", "14 inches") to Short/Long only
+    const normalizeLength = (raw: string): string => {
+      const lower = raw.toLowerCase().trim();
+      // Already a plain category
+      if (lower === 'short') return 'Short';
+      if (lower === 'long') return 'Long';
+      // Extract numeric inch value (e.g. "12 inches", "12\"", "12in")
+      const inchMatch = lower.match(/^(\d+(\.\d+)?)\s*(inches?|in|")?$/);
+      if (inchMatch) {
+        const inches = parseFloat(inchMatch[1]);
+        return inches < 12 ? 'Short' : 'Long';
+      }
+      // Fallback: check if any keyword is present
+      if (lower.includes('short')) return 'Short';
+      if (lower.includes('long')) return 'Long';
+      // Default to Long for unrecognized values
+      return 'Long';
+    };
+
+    const normalizeColor = (raw: string): string => {
+      const lower = raw.toLowerCase();
+      if (lower.includes('black')) return 'Black';
+      if (lower.includes('brown')) return 'Brown';
+      if (lower.includes('light') || lower.includes('blonde')) return 'Light';
+      return 'Other';
+    };
+
+    let uncategorized = 0;
     for (const d of dons) {
-      if (!d.hairLength || !d.hairColor) continue;
-      let l = d.hairLength.charAt(0).toUpperCase() + d.hairLength.slice(1).toLowerCase();
-      let c = d.hairColor.charAt(0).toUpperCase() + d.hairColor.slice(1).toLowerCase();
-      if (c.includes('Black')) c = 'Black'; if (c.includes('Brown')) c = 'Brown';
-      if (c.includes('Light') || c.includes('Blonde')) c = 'Light';
-      if (stock[l]?.[c] !== undefined) stock[l][c]++;
+      if (!d.hairLength || !d.hairColor) { uncategorized++; continue; }
+      const l = normalizeLength(d.hairLength);
+      const c = normalizeColor(d.hairColor);
+      if (!stock[l]) stock[l] = {};
+      if (stock[l][c] === undefined) stock[l][c] = 0;
+      stock[l][c]++;
     }
-    res.json({ stock });
+
+    res.json({ stock, uncategorized });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 

@@ -43,7 +43,7 @@ router.post('/donate', upload.single('proof'), authenticate, validate(monetaryDo
         paymentMethod: validatedData.payment_method,
         referenceNumber: reference,
         proofPath,
-        status: 'Completed',
+        status: 'Submitted',
         anonymous: validatedData.is_anonymous || false,
       },
     });

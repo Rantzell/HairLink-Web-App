@@ -33,16 +33,16 @@ router.get('/dashboard', ...adminOrStaff, async (_req, res) => {
   try {
     const [uc, dc, rc, pd, pr, sd] = await Promise.all([
       prisma.user.count(), prisma.donation.count(), prisma.hairRequest.count(),
-      prisma.donation.count({ where: { status: 'Received Hair' } }),
-      prisma.hairRequest.count({ where: { status: 'Submitted' } }),
       prisma.donation.count({ where: { status: 'Submitted' } }),
+      prisma.hairRequest.count({ where: { status: 'Submitted' } }),
+      prisma.monetaryDonation.count({ where: { status: 'Submitted' } }),
     ]);
     const recentUsers = await prisma.user.findMany({ orderBy: { createdAt: 'desc' }, take: 5 });
     const recentDonations = await prisma.donation.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' }, take: 5 });
     const recentRequests = await prisma.hairRequest.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' }, take: 5 });
     const [ad, pdc, rd, ar, prc] = await Promise.all([
       prisma.donation.count({ where: { status: { in: ['Received Hair', 'In Queue', 'In Production', 'In Progress', 'Completed', 'Wig Received', 'Verified'] } } }),
-      prisma.donation.count({ where: { status: { in: ['Submitted', 'Received Hair'] } } }),
+      prisma.donation.count({ where: { status: 'Submitted' } }),
       prisma.donation.count({ where: { status: 'Rejected' } }),
       prisma.hairRequest.count({ where: { status: 'Validated' } }),
       prisma.hairRequest.count({ where: { status: 'Submitted' } }),
