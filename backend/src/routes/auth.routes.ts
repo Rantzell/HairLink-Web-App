@@ -59,4 +59,39 @@ router.post('/logout', authenticate, (_req: Request, res: Response) => {
   res.json({ message: 'Successfully logged out' });
 });
 
+/**
+ * POST /auth/push-token
+ * Receives the Expo Push Token and stores it in the user_push_tokens table.
+ */
+router.post('/push-token', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { token, platform } = req.body;
+    if (!token) {
+      res.status(400).json({ error: 'Token is required' });
+      return;
+    }
+
+    await prisma.user_push_tokens.upsert({
+      where: { expo_push_token: token },
+      update: {
+        user_id: req.user!.id,
+        platform: platform || 'unknown',
+        is_active: true,
+        updated_at: new Date()
+      },
+      create: {
+        user_id: req.user!.id,
+        expo_push_token: token,
+        platform: platform || 'unknown',
+        is_active: true,
+      }
+    });
+
+    res.json({ success: true, message: 'Push token saved successfully.' });
+  } catch (err) {
+    console.error('Failed to save push token:', err);
+    res.status(500).json({ error: 'Failed to save push token' });
+  }
+});
+
 export default router;

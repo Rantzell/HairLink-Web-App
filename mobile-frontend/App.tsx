@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import api from "./lib/api";
 import { supabase } from "./lib/supabase";
+import { registerForPushNotificationsAsync, sendPushTokenToBackend } from "./lib/pushNotifications";
 
 import DonorDashboard from "./screens/dashboard/DonorDashboard";
 import RecipientDashboard from "./screens/dashboard/RecipientDashboard";
@@ -98,6 +99,11 @@ export default function App() {
       setUserName(user.name || user.firstName || user.first_name || role);
       setUserRole(role);
       setIsAuthenticated(true);
+      
+      // Register for push notifications once authenticated
+      registerForPushNotificationsAsync().then(token => {
+        if (token) sendPushTokenToBackend(token);
+      });
     } catch (err) {
       console.warn("Failed to load user profile", err);
       await supabase.auth.signOut();

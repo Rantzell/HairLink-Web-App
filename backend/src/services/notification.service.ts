@@ -1,4 +1,40 @@
 import prisma from '../config/database';
+import { Expo } from 'expo-server-sdk';
+
+const expo = new Expo();
+
+export const broadcastPushNotifications = async (userIds: string[], title: string, body: string, data?: any) => {
+  try {
+    const tokens = await prisma.user_push_tokens.findMany({
+      where: { user_id: { in: userIds }, is_active: true }
+    });
+    
+    const messages = [];
+    for (const tokenRecord of tokens) {
+      if (!Expo.isExpoPushToken(tokenRecord.expo_push_token)) continue;
+      messages.push({
+        to: tokenRecord.expo_push_token,
+        sound: 'default' as const,
+        title: title,
+        body: body,
+        data: data || {},
+      });
+    }
+
+    if (messages.length > 0) {
+      const chunks = expo.chunkPushNotifications(messages);
+      for (const chunk of chunks) {
+        try {
+          await expo.sendPushNotificationsAsync(chunk);
+        } catch (error) {
+          console.error('[Notify] Error sending push chunk:', error);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[Notify] Error fetching tokens for push:', err);
+  }
+};
 
 export const createNotification = async (
   userId: string,
@@ -21,8 +57,13 @@ export const createNotification = async (
         is_read: false,
       },
     });
+
+    // Try to send push notification
+    await broadcastPushNotifications([userId], title, message, { link });
+
     return notif;
   } catch (err: any) {
+    console.error('Failed to create notification:', err);
     return null;
   }
 };
@@ -287,6 +328,10 @@ export const notifyAllUsers = async (title: string, message: string, type: strin
         is_read: false,
       })),
     });
+    
+    // Also broadcast push notifications for this announcement
+    await broadcastPushNotifications(users.map(u => u.id), title, message);
+
     return users.length;
   } catch (err) {
     console.error('[Notify] notifyAllUsers failed:', err);
