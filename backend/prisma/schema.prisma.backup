@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  name              String
+  firstName         String?             @map("first_name")
+  lastName          String?             @map("last_name")
+  email             String              @unique
+  emailVerifiedAt   DateTime?           @map("email_verified_at")
+  role              String              @default("donor")
+  country           String?
+  region            String?
+  postalCode        String?             @map("postal_code")
+  age               Int?
+  gender            String?
+  phone             String?
+  bio               String?
+  profile_photo_url String?
+  isActive          Boolean             @default(true) @map("is_active")
+  referredBy        String?             @map("referred_by")
+  referralCode      String?             @map("referral_code")
+  onesignalId       String?             @map("onesignal_id")
+  // Running counter of points earned toward the next free-wig voucher.
+  // Each time it reaches 100 a Voucher is auto-issued and this resets via
+  // `% 100`. See backend/src/services/milestone.service.ts.
+  milestoneProgress Int                 @default(0) @map("milestone_progress")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  id                String              @id @db.Uuid
+  password          String?
+  communityComments CommunityComment[]
+  communityLikes    CommunityPostLike[]
+  communityPosts    CommunityPost[]
+  donations         Donation[]
+  hairRequests      HairRequest[]
+  monetaryDonations MonetaryDonation[]
+  notifications     notifications[]
+  user_push_tokens  user_push_tokens[]
+  vouchers          Voucher[]
+  wigProductions    WigProduction[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// Saveable rewards issued automatically when a donor's milestone counter
+// reaches a threshold (currently 100 pts → 1 free-wig voucher).
+model Voucher {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  code       String    @unique
+  type       String    @default("free_wig")
+  status     String    @default("active") // active | redeemed | expired
+  issuedAt   DateTime  @default(now()) @map("issued_at")
+  redeemedAt DateTime? @map("redeemed_at")
+  expiresAt  DateTime? @map("expires_at")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("vouchers")
+}
+
+model Donation {
+  id                Int            @id @default(autoincrement())
+  userId            String?        @map("user_id") @db.Uuid
+  reference         String?        @unique
+  hairLength        String?        @map("hair_length")
+  hairColor         String?        @map("hair_color")
+  treatedHair       Boolean?       @default(false) @map("treated_hair")
+  address           String?
+  reason            String?
+  dropoffLocation   String?        @map("dropoff_location")
+  appointmentAt     DateTime?      @map("appointment_at") @db.Timestamptz(6)
+  status            String?        @default("Submitted")
+  certificateNo     String?        @map("certificate_no")
+  receivedWigAt     DateTime?      @map("received_wig_at") @db.Timestamptz(6)
+  photoFront        String?        @map("photo_front")
+  photoSide         String?        @map("photo_side")
+  donorDeliveryLink String?        @map("donor_delivery_link")
+  scheduledDeliveryAt DateTime?    @map("scheduled_delivery_at") @db.Timestamptz(6)
+  deliveryDueNotified Boolean?     @default(false) @map("delivery_due_notified")
+  createdAt         DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  wigProductionId   Int?           @map("wig_production_id")
+  user              User?          @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  wigProduction     WigProduction? @relation(fields: [wigProductionId], references: [id])
+
+  @@map("donations")
+}
+
+model HairRequest {
+  id                 Int             @id @default(autoincrement())
+  userId             String?         @map("user_id") @db.Uuid
+  reference          String?         @unique
+  story              String?
+  wigLength          String?         @map("wig_length")
+  wigColor           String?         @map("wig_color")
+  medicalCertificate String?         @map("medical_certificate")
+  additionalPhoto    String?         @map("additional_photo")
+  notes              String?
+  status             String?         @default("Submitted")
+  createdAt          DateTime?       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime?       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  appointmentAt      DateTime?       @map("appointment_at") @db.Timestamptz(6)
+  contactNumber      String?         @map("contact_number")
+  diagnosisPhoto     String?         @map("diagnosis_photo")
+  documents          String[]
+  gender             String?
+  recipientPhoto     String?         @map("recipient_photo")
+  deliveryLink       String?         @map("delivery_link")
+  receivedAt         DateTime?       @map("received_at") @db.Timestamptz(6)
+  deliveryMethod     String?         @default("delivery") @map("delivery_method")
+  user               User?           @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  wigProductions     WigProduction[]
+
+  @@map("hair_requests")
+}
+
+model WigProduction {
+  id                   Int          @id @default(autoincrement())
+  taskCode             String       @unique @map("task_code")
+  wigmakerId           String       @map("wigmaker_id") @db.Uuid
+  hairRequestId        Int?         @map("hair_request_id")
+  targetLength         String?      @map("target_length")
+  targetColor          String?      @map("target_color")
+  status               String       @default("assigned")
+  dueDate              DateTime?    @map("due_date")
+  deliveryLink         String?      @map("delivery_link")
+  preview_photo        String?
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+  materialDeliveryLink String?      @map("material_delivery_link")
+  isReceived           Boolean      @default(false) @map("is_received")
+  donations            Donation[]
+  hairRequest          HairRequest? @relation(fields: [hairRequestId], references: [id])
+  wigmaker             User         @relation(fields: [wigmakerId], references: [id])
+
+  @@map("wig_productions")
+}
+
+model CommunityPost {
+  id        String              @id
+  userId    String              @map("user_id") @db.Uuid
+  content   String
+  imageUrl  String?             @map("image_url")
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+  comments  CommunityComment[]
+  likedBy   CommunityPostLike[]
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id        String             @id
+  postId    String             @map("post_id")
+  userId    String             @map("user_id") @db.Uuid
+  content   String?
+  imageUrl  String?            @map("image_url")
+  parentId  String?            @map("parent_id")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  parent    CommunityComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   CommunityComment[] @relation("CommentReplies")
+  post      CommunityPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("community_comments")
+}
+
+model CommunityPostLike {
+  id              String        @id
+  communityPostId String        @map("community_post_id")
+  userId          String        @map("user_id") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at")
+  post            CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityPostId, userId])
+  @@map("community_post_likes")
+}
+
+model StatusHistory {
+  id            Int      @id @default(autoincrement())
+  trackableId   Int      @map("trackable_id")
+  trackableType String   @map("trackable_type")
+  status        String
+  notes         String?
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([trackableId, trackableType])
+  @@map("status_histories")
+}
+
+model MonetaryDonation {
+  id              Int       @id @default(autoincrement())
+  userId          String?   @map("user_id") @db.Uuid
+  name            String?
+  email           String?
+  amount          Decimal?  @db.Decimal
+  currency        String?   @default("PHP")
+  paymentMethod   String?   @map("payment_method")
+  referenceNumber String?   @unique @map("reference_number")
+  proofPath       String?   @map("proof_path")
+  status          String?   @default("Completed")
+  remarks         String?
+  anonymous       Boolean?  @default(false)
+  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
+
+  @@map("monetary_donations")
+}
+
+model Event {
+  id                Int      @id @default(autoincrement())
+  title             String
+  date              DateTime
+  description       String?
+  location          String?
+  status            String   @default("Upcoming")
+  participantsCount Int      @default(0) @map("participants_count")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("events")
+}
+
+model HaircareArticle {
+  id              Int      @id @default(autoincrement())
+  title           String
+  content         String
+  image_url       String?
+  author          String?
+  category        String?
+  targetAudience  String?  @default("all") @map("target_audience")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("haircare_articles")
+}
+
+model HaircareVideo {
+  id          Int      @id @default(autoincrement())
+  title       String
+  url         String
+  thumbnail   String?
+  description String?
+  category    String?
+  duration    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("haircare_videos")
+}
+
+model Partnership {
+  id          Int      @id @default(autoincrement())
+  name        String
+  type        String?
+  contact     String?
+  email       String?
+  description String?
+  logo_url    String?
+  status      String   @default("Active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("partnerships")
+}
+
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+}
+
+model notifications {
+  id         Int       @id @default(autoincrement())
+  user_id    String?   @db.Uuid
+  title      String
+  message    String?
+  type       String?   @default("general")
+  link       String?
+  is_read    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_push_tokens {
+  id              Int       @id @default(autoincrement())
+  user_id         String?   @db.Uuid
+  expo_push_token String    @unique
+  platform        String?   @default("unknown")
+  is_active       Boolean?  @default(true)
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime? @default(now()) @db.Timestamptz(6)
+  users           User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
