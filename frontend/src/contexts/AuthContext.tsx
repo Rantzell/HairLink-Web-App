@@ -136,8 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = loginData.session?.access_token;
     const profile = await fetchProfile(token);
 
-    // First-login OTP check — skip for demo accounts
-    const isDemo = email.endsWith('@hairlink.local');
+    // First-login OTP check — skip for demo accounts and admin-created test accounts
+    const isDemo = email.endsWith('@hairlink.local') || email.endsWith('@test.com');
     if (!isDemo && !profile.emailVerifiedAt) {
       await supabase.auth.signOut();
       await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });

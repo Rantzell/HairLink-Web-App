@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { authenticate } from '../middleware/auth';
@@ -7,6 +6,7 @@ import { requireRole } from '../middleware/requireRole';
 import { validate } from '../middleware/validate';
 import { eventCreateSchema } from '../schemas';
 import { notifyAllDonorsAndRecipients, notifyAnnouncement } from '../services/notification.service';
+import supabaseAdmin from '../config/supabase';
 
 
 const router = Router();
@@ -111,20 +111,67 @@ router.get('/users', ...adminOnly, async (req, res) => {
 router.post('/users', ...adminOnly, async (req, res) => {
   try {
     const { email, password, role, firstName, lastName, name } = req.body;
-    const hashedPassword = await bcrypt.hash(password || 'password123', 10);
-    
-    const user = await prisma.user.create({
-      data: {
-        id: uuidv4(),
-        email,
-        password: hashedPassword,
-        role: role || 'donor',
-        firstName,
-        lastName,
-        name: name || `${firstName} ${lastName}`,
-        isActive: true
-      }
+    const rawPassword = password || 'password123';
+    const resolvedRole = role || 'donor';
+    const resolvedName = name || `${firstName ?? ''} ${lastName ?? ''}`.trim() || email;
+
+    // 1. Create the user in Supabase Auth using the service-role admin API.
+    //    This is required so the user can actually sign in via supabase.auth.signInWithPassword.
+    //    email_confirm: true skips the confirmation email so the account is immediately usable.
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: rawPassword,
+      email_confirm: true,
+      user_metadata: {
+        first_name: firstName,
+        last_name: lastName,
+        role: resolvedRole,
+      },
     });
+
+    if (authError) {
+      // If the auth user already exists, surface a clear message
+      if (authError.message?.toLowerCase().includes('already')) {
+        res.status(409).json({ error: 'A user with this email already exists in authentication.' });
+        return;
+      }
+      throw new Error(`Supabase Auth error: ${authError.message}`);
+    }
+
+    const authUserId = authData.user.id;
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
+    // 2. Create (or upsert) the matching row in public.users using the same UUID
+    //    that Supabase Auth assigned, so JWT sub === public.users.id.
+    let user;
+    try {
+      user = await prisma.user.create({
+        data: {
+          id: authUserId,
+          email,
+          password: hashedPassword,
+          role: resolvedRole,
+          firstName,
+          lastName,
+          name: resolvedName,
+          isActive: true,
+          emailVerifiedAt: new Date(), // admin-created accounts are pre-verified
+        }
+      });
+    } catch (dbErr: any) {
+      // If the public.users row already exists (e.g. trigger ran first), update it
+      if (dbErr.code === 'P2002') {
+        user = await prisma.user.update({
+          where: { id: authUserId },
+          data: { role: resolvedRole, firstName, lastName, name: resolvedName, isActive: true, emailVerifiedAt: new Date() }
+        });
+      } else {
+        // Roll back the auth user to avoid orphaned auth entries
+        await supabaseAdmin.auth.admin.deleteUser(authUserId);
+        throw dbErr;
+      }
+    }
+
     res.status(201).json(s(user));
   } catch (err: any) { res.status(500).json({ error: 'Failed', message: err.message }); }
 });
