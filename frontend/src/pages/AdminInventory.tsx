@@ -79,7 +79,6 @@ const AdminInventory: React.FC = () => {
             { label: 'Hair Records', count: data.totalHairRecords, icon: 'bx-cut' },
             { label: 'Wig Stock', count: data.wigCount, icon: 'bx-shopping-bag' },
             { label: 'Donation History', count: data.allDonationsCount, icon: 'bx-history' },
-            { label: 'Available Stock', count: data.totalHairRecords, icon: 'bx-check-circle' },
           ].map((item, i) => (
             <div key={i} className="inv-summary-item admin-mini-stat">
               <span className="admin-mini-stat-label">{item.label}</span>

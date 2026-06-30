@@ -128,7 +128,7 @@ model HairRequest {
 model WigProduction {
   id                   Int          @id @default(autoincrement())
   taskCode             String       @unique @map("task_code")
-  wigmakerId           String       @map("wigmaker_id") @db.Uuid
+  wigmakerId           String?      @map("wigmaker_id") @db.Uuid
   hairRequestId        Int?         @map("hair_request_id")
   targetLength         String?      @map("target_length")
   targetColor          String?      @map("target_color")
@@ -142,7 +142,7 @@ model WigProduction {
   isReceived           Boolean      @default(false) @map("is_received")
   donations            Donation[]
   hairRequest          HairRequest? @relation(fields: [hairRequestId], references: [id])
-  wigmaker             User         @relation(fields: [wigmakerId], references: [id])
+  wigmaker             User?        @relation(fields: [wigmakerId], references: [id])
 
   @@map("wig_productions")
 }
