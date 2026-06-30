@@ -418,7 +418,7 @@ const StaffRealtimeTracking: React.FC = () => {
             </div>
             <div className="batch-status-text">
               {selectedDonations.length > 0
-                ? `${selectedDonations.length} donation${selectedDonations.length > 1 ? 's' : ''} selected — ready to assign! 🚀`
+                ? `${selectedDonations.length} donation${selectedDonations.length > 1 ? 's' : ''} selected — ready to assign!`
                 : 'Select donations to create a batch'}
             </div>
           </div>
