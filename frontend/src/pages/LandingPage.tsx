@@ -1796,7 +1796,10 @@ const LandingPage: React.FC = () => {
     apiClient.get('/api/public/site-settings').then(r => setCms(r.data)).catch(() => { });
     apiClient.get('/api/public/events/upcoming').then(r => {
       const events: any[] = Array.isArray(r.data) ? r.data : [];
-      const validEvents = events.filter(e => new Date(e.date).getTime() > Date.now());
+      const now = Date.now();
+      const validEvents = events
+        .filter(e => new Date(e.date).getTime() > now)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       if (validEvents.length > 0) setNextEvent(validEvents[0]);
       setUpcomingEvents(validEvents);
     }).catch(() => { });

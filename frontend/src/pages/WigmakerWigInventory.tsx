@@ -328,7 +328,7 @@ const WigmakerWigInventory: React.FC = () => {
               {selectedWigIds.length}
             </div>
             <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>
-              Wigs Selected for Shipment back to Staff 🚀
+              Wigs Selected for Shipment back to Staff
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>

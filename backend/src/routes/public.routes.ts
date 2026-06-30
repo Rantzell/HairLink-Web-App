@@ -19,8 +19,8 @@ function getStartOfTodayPH(): Date {
 router.get('/events/next', async (_req, res) => {
   try {
     const nextEvent = await prisma.event.findFirst({
-      where: { date: { gt: new Date() } },
-      orderBy: { createdAt: 'desc' }
+      where: { date: { gte: new Date() } },
+      orderBy: { date: 'asc' }
     });
     res.json(nextEvent);
   } catch (err) {
@@ -33,8 +33,8 @@ router.get('/events/next', async (_req, res) => {
 router.get('/events/upcoming', async (_req, res) => {
   try {
     const events = await prisma.event.findMany({
-      where: { date: { gt: new Date() } },
-      orderBy: { createdAt: 'desc' },
+      where: { date: { gte: new Date() } },
+      orderBy: { date: 'asc' },
       take: 4,
     });
     res.json(events);

@@ -644,16 +644,42 @@ router.delete('/wigs/bulk-delete', ...wmOnly, async (req, res) => {
     }
 
     const foundIds = wigs.map(w => w.id);
+    const SYSTEM_WIGMAKER_ID = '00000000-0000-0000-0000-000000000000';
+    const wigsToKeep = wigs.filter(w => w.status === 'received' || w.status === 'matched');
+    const wigsToDelete = wigs.filter(w => w.status !== 'received' && w.status !== 'matched');
 
-    // Delete status histories first, then the wigs
-    await prisma.statusHistory.deleteMany({
-      where: { trackableType: WIG_TYPE, trackableId: { in: foundIds } }
-    });
-    await prisma.wigProduction.deleteMany({
-      where: { id: { in: foundIds } }
-    });
+    if (wigsToKeep.length > 0) {
+      await prisma.user.upsert({
+        where: { id: SYSTEM_WIGMAKER_ID },
+        update: {},
+        create: {
+          id: SYSTEM_WIGMAKER_ID,
+          name: 'System Pool',
+          firstName: 'System',
+          lastName: 'Pool',
+          email: 'system-pool@hairlink.org',
+          role: 'wigmaker',
+          isActive: false,
+        }
+      });
 
-    res.json({ message: `${foundIds.length} wig(s) deleted successfully.`, deletedIds: foundIds });
+      await prisma.wigProduction.updateMany({
+        where: { id: { in: wigsToKeep.map(w => w.id) } },
+        data: { wigmakerId: SYSTEM_WIGMAKER_ID }
+      });
+    }
+
+    if (wigsToDelete.length > 0) {
+      const deleteIds = wigsToDelete.map(w => w.id);
+      await prisma.statusHistory.deleteMany({
+        where: { trackableType: WIG_TYPE, trackableId: { in: deleteIds } }
+      });
+      await prisma.wigProduction.deleteMany({
+        where: { id: { in: deleteIds } }
+      });
+    }
+
+    res.json({ message: `${foundIds.length} wig(s) processed successfully.`, deletedIds: foundIds });
   } catch (err) {
     console.error('[Wigmaker API] Bulk delete wigs error:', err);
     res.status(500).json({ error: 'Failed to delete wigs' });

@@ -46,6 +46,8 @@ const StaffRealtimeTracking: React.FC = () => {
   const [showDeliveryLinkModal, setShowDeliveryLinkModal] = useState(false);
   const [deliveryLinkTaskCode, setDeliveryLinkTaskCode] = useState('');
   const [deliveryLinkValue, setDeliveryLinkValue] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteBatchId, setDeleteBatchId] = useState<number | null>(null);
 
   const triggerAction = (ref: string, _type: 'donor' | 'recipient', status: string, label: string, link?: string) => {
     setPendingAction({ reference: ref, _type, status, label, link });
@@ -134,19 +136,24 @@ const StaffRealtimeTracking: React.FC = () => {
     }
   };
 
-  const handleDeleteBatch = async (batchId: number) => {
-    if (!window.confirm("Are you sure you want to delete this batch? All associated donations will be returned to the queue.")) {
-      return;
-    }
+  const handleDeleteBatch = (batchId: number) => {
+    setDeleteBatchId(batchId);
+    setShowDeleteConfirm(true);
+  };
+
+  const doDeleteBatch = async () => {
+    if (deleteBatchId === null) return;
+    setShowDeleteConfirm(false);
     setIsSubmitting(true);
     try {
-      await apiClient.delete(`/internal-api/staff/batches/${batchId}`);
+      await apiClient.delete(`/internal-api/staff/batches/${deleteBatchId}`);
       toast.success('Batch deleted successfully!');
       fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to delete batch');
     } finally {
       setIsSubmitting(false);
+      setDeleteBatchId(null);
     }
   };
 
@@ -1668,6 +1675,18 @@ const StaffRealtimeTracking: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => { setShowDeleteConfirm(false); setDeleteBatchId(null); }}
+        onConfirm={doDeleteBatch}
+        title="Delete Batch"
+        message="Are you sure you want to delete this batch? All associated donations will be returned to the queue."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

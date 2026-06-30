@@ -46,8 +46,8 @@ router.get('/dashboard', ...staffOnly, async (_req, res) => {
       prisma.donation.count({ where: { status: 'Submitted' } }),
       prisma.hairRequest.count({ where: { status: 'Submitted' } }),
       prisma.donation.count({ where: { status: 'Received Hair' } }),
-      prisma.wigProduction.count({ where: { status: { in: ['assigned', 'processing', 'shipped'] }, taskCode: { contains: '-W' } } }),
-      prisma.wigProduction.count({ where: { status: { in: ['completed', 'received'] }, taskCode: { contains: '-W' } } }),
+      prisma.wigProduction.count({ where: { status: { in: ['assigned', 'processing', 'completed'] }, taskCode: { contains: '-W' } } }),
+      prisma.wigProduction.count({ where: { status: 'received', taskCode: { contains: '-W' } } }),
       prisma.monetaryDonation.count({ where: { status: 'Submitted' } }),
     ]);
     res.json({ pendingDonations: pd, pendingRequests: pr, totalStock: ts, productionCount: pc, wigStockCount: ws, monetaryDonations: md });
@@ -449,11 +449,11 @@ router.post('/tracking/:reference/status', ...staffOnly, validate(trackingStatus
 
       if (ns === 'Wig Received') {
         const completedWigs = await prisma.wigProduction.findMany({
-          where: { donations: { some: { id: record.id } }, status: { in: ['completed', 'shipped'] } } as any,
+          where: { donations: { some: { id: record.id } }, status: 'shipped' } as any,
         });
 
         await prisma.wigProduction.updateMany({
-          where: { donations: { some: { id: record.id } }, status: { in: ['completed', 'shipped'] } } as any,
+          where: { donations: { some: { id: record.id } }, status: 'shipped' } as any,
           data: { status: 'received' }
         });
 
@@ -670,7 +670,7 @@ router.post('/requests/:reference/ready-for-pickup', ...staffOnly, async (req, r
 // GET /internal-api/staff/rule-matching
 router.get('/rule-matching', ...staffOnly, async (_req, res) => {
   try {
-    const recipients = await prisma.hairRequest.findMany({ where: { status: { in: ['Validated', 'Submitted'] } }, include: { user: true } });
+    const recipients = await prisma.hairRequest.findMany({ where: { status: 'Validated' }, include: { user: true } });
     const wigs = await prisma.wigProduction.findMany({
       where: {
         status: { in: ['completed', 'received'] },
@@ -853,20 +853,13 @@ router.delete('/batches/:id', ...staffOnly, async (req, res) => {
       });
     }
 
-    // Delete status history for the batch and its child wigs
+    // Delete status history for the batch only
     await prisma.statusHistory.deleteMany({
       where: { 
         trackableType: WIG_TYPE, 
-        trackableId: { in: [id, ...childIds] } 
+        trackableId: id 
       }
     });
-
-    // Delete the child wigs
-    if (childIds.length > 0) {
-      await prisma.wigProduction.deleteMany({
-        where: { id: { in: childIds } }
-      });
-    }
 
     // Delete the batch record itself
     await prisma.wigProduction.delete({ where: { id } });
