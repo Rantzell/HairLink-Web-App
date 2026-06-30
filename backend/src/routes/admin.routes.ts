@@ -201,6 +201,27 @@ router.patch('/users/:id/toggle-active', ...adminOnly, async (req, res) => {
   }
 });
 
+// DELETE /internal-api/admin/users/:id
+router.delete('/users/:id', ...adminOnly, async (req, res) => {
+  try {
+    const userId = req.params.id as string;
+
+    // Remove from public.users first (cascade deletes related rows)
+    await prisma.user.delete({ where: { id: userId } });
+
+    // Remove from Supabase Auth so the email can be reused and the account is fully gone
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (authError) {
+      // Log but don't fail — public.users row is already gone, auth cleanup is best-effort
+      console.warn(`[Admin] Could not delete Supabase Auth user ${userId}:`, authError.message);
+    }
+
+    res.json({ success: true, message: 'User deleted.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed', message: err.message });
+  }
+});
+
 // GET /internal-api/admin/events
 router.get('/events', ...adminOnly, async (_req, res) => {
   try {
