@@ -28,6 +28,8 @@ const AdminUserManagement: React.FC = () => {
   const [showToggleConfirm, setShowToggleConfirm] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [pendingToggleUser, setPendingToggleUser] = useState<any>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingDeleteUser, setPendingDeleteUser] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchUsers = async (searchStr = filter, roleStr = roleFilter, page = currentPage) => {
@@ -85,6 +87,26 @@ const AdminUserManagement: React.FC = () => {
   const requestToggle = (user: any) => {
     setPendingToggleUser(user);
     setShowToggleConfirm(true);
+  };
+
+  const requestDelete = (user: any) => {
+    setPendingDeleteUser(user);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!pendingDeleteUser) return;
+    setIsSubmitting(true);
+    try {
+      await apiClient.delete(`/internal-api/admin/users/${pendingDeleteUser.id}`);
+      fetchUsers();
+    } catch (err) {
+      console.error('Delete failed', err);
+    } finally {
+      setIsSubmitting(false);
+      setShowDeleteConfirm(false);
+      setPendingDeleteUser(null);
+    }
   };
 
   const handleOpenModal = (user: any = null) => {
@@ -270,6 +292,14 @@ const AdminUserManagement: React.FC = () => {
                         >
                           <i className={`bx ${user.isActive ? 'bx-user-x' : 'bx-user-check'} admin-td-text`}></i>
                           {user.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button
+                          onClick={() => requestDelete(user)}
+                          disabled={isSubmitting}
+                          className="admin-user-toggle-btn deactivate"
+                          style={{ background: '#fef2f2', color: '#dc2626', borderColor: '#fca5a5' }}
+                        >
+                          <i className="bx bx-trash admin-td-text"></i> Delete
                         </button>
                       </div>
                     </td>
@@ -507,6 +537,17 @@ const AdminUserManagement: React.FC = () => {
         title={editingUser ? 'Update User Account' : 'Create User Account'}
         message={editingUser ? `Save changes to ${userForm.firstName} ${userForm.lastName}'s account?` : `Create a new ${userForm.role} account for ${userForm.firstName} ${userForm.lastName}?`}
         confirmText={editingUser ? 'Yes, Update Account' : 'Yes, Create Account'}
+        isConfirming={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => { setShowDeleteConfirm(false); setPendingDeleteUser(null); }}
+        onConfirm={handleDeleteUser}
+        title="Delete Account"
+        message={`Are you sure you want to permanently delete ${pendingDeleteUser?.displayName}'s account? This cannot be undone and will remove all their data.`}
+        confirmText="Yes, Delete Account"
+        variant="danger"
         isConfirming={isSubmitting}
       />
     </section>
