@@ -542,20 +542,6 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
   const navigate = useNavigate();
   const location = useLocation();
 
-  // If user is already logged in and visits /login, redirect them
-  useEffect(() => {
-    if (user) {
-      const dashboardPath: Record<string, string> = {
-        admin: '/admin/dashboard',
-        staff: '/staff/dashboard',
-        wigmaker: '/wigmaker/dashboard',
-        recipient: '/recipient/dashboard',
-        donor: '/donor/dashboard',
-      };
-      navigate(dashboardPath[user.role] || '/donor/dashboard', { replace: true });
-    }
-  }, [user, navigate]);
-
   const [isReg, setIsReg] = useState(location.pathname === '/register');
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
@@ -567,6 +553,20 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
   const [forgotStep, setForgotStep] = useState<'email' | 'otp' | 'newpw' | 'done'>('email');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState('');
+
+  // If user is already logged in and visits /login, redirect them (unless they are resetting password)
+  useEffect(() => {
+    if (user && !showForgot) {
+      const dashboardPath: Record<string, string> = {
+        admin: '/admin/dashboard',
+        staff: '/staff/dashboard',
+        wigmaker: '/wigmaker/dashboard',
+        recipient: '/recipient/dashboard',
+        donor: '/donor/dashboard',
+      };
+      navigate(dashboardPath[user.role] || '/donor/dashboard', { replace: true });
+    }
+  }, [user, navigate, showForgot]);
 
   const resetForgot = () => {
     setForgotStep('email'); setForgotEmail(''); setForgotOtp('');
@@ -1148,10 +1148,10 @@ const AuthPage: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMod
                 <i className="bx bx-check-circle" style={{ fontSize: '2rem', color: '#10b981' }}></i>
               </div>
               <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', fontWeight: 800, color: '#1a1a1a' }}>Password Updated!</h2>
-              <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: '#6b7280' }}>Your password has been reset. You can now log in.</p>
+              <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: '#6b7280' }}>Your password has been reset. You can now access your dashboard.</p>
               <button onClick={() => { setShowForgot(false); resetForgot(); }}
                 style={{ width: '100%', padding: '0.75rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#D63B8A,#e8559e)', color: '#fff', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer' }}>
-                Back to Login
+                Go to Dashboard
               </button>
             </div>
           )}
