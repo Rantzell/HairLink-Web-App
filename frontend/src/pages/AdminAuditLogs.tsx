@@ -45,6 +45,13 @@ const ACTION_OPTIONS = [
 const actionLabel = (action: string) =>
   ACTION_OPTIONS.find(a => a.value === action)?.label || action;
 
+// Today in local YYYY-MM-DD, used to block future dates in the filters.
+const todayStr = () => {
+  const d = new Date();
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+};
+
 const AdminAuditLogs: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,11 +150,11 @@ const AdminAuditLogs: React.FC = () => {
           </select>
           <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.7rem', color: '#8c7895' }}>
             From
-            <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="admin-filter-input" />
+            <input type="date" value={from} max={to || todayStr()} onChange={e => setFrom(e.target.value)} className="admin-filter-input" />
           </label>
           <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.7rem', color: '#8c7895' }}>
             To
-            <input type="date" value={to} onChange={e => setTo(e.target.value)} className="admin-filter-input" />
+            <input type="date" value={to} min={from || undefined} max={todayStr()} onChange={e => setTo(e.target.value)} className="admin-filter-input" />
           </label>
         </div>
 
