@@ -25,6 +25,12 @@ interface AuditParams {
 export const logAudit = async (params: AuditParams): Promise<void> => {
   try {
     const user = params.req?.user;
+
+    // Only record activity performed by admin or staff accounts. Actions taken
+    // by donors, recipients, or wigmakers are intentionally not audited.
+    const actorRole = params.actorRole ?? user?.role ?? null;
+    if (actorRole !== 'admin' && actorRole !== 'staff') return;
+
     const ip =
       (params.req?.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
       params.req?.socket?.remoteAddress ||
@@ -34,7 +40,7 @@ export const logAudit = async (params: AuditParams): Promise<void> => {
       data: {
         actorId: params.actorId ?? user?.id ?? null,
         actorName: params.actorName ?? user?.name ?? null,
-        actorRole: params.actorRole ?? user?.role ?? null,
+        actorRole,
         action: params.action,
         targetType: params.targetType ?? null,
         targetId: params.targetId != null ? String(params.targetId) : null,

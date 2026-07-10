@@ -18,11 +18,8 @@ interface AuditLog {
 
 const ROLE_OPTIONS = [
   { value: 'all', label: 'All roles' },
-  { value: 'donor', label: 'Donor' },
-  { value: 'recipient', label: 'Recipient' },
-  { value: 'staff', label: 'Staff' },
-  { value: 'wigmaker', label: 'Wigmaker' },
   { value: 'admin', label: 'Admin' },
+  { value: 'staff', label: 'Staff' },
 ];
 
 const ACTION_OPTIONS = [
@@ -35,7 +32,6 @@ const ACTION_OPTIONS = [
   { value: 'staff.tracking_status_changed', label: 'Staff tracking update' },
   { value: 'staff.wigmaker_assigned', label: 'Wigmaker assigned' },
   { value: 'staff.wig_matched', label: 'Wig matched' },
-  { value: 'wigmaker.task_updated', label: 'Wigmaker task update' },
   { value: 'admin.user_created', label: 'Admin created user' },
   { value: 'admin.user_updated', label: 'Admin updated user' },
   { value: 'admin.user_activated', label: 'Admin activated user' },
@@ -104,7 +100,7 @@ const AdminAuditLogs: React.FC = () => {
           <p className="admin-page-kicker">Admin · System</p>
           <h1 className="admin-page-title">Audit Logs</h1>
           <p className="admin-page-subtitle">
-            Activity trail of key actions across all roles — donors, recipients, staff, and wigmakers.
+            Activity trail of key actions performed by admin and staff accounts.
           </p>
         </div>
       </header>
