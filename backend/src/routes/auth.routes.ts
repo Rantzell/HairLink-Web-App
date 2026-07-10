@@ -60,8 +60,8 @@ router.post('/session-start', authenticate, async (req: Request, res: Response) 
   await logAudit({
     req,
     action: 'auth.login',
-    targetType: 'User',
-    targetId: req.user!.id,
+    targetType: 'Account',
+    targetId: req.user!.email,
     description: `${req.user!.name || req.user!.email} logged in`,
   });
   res.json({ success: true });
@@ -76,8 +76,8 @@ router.post('/logout', authenticate, async (req: Request, res: Response) => {
   await logAudit({
     req,
     action: 'auth.logout',
-    targetType: 'User',
-    targetId: req.user!.id,
+    targetType: 'Account',
+    targetId: req.user!.email,
     description: `${req.user!.name || req.user!.email} logged out`,
   });
   res.json({ message: 'Successfully logged out' });

@@ -99,7 +99,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const profile = await fetchProfile(session.access_token, true);
         setUser(profile);
         // Record the login in the admin audit trail (fire-and-forget).
-        if (_event === 'SIGNED_IN') {
+        // Supabase fires SIGNED_IN not only on a real login but also on token
+        // refreshes and tab re-focus, and again on every page reload. Dedupe
+        // per browser session so only one genuine login is logged.
+        if (_event === 'SIGNED_IN' &&
+            sessionStorage.getItem('hl_login_logged') !== session.user.id) {
+          sessionStorage.setItem('hl_login_logged', session.user.id);
           apiClient.post('/auth/session-start', {}, {
             headers: { Authorization: `Bearer ${session.access_token}` },
           }).catch(() => {});
@@ -295,6 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await apiClient.post('/auth/logout');
     } catch { /* ignore */ }
+    sessionStorage.removeItem('hl_login_logged');
     await supabase.auth.signOut();
     setUser(null);
   };
