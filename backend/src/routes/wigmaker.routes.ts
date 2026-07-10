@@ -9,6 +9,7 @@ import { createStatusHistory, getStatusHistories } from '../services/statusHisto
 import { uploadFile } from '../services/storage.service';
 import { notifyDonationStatus, notifyStaffWigmakerCompletedWig, notifyStaffWigmakerReceivedMaterial, notifyStaffMissingHair, notifyStaffHairReceived } from '../services/notification.service';
 import { generateSequentialReference } from '../services/reference.service';
+import { logAudit } from '../services/audit.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -208,6 +209,15 @@ router.post('/tasks/:taskCode', ...wmOnly, upload.single('previewPhoto'), valida
       const wmUser = await prisma.user.findUnique({ where: { id: task.wigmakerId } });
       await notifyStaffWigmakerCompletedWig(task.taskCode, wmUser?.name || 'Wigmaker', updateData.deliveryLink);
     }
+
+    await logAudit({
+      req,
+      action: 'wigmaker.task_updated',
+      targetType: 'WigProduction',
+      targetId: task.taskCode,
+      description: `Wigmaker updated task ${task.taskCode} status to "${status}"`,
+      metadata: { status, progressNotes: progressNotes ?? null },
+    });
 
     res.json({ message: 'Task updated successfully and synced with tracking.', success: true, delivery_link: updateData.deliveryLink || task.deliveryLink });
   } catch (err) {

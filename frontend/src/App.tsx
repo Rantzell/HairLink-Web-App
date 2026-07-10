@@ -47,6 +47,7 @@ import AdminOperations from './pages/AdminOperations';
 import AdminMatching from './pages/AdminMatching';
 import AdminVerification from './pages/AdminVerification';
 import AdminCMS from './pages/AdminCMS';
+import AdminAuditLogs from './pages/AdminAuditLogs';
 import { Toaster } from 'react-hot-toast';
 import ErrorPage from './pages/ErrorPage';
 
@@ -160,6 +161,7 @@ function App() {
                   <Route path="cms" element={<AdminCMS />} />
                   <Route path="profile" element={<DonorProfile />} />
                   <Route path="reports" element={<AdminReports />} />
+                  <Route path="audit-logs" element={<AdminAuditLogs />} />
                   <Route path="*" element={<Navigate to="/404" replace />} />
                 </Routes>
               </DashboardLayout>

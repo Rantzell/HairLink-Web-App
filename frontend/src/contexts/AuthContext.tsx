@@ -98,6 +98,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Pass the token explicitly to avoid any race with the apiClient interceptor
         const profile = await fetchProfile(session.access_token, true);
         setUser(profile);
+        // Record the login in the admin audit trail (fire-and-forget).
+        if (_event === 'SIGNED_IN') {
+          apiClient.post('/auth/session-start', {}, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).catch(() => {});
+        }
       } else {
         setUser(null);
       }

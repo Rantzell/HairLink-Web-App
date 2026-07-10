@@ -9,6 +9,7 @@ import { createStatusHistory, getStatusHistories } from '../services/statusHisto
 import { calculateCompatibility } from '../services/matching.service';
 import { generateSequentialReference } from '../services/reference.service';
 import { notifyDonationStatus, notifyRequestStatus, createNotification, notifyPickupReady } from '../services/notification.service';
+import { logAudit } from '../services/audit.service';
 import crypto from 'crypto';
 
 const router = Router();
@@ -154,6 +155,16 @@ router.post('/verification/:type/:reference', ...staffOnly, validate(verificatio
         await notifyRequestStatus(record.userId, status, reference as string);
       }
     }
+
+    await logAudit({
+      req,
+      action: 'staff.verification',
+      targetType: type === 'recipient' ? 'HairRequest' : type === 'monetary' ? 'MonetaryDonation' : 'Donation',
+      targetId: String(reference),
+      description: `Staff set ${type} ${reference} verification status to "${status}"`,
+      metadata: { type, status, remarks: remarks ?? null },
+    });
+
     res.json({ message: 'Status updated successfully', success: true });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
@@ -364,9 +375,18 @@ router.post('/assign-batch', ...staffOnly, validate(assignWigmakerSchema), async
       await notifyWigmakerMaterialDelivery(wm.id, tc, material_delivery_link);
     }
 
+    await logAudit({
+      req,
+      action: 'staff.wigmaker_assigned',
+      targetType: 'WigProduction',
+      targetId: tc,
+      description: `Staff assigned batch ${batchHairReference} to wigmaker ${wm.firstName || ''} ${wm.lastName || ''}`.trim(),
+      metadata: { wigmakerId: wm.id, donationReferences: donation_references, staffNote: staff_note ?? null },
+    });
+
     res.json({ message: `Batch ${batchHairReference} assigned to ${wm.firstName || 'Wigmaker'}.`, success: true, task_code: tc, batch_hair_reference: batchHairReference });
-  } catch (err: any) { 
-    res.status(500).json({ error: 'Failed', message: err.message }); 
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed', message: err.message });
   }
 });
 
@@ -470,6 +490,16 @@ router.post('/tracking/:reference/status', ...staffOnly, validate(trackingStatus
       if (record.userId) await notifyRequestStatus(record.userId, ns, reference as string);
     }
     await createStatusHistory(tt, record.id, ns, notes || `Status updated to ${ns} by staff`);
+
+    await logAudit({
+      req,
+      action: 'staff.tracking_status_changed',
+      targetType: isDon ? 'Donation' : 'HairRequest',
+      targetId: String(reference),
+      description: `Staff updated ${isDon ? 'donation' : 'request'} ${reference} status to "${ns}"`,
+      metadata: { status: ns, notes: notes ?? null },
+    });
+
     res.json({ message: `Status updated to ${ns}.`, success: true });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
@@ -487,6 +517,16 @@ router.post('/match-wig', ...staffOnly, validate(matchWigSchema), async (req, re
     // Notify the recipient that their wig has been matched
     const { notifyRequestStatus } = await import('../services/notification.service');
     if (hr.userId) await notifyRequestStatus(hr.userId, 'Matched', hr.reference as string);
+
+    await logAudit({
+      req,
+      action: 'staff.wig_matched',
+      targetType: 'HairRequest',
+      targetId: hr.reference,
+      description: `Staff matched request ${hr.reference} with Wig #${wig.taskCode}`,
+      metadata: { wigTaskCode: wig.taskCode },
+    });
+
     res.json({ message: `Matched with Wig #${wig.taskCode}.`, success: true });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });

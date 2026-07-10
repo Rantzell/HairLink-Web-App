@@ -302,6 +302,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           { icon: 'bx bx-file',         label: 'Content (CMS)',       to: '/admin/cms' },
           { icon: 'bx bx-calendar',     label: 'Events Schedule',     to: '/admin/events' },
           { icon: 'bx bx-bar-chart-alt-2', label: 'System Reports',   to: '/admin/reports?type=donations' },
+          { icon: 'bx bx-history',      label: 'Audit Logs',          to: '/admin/audit-logs' },
         ],
       },
     ];
@@ -326,6 +327,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         if (search.includes('view=donations')) return 'Donation Records';
         return 'Inventory Management';
       }
+      if (location.pathname.startsWith('/admin/audit-logs')) return 'Audit Logs';
       if (location.pathname.startsWith('/admin/users')) return 'User Account Management';
       if (location.pathname.startsWith('/admin/cms')) return 'Content Management System';
       if (location.pathname.startsWith('/admin/events')) return 'Events Scheduling Panel';

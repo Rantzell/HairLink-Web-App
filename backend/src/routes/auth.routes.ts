@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../config/database';
 import { authenticate } from '../middleware/auth';
+import { logAudit } from '../services/audit.service';
 
 const router = Router();
 
@@ -51,11 +52,34 @@ router.post('/mark-verified', authenticate, async (req: Request, res: Response) 
 });
 
 /**
+ * POST /auth/session-start
+ * Called once by the frontend when a session is established (SIGNED_IN),
+ * so admins can audit logins across all roles.
+ */
+router.post('/session-start', authenticate, async (req: Request, res: Response) => {
+  await logAudit({
+    req,
+    action: 'auth.login',
+    targetType: 'User',
+    targetId: req.user!.id,
+    description: `${req.user!.name || req.user!.email} logged in`,
+  });
+  res.json({ success: true });
+});
+
+/**
  * POST /auth/logout
  * JWT is stateless — the frontend signs out via supabase.auth.signOut().
  * This endpoint exists for compatibility / session cleanup if needed.
  */
-router.post('/logout', authenticate, (_req: Request, res: Response) => {
+router.post('/logout', authenticate, async (req: Request, res: Response) => {
+  await logAudit({
+    req,
+    action: 'auth.logout',
+    targetType: 'User',
+    targetId: req.user!.id,
+    description: `${req.user!.name || req.user!.email} logged out`,
+  });
   res.json({ message: 'Successfully logged out' });
 });
 

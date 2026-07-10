@@ -8,6 +8,7 @@ import { createStatusHistory, getStatusHistories } from '../services/statusHisto
 import { uploadFile } from '../services/storage.service';
 import { notifyRequestStatus, notifyDonationStatus, notifyStaffNewRequest } from '../services/notification.service';
 import { generateSequentialReference } from '../services/reference.service';
+import { logAudit } from '../services/audit.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -201,6 +202,15 @@ router.post('/:reference/status', authenticate, validate(requestStatusSchema), a
       await createStatusHistory(REQUEST_TYPE, hairRequest.id, newStatus);
 
       if (hairRequest.userId) await notifyRequestStatus(hairRequest.userId, newStatus, hairRequest.reference!);
+
+      await logAudit({
+        req,
+        action: 'request.status_changed',
+        targetType: 'HairRequest',
+        targetId: hairRequest.reference,
+        description: `Request ${hairRequest.reference} status changed from "${hairRequest.status}" to "${newStatus}"`,
+        metadata: { from: hairRequest.status, to: newStatus },
+      });
     }
 
     const updated = await prisma.hairRequest.findUnique({ where: { id: hairRequest.id }, include: { user: true } });

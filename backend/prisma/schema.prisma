@@ -204,6 +204,26 @@ model StatusHistory {
   @@map("status_histories")
 }
 
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  actorId     String?  @map("actor_id") @db.Uuid
+  actorName   String?  @map("actor_name")
+  actorRole   String?  @map("actor_role")
+  action      String
+  targetType  String?  @map("target_type")
+  targetId    String?  @map("target_id")
+  description String?
+  metadata    Json?
+  ipAddress   String?  @map("ip_address")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([actorId])
+  @@index([actorRole])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
 model MonetaryDonation {
   id              Int       @id @default(autoincrement())
   userId          String?   @map("user_id") @db.Uuid

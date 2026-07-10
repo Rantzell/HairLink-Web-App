@@ -7,6 +7,7 @@ import { validate } from '../middleware/validate';
 import { eventCreateSchema } from '../schemas';
 import { notifyAllDonorsAndRecipients, notifyAnnouncement } from '../services/notification.service';
 import supabaseAdmin from '../config/supabase';
+import { logAudit } from '../services/audit.service';
 
 
 const router = Router();
@@ -27,6 +28,58 @@ function s(o: any): any {
   }
   return o;
 }
+
+// GET /internal-api/admin/audit-logs
+// Admin-visible activity trail across all roles (donor, recipient, staff, wigmaker, admin).
+// Query params: role, action, actorId, search, from, to, page, pageSize.
+router.get('/audit-logs', ...adminOnly, async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(String(req.query.page ?? '1'), 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize ?? '25'), 10) || 25));
+
+    const where: any = {};
+    if (req.query.role) where.actorRole = String(req.query.role);
+    if (req.query.action) where.action = String(req.query.action);
+    if (req.query.actorId) where.actorId = String(req.query.actorId);
+    if (req.query.from || req.query.to) {
+      where.createdAt = {};
+      if (req.query.from) where.createdAt.gte = new Date(String(req.query.from));
+      if (req.query.to) {
+        const to = new Date(String(req.query.to));
+        to.setHours(23, 59, 59, 999);
+        where.createdAt.lte = to;
+      }
+    }
+    if (req.query.search) {
+      const q = String(req.query.search);
+      where.OR = [
+        { actorName: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { targetId: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    const [total, logs] = await Promise.all([
+      prisma.auditLog.count({ where }),
+      prisma.auditLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+
+    res.json({
+      logs: s(logs),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed', message: err?.message || String(err) });
+  }
+});
 
 // GET /internal-api/admin/dashboard
 router.get('/dashboard', ...adminOrStaff, async (_req, res) => {
@@ -172,6 +225,15 @@ router.post('/users', ...adminOnly, async (req, res) => {
       }
     }
 
+    await logAudit({
+      req,
+      action: 'admin.user_created',
+      targetType: 'User',
+      targetId: user.id,
+      description: `Admin created ${resolvedRole} account for ${email}`,
+      metadata: { email, role: resolvedRole },
+    });
+
     res.status(201).json(s(user));
   } catch (err: any) { res.status(500).json({ error: 'Failed', message: err.message }); }
 });
@@ -184,6 +246,16 @@ router.put('/users/:id', ...adminOnly, async (req, res) => {
       where: { id: req.params.id as string },
       data: { email, role, firstName, lastName, name, isActive }
     });
+
+    await logAudit({
+      req,
+      action: 'admin.user_updated',
+      targetType: 'User',
+      targetId: user.id,
+      description: `Admin updated account for ${user.email}`,
+      metadata: { email, role, firstName, lastName, name, isActive },
+    });
+
     res.json(s(user));
   } catch (err: any) { res.status(500).json({ error: 'Failed', message: err.message }); }
 });
@@ -194,8 +266,18 @@ router.patch('/users/:id/toggle-active', ...adminOnly, async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.params.id as string } });
     if (!user) { res.status(404).json({ message: 'User not found' }); return; }
     await prisma.user.update({ where: { id: user.id }, data: { isActive: !user.isActive } });
+
+    await logAudit({
+      req,
+      action: user.isActive ? 'admin.user_deactivated' : 'admin.user_activated',
+      targetType: 'User',
+      targetId: user.id,
+      description: `Admin ${user.isActive ? 'deactivated' : 'activated'} account for ${user.email}`,
+      metadata: { email: user.email, role: user.role },
+    });
+
     res.json({ message: user.isActive ? 'User deactivated.' : 'User activated.', success: true });
-  } catch (err: any) { 
+  } catch (err: any) {
     console.error('[Admin API] /community error:', err);
     res.status(500).json({ error: 'Failed', message: err?.message || String(err) });
   }

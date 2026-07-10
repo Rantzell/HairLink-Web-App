@@ -8,6 +8,7 @@ import { createStatusHistory, getStatusHistories } from '../services/statusHisto
 import { uploadFile, getPublicUrl } from '../services/storage.service';
 import { notifyDonationStatus, notifyStaffNewDonation, notifyStaffDeliveryScheduled } from '../services/notification.service';
 import { generateSequentialReference } from '../services/reference.service';
+import { logAudit } from '../services/audit.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -264,6 +265,15 @@ router.post('/:reference/status', authenticate, validate(donationStatusSchema), 
 
       const { notifyDonationStatus } = await import('../services/notification.service');
       if (donation.userId) await notifyDonationStatus(donation.userId, newStatus, donation.reference!);
+
+      await logAudit({
+        req,
+        action: 'donation.status_changed',
+        targetType: 'Donation',
+        targetId: donation.reference,
+        description: `Donation ${donation.reference} status changed from "${donation.status}" to "${newStatus}"`,
+        metadata: { from: donation.status, to: newStatus, remarks: req.body.remarks ?? null },
+      });
 
       // Milestone: the donor earns points the moment staff confirms the hair
       // was physically received. Award here so a re-PUT of an already-received
