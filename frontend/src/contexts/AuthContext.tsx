@@ -98,17 +98,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Pass the token explicitly to avoid any race with the apiClient interceptor
         const profile = await fetchProfile(session.access_token, true);
         setUser(profile);
-        // Record the login in the admin audit trail (fire-and-forget).
-        // Supabase fires SIGNED_IN not only on a real login but also on token
-        // refreshes and tab re-focus, and again on every page reload. Dedupe
-        // per browser session so only one genuine login is logged.
-        if (_event === 'SIGNED_IN' &&
-            sessionStorage.getItem('hl_login_logged') !== session.user.id) {
-          sessionStorage.setItem('hl_login_logged', session.user.id);
-          apiClient.post('/auth/session-start', {}, {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          }).catch(() => {});
-        }
+        // NOTE: login auditing is intentionally NOT done here. onAuthStateChange
+        // also fires on page reloads, token refreshes, and tab re-focus, which
+        // would create phantom "login" entries. It is recorded only from the
+        // explicit login()/loginAs() flows below, which run once per real login.
       } else {
         setUser(null);
       }
@@ -138,6 +131,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * If the user's email_verified_at is null, signs them out and sends an OTP,
    * then returns a redirect to /verify-otp.
    */
+  // Records a genuine login in the admin audit trail (fire-and-forget). Called
+  // only from explicit login flows, never from the auth state listener, so
+  // reloads/token-refreshes don't create phantom entries. The backend only
+  // persists entries for admin/staff actors.
+  const recordLogin = (token?: string) => {
+    apiClient.post('/auth/session-start', {}, token ? {
+      headers: { Authorization: `Bearer ${token}` },
+    } : undefined).catch(() => {});
+  };
+
   const login = async (email: string, password: string): Promise<AuthResponse> => {
     const { data: loginData, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw { response: { data: { error: error.message } } };
@@ -157,6 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setUser(profile);
+    recordLogin(token);
     return { user: profile, redirect: dashboardPath[profile.role] || '/donor/dashboard' };
   };
 
@@ -189,6 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               return;
             }
             setUser(profile);
+            recordLogin(session.access_token);
             window.location.replace(dashboardPath[profile.role] || '/donor/dashboard');
             return;
           }
@@ -209,6 +214,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       const profile = await fetchProfile(undefined, false);
       setUser(profile);
+      recordLogin();
       window.location.replace(dashboardPath[profile.role] || '/donor/dashboard');
     } catch (err: any) {
       console.error('[Auth] Demo login failed:', err);
@@ -300,7 +306,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await apiClient.post('/auth/logout');
     } catch { /* ignore */ }
-    sessionStorage.removeItem('hl_login_logged');
     await supabase.auth.signOut();
     setUser(null);
   };
