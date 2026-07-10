@@ -717,6 +717,44 @@ const hlStyles = `
   margin: 0 auto;
 }
 
+.hl-stats-strip {
+  background: linear-gradient(135deg, #D63B8A 0%, #AD246D 100%);
+  padding: clamp(32px,4vw,52px) clamp(20px,4vw,56px);
+}
+
+.hl-stats-inner {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: clamp(20px, 3vw, 48px);
+  text-align: center;
+}
+
+.hl-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.hl-stat-num {
+  font-family: 'DM Serif Display', 'Outfit', Georgia, serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 400;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.hl-stat-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .hl-section-label {
   font-size: 0.72rem;
   font-weight: 700;
