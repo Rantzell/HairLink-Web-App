@@ -165,6 +165,7 @@ const AdminCMS: React.FC = () => {
   const [showLandingConfirm, setShowLandingConfirm] = useState(false);
   const [showAnnouncementConfirm, setShowAnnouncementConfirm] = useState(false);
   const [showPartnershipConfirm, setShowPartnershipConfirm] = useState(false);
+  const [showPartnerEditConfirm, setShowPartnerEditConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Announcements selection / deletion state
@@ -465,6 +466,7 @@ const AdminCMS: React.FC = () => {
 
   const doPartnerEdit = async () => {
     if (!editingPartner) return;
+    setShowPartnerEditConfirm(false);
     setEditSaving(true);
     try {
       await apiClient.put(`/internal-api/admin/partnerships/${editingPartner.id}`, editForm);
@@ -632,6 +634,48 @@ const AdminCMS: React.FC = () => {
                   <label className="admin-cms-field-label">Button Border Radius (px)</label>
                   <input type="range" min="0" max="30" value={parseInt(branding.btnRadius)} onChange={e => setBranding({ ...branding, btnRadius: `${e.target.value}px` })} className="admin-cms-range" />
                   <div className="admin-cms-range-value">{branding.btnRadius}</div>
+                </div>
+
+                {/* Live preview: reflects the picked colors on a mini landing hero
+                    so admins see the effect before saving. */}
+                <div className="admin-cms-preview">
+                  <div className="admin-cms-preview-head">
+                    <i className="bx bx-show" /> Live Preview — how it looks on the landing page
+                  </div>
+                  <div
+                    className="admin-cms-preview-stage"
+                    style={{ ['--pv-primary' as any]: branding.primaryColor }}
+                  >
+                    <span
+                      className="admin-cms-pv-pill"
+                      style={{ color: branding.primaryColor, borderColor: `${branding.primaryColor}55`, background: `${branding.primaryColor}14` }}
+                    >
+                      <span className="admin-cms-pv-dot" style={{ background: branding.primaryColor }} />
+                      {hero.pillText || 'Strand Up for Cancer'}
+                    </span>
+                    <h3
+                      className="admin-cms-pv-heading"
+                      dangerouslySetInnerHTML={{ __html: hero.heading || 'Every Strand,<br />a Story of <em>Hope.</em>' }}
+                    />
+                    <p className="admin-cms-pv-copy">{hero.subheading || 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.'}</p>
+                    <div className="admin-cms-pv-btns">
+                      <button
+                        type="button"
+                        className="admin-cms-pv-btn"
+                        style={{ background: branding.primaryColor, color: branding.primaryTextColor, borderRadius: branding.btnRadius, border: 'none' }}
+                      >
+                        {hero.ctaLabel || 'Donate Your Hair'}
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-cms-pv-btn"
+                        style={{ background: 'transparent', color: branding.primaryColor, borderRadius: branding.btnRadius, border: `1.5px solid ${branding.primaryColor}` }}
+                      >
+                        {hero.ghostLabel || 'Request a Wig'}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="admin-rt-hint">This is a preview only. Click “Save All” to apply these colors to the real landing page.</p>
                 </div>
               </>
             )}
@@ -1202,7 +1246,7 @@ const AdminCMS: React.FC = () => {
                     </button>
                     <button
                       style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', background: '#ad246d', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}
-                      onClick={doPartnerEdit}
+                      onClick={() => setShowPartnerEditConfirm(true)}
                       disabled={editSaving}
                     >
                       {editSaving ? 'Saving...' : 'Save Changes'}
@@ -1254,6 +1298,16 @@ const AdminCMS: React.FC = () => {
         message={`Add ${partnershipForm.name || 'this organization'} as a new ${partnershipForm.type} partner?`}
         confirmText="Yes, Add Partner"
         isConfirming={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={showPartnerEditConfirm}
+        onClose={() => setShowPartnerEditConfirm(false)}
+        onConfirm={doPartnerEdit}
+        title="Save Changes"
+        message={`Save changes to ${editingPartner?.name || 'this partnership'}?`}
+        confirmText="Yes, Save Changes"
+        isConfirming={editSaving}
       />
 
       <ConfirmModal

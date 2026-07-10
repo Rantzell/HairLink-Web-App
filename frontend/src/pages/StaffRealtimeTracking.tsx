@@ -43,6 +43,10 @@ const StaffRealtimeTracking: React.FC = () => {
   const [pendingBatchRefs, setPendingBatchRefs] = useState<string[]>([]);
   const [pendingBatchStatus, setPendingBatchStatus] = useState<{ status: string; link?: string } | null>(null);
   const [showBatchActionConfirm, setShowBatchActionConfirm] = useState(false);
+  // Confirmation for marking a wig / whole batch as received after transit,
+  // to guard against accidental clicks.
+  type PendingReceive = { kind: 'wig'; wigId: number } | { kind: 'batch'; batchId: number; deliveryLink?: string };
+  const [pendingReceive, setPendingReceive] = useState<PendingReceive | null>(null);
   const [showDeliveryLinkModal, setShowDeliveryLinkModal] = useState(false);
   const [deliveryLinkTaskCode, setDeliveryLinkTaskCode] = useState('');
   const [deliveryLinkValue, setDeliveryLinkValue] = useState('');
@@ -700,7 +704,7 @@ const StaffRealtimeTracking: React.FC = () => {
                                   )}
                                   <button
                                     className="soft-btn"
-                                    onClick={() => handleReceiveAllWigs(wpId, deliveryLink || undefined)}
+                                    onClick={() => setPendingReceive({ kind: 'batch', batchId: wpId, deliveryLink: deliveryLink || undefined })}
                                     disabled={isSubmitting}
                                     style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'linear-gradient(135deg, #ad246d, #8c1e58)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 800 }}
                                   >
@@ -888,7 +892,7 @@ const StaffRealtimeTracking: React.FC = () => {
                                                       ) : (
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                           <div style={{ display: 'flex', gap: '6px' }}>
-                                                            <button onClick={() => handleReceiveWig(w.id)} disabled={isSubmitting}
+                                                            <button onClick={() => setPendingReceive({ kind: 'wig', wigId: w.id })} disabled={isSubmitting}
                                                               style={{ flex: 1, padding: '0.35rem 0.5rem', fontSize: '0.72rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
                                                               <i className='bx bx-check'></i> Received
                                                             </button>
@@ -1475,6 +1479,24 @@ const StaffRealtimeTracking: React.FC = () => {
                 'confirm receipt of this finished wig'
           }?`}
         confirmText={`Yes, ${pendingAction?.label || 'Confirm'}`}
+        isConfirming={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={!!pendingReceive}
+        onClose={() => setPendingReceive(null)}
+        onConfirm={() => {
+          const p = pendingReceive;
+          setPendingReceive(null);
+          if (!p) return;
+          if (p.kind === 'wig') handleReceiveWig(p.wigId);
+          else handleReceiveAllWigs(p.batchId, p.deliveryLink);
+        }}
+        title={pendingReceive?.kind === 'batch' ? 'Confirm Batch Received' : 'Confirm Wig Received'}
+        message={pendingReceive?.kind === 'batch'
+          ? 'Are you sure all wigs in this batch have arrived? They will be marked as received and added to stock. This cannot be easily undone.'
+          : 'Are you sure this wig has arrived? It will be marked as received and added to stock. This cannot be easily undone.'}
+        confirmText="Yes, mark received"
         isConfirming={isSubmitting}
       />
 

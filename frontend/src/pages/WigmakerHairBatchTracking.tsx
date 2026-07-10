@@ -14,6 +14,11 @@ const WigmakerHairBatchTracking: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<{ taskCode: string; batchRef: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [viewNoteModal, setViewNoteModal] = useState<{ note: string; batchRef: string } | null>(null);
+  // Confirmation for marking hair as received, to prevent accidental clicks.
+  type ReceiveConfirm =
+    | { kind: 'one'; taskCode: string; donationId: number; batchRef: string }
+    | { kind: 'all'; taskCode: string; donations: any[]; batchRef: string };
+  const [receiveConfirm, setReceiveConfirm] = useState<ReceiveConfirm | null>(null);
 
   const toggleBatch = (taskId: number) =>
     setOpenBatches(prev => ({ ...prev, [taskId]: !prev[taskId] }));
@@ -155,7 +160,7 @@ const WigmakerHairBatchTracking: React.FC = () => {
 
                     {pendingCount > 0 && (
                       <button
-                        onClick={() => handleReceiveAll(task.taskCode, donations)}
+                        onClick={() => setReceiveConfirm({ kind: 'all', taskCode: task.taskCode, donations, batchRef })}
                         disabled={isReceiveAllBusy}
                         style={{ padding: '0.35rem 0.8rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', fontWeight: 800, fontSize: '0.72rem', cursor: isReceiveAllBusy ? 'not-allowed' : 'pointer', opacity: isReceiveAllBusy ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', boxShadow: '0 2px 8px rgba(22,163,74,0.25)', whiteSpace: 'nowrap' }}
                       >
@@ -280,7 +285,7 @@ const WigmakerHairBatchTracking: React.FC = () => {
                                 {isPending && (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <button
-                                      onClick={() => handleReceive(task.taskCode, d.id)}
+                                      onClick={() => setReceiveConfirm({ kind: 'one', taskCode: task.taskCode, donationId: d.id, batchRef })}
                                       disabled={recvBusy || missBusy}
                                       style={{ padding: '0.35rem 0.8rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', fontWeight: 800, fontSize: '0.75rem', cursor: recvBusy ? 'not-allowed' : 'pointer', opacity: recvBusy ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 8px rgba(22,163,74,0.3)', whiteSpace: 'nowrap' }}
                                     >
@@ -320,6 +325,45 @@ const WigmakerHairBatchTracking: React.FC = () => {
       )}
 
       {/* Delete confirm modal */}
+      {receiveConfirm && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setReceiveConfirm(null); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+        >
+          <div style={{ background: '#fff', borderRadius: '20px', padding: '2rem', maxWidth: '400px', width: '100%', border: '1px solid #ead7e8', boxShadow: '0 24px 60px rgba(22,163,74,0.15)', textAlign: 'center' }}>
+            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.75rem' }}>
+              <i className="bx bx-check-circle"></i>
+            </div>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b2e43', margin: '0 0 0.5rem' }}>Confirm Hair Received?</h2>
+            <p style={{ color: '#5d4d62', fontSize: '0.88rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>
+              {receiveConfirm.kind === 'all'
+                ? <>Mark <strong>all pending hair donations</strong> in batch <strong>{receiveConfirm.batchRef}</strong> as received? This confirms the materials arrived and cannot be undone.</>
+                : <>Confirm you have received this hair donation for batch <strong>{receiveConfirm.batchRef}</strong>? This cannot be undone.</>}
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button
+                onClick={() => setReceiveConfirm(null)}
+                style={{ height: '42px', borderRadius: '50px', border: '1.5px solid #ead7e8', background: '#fff', color: '#5d4d62', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const c = receiveConfirm;
+                  setReceiveConfirm(null);
+                  if (c.kind === 'all') handleReceiveAll(c.taskCode, c.donations);
+                  else handleReceive(c.taskCode, c.donationId);
+                }}
+                style={{ height: '42px', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                <i className="bx bx-check" /> Yes, Received
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {deleteConfirm && createPortal(
         <div
           onClick={(e) => { if (e.target === e.currentTarget && !deleting) setDeleteConfirm(null); }}

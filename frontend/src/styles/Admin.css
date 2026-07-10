@@ -1168,6 +1168,75 @@
   color: #8c7895;
 }
 
+/* Branding live preview */
+.admin-cms-preview {
+  margin-top: 1.5rem;
+}
+.admin-cms-preview-head {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8c7895;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.admin-cms-preview-stage {
+  border: 1.5px solid #ead7e8;
+  border-radius: 16px;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  background: linear-gradient(160deg, #ffffff 0%, #fdf5fa 100%);
+  text-align: center;
+}
+.admin-cms-pv-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  border: 1.5px solid;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.admin-cms-pv-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.admin-cms-pv-heading {
+  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  font-weight: 800;
+  color: #1C1917;
+  line-height: 1.15;
+  margin: 1rem 0 0.5rem;
+}
+.admin-cms-pv-heading em {
+  font-style: italic;
+  color: var(--pv-primary);
+}
+.admin-cms-pv-copy {
+  font-size: 0.9rem;
+  color: #78716C;
+  max-width: 420px;
+  margin: 0 auto 1.25rem;
+  line-height: 1.6;
+}
+.admin-cms-pv-btns {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.admin-cms-pv-btn {
+  padding: 0.6rem 1.3rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: default;
+}
+
 /* Announcement audience checkboxes (selectable chips) */
 .admin-form-grid .admin-audience-checks {
   display: flex;
