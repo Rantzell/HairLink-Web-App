@@ -1,5 +1,5 @@
 import toast from 'react-hot-toast';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import '../styles/Admin.css';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
@@ -15,6 +15,25 @@ interface TypographySettings { headingFont: string; bodyFont: string }
 
 const GOOGLE_FONTS = ['Inter', 'Poppins', 'Manrope', 'Nunito', 'Lato', 'Roboto', 'Playfair Display', 'Merriweather', 'Raleway', 'Montserrat'];
 
+// Selectable announcement audiences. An empty selection means "everyone".
+const AUDIENCE_OPTIONS = [
+  { value: 'donor', label: 'Donors' },
+  { value: 'recipient', label: 'Recipients' },
+  { value: 'staff', label: 'Staff' },
+  { value: 'wigmaker', label: 'Wigmakers' },
+];
+const AUDIENCE_LABELS: Record<string, string> = { donor: 'Donors', recipient: 'Recipients', staff: 'Staff', wigmaker: 'Wigmakers' };
+
+// Renders a stored targetAudience (comma-separated roles, or a legacy single
+// value) into a human label for the published list.
+const formatAudience = (raw?: string | null): string => {
+  if (!raw || raw === 'all') return 'All Users';
+  if (raw === 'donor_recipient') return 'Donors & Recipients';
+  const roles = raw.split(',').map(r => r.trim()).filter(Boolean);
+  if (roles.length === 0 || roles.length >= AUDIENCE_OPTIONS.length) return 'All Users';
+  return roles.map(r => AUDIENCE_LABELS[r] || r).join(', ');
+};
+
 const Field: React.FC<{ label: string; value: string; onChange: (v: string) => void; multiline?: boolean }> = ({ label, value, onChange, multiline }) => (
   <div className="admin-cms-field">
     <label className="admin-cms-field-label">{label}</label>
@@ -25,6 +44,84 @@ const Field: React.FC<{ label: string; value: string; onChange: (v: string) => v
         className="admin-cms-input" />}
   </div>
 );
+
+/**
+ * Rich-text field for content that renders as HTML on the landing page.
+ * Admins format text with toolbar buttons instead of typing tags like
+ * <br> or <em>. The stored value is still HTML so the landing page renders
+ * it unchanged.
+ */
+const RichField: React.FC<{ label: string; value: string; onChange: (v: string) => void; hint?: string }> = ({ label, value, onChange, hint }) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Sync external value changes (e.g. async CMS load, or reset-to-defaults)
+  // into the editor, but skip while the admin is actively typing in it —
+  // otherwise re-writing innerHTML would reset the caret to the start.
+  useEffect(() => {
+    const el = ref.current;
+    if (el && document.activeElement !== el && el.innerHTML !== (value || '')) {
+      el.innerHTML = value || '';
+    }
+  }, [value]);
+
+  const sync = () => { if (ref.current) onChange(ref.current.innerHTML); };
+
+  // Wrap the current selection in a tag (e.g. strong, em). No-op if nothing
+  // is selected, so the admin knows to highlight text first.
+  const wrap = (tag: string) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    const el = document.createElement(tag);
+    el.appendChild(range.extractContents());
+    range.insertNode(el);
+    sel.removeAllRanges();
+    ref.current?.focus();
+    sync();
+  };
+
+  const insertBreak = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    const sel = window.getSelection();
+    const br = document.createElement('br');
+    if (sel && sel.rangeCount > 0 && el.contains(sel.anchorNode)) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(br);
+      range.setStartAfter(br);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      el.appendChild(br);
+    }
+    sync();
+  };
+
+  return (
+    <div className="admin-cms-field">
+      <label className="admin-cms-field-label">{label}</label>
+      <div className="admin-rt-toolbar">
+        <button type="button" className="admin-rt-btn" title="Bold — select text first"
+          onMouseDown={e => e.preventDefault()} onClick={() => wrap('strong')}><b>B</b></button>
+        <button type="button" className="admin-rt-btn" title="Highlight in pink — select text first"
+          onMouseDown={e => e.preventDefault()} onClick={() => wrap('em')}><em>Highlight</em></button>
+        <button type="button" className="admin-rt-btn" title="Insert a line break"
+          onMouseDown={e => e.preventDefault()} onClick={insertBreak}>↵ Line break</button>
+      </div>
+      <div
+        ref={ref}
+        className="admin-cms-input admin-rt-editor"
+        contentEditable
+        suppressContentEditableWarning
+        onInput={sync}
+      />
+      <p className="admin-rt-hint">{hint || 'Select text, then use the buttons above to format it — no code needed.'}</p>
+    </div>
+  );
+};
 
 const AdminCMS: React.FC = () => {
   type TabType = 'landing' | 'announcements' | 'partnerships';
@@ -62,7 +159,7 @@ const AdminCMS: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', category: 'Care', author: 'Admin', target_audience: 'all' });
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', category: 'Care', author: 'Admin', target_audience: [] as string[] });
   const [partnershipForm, setPartnershipForm] = useState({ name: '', type: 'Wigmaker', contact: '', email: '', description: '', status: 'Active' });
 
   const [showLandingConfirm, setShowLandingConfirm] = useState(false);
@@ -256,7 +353,7 @@ const AdminCMS: React.FC = () => {
     setIsSubmitting(true);
     try {
       await apiClient.post('/internal-api/admin/announcements', announcementForm);
-      setAnnouncementForm({ title: '', content: '', category: 'Care', author: 'Admin', target_audience: 'all' });
+      setAnnouncementForm({ title: '', content: '', category: 'Care', author: 'Admin', target_audience: [] as string[] });
       fetchData();
     } catch (err) { console.error('Failed to create announcement', err); }
     finally { setIsSubmitting(false); }
@@ -444,7 +541,7 @@ const AdminCMS: React.FC = () => {
             {landingSection === 'hero' && (
               <>
                 <h2 className="admin-cms-section-title">Hero Section</h2>
-                <Field label="Main Heading (H1)" value={hero.heading} onChange={v => setHero({ ...hero, heading: v })} />
+                <RichField label="Main Heading (H1)" value={hero.heading} onChange={v => setHero({ ...hero, heading: v })} />
                 <Field label="Subheading / Tagline" value={hero.subheading} onChange={v => setHero({ ...hero, subheading: v })} />
                 <Field label="Pill Text (Top Label)" value={hero.pillText} onChange={v => setHero({ ...hero, pillText: v })} />
                 <Field label="Floating Badge Text (Bottom Right)" value={hero.floatBadgeText} onChange={v => setHero({ ...hero, floatBadgeText: v })} />
@@ -459,7 +556,7 @@ const AdminCMS: React.FC = () => {
                 <div className="admin-cms-item-card">
                   <p className="admin-cms-item-label">Section Header Info</p>
                   <Field label="Section Label" value={servicesHeader.label} onChange={v => setServicesHeader({ ...servicesHeader, label: v })} />
-                  <Field label="Section Heading" value={servicesHeader.heading} onChange={v => setServicesHeader({ ...servicesHeader, heading: v })} />
+                  <RichField label="Section Heading" value={servicesHeader.heading} onChange={v => setServicesHeader({ ...servicesHeader, heading: v })} />
                   <Field label="Section Subheading" value={servicesHeader.subheading} onChange={v => setServicesHeader({ ...servicesHeader, subheading: v })} multiline />
                 </div>
                 {services.map((svc, i) => (
@@ -743,8 +840,7 @@ const AdminCMS: React.FC = () => {
                     </tr>
                   ) : (
                     announcements.map(a => {
-                      const audienceMap: Record<string, string> = { all: 'All Users', donor: 'Donors', recipient: 'Recipients', staff: 'Staff', donor_recipient: 'Donors & Recipients' };
-                      const audienceLabel = audienceMap[a.targetAudience ?? 'all'] ?? 'All Users';
+                      const audienceLabel = formatAudience(a.targetAudience);
                       const isSelected = selectedAnns.includes(a.id);
                       return (
                         <tr key={a.id} style={{ background: isSelected ? '#fff5f5' : 'transparent', transition: 'background 0.15s ease' }}>
@@ -796,13 +892,23 @@ const AdminCMS: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label className="admin-form-label-sm">Target Audience</label>
-                  <select value={announcementForm.target_audience} onChange={e => setAnnouncementForm({ ...announcementForm, target_audience: e.target.value })}>
-                    <option value="all">All Users</option>
-                    <option value="donor">Donors Only</option>
-                    <option value="recipient">Recipients Only</option>
-                    <option value="staff">Staff Only</option>
-                    <option value="donor_recipient">Both Donors & Recipients</option>
-                  </select>
+                  <div className="admin-audience-checks">
+                    {AUDIENCE_OPTIONS.map(opt => (
+                      <label key={opt.value} className="admin-audience-check">
+                        <input
+                          type="checkbox"
+                          checked={announcementForm.target_audience.includes(opt.value)}
+                          onChange={e => {
+                            const set = new Set(announcementForm.target_audience);
+                            if (e.target.checked) set.add(opt.value); else set.delete(opt.value);
+                            setAnnouncementForm({ ...announcementForm, target_audience: Array.from(set) });
+                          }}
+                        />
+                        {opt.label}
+                      </label>
+                    ))}
+                  </div>
+                  <p className="admin-rt-hint">Leave all unchecked to send to everyone.</p>
                 </div>
                 <div className="form-group">
                   <label className="admin-form-label-sm">Content</label>

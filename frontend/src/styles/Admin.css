@@ -1127,6 +1127,69 @@
   border-color: #ad246d;
 }
 
+/* Rich-text editor (CMS formatted fields) */
+.admin-rt-toolbar {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+.admin-rt-btn {
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  border: 1.5px solid #ead7e8;
+  background: #fff;
+  color: #6b2b57;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1;
+}
+.admin-rt-btn:hover {
+  background: #fdf2f8;
+  border-color: #ad246d;
+}
+.admin-rt-btn em {
+  color: #D63B8A;
+  font-style: italic;
+}
+.admin-rt-editor {
+  min-height: 44px;
+  cursor: text;
+  white-space: pre-wrap;
+}
+.admin-rt-editor:empty::before {
+  content: 'Type here…';
+  color: #b9a9b3;
+}
+.admin-rt-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  color: #8c7895;
+}
+
+/* Announcement audience checkboxes */
+.admin-audience-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.25rem 0;
+}
+.admin-audience-check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #4a3a44;
+  cursor: pointer;
+}
+.admin-audience-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #ad246d;
+  cursor: pointer;
+}
+
 /* Textarea */
 .admin-cms-textarea {
   width: 100%;

@@ -248,12 +248,14 @@ export const notifyReferralRedeemed = async (redeemerId: string, referrerId: str
  */
 export const notifyAnnouncement = async (title: string, message: string, audience: string = 'all') => {
   try {
+    const ALL_ROLES = ['donor', 'recipient', 'staff', 'wigmaker'];
+    // audience may be 'all', a legacy value ('donor_recipient'), a single role,
+    // or a comma-separated list of roles from the checkbox UI.
     const roles: string[] =
-      audience === 'donor' ? ['donor'] :
-        audience === 'recipient' ? ['recipient'] :
-          audience === 'staff' ? ['staff'] :
-            audience === 'donor_recipient' ? ['donor', 'recipient'] :
-              ['donor', 'recipient', 'staff', 'wigmaker'];
+      !audience || audience === 'all' ? ALL_ROLES :
+        audience === 'donor_recipient' ? ['donor', 'recipient'] :
+          audience.split(',').map(r => r.trim()).filter(r => ALL_ROLES.includes(r));
+    if (roles.length === 0) roles.push(...ALL_ROLES);
 
     const targetUsers = await prisma.user.findMany({
       where: { role: { in: roles }, isActive: true },

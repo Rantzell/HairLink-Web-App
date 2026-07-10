@@ -519,12 +519,22 @@ router.get('/announcements', ...adminOnly, async (_req, res) => {
 router.post('/announcements', ...adminOnly, async (req, res) => {
   try {
     const { title, content, category, author, target_audience = 'all' } = req.body;
+
+    // target_audience may arrive as an array of roles (from the checkbox UI),
+    // a legacy single string, or empty. Normalize to a comma-separated string
+    // for storage ('all' when nothing/every role is selected).
+    const roles: string[] = Array.isArray(target_audience)
+      ? target_audience
+      : (target_audience && target_audience !== 'all' ? [target_audience] : []);
+    const ALL_ROLES = ['donor', 'recipient', 'staff', 'wigmaker'];
+    const normalized = roles.length === 0 || roles.length >= ALL_ROLES.length ? 'all' : roles.join(',');
+
     const a = await prisma.haircareArticle.create({
-      data: { title, content, category, author, targetAudience: target_audience }
+      data: { title, content, category, author, targetAudience: normalized }
     });
 
     // Broadcast only to the selected audience
-    await notifyAnnouncement(title, content, target_audience);
+    await notifyAnnouncement(title, content, normalized);
 
     res.status(201).json(s(a));
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
