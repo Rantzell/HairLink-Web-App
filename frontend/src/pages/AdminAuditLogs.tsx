@@ -30,7 +30,7 @@ const ACTION_OPTIONS = [
   { value: 'donation.status_changed', label: 'Donation status changed' },
   { value: 'staff.verification', label: 'Staff verification' },
   { value: 'staff.tracking_status_changed', label: 'Staff tracking update' },
-  { value: 'staff.wigmaker_assigned', label: 'Wigmaker assigned' },
+  { value: 'staff.wigmaker_assigned', label: 'Batch assigned' },
   { value: 'staff.wig_matched', label: 'Wig matched' },
   { value: 'admin.user_created', label: 'Admin created user' },
   { value: 'admin.user_updated', label: 'Admin updated user' },
