@@ -58,4 +58,36 @@ router.get('/site-settings', async (_req, res) => {
   }
 });
 
+// GET /api/public/stats
+// Aggregate counts across all user roles (admin, staff, wigmaker, donor, recipient)
+// plus donation/wig totals, for display on the public landing page.
+router.get('/stats', async (_req, res) => {
+  try {
+    const [donorCount, recipientCount, staffCount, wigmakerCount, adminCount, donationCount, wigCount] = await Promise.all([
+      prisma.user.count({ where: { role: 'donor' } }),
+      prisma.user.count({ where: { role: 'recipient' } }),
+      prisma.user.count({ where: { role: 'staff' } }),
+      prisma.user.count({ where: { role: 'wigmaker' } }),
+      prisma.user.count({ where: { role: 'admin' } }),
+      prisma.donation.count(),
+      prisma.wigProduction.count({ where: { status: 'completed' } }),
+    ]);
+
+    res.json({
+      users: {
+        donor: donorCount,
+        recipient: recipientCount,
+        staff: staffCount,
+        wigmaker: wigmakerCount,
+        admin: adminCount,
+        total: donorCount + recipientCount + staffCount + wigmakerCount + adminCount,
+      },
+      donations: donationCount,
+      wigsCompleted: wigCount,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
 export default router;

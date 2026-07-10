@@ -1776,6 +1776,7 @@ const LandingPage: React.FC = () => {
   const [cms, setCms] = useState<any>(null);
   const [aboutIndex, setAboutIndex] = useState(0);
   const [partnerIndex, setPartnerIndex] = useState(0);
+  const [stats, setStats] = useState<any>(null);
   const [nextEvent, setNextEvent] = useState<any>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -1794,6 +1795,7 @@ const LandingPage: React.FC = () => {
 
   useEffect(() => {
     apiClient.get('/api/public/site-settings').then(r => setCms(r.data)).catch(() => { });
+    apiClient.get('/api/public/stats').then(r => setStats(r.data)).catch(() => { });
     apiClient.get('/api/public/events/upcoming').then(r => {
       const events: any[] = Array.isArray(r.data) ? r.data : [];
       const now = Date.now();
@@ -1982,6 +1984,28 @@ const LandingPage: React.FC = () => {
               <span className="hl-hero-float-badge-dot" />
               {get('hero', 'floatBadgeText', '100% Free for Patients')}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {}
+      <section className="hl-stats-strip">
+        <div className="hl-stats-inner">
+          <div className="hl-stat-item">
+            <span className="hl-stat-num">{stats ? stats.users.donor.toLocaleString() : '—'}</span>
+            <span className="hl-stat-label">Hair Donors</span>
+          </div>
+          <div className="hl-stat-item">
+            <span className="hl-stat-num">{stats ? stats.users.recipient.toLocaleString() : '—'}</span>
+            <span className="hl-stat-label">Recipients</span>
+          </div>
+          <div className="hl-stat-item">
+            <span className="hl-stat-num">{stats ? stats.donations.toLocaleString() : '—'}</span>
+            <span className="hl-stat-label">Hair Donations</span>
+          </div>
+          <div className="hl-stat-item">
+            <span className="hl-stat-num">{stats ? stats.wigsCompleted.toLocaleString() : '—'}</span>
+            <span className="hl-stat-label">Wigs Created</span>
           </div>
         </div>
       </section>
