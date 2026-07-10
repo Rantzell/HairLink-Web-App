@@ -105,9 +105,9 @@ const RichField: React.FC<{ label: string; value: string; onChange: (v: string) 
       <label className="admin-cms-field-label">{label}</label>
       <div className="admin-rt-toolbar">
         <button type="button" className="admin-rt-btn" title="Bold — select text first"
-          onMouseDown={e => e.preventDefault()} onClick={() => wrap('strong')}><b>B</b></button>
-        <button type="button" className="admin-rt-btn" title="Highlight in pink — select text first"
-          onMouseDown={e => e.preventDefault()} onClick={() => wrap('em')}><em>Highlight</em></button>
+          onMouseDown={e => e.preventDefault()} onClick={() => wrap('strong')}><b>Bold</b></button>
+        <button type="button" className="admin-rt-btn" title="Italic — select text first"
+          onMouseDown={e => e.preventDefault()} onClick={() => wrap('em')}><em>Italic</em></button>
         <button type="button" className="admin-rt-btn" title="Insert a line break"
           onMouseDown={e => e.preventDefault()} onClick={insertBreak}>↵ Line break</button>
       </div>
