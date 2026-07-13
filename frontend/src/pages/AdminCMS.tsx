@@ -66,17 +66,47 @@ const RichField: React.FC<{ label: string; value: string; onChange: (v: string) 
 
   const sync = () => { if (ref.current) onChange(ref.current.innerHTML); };
 
-  // Wrap the current selection in a tag (e.g. strong, em). No-op if nothing
-  // is selected, so the admin knows to highlight text first.
-  const wrap = (tag: string) => {
+  // Toggle a formatting tag (e.g. strong, em) on the current selection. If the
+  // selection already sits inside that tag, the tag is removed (un-format);
+  // otherwise the selection is wrapped. No-op if nothing is selected.
+  const toggle = (tag: string) => {
+    const editor = ref.current;
+    if (!editor) return;
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
     const range = sel.getRangeAt(0);
-    const el = document.createElement(tag);
-    el.appendChild(range.extractContents());
-    range.insertNode(el);
+
+    // Walk up from a node to find an ancestor matching `tag`, stopping at the
+    // editor root.
+    const findTagAncestor = (node: Node | null): HTMLElement | null => {
+      let n: Node | null = node;
+      while (n && n !== editor) {
+        if (n.nodeType === 1 && (n as HTMLElement).tagName.toLowerCase() === tag) return n as HTMLElement;
+        n = n.parentNode;
+      }
+      return null;
+    };
+
+    const startTag = findTagAncestor(range.startContainer);
+    const endTag = findTagAncestor(range.endContainer);
+
+    if (startTag && startTag === endTag) {
+      // Selection is within an existing tag → unwrap it (remove formatting).
+      const parent = startTag.parentNode;
+      if (parent) {
+        while (startTag.firstChild) parent.insertBefore(startTag.firstChild, startTag);
+        parent.removeChild(startTag);
+        parent.normalize();
+      }
+    } else {
+      // Wrap the selection in the tag (add formatting).
+      const wrapper = document.createElement(tag);
+      wrapper.appendChild(range.extractContents());
+      range.insertNode(wrapper);
+    }
+
     sel.removeAllRanges();
-    ref.current?.focus();
+    editor.focus();
     sync();
   };
 
@@ -104,10 +134,10 @@ const RichField: React.FC<{ label: string; value: string; onChange: (v: string) 
     <div className="admin-cms-field">
       <label className="admin-cms-field-label">{label}</label>
       <div className="admin-rt-toolbar">
-        <button type="button" className="admin-rt-btn" title="Bold — select text first"
-          onMouseDown={e => e.preventDefault()} onClick={() => wrap('strong')}><b>Bold</b></button>
-        <button type="button" className="admin-rt-btn" title="Italic — select text first"
-          onMouseDown={e => e.preventDefault()} onClick={() => wrap('em')}><em>Italic</em></button>
+        <button type="button" className="admin-rt-btn" title="Bold — select text to add or remove"
+          onMouseDown={e => e.preventDefault()} onClick={() => toggle('strong')}><b>Bold</b></button>
+        <button type="button" className="admin-rt-btn" title="Italic — select text to add or remove"
+          onMouseDown={e => e.preventDefault()} onClick={() => toggle('em')}><em>Italic</em></button>
         <button type="button" className="admin-rt-btn" title="Insert a line break"
           onMouseDown={e => e.preventDefault()} onClick={insertBreak}>↵ Line break</button>
       </div>
