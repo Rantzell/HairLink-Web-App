@@ -87,15 +87,22 @@ const RichField: React.FC<{ label: string; value: string; onChange: (v: string) 
       return null;
     };
 
-    const startTag = findTagAncestor(range.startContainer);
-    const endTag = findTagAncestor(range.endContainer);
+    // Consider the selection "already formatted" if any of its boundary nodes
+    // (or their common ancestor) sits inside the tag. Selection boundaries land
+    // on different nodes depending on how the text was selected, so we check
+    // several points rather than requiring an exact match.
+    const existing =
+      findTagAncestor(range.commonAncestorContainer) ||
+      findTagAncestor(range.startContainer) ||
+      findTagAncestor(range.endContainer);
 
-    if (startTag && startTag === endTag) {
-      // Selection is within an existing tag → unwrap it (remove formatting).
-      const parent = startTag.parentNode;
+    if (existing) {
+      // Unwrap it (remove formatting) — replace the tag element with its
+      // children in place.
+      const parent = existing.parentNode;
       if (parent) {
-        while (startTag.firstChild) parent.insertBefore(startTag.firstChild, startTag);
-        parent.removeChild(startTag);
+        while (existing.firstChild) parent.insertBefore(existing.firstChild, existing);
+        parent.removeChild(existing);
         parent.normalize();
       }
     } else {
