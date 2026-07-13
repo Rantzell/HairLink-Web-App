@@ -1806,6 +1806,13 @@ export const HairStrand3D: React.FC = () => (
   </svg>
 );
 
+// Renders CMS text that may contain admin-authored formatting (<strong>, <em>,
+// <br>) from the CMS rich-text fields. Safe for plain strings too — they render
+// unchanged.
+const RT: React.FC<{ html: any; as?: any; className?: string; style?: React.CSSProperties }> = ({ html, as: Tag = 'span', className, style }) => (
+  <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: html == null ? '' : String(html) }} />
+);
+
 const LandingPage: React.FC = () => {
   const [partnershipData, setPartnershipData] = useState({
     full_name: '', email: '', phone: '', organization: '', message: ''
@@ -1983,7 +1990,7 @@ const LandingPage: React.FC = () => {
           <div className="hl-hero-text">
             <div className="hl-hero-pill">
               <span className="hl-hero-pill-dot" />
-              {get('hero', 'pillText', 'Strand Up for Cancer')}
+              <RT html={get('hero', 'pillText', 'Strand Up for Cancer')} />
             </div>
             <h1 className="hl-hero-h1">
               {(() => {
@@ -1994,15 +2001,13 @@ const LandingPage: React.FC = () => {
                 return val || <>Every Strand,<br />a Story of <em>Hope.</em></>;
               })()}
             </h1>
-            <p className="hl-hero-copy">
-              {get('hero', 'subheading', 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.')}
-            </p>
+            <RT as="p" className="hl-hero-copy" html={get('hero', 'subheading', 'Supporting cancer patients through hair donation, wig crafting, and compassionate community.')} />
             <div className="hl-hero-actions">
               <Link to="/donor/donate" className="hl-btn-hero-primary">
-                {get('hero', 'ctaLabel', 'Donate Your Hair')}
+                <RT html={get('hero', 'ctaLabel', 'Donate Your Hair')} />
               </Link>
               <Link to="/recipient/request" className="hl-btn-hero-ghost">
-                {get('hero', 'ghostLabel', 'Request a Wig')}
+                <RT html={get('hero', 'ghostLabel', 'Request a Wig')} />
               </Link>
             </div>
           </div>
@@ -2020,7 +2025,7 @@ const LandingPage: React.FC = () => {
 
             <div className="hl-hero-float-badge">
               <span className="hl-hero-float-badge-dot" />
-              {get('hero', 'floatBadgeText', '100% Free for Patients')}
+              <RT html={get('hero', 'floatBadgeText', '100% Free for Patients')} />
             </div>
           </div>
         </div>
@@ -2052,17 +2057,17 @@ const LandingPage: React.FC = () => {
       <section className="hl-section hl-how" id="services">
         <div className="hl-section-inner">
           <div className="hl-how-head">
-            <p className="hl-section-label">{get('servicesHeader', 'label', 'How It Works')}</p>
+            <RT as="p" className="hl-section-label" html={get('servicesHeader', 'label', 'How It Works')} />
             <h2 className="hl-section-h2" dangerouslySetInnerHTML={{ __html: get('servicesHeader', 'heading', 'Simple steps,<br />lasting impact.') }} />
-            <p className="hl-section-sub">{get('servicesHeader', 'subheading', 'Whether you want to donate or receive, we make the process simple and transparent.')}</p>
+            <RT as="p" className="hl-section-sub" html={get('servicesHeader', 'subheading', 'Whether you want to donate or receive, we make the process simple and transparent.')} />
           </div>
           <div className="hl-how-grid">
             {services.map((svc, i) => (
               <div key={i} className="hl-how-card">
-                <h3 className="hl-how-title">{svc.title}</h3>
-                <p className="hl-how-body">{svc.description}</p>
+                <RT as="h3" className="hl-how-title" html={svc.title} />
+                <RT as="p" className="hl-how-body" html={svc.description} />
                 <Link to={serviceLinks[i] || '/donor/donate'} className="hl-how-link">
-                  {svc.ctaLabel}
+                  <RT html={svc.ctaLabel} />
                 </Link>
               </div>
             ))}
@@ -2172,9 +2177,9 @@ const LandingPage: React.FC = () => {
       <section className="hl-section hl-past-events" id="past-events" style={{ background: '#ffffff' }}>
         <div className="hl-section-inner">
           <div className="hl-how-head" style={{ marginBottom: '3rem' }}>
-            <p className="hl-section-label">{get('pastEventsHeader', 'label', 'Past Events')}</p>
-            <h2 className="hl-section-h2">{get('pastEventsHeader', 'heading', 'Highlighting our community impact.')}</h2>
-            <p className="hl-section-sub">{get('pastEventsHeader', 'subheading', 'Take a look back at our past hair donation drives, volunteer campaigns, and charity events.')}</p>
+            <RT as="p" className="hl-section-label" html={get('pastEventsHeader', 'label', 'Past Events')} />
+            <RT as="h2" className="hl-section-h2" html={get('pastEventsHeader', 'heading', 'Highlighting our community impact.')} />
+            <RT as="p" className="hl-section-sub" html={get('pastEventsHeader', 'subheading', 'Take a look back at our past hair donation drives, volunteer campaigns, and charity events.')} />
           </div>
 
           <div className="hl-events-grid">
@@ -2185,8 +2190,8 @@ const LandingPage: React.FC = () => {
                   <span className="hl-event-date">{pe.date}</span>
                 </div>
                 <div className="hl-event-info">
-                  <h3>{pe.title}</h3>
-                  <p>{pe.description}</p>
+                  <RT as="h3" html={pe.title} />
+                  <RT as="p" html={pe.description} />
                 </div>
               </div>
             ))}
@@ -2208,10 +2213,8 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="hl-about-text">
             <span className="hl-about-tag">🎀 Our Mission</span>
-            <h2>{get('about', 'heading', 'About Strand Up for Cancer')}</h2>
-            <p>
-              {get('about', 'body', 'Strand Up for Cancer (SUFC) is a youth-led initiative dedicated to supporting cancer patients through hair donation and wig crafting. We believe every person fighting cancer deserves to feel beautiful and confident.')}
-            </p>
+            <RT as="h2" html={get('about', 'heading', 'About Strand Up for Cancer')} />
+            <RT as="p" html={get('about', 'body', 'Strand Up for Cancer (SUFC) is a youth-led initiative dedicated to supporting cancer patients through hair donation and wig crafting. We believe every person fighting cancer deserves to feel beautiful and confident.')} />
             <Link to="/register" className="hl-btn-hero-primary" style={{ width: 'fit-content', marginTop: '0.5rem' }}>
               Join Our Mission
             </Link>
@@ -2223,8 +2226,8 @@ const LandingPage: React.FC = () => {
       <section className="hl-section hl-partners" id="partners">
         <div className="hl-section-inner">
           <div className="hl-partners-head">
-            <p className="hl-section-label">{get('partnersHeader', 'label', 'Partners')}</p>
-            <h2 className="hl-section-h2">{get('partnersHeader', 'heading', 'Organizations that believe in our cause.')}</h2>
+            <RT as="p" className="hl-section-label" html={get('partnersHeader', 'label', 'Partners')} />
+            <RT as="h2" className="hl-section-h2" html={get('partnersHeader', 'heading', 'Organizations that believe in our cause.')} />
           </div>
           <div className="hl-partners-carousel">
             <button
@@ -2277,9 +2280,9 @@ const LandingPage: React.FC = () => {
       <section className="hl-section hl-contact" id="contact">
         <div className="hl-contact-inner">
           <div className="hl-contact-info">
-            <p className="hl-section-label">{get('contactHeader', 'label', 'Partnership')}</p>
-            <h2>{get('contactHeader', 'heading', 'Want to partner with us?')}</h2>
-            <p>{get('contactHeader', 'subheading', "Let's connect and grow together. We're open to collaborations with hospitals, organizations, and businesses that share our mission.")}</p>
+            <RT as="p" className="hl-section-label" html={get('contactHeader', 'label', 'Partnership')} />
+            <RT as="h2" html={get('contactHeader', 'heading', 'Want to partner with us?')} />
+            <RT as="p" html={get('contactHeader', 'subheading', "Let's connect and grow together. We're open to collaborations with hospitals, organizations, and businesses that share our mission.")} />
           </div>
           <div className="hl-contact-card">
             <form onSubmit={handlePartnershipSubmit}>
@@ -2342,9 +2345,7 @@ const LandingPage: React.FC = () => {
               <img src="/assets/images/landing/pink-ribbon.png" alt="HairLink" />
               <span>HairLink</span>
             </div>
-            <p className="hl-footer-tagline">
-              {get('footer', 'tagline', 'Empowering cancer patients through hair donation, wig crafting, and community compassion.')}
-            </p>
+            <RT as="p" className="hl-footer-tagline" html={get('footer', 'tagline', 'Empowering cancer patients through hair donation, wig crafting, and community compassion.')} />
             <div className="hl-social-links" style={{ marginTop: '0.75rem', display: 'flex', gap: '0.6rem' }}>
               <a href="https://www.facebook.com/strandupforcancer" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hl-social-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" /></svg>
@@ -2383,7 +2384,7 @@ const LandingPage: React.FC = () => {
 
         <div className="hl-footer-bottom">
           <span className="hl-footer-copy">
-            © {new Date().getFullYear()} {get('footer', 'orgName', 'Strand Up for Cancer')}. All rights reserved.
+            © {new Date().getFullYear()} <RT html={get('footer', 'orgName', 'Strand Up for Cancer')} />. All rights reserved.
           </span>
           <span className="hl-footer-copy">Made with ♥ for cancer patients</span>
         </div>

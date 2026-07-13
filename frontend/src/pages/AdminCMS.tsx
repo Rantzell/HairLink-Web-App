@@ -34,16 +34,23 @@ const formatAudience = (raw?: string | null): string => {
   return roles.map(r => AUDIENCE_LABELS[r] || r).join(', ');
 };
 
-const Field: React.FC<{ label: string; value: string; onChange: (v: string) => void; multiline?: boolean }> = ({ label, value, onChange, multiline }) => (
-  <div className="admin-cms-field">
-    <label className="admin-cms-field-label">{label}</label>
-    {multiline
-      ? <textarea rows={3} value={value} onChange={e => onChange(e.target.value)}
-        className="admin-cms-textarea" />
-      : <input type="text" value={value} onChange={e => onChange(e.target.value)}
-        className="admin-cms-input" />}
-  </div>
-);
+// Text field for CMS content. Rich by default (Bold / Italic / Line break
+// toolbar) so admins can format any content field without typing tags. Pass
+// `plain` for structural values that must stay literal text — URLs, the
+// footer address (uses \n), etc.
+const Field: React.FC<{ label: string; value: string; onChange: (v: string) => void; multiline?: boolean; plain?: boolean }> = ({ label, value, onChange, multiline, plain }) => {
+  if (!plain) return <RichField label={label} value={value} onChange={onChange} />;
+  return (
+    <div className="admin-cms-field">
+      <label className="admin-cms-field-label">{label}</label>
+      {multiline
+        ? <textarea rows={3} value={value} onChange={e => onChange(e.target.value)}
+          className="admin-cms-textarea" />
+        : <input type="text" value={value} onChange={e => onChange(e.target.value)}
+          className="admin-cms-input" />}
+    </div>
+  );
+};
 
 /**
  * Rich-text field for content that renders as HTML on the landing page.
@@ -641,10 +648,10 @@ const AdminCMS: React.FC = () => {
               <>
                 <h2 className="admin-cms-section-title">Footer</h2>
                 <Field label="Organization Name" value={footer.orgName} onChange={v => setFooter({ ...footer, orgName: v })} />
-                <Field label="Address (use \\n for line break)" value={footer.address} onChange={v => setFooter({ ...footer, address: v })} multiline />
+                <Field label="Address (use \\n for line break)" value={footer.address} onChange={v => setFooter({ ...footer, address: v })} multiline plain />
                 <Field label="Tagline" value={footer.tagline} onChange={v => setFooter({ ...footer, tagline: v })} multiline />
-                <Field label="Facebook URL" value={footer.facebook} onChange={v => setFooter({ ...footer, facebook: v })} />
-                <Field label="Instagram URL" value={footer.instagram} onChange={v => setFooter({ ...footer, instagram: v })} />
+                <Field label="Facebook URL" value={footer.facebook} onChange={v => setFooter({ ...footer, facebook: v })} plain />
+                <Field label="Instagram URL" value={footer.instagram} onChange={v => setFooter({ ...footer, instagram: v })} plain />
               </>
             )}
 
@@ -783,7 +790,7 @@ const AdminCMS: React.FC = () => {
                         </button>
                       )}
                     </div>
-                    <Field label="Partner Name" value={partner.name} onChange={v => updatePartnerLogo(i, 'name', v)} />
+                    <Field label="Partner Name" value={partner.name} onChange={v => updatePartnerLogo(i, 'name', v)} plain />
                     <div className="admin-cms-img-preview" style={{ height: 140, marginTop: '0.5rem' }}>
                       {partner.url ? (
                         <img src={partner.url} alt={partner.name} className="admin-cms-img-preview-img" />
