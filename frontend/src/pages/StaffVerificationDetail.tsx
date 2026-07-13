@@ -119,6 +119,40 @@ const StaffVerificationDetail: React.FC = () => {
                       <span><strong>Reason:</strong> <span className="detail-italic-text">"{record.reason || 'No reason provided'}"</span></span>
                     </li>
                   </>
+                ) : isMonetary ? (
+                  <>
+                    <li className="detail-list-item">
+                      <i className="bx bx-user detail-list-icon"></i>
+                      <span>
+                        <strong>Donor:</strong>{' '}
+                        {record.anonymous ? (
+                          <span style={{ color: '#9b8a9e', fontStyle: 'italic' }}>Anonymous</span>
+                        ) : record.user?.firstName ? (
+                          `${record.user.firstName} ${record.user.lastName || ''}`.trim()
+                        ) : (
+                          record.name || 'Anonymous'
+                        )}
+                      </span>
+                    </li>
+                    <li className="detail-list-item">
+                      <i className="bx bx-envelope detail-list-icon"></i>
+                      <span><strong>Email:</strong> {record.anonymous ? '—' : record.user?.email || record.email || 'N/A'}</span>
+                    </li>
+                    <li className="detail-list-item">
+                      <i className="bx bx-wallet detail-list-icon"></i>
+                      <span>
+                        <strong>Amount:</strong>{' '}
+                        <strong style={{ color: '#ad246d' }}>
+                          ₱{Number(record.amount || 0).toLocaleString()}
+                        </strong>{' '}
+                        {record.currency || 'PHP'}
+                      </span>
+                    </li>
+                    <li className="detail-list-item">
+                      <i className="bx bx-credit-card detail-list-icon"></i>
+                      <span><strong>Payment Method:</strong> {record.paymentMethod || '—'}</span>
+                    </li>
+                  </>
                 ) : (
                   <>
                     <li className="detail-list-item">

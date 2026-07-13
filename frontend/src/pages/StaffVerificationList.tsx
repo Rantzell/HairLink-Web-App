@@ -109,6 +109,8 @@ const StaffVerificationList: React.FC = () => {
     setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   };
 
+
+
   const handleDeleteSelected = async () => {
     setIsDeleting(true);
     try {
@@ -272,10 +274,8 @@ const StaffVerificationList: React.FC = () => {
                         <Link
                           to={`/staff/verification/${type}/${item.reference || item.referenceNumber}`}
                           className="soft-btn review-btn-styled"
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
                         >
-                          <i className="bx bx-image-alt"></i>
-                          Review Proof
+                          Review
                         </Link>
                       </td>
                     </tr>
@@ -327,6 +327,8 @@ const StaffVerificationList: React.FC = () => {
         variant="danger"
         isConfirming={isDeleting}
       />
+
+
     </div>
   );
 };
