@@ -11,7 +11,7 @@ import prisma from '../config/database';
  * @param metadata      Optional JSON metadata (e.g. preview photos)
  */
 export async function createStatusHistory(
-  trackableType: 'App\\Models\\Donation' | 'App\\Models\\HairRequest' | 'App\\Models\\WigProduction',
+  trackableType: 'App\\Models\\Donation' | 'App\\Models\\HairRequest' | 'App\\Models\\WigProduction' | 'App\\Models\\MonetaryDonation',
   trackableId: string | number,
   status: string,
   notes?: string | null,

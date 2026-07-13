@@ -154,6 +154,23 @@ router.post('/verification/:type/:reference', ...staffOnly, validate(verificatio
       if (record.userId) {
         await notifyRequestStatus(record.userId, status, reference as string);
       }
+    } else if (type === 'monetary') {
+      await prisma.monetaryDonation.update({ where: { id: record.id }, data: { status, remarks } });
+      await createStatusHistory('App\\Models\\MonetaryDonation', record.id, status, remarks);
+      if (record.userId) {
+        if (status === 'Completed') {
+          const { notifyMonetaryReceived } = await import('../services/notification.service');
+          await notifyMonetaryReceived(record.userId, Number(record.amount || 0), reference as string);
+        } else if (status === 'Rejected') {
+          const { createNotification } = await import('../services/notification.service');
+          await createNotification(
+            record.userId,
+            'Monetary Donation Rejected',
+            `Your monetary contribution reference ${reference} could not be verified. Remarks: ${remarks}`,
+            'monetary'
+          );
+        }
+      }
     }
 
     await logAudit({
@@ -163,6 +180,44 @@ router.post('/verification/:type/:reference', ...staffOnly, validate(verificatio
       targetId: String(reference),
       description: `Staff set ${type} ${reference} verification status to "${status}"`,
       metadata: { type, status, remarks: remarks ?? null },
+    });
+
+    res.json({ message: 'Status updated successfully', success: true });
+  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
+// POST /internal-api/staff/verification/monetary/:reference/status
+router.post('/verification/monetary/:reference/status', ...staffOnly, validate(verificationStatusSchema), async (req, res) => {
+  try {
+    const { reference } = req.params;
+    const { status, remarks } = req.body;
+    const record = await prisma.monetaryDonation.findFirst({ where: { referenceNumber: reference as string } });
+    if (!record) { res.status(404).json({ message: 'Not found' }); return; }
+
+    await prisma.monetaryDonation.update({ where: { id: record.id }, data: { status, remarks } });
+    await createStatusHistory('App\\Models\\MonetaryDonation', record.id, status, remarks);
+    if (record.userId) {
+      if (status === 'Completed') {
+        const { notifyMonetaryReceived } = await import('../services/notification.service');
+        await notifyMonetaryReceived(record.userId, Number(record.amount || 0), reference as string);
+      } else if (status === 'Rejected') {
+        const { createNotification } = await import('../services/notification.service');
+        await createNotification(
+          record.userId,
+          'Monetary Donation Rejected',
+          `Your monetary contribution reference ${reference} could not be verified. Remarks: ${remarks}`,
+          'monetary'
+        );
+      }
+    }
+
+    await logAudit({
+      req,
+      action: 'staff.verification',
+      targetType: 'MonetaryDonation',
+      targetId: String(reference),
+      description: `Staff set monetary ${reference} verification status to "${status}"`,
+      metadata: { type: 'monetary', status, remarks: remarks ?? null },
     });
 
     res.json({ message: 'Status updated successfully', success: true });

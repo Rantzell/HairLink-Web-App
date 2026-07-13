@@ -264,106 +264,82 @@ const StaffVerificationDetail: React.FC = () => {
         </div>
       </article>
 
-      {!isMonetary && (
-        <article className="staff-block detail-decision-block">
-          <div className="detail-decision-head">
-            <i className="bx bx-check-shield detail-section-icon"></i>
-            <h2 className="detail-section-title">Verification Decision</h2>
+      <article className="staff-block detail-decision-block">
+        <div className="detail-decision-head">
+          <i className="bx bx-check-shield detail-section-icon"></i>
+          <h2 className="detail-section-title">Verification Decision</h2>
+        </div>
+        
+        <div className="verification-form">
+          <div className="form-group detail-form-group">
+            <label className="detail-form-label">Validation Remarks <span className="required">*</span></label>
+            <textarea 
+              rows={3} 
+              placeholder="Explain the rationale for this decision..." 
+              value={remarks}
+              onChange={e => { setRemarks(e.target.value); if (e.target.value) setRemarksError(''); }}
+              className="detail-form-textarea"
+              style={remarksError ? { borderColor: '#e03c3c' } : {}}
+            ></textarea>
+            {remarksError && (
+              <p style={{ color: '#e03c3c', fontSize: '0.8rem', marginTop: '4px' }}>
+                <i className='bx bx-error-circle' style={{ marginRight: 4 }}></i>{remarksError}
+              </p>
+            )}
+            {decisionError && (
+              <p style={{ color: '#e03c3c', fontSize: '0.8rem', marginTop: '4px' }}>
+                <i className='bx bx-error-circle' style={{ marginRight: 4 }}></i>{decisionError}
+              </p>
+            )}
           </div>
-          
-          <div className="verification-form">
-            <div className="form-group detail-form-group">
-              <label className="detail-form-label">Validation Remarks <span className="required">*</span></label>
-              <textarea 
-                rows={3} 
-                placeholder="Explain the rationale for this decision..." 
-                value={remarks}
-                onChange={e => { setRemarks(e.target.value); if (e.target.value) setRemarksError(''); }}
-                className="detail-form-textarea"
-                style={remarksError ? { borderColor: '#e03c3c' } : {}}
-              ></textarea>
-              {remarksError && (
-                <p style={{ color: '#e03c3c', fontSize: '0.8rem', marginTop: '4px' }}>
-                  <i className='bx bx-error-circle' style={{ marginRight: 4 }}></i>{remarksError}
-                </p>
-              )}
-              {decisionError && (
-                <p style={{ color: '#e03c3c', fontSize: '0.8rem', marginTop: '4px' }}>
-                  <i className='bx bx-error-circle' style={{ marginRight: 4 }}></i>{decisionError}
-                </p>
-              )}
-            </div>
 
-            <div className="form-actions detail-form-actions">
-              <button 
-                type="button" 
-                className="soft-btn detail-btn detail-btn-approve" 
-                disabled={isSubmitting}
-                onClick={() => { setPendingDecision('approve'); setShowConfirm(true); }}
-              >
-                {isSubmitting ? 'Processing...' : 'Approve Submission'}
-              </button>
-              <button 
-                type="button" 
-                className="ghost-btn detail-btn detail-btn-reject" 
-                disabled={isSubmitting}
-                onClick={() => { setPendingDecision('reject'); setShowConfirm(true); }}
-              >
-                Reject Submission
-              </button>
-              <Link 
-                to={`/staff/verification/${type}`} 
-                className="detail-btn detail-btn-return"
-              >
-                Return to Queue
-              </Link>
-            </div>
-          </div>
-        </article>
-      )}
-
-      {isMonetary && (
-        <article className="staff-block detail-decision-block">
-          <div className="detail-decision-head">
-            <i className="bx bx-info-circle detail-section-icon"></i>
-            <h2 className="detail-section-title">Donation Details</h2>
-          </div>
-          <div className="verification-form">
-            <p className="detail-note">Monetary donations are recorded for reference and do not require verification from this screen.</p>
+          <div className="form-actions detail-form-actions">
+            <button 
+              type="button" 
+              className="soft-btn detail-btn detail-btn-approve" 
+              disabled={isSubmitting}
+              onClick={() => { setPendingDecision('approve'); setShowConfirm(true); }}
+            >
+              {isSubmitting ? 'Processing...' : isMonetary ? 'Confirm Donation' : 'Approve Submission'}
+            </button>
+            <button 
+              type="button" 
+              className="ghost-btn detail-btn detail-btn-reject" 
+              disabled={isSubmitting}
+              onClick={() => { setPendingDecision('reject'); setShowConfirm(true); }}
+            >
+              Reject Submission
+            </button>
             <Link 
               to={`/staff/verification/${type}`} 
               className="detail-btn detail-btn-return"
             >
-              Back to Donations
+              Return to Queue
             </Link>
           </div>
-        </article>
-      )}
+        </div>
+      </article>
 
-      {!isMonetary && (
-        <>
-          <ConfirmModal
-            isOpen={showConfirm && pendingDecision === 'approve'}
-            onClose={() => { setShowConfirm(false); setPendingDecision(null); }}
-            onConfirm={() => { setShowConfirm(false); handleDecision('approve'); }}
-            title="Approve Submission"
-            message="Are you sure you want to approve this submission? This will update the applicant's status."
-            confirmText="Yes, Approve"
-            isConfirming={isSubmitting}
-          />
+      <ConfirmModal
+        isOpen={showConfirm && pendingDecision === 'approve'}
+        onClose={() => { setShowConfirm(false); setPendingDecision(null); }}
+        onConfirm={() => { setShowConfirm(false); handleDecision('approve'); }}
+        title={isMonetary ? "Confirm Donation" : "Approve Submission"}
+        message={isMonetary ? "Are you sure you want to confirm this monetary donation? This will update the status to Completed." : "Are you sure you want to approve this submission? This will update the applicant's status."}
+        confirmText={isMonetary ? "Yes, Confirm" : "Yes, Approve"}
+        isConfirming={isSubmitting}
+      />
 
-          <ConfirmModal
-            isOpen={showConfirm && pendingDecision === 'reject'}
-            onClose={() => { setShowConfirm(false); setPendingDecision(null); }}
-            onConfirm={() => { setShowConfirm(false); handleDecision('reject'); }}
-            title="Reject Submission"
-            message="Are you sure you want to reject this submission? The applicant will be notified."
-            confirmText="Yes, Reject"
-            variant="danger"
-            isConfirming={isSubmitting}
-          />
-        </>
-      )}
+      <ConfirmModal
+        isOpen={showConfirm && pendingDecision === 'reject'}
+        onClose={() => { setShowConfirm(false); setPendingDecision(null); }}
+        onConfirm={() => { setShowConfirm(false); handleDecision('reject'); }}
+        title="Reject Submission"
+        message="Are you sure you want to reject this submission? The applicant will be notified."
+        confirmText="Yes, Reject"
+        variant="danger"
+        isConfirming={isSubmitting}
+      />
     </section>
   );
 };

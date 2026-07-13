@@ -89,9 +89,12 @@ const StaffVerificationList: React.FC = () => {
       ref.includes(searchTerm.toLowerCase()) ||
       name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (isMonetary && (item.paymentMethod || '').toLowerCase().includes(searchTerm.toLowerCase()));
+    const itemStatus = (item.status || '').toLowerCase();
     const matchesStatus =
       statusFilter === 'All Status' ||
-      (item.status || '').toLowerCase() === statusFilter.toLowerCase();
+      (statusFilter === 'Pending' && (itemStatus === 'submitted' || itemStatus === 'pending')) ||
+      (statusFilter === 'Approved' && (itemStatus === 'completed' || itemStatus === 'approved' || itemStatus === 'validated')) ||
+      (statusFilter === 'Rejected' && itemStatus === 'rejected');
     return matchesSearch && matchesStatus;
   });
 
@@ -99,7 +102,7 @@ const StaffVerificationList: React.FC = () => {
   const pagedItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const title    = type === 'donor' ? 'Hair Donations' : type === 'recipient' ? 'Recipient Requests' : 'Monetary Donations';
-  const hasReview = !isMonetary;
+  const hasReview = true;
 
   const openProof = (path: string) => {
     const url = getPublicUrl('hairlink', path);
@@ -148,7 +151,7 @@ const StaffVerificationList: React.FC = () => {
             </h2>
             {isMonetary && (
               <p style={{ fontSize: '0.78rem', color: '#9b8a9e', margin: '0.2rem 0 0' }}>
-                Read-only financial record of all monetary contributions.
+                Review and approve proof of monetary contributions.
               </p>
             )}
           </div>
@@ -164,18 +167,16 @@ const StaffVerificationList: React.FC = () => {
                 className="search-input-field"
               />
             </div>
-            {!isMonetary && (
-              <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className="status-filter-select"
-              >
-                <option>All Status</option>
-                <option>Pending</option>
-                <option>Approved</option>
-                <option>Rejected</option>
-              </select>
-            )}
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="status-filter-select"
+            >
+              <option>All Status</option>
+              <option>Pending</option>
+              <option>Approved</option>
+              <option>Rejected</option>
+            </select>
             {isMonetary && selectedIds.size > 0 && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
@@ -222,7 +223,9 @@ const StaffVerificationList: React.FC = () => {
                     <th className="tracking-table-th">Amount</th>
                     <th className="tracking-table-th">Method</th>
                     <th className="tracking-table-th">Date</th>
+                    <th className="tracking-table-th">Status</th>
                     <th className="tracking-table-th tracking-table-th-center">Proof</th>
+                    <th className="tracking-table-th-center">Action</th>
                   </>
                 ) : (
                   <>
@@ -238,7 +241,7 @@ const StaffVerificationList: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={isMonetary ? 8 : hasReview ? 5 : 4} className="tracking-table-loading">
+                  <td colSpan={isMonetary ? 10 : 5} className="tracking-table-loading">
                     <i className='bx bx-loader-alt bx-spin tracking-table-loading-icon'></i>
                     Loading {isMonetary ? 'monetary records' : 'verification queue'}…
                   </td>
@@ -278,6 +281,9 @@ const StaffVerificationList: React.FC = () => {
                             })
                           : '—'}
                       </td>
+                      <td className="tracking-table-td">
+                        <StatusPill status={item.status} />
+                      </td>
                       <td className="tracking-table-td-center">
                         {item.proofPath ? (
                           <button
@@ -293,6 +299,14 @@ const StaffVerificationList: React.FC = () => {
                             No proof
                           </span>
                         )}
+                      </td>
+                      <td className="tracking-table-td-center">
+                        <Link
+                          to={`/staff/verification/${type}/${item.reference || item.referenceNumber}`}
+                          className="soft-btn review-btn-styled"
+                        >
+                          Review
+                        </Link>
                       </td>
                     </tr>
                   ) : (
@@ -320,7 +334,7 @@ const StaffVerificationList: React.FC = () => {
                 )
               ) : (
                 <tr>
-                  <td colSpan={isMonetary ? 8 : hasReview ? 5 : 4} className="tracking-table-empty">
+                  <td colSpan={isMonetary ? 10 : 5} className="tracking-table-empty">
                     <i className='bx bx-file-find tracking-table-empty-icon'></i>
                     No items match your search or filter criteria.
                   </td>
