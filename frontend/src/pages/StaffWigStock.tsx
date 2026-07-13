@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import apiClient from '../api/client';
 import Pagination from '../components/Pagination';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import '../styles/StaffWigStock.css';
 
 const PAGE_SIZE = 10;
@@ -13,19 +14,18 @@ const StaffWigStock: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    const fetchStock = async () => {
-      try {
-        const res = await apiClient.get('/internal-api/staff/wig-stock');
-        setWigs(res.data);
-      } catch (err) {
-        console.error('Failed to fetch wig stock', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStock();
+  const fetchStock = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/internal-api/staff/wig-stock');
+      setWigs(res.data);
+    } catch (err) {
+      console.error('Failed to fetch wig stock', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useAutoRefresh(fetchStock, 20_000);
 
   // Show only individual finished wigs (WIG-prefixed) — batch parents
   // (WB-prefixed) are tracked elsewhere and shouldn't appear in Wig Stock.

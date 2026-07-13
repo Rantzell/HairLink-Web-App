@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import Pagination from '../components/Pagination';
 import type { Donation } from '../types';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 const PAGE_SIZE = 10;
 
@@ -13,19 +14,18 @@ const DonorTracking: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    const fetchDonations = async () => {
-      try {
-        const res = await apiClient.get('/internal-api/donations');
-        setDonations(res.data);
-      } catch (err) {
-        console.error('Failed to fetch donations', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDonations();
+  const fetchDonations = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/internal-api/donations');
+      setDonations(res.data);
+    } catch (err) {
+      console.error('Failed to fetch donations', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useAutoRefresh(fetchDonations, 15_000);
 
   const filteredDonations = donations.filter(d =>
     d.reference.toLowerCase().includes(filter.toLowerCase()) ||

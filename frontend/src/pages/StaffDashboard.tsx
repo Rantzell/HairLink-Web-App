@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import '../styles/StaffDashboard.css';
 
 interface StaffStats {
@@ -23,19 +24,18 @@ const StaffDashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await apiClient.get('/internal-api/staff/dashboard');
-        setStats(res.data);
-      } catch (err) {
-        console.error('Failed to fetch staff stats', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/internal-api/staff/dashboard');
+      setStats(res.data);
+    } catch (err) {
+      console.error('Failed to fetch staff stats', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  const { lastUpdated: _lu, refresh: _r } = useAutoRefresh(fetchStats, 15_000);
 
   const statCards = [
     {

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import apiClient from '../api/client';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import '../styles/StaffHairStock.css';
 
 interface StockData {
@@ -13,24 +14,19 @@ const StaffHairStock: React.FC = () => {
   const [uncategorized, setUncategorized] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStock = async () => {
-      try {
-        const res = await apiClient.get('/internal-api/staff/hair-stock');
-        if (res.data.stock) {
-          setStock(res.data.stock);
-        }
-        if (res.data.uncategorized !== undefined) {
-          setUncategorized(res.data.uncategorized);
-        }
-      } catch (err) {
-        console.error('Failed to fetch hair stock', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStock();
+  const fetchStock = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/internal-api/staff/hair-stock');
+      if (res.data.stock) setStock(res.data.stock);
+      if (res.data.uncategorized !== undefined) setUncategorized(res.data.uncategorized);
+    } catch (err) {
+      console.error('Failed to fetch hair stock', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useAutoRefresh(fetchStock, 20_000);
 
   const lengths = ['Short', 'Long'];
   const colors = ['Black', 'Brown', 'Light'];

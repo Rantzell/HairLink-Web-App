@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 import '../styles/StaffRealtimeTracking.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Pagination from '../components/Pagination';
 import apiClient from '../api/client';
@@ -9,6 +9,7 @@ import { getPublicUrl, getProfilePhotoUrl } from '../lib/storage';
 
 import ConfirmModal from '../components/ConfirmModal';
 import PageLoader from '../components/PageLoader';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 const StaffRealtimeTracking: React.FC = () => {
   const { type } = useParams<{ type: 'donation' | 'recipient' | 'wigmaker' | 'batch-donation' }>();
@@ -58,7 +59,7 @@ const StaffRealtimeTracking: React.FC = () => {
     setShowActionConfirm(true);
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const res = await apiClient.get('/internal-api/staff/realtime-tracking');
       setData(res.data);
@@ -67,11 +68,9 @@ const StaffRealtimeTracking: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
+
+  useAutoRefresh(fetchData, 10_000, { enabled: !isSubmitting });
 
   const handleUpdateStatus = async (reference: string, _type: 'donor' | 'recipient', status: string, deliveryTrackingLink?: string) => {
     setIsSubmitting(true);

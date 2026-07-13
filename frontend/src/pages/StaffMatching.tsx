@@ -1,8 +1,9 @@
 import toast from 'react-hot-toast';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import '../styles/StaffMatching.css';
 import PageLoader from '../components/PageLoader';
 
@@ -50,28 +51,26 @@ const StaffMatching: React.FC = () => {
   const queryParams = new URLSearchParams(location.search);
   const targetRef = queryParams.get('reference');
 
-  useEffect(() => {
-    const fetchMatchingData = async () => {
-      try {
-        const res = await apiClient.get('/internal-api/staff/rule-matching');
-        setRecipients(res.data.recipients);
-        setWigs(res.data.wigs);
-        
-        // Auto-select based on reference if provided, otherwise first recipient
-        if (res.data.recipients.length > 0) {
-          const matched = targetRef 
-            ? res.data.recipients.find((r: any) => r.reference === targetRef) 
-            : res.data.recipients[0];
-          setSelectedRecipient(matched || res.data.recipients[0]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch matching data', err);
-      } finally {
-        setLoading(false);
+  const fetchMatchingData = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/internal-api/staff/rule-matching');
+      setRecipients(res.data.recipients);
+      setWigs(res.data.wigs);
+      // Auto-select based on reference if provided, otherwise first recipient
+      if (res.data.recipients.length > 0) {
+        const matched = targetRef
+          ? res.data.recipients.find((r: any) => r.reference === targetRef)
+          : res.data.recipients[0];
+        setSelectedRecipient(matched || res.data.recipients[0]);
       }
-    };
-    fetchMatchingData();
+    } catch (err) {
+      console.error('Failed to fetch matching data', err);
+    } finally {
+      setLoading(false);
+    }
   }, [targetRef]);
+
+  useAutoRefresh(fetchMatchingData, 15_000, { enabled: !isSubmitting, deps: [targetRef] });
 
   const filteredRecipients = recipients.filter(r => 
     `${r.user?.firstName} ${r.user?.lastName}`.toLowerCase().includes(recipientSearch.toLowerCase())

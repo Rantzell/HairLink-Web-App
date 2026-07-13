@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import '../styles/Admin.css';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import LoadingScreen from '../components/LoadingScreen';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 const AdminDashboard: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAdminData = async () => {
-      try {
-        const res = await apiClient.get('/internal-api/admin/dashboard');
-        setData(res.data);
-      } catch (err: any) {
-        console.error('Failed to fetch admin dashboard', err);
-        setData({ error: true, message: err.response?.data?.message || err.message });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAdminData();
+  const fetchAdminData = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/internal-api/admin/dashboard');
+      setData(res.data);
+    } catch (err: any) {
+      console.error('Failed to fetch admin dashboard', err);
+      setData({ error: true, message: err.response?.data?.message || err.message });
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useAutoRefresh(fetchAdminData, 30_000);
 
   if (loading) return <LoadingScreen />;
   if (loading) return <LoadingScreen />;

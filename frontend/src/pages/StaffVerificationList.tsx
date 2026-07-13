@@ -1,5 +1,5 @@
 import toast from 'react-hot-toast';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
@@ -7,6 +7,7 @@ import StatusPill from '../components/StatusPill';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ConfirmModal';
 import { getPublicUrl } from '../lib/storage';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import '../styles/StaffVerificationList.css';
 
 const PAGE_SIZE = 10;
@@ -60,26 +61,26 @@ const StaffVerificationList: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [proofUrl]);
 
-  useEffect(() => {
-    const fetchItems = async () => {
-      setLoading(true);
-      try {
-        const endpoint = type === 'donor'
-          ? '/internal-api/staff/donor-verification'
-          : type === 'recipient'
-            ? '/internal-api/staff/recipient-verification'
-            : '/internal-api/staff/monetary-donations';
-        const res = await apiClient.get(endpoint);
-        setItems(res.data);
-      } catch (err) {
-        console.error('Failed to fetch verification items', err);
-        setItems([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchItems();
+  const fetchItems = useCallback(async () => {
+    setLoading(true);
+    try {
+      const endpoint = type === 'donor'
+        ? '/internal-api/staff/donor-verification'
+        : type === 'recipient'
+          ? '/internal-api/staff/recipient-verification'
+          : '/internal-api/staff/monetary-donations';
+      const res = await apiClient.get(endpoint);
+      setItems(res.data);
+    } catch (err) {
+      console.error('Failed to fetch verification items', err);
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   }, [type]);
+
+  useAutoRefresh(fetchItems, 15_000, { deps: [type] });
+
 
   const filteredItems = items.filter(item => {
     const name = item.user ? `${item.user.firstName} ${item.user.lastName}` : (item.name || '');

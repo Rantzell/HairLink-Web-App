@@ -1,11 +1,12 @@
 import toast from 'react-hot-toast';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import StatusPill from '../components/StatusPill';
 import Pagination from '../components/Pagination';
 import type { HairRequest } from '../types';
 import ConfirmModal from '../components/ConfirmModal';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import '../styles/RecipientTracking.css';
 
 const PAGE_SIZE = 10;
@@ -19,19 +20,18 @@ const RecipientTracking: React.FC = () => {
   const [pendingRef, setPendingRef] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
 
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const res = await apiClient.get('/internal-api/requests');
-        setRequests(res.data);
-      } catch (err) {
-        console.error('Failed to fetch requests', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRequests();
+  const fetchRequests = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/internal-api/requests');
+      setRequests(res.data);
+    } catch (err) {
+      console.error('Failed to fetch requests', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useAutoRefresh(fetchRequests, 15_000, { enabled: !isConfirming });
 
   const filteredRequests = requests.filter(r =>
     r.reference.toLowerCase().includes(filter.toLowerCase()) ||
@@ -49,7 +49,7 @@ const RecipientTracking: React.FC = () => {
     setIsConfirming(true);
     try {
       await apiClient.post(`/internal-api/requests/${pendingRef}/confirm-received`);
-      window.location.reload();
+      await fetchRequests();
     } catch {
       toast.error('Failed to confirm receipt.');
     } finally {

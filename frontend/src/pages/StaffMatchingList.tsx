@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import apiClient from '../api/client';
 import Pagination from '../components/Pagination';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import '../styles/StaffMatchingList.css';
 
 const PAGE_SIZE = 10;
@@ -11,19 +12,19 @@ const StaffMatchingList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    const fetchMatches = async () => {
-      try {
-        const res = await apiClient.get('/internal-api/staff/recipient-matching-list');
-        setMatches(res.data.matches || []);
-      } catch (err) {
-        console.error('Failed to fetch match history', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMatches();
+  const fetchMatches = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/internal-api/staff/recipient-matching-list');
+      setMatches(res.data.matches || []);
+    } catch (err) {
+      console.error('Failed to fetch match history', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useAutoRefresh(fetchMatches, 15_000);
+
 
   const filteredMatches = matches.filter(m =>
     `${m.user?.firstName} ${m.user?.lastName}`.toLowerCase().includes(filter.toLowerCase()) ||
