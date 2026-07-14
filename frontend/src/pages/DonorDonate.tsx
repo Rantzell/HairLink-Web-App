@@ -313,8 +313,12 @@ const DonorDonate: React.FC = () => {
   );
 
   return (
-    <section className="section-wrap donate-page reveal active">
+    <section className="section-wrap donate-page donate-page-wide reveal active">
       <style>{`
+        /* Widen this page beyond the shared 800px cap and use full-width side padding */
+        .donate-page-wide.donate-page { max-width: 1240px; padding: 0 2rem; }
+        @media (max-width: 860px) { .donate-page-wide.donate-page { padding: 0 1rem; } }
+
         .checkbox-wrap {
           display: flex !important; flex-direction: row !important; align-items: center !important;
           justify-content: flex-start !important; gap: 0.5rem !important; grid-column: span 2 !important;
@@ -537,8 +541,6 @@ const DonorDonate: React.FC = () => {
                       onClear={() => setFile(null)}
                     />
                   </div>
-
-                  {CertificateNames}
 
                   {DeliveryDetails}
                 </>
