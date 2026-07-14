@@ -11,6 +11,7 @@ type TabKey = 'hair' | 'bundle';
 
 interface Bundle {
   id: number;
+  donorName: string;
   hairLength: string;
   hairColor: string;
   treatedHair: boolean;
@@ -19,6 +20,7 @@ interface Bundle {
 
 const emptyBundle = (): Bundle => ({
   id: Date.now() + Math.floor(Math.random() * 1000),
+  donorName: '',
   hairLength: '',
   hairColor: '',
   treatedHair: false,
@@ -121,9 +123,6 @@ const DonorDonate: React.FC = () => {
   });
   const [file, setFile] = useState<File | null>(null);
 
-  // ---- Certificate names (shared, used to generate certificate names) ----
-  const [certNames, setCertNames] = useState<string[]>(['']);
-
   // ---- Bundle Donation (optional alternative path) ----
   const [bundles, setBundles] = useState<Bundle[]>([emptyBundle()]);
   const [bundleAddress, setBundleAddress] = useState('');
@@ -136,14 +135,7 @@ const DonorDonate: React.FC = () => {
   const bundleTouched =
     bundleAddress.trim() !== '' ||
     bundleReason.trim() !== '' ||
-    bundles.some(b => b.hairLength || b.hairColor || b.treatedHair || b.file);
-
-  // ---- Certificate name helpers ----
-  const addName = () => setCertNames(prev => [...prev, '']);
-  const updateName = (i: number, value: string) =>
-    setCertNames(prev => prev.map((n, idx) => (idx === i ? value : n)));
-  const removeName = (i: number) =>
-    setCertNames(prev => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== i)));
+    bundles.some(b => b.donorName || b.hairLength || b.hairColor || b.treatedHair || b.file);
 
   // ---- Bundle helpers ----
   const addBundle = () => setBundles(prev => [...prev, emptyBundle()]);
@@ -151,8 +143,6 @@ const DonorDonate: React.FC = () => {
     setBundles(prev => (prev.length === 1 ? prev : prev.filter(b => b.id !== id)));
   const updateBundle = (id: number, patch: Partial<Bundle>) =>
     setBundles(prev => prev.map(b => (b.id === id ? { ...b, ...patch } : b)));
-
-  const cleanNames = () => certNames.map(n => n.trim()).filter(Boolean);
 
   // ---- Validation ----
   const validate = (): boolean => {
@@ -168,7 +158,7 @@ const DonorDonate: React.FC = () => {
       }
       for (let i = 0; i < bundles.length; i++) {
         const b = bundles[i];
-        if (!b.hairLength || !b.hairColor || !b.file) {
+        if (!b.donorName.trim() || !b.hairLength || !b.hairColor || !b.file) {
           toast.error(`Please complete all fields and upload a photo for Bundle ${i + 1}.`);
           setActiveTab('bundle');
           return false;
@@ -192,10 +182,9 @@ const DonorDonate: React.FC = () => {
     setShowConfirm(true);
   };
 
-  const buildReason = (baseReason: string) => {
-    const names = cleanNames();
-    if (names.length === 0) return baseReason;
-    return `${baseReason}\n\nCertificate names: ${names.join(', ')}`;
+  const buildReason = (baseReason: string, certName?: string) => {
+    if (!certName || !certName.trim()) return baseReason;
+    return `${baseReason}\n\nCertificate names: ${certName.trim()}`;
   };
 
   const postDonation = (opts: {
@@ -205,6 +194,7 @@ const DonorDonate: React.FC = () => {
     address: string;
     reason: string;
     photo: File;
+    certName?: string;
   }) => {
     const data = new FormData();
     // Backend generates its own sequential reference, but the schema still
@@ -216,7 +206,7 @@ const DonorDonate: React.FC = () => {
     data.append('hair_color', opts.hairColor);
     data.append('treated_hair', opts.treatedHair ? '1' : '0');
     data.append('address', opts.address);
-    data.append('reason', buildReason(opts.reason));
+    data.append('reason', buildReason(opts.reason, opts.certName));
     data.append('dropoff_location', DROPOFF_LOCATION);
     const apptAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
     data.append('appointment_at', apptAt);
@@ -242,6 +232,7 @@ const DonorDonate: React.FC = () => {
             address: bundleAddress,
             reason: bundleReason,
             photo: b.file!,
+            certName: b.donorName,
           });
           if (!firstReference) firstReference = res.data.reference;
         }
@@ -270,43 +261,6 @@ const DonorDonate: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
-  // ---- Certificate names block ----
-  const CertificateNames = (
-    <div className="cert-names-block">
-      <div className="cert-names-head">
-        <div>
-          <h3>Names for Certificate</h3>
-          <p>These names are used to generate the donation certificate. Add one per donor.</p>
-        </div>
-      </div>
-      <div className="cert-names-list">
-        {certNames.map((name, i) => (
-          <div className="cert-name-row" key={i}>
-            <input
-              type="text"
-              placeholder={`Name ${i + 1}`}
-              value={name}
-              onChange={e => updateName(i, e.target.value)}
-            />
-            {certNames.length > 1 && (
-              <button
-                type="button"
-                className="cert-name-remove"
-                aria-label="Remove name"
-                onClick={() => removeName(i)}
-              >
-                <i className="bx bx-x"></i>
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-      <button type="button" className="add-name-btn" onClick={addName}>
-        <i className="bx bx-plus"></i> Add Name
-      </button>
-    </div>
-  );
 
   const DeliveryDetails = (
     <div className="delivery-note">
@@ -590,6 +544,16 @@ const DonorDonate: React.FC = () => {
                       </div>
 
                       <div className="form-grid two-col">
+                        <label style={{ gridColumn: 'span 2' }}>
+                          <span>Donor Name (for certificate) {bundleTouched && <span>*</span>}</span>
+                          <input
+                            type="text"
+                            placeholder="Full name to print on this bundle's certificate"
+                            value={b.donorName}
+                            onChange={e => updateBundle(b.id, { donorName: e.target.value })}
+                          />
+                        </label>
+
                         <label>
                           <span>Hair Length {bundleTouched && <span>*</span>}</span>
                           <select value={b.hairLength} onChange={e => updateBundle(b.id, { hairLength: e.target.value })}>
@@ -630,8 +594,6 @@ const DonorDonate: React.FC = () => {
                   <button type="button" className="add-bundle-btn" onClick={addBundle}>
                     <i className="bx bx-plus"></i> Add Another Bundle
                   </button>
-
-                  {CertificateNames}
 
                   {DeliveryDetails}
                 </>
