@@ -207,6 +207,11 @@ const DonorDonate: React.FC = () => {
     photo: File;
   }) => {
     const data = new FormData();
+    // Backend generates its own sequential reference, but the schema still
+    // requires a non-empty reference field on the request.
+    const currentYear = new Date().getFullYear();
+    const randomId = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    data.append('reference', `HD-${currentYear}-${randomId}`);
     data.append('hair_length', opts.hairLength);
     data.append('hair_color', opts.hairColor);
     data.append('treated_hair', opts.treatedHair ? '1' : '0');
