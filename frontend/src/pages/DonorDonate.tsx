@@ -108,7 +108,6 @@ const UploadBox: React.FC<{
 const DonorDonate: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<TabKey>('hair');
 
