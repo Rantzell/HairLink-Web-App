@@ -12,6 +12,20 @@ import sigHonorio from '../assets/sig_honorio.png';
 
 // Static demo removed
 
+// Certificate names are stored on the donation's reason field as
+// "Certificate names: A, B" by the donate form (no dedicated DB column).
+// Extract and format them for display; returns '' when none were provided.
+const certificateNames = (donation: any): string => {
+  const reason: string = donation?.reason || '';
+  const match = reason.match(/Certificate names:\s*(.+)$/im);
+  if (!match) return '';
+  const names = match[1]
+    .split(',')
+    .map((n) => n.trim())
+    .filter(Boolean);
+  return names.join(' & ');
+};
+
 const DonorCertificate: React.FC = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -167,7 +181,8 @@ const DonorCertificate: React.FC = () => {
 
                 <div className="certificate-name-wrap">
                   <h1 className="certificate-name-new">
-                    {user?.firstName || 'Donor'} {user?.lastName || 'Demo'}
+                    {certificateNames(selectedDonation) ||
+                      `${user?.firstName || 'Donor'} ${user?.lastName || 'Demo'}`}
                   </h1>
                   <div className="certificate-name-line"></div>
                 </div>
