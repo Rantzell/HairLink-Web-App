@@ -14,16 +14,15 @@ import sigHonorio from '../assets/sig_honorio.png';
 
 // Certificate names are stored on the donation's reason field as
 // "Certificate names: A, B" by the donate form (no dedicated DB column).
-// Extract and format them for display; returns '' when none were provided.
-const certificateNames = (donation: any): string => {
+// Returns the list of donor-provided names ([] when none were provided).
+const certificateNames = (donation: any): string[] => {
   const reason: string = donation?.reason || '';
   const match = reason.match(/Certificate names:\s*(.+)$/im);
-  if (!match) return '';
-  const names = match[1]
+  if (!match) return [];
+  return match[1]
     .split(',')
     .map((n) => n.trim())
     .filter(Boolean);
-  return names.join(' & ');
 };
 
 const DonorCertificate: React.FC = () => {
@@ -34,7 +33,25 @@ const DonorCertificate: React.FC = () => {
   
   const [donations, setDonations] = useState<any[]>([]);
   const [selectedDonation, setSelectedDonation] = useState<any | null>(null);
+  const [selectedName, setSelectedName] = useState<string>('');
   const [loading, setLoading] = useState(true);
+
+  const accountName = `${user?.firstName || 'Donor'} ${user?.lastName || 'Demo'}`;
+  // The list of certificate recipients for the selected donation: either the
+  // donor-provided names (bundle donations) or the account holder.
+  const nameOptions = selectedDonation
+    ? (certificateNames(selectedDonation).length > 0
+        ? certificateNames(selectedDonation)
+        : [accountName])
+    : [];
+
+  // Default the selected name whenever the donation (and thus its names) changes.
+  useEffect(() => {
+    if (nameOptions.length > 0 && !nameOptions.includes(selectedName)) {
+      setSelectedName(nameOptions[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDonation]);
 
 
   useEffect(() => {
@@ -79,7 +96,7 @@ const DonorCertificate: React.FC = () => {
 
       exportPDF(
         'certificatePaper',
-        `Certificate-${selectedDonation?.certificateNo || selectedDonation?.reference || 'Recognition'}`,
+        `Certificate-${(selectedName || selectedDonation?.certificateNo || selectedDonation?.reference || 'Recognition').replace(/\s+/g, '-')}`,
         {
           jsPDF: {
             unit: 'mm',
@@ -181,8 +198,7 @@ const DonorCertificate: React.FC = () => {
 
                 <div className="certificate-name-wrap">
                   <h1 className="certificate-name-new">
-                    {certificateNames(selectedDonation) ||
-                      `${user?.firstName || 'Donor'} ${user?.lastName || 'Demo'}`}
+                    {selectedName || accountName}
                   </h1>
                   <div className="certificate-name-line"></div>
                 </div>
@@ -285,20 +301,36 @@ const DonorCertificate: React.FC = () => {
             }}>
               <i className='bx bx-check-circle' style={{ fontSize: '1rem' }}></i>
               Certificate is ready. Click "Print as PDF" to download.
-              {donations.length > 1 && (
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontWeight: 700 }}>Switch:</span>
-                  <select 
-                    style={{ padding: '0.2rem 0.5rem', borderRadius: '6px', border: '1px solid #ead7e8', fontSize: '0.7rem' }}
-                    onChange={(e) => setSelectedDonation(donations.find(d => d.reference === e.target.value) || null)}
-                    value={selectedDonation.reference}
-                  >
-                    {donations.map(d => (
-                      <option key={d.id} value={d.reference}>{d.reference}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {nameOptions.length > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontWeight: 700 }}>Recipient:</span>
+                    <select
+                      style={{ padding: '0.2rem 0.5rem', borderRadius: '6px', border: '1px solid #ead7e8', fontSize: '0.7rem' }}
+                      onChange={(e) => setSelectedName(e.target.value)}
+                      value={selectedName}
+                    >
+                      {nameOptions.map((n, i) => (
+                        <option key={i} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {donations.length > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontWeight: 700 }}>Switch:</span>
+                    <select
+                      style={{ padding: '0.2rem 0.5rem', borderRadius: '6px', border: '1px solid #ead7e8', fontSize: '0.7rem' }}
+                      onChange={(e) => setSelectedDonation(donations.find(d => d.reference === e.target.value) || null)}
+                      value={selectedDonation.reference}
+                    >
+                      {donations.map(d => (
+                        <option key={d.id} value={d.reference}>{d.reference}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
           </>
         ) : (
