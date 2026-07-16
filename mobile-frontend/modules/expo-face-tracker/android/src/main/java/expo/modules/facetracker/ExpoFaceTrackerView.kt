@@ -210,6 +210,20 @@ class ExpoFaceTrackerView(context: Context, appContext: AppContext) :
     )
   }
 
+  // ExpoView is a bare ViewGroup and does NOT measure/lay out its children —
+  // without this the CameraX PreviewView (and its internal TextureView) stays
+  // 0x0, never gets a Surface, and the preview is black ("waiting for new
+  // frames" timeouts). Measure AND lay out the child to fill us every pass.
+  override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+    val w = right - left
+    val h = bottom - top
+    previewView.measure(
+      android.view.View.MeasureSpec.makeMeasureSpec(w, android.view.View.MeasureSpec.EXACTLY),
+      android.view.View.MeasureSpec.makeMeasureSpec(h, android.view.View.MeasureSpec.EXACTLY),
+    )
+    previewView.layout(0, 0, w, h)
+  }
+
   override fun onDetachedFromWindow() {
     super.onDetachedFromWindow()
     try {

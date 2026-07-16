@@ -5,6 +5,36 @@ import { useSearchParams } from 'react-router-dom';
 import apiClient from '../api/client';
 import type { CommunityPost } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { getProfilePhotoUrl } from '../lib/storage';
+
+/**
+ * Author avatar: shows the profile picture when available, falling back to
+ * initials (matches the mobile Community screen). `photo` may be a bare storage
+ * filename (from the feed API) or an already-resolved full URL (current user).
+ */
+function Avatar({
+  photo,
+  initials,
+  className,
+  style,
+}: {
+  photo?: string | null;
+  initials: string;
+  className: string;
+  style?: React.CSSProperties;
+}) {
+  const [failed, setFailed] = useState(false);
+  const url = photo ? (photo.startsWith('http') ? photo : getProfilePhotoUrl(photo)) : null;
+  return (
+    <div className={className} style={style}>
+      {url && !failed ? (
+        <img src={url} alt="" className="cf-avatar-img" onError={() => setFailed(true)} />
+      ) : (
+        initials
+      )}
+    </div>
+  );
+}
 
 const TOPIC_PREFIX = '[TOPIC:';
 const TOPIC_SUFFIX = ']';
@@ -277,7 +307,7 @@ const CommunityFeed: React.FC = () => {
             {/* Author row at top — shows who is posting before they begin */}
             {user && (
               <div className="cf-modal-user-row" style={{ borderTop: 'none', borderBottom: '1px solid #ead7e8', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
-                <div className="cf-avatar" style={{ width: 36, height: 36, fontSize: '0.78rem' }}>{initials}</div>
+                <Avatar photo={user.profile_photo_url} initials={initials} className="cf-avatar" style={{ width: 36, height: 36, fontSize: '0.78rem' }} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <span className="cf-modal-user-name">{user.firstName} {user.lastName?.[0]}.</span>
                   <span className="cf-role-badge" style={{ background: roleInfo.bg, color: roleInfo.color, alignSelf: 'flex-start' }}>
@@ -550,7 +580,7 @@ const PostCard: React.FC<{
       <div className="cf-card-body">
         {/* Author row */}
         <div className="cf-author-row" style={{ position: 'relative' }}>
-          <div className="cf-avatar">{initials}</div>
+          <Avatar photo={(post.user as any)?.profile_photo_url} initials={initials} className="cf-avatar" />
           <span className="cf-author-name">
             {post.user?.firstName} {post.user?.lastName?.[0]}.
           </span>
@@ -716,7 +746,7 @@ const PostCard: React.FC<{
                   const cInit = `${c.user?.firstName?.[0] ?? ''}${c.user?.lastName?.[0] ?? ''}`.toUpperCase() || 'U';
                   return (
                     <div key={c.id} className="cf-comment">
-                      <div className="cf-comment-avatar">{cInit}</div>
+                      <Avatar photo={(c.user as any)?.profile_photo_url} initials={cInit} className="cf-comment-avatar" />
                       <div className="cf-comment-bubble">
                         <span className="cf-comment-author">{c.user?.firstName} {c.user?.lastName?.[0]}.</span>
                         <span className="cf-comment-time">{timeAgo(c.createdAt)}</span>

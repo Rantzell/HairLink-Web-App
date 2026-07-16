@@ -44,6 +44,7 @@ import CommunityScreen from './CommunityScreen';
 import HairCareScreen from './HairCareScreen';
 import RewardsScreen from './RewardsScreen';
 import { CustomAlert } from '../../components/GlobalAlert';
+import PastEventsSection from '../../components/PastEventsSection';
 
 interface DonorDashboardProps {
   onLogout?: () => void;
@@ -649,6 +650,8 @@ export default function DonorDashboard({ onLogout, onRoleChange, userName = "Don
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
+
+        <PastEventsSection />
       </ScrollView>
 
       {/* Wig Reward Unlocked Modal */}

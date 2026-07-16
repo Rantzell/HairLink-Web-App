@@ -17,6 +17,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import api from '../../lib/api';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 /**
  * Mirrors frontend/src/pages/RecipientTrackingDetail.tsx — same data
@@ -72,23 +73,31 @@ export default function RecipientTrackingDetailScreen({ reference, onBack }: Pro
   // Which confirmation flow is active — delivery (In Transit) or pickup (Ready for Pickup).
   const [confirmKind, setConfirmKind] = useState<'delivery' | 'pickup'>('delivery');
 
-  const fetchDetail = useCallback(async () => {
+  // `silent` skips the spinner + not-found redirect so the 30s background poll
+  // refreshes quietly without disrupting the user.
+  const fetchDetail = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.get(`/requests/${reference}`);
       setData(res.data);
     } catch (err: any) {
       console.error('Failed to fetch request detail', err);
-      Alert.alert('Error', 'Request not found or you do not have access.');
-      onBack();
+      if (!silent) {
+        Alert.alert('Error', 'Request not found or you do not have access.');
+        onBack();
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [reference, onBack]);
 
+  // Initial load (with spinner).
   useEffect(() => {
     fetchDetail();
   }, [fetchDetail]);
+
+  // Live auto-refresh every 30s, matching the website's tracking page.
+  useAutoRefresh(() => fetchDetail(true), 30_000, { immediate: false, deps: [reference] });
 
   const doConfirm = async () => {
     if (!data?.reference) return;

@@ -19,6 +19,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import api from '../../lib/api';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 interface StatusHistory {
   id?: string | number;
@@ -57,23 +58,32 @@ export default function DonorTrackingDetailScreen({ reference, onBack }: Props) 
   const [data, setData] = useState<DonationDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchDetail = useCallback(async () => {
+  // `silent` skips the full-screen spinner + the not-found redirect so the
+  // 30s background poll refreshes data quietly without disrupting the user.
+  const fetchDetail = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.get(`/donations/${reference}`);
       setData(res.data);
     } catch (err: any) {
       console.error('Failed to fetch donation detail', err);
-      Alert.alert('Error', 'Donation not found or you do not have access.');
-      onBack();
+      if (!silent) {
+        Alert.alert('Error', 'Donation not found or you do not have access.');
+        onBack();
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [reference, onBack]);
 
+  // Initial load (with spinner).
   useEffect(() => {
     fetchDetail();
   }, [fetchDetail]);
+
+  // Auto-refresh the status live every 30s, like the website's tracking page.
+  // immediate:false because the effect above already did the first load.
+  useAutoRefresh(() => fetchDetail(true), 30_000, { immediate: false, deps: [reference] });
 
   const [scheduleDate, setScheduleDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);

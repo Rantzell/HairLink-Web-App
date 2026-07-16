@@ -7,7 +7,10 @@ import api from './api';
 // Set how notifications behave when the app is in the foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
+    // shouldShowAlert is deprecated in SDK 54; shouldShowBanner/shouldShowList replace it.
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -15,6 +18,13 @@ Notifications.setNotificationHandler({
 
 export async function registerForPushNotificationsAsync() {
   let token;
+
+  // Expo Go (SDK 53+) dropped remote push support. Skip registration there to
+  // avoid the noisy runtime error; push works in a development/production build.
+  if (Constants.appOwnership === 'expo' || Constants.executionEnvironment === 'storeClient') {
+    console.log('Push notifications are not supported in Expo Go — skipping registration.');
+    return null;
+  }
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -40,13 +50,13 @@ export async function registerForPushNotificationsAsync() {
     }
     
     try {
-        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-        const tokenResponse = await Notifications.getExpoPushTokenAsync({
-            projectId: projectId
-        });
-        token = tokenResponse.data;
+        // Native FCM registration token (Android) / APNs token (iOS). The backend
+        // delivers directly through Firebase Admin, so we use the device token
+        // rather than an Expo push token (no Expo push service / account needed).
+        const tokenResponse = await Notifications.getDevicePushTokenAsync();
+        token = tokenResponse.data as string;
     } catch (e) {
-        console.log('Error getting push token:', e);
+        console.log('Error getting device push token:', e);
         return null;
     }
   } else {

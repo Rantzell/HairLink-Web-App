@@ -13,8 +13,15 @@ html,body{margin:0;padding:0;overflow:hidden;width:100%;height:100%;background:#
 /* Light blur on the 3D hair overlay feathers the hair silhouette so its
    edges blend into the real photo instead of looking like hard-cut cards.
    Tune the px value: more = softer/dreamier, less = crisper. */
-#canvas{z-index:1;pointer-events:none;filter:blur(0.8px);}
+#canvas{z-index:1;pointer-events:none;filter:blur(0.35px);}
 #stage.mirror #video,#stage.mirror #canvas{transform:scaleX(-1);}
+/* Fine film grain over the whole composite. The CG hair is mathematically clean
+   while the phone camera feed is noisy — matching a little grain across both
+   unifies them so the hair reads as part of the same photo, not a sticker.
+   Bump opacity for more grain; set to 0 to disable. */
+#grain{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px 180px;}
 
 #status{position:fixed;top:12px;left:12px;right:12px;color:#fff;font-family:monospace;font-size:12px;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:8px;z-index:200;pointer-events:none;opacity:0;transition:opacity .25s;text-align:center;}
 #status.show{opacity:1;}
@@ -75,6 +82,7 @@ html,body{margin:0;padding:0;overflow:hidden;width:100%;height:100%;background:#
 <div id="stage" class="mirror">
   <video id="video" playsinline muted autoplay></video>
   <canvas id="canvas"></canvas>
+  <div id="grain"></div>
 </div>
 <div id="status"></div>
 
@@ -84,6 +92,7 @@ html,body{margin:0;padding:0;overflow:hidden;width:100%;height:100%;background:#
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 
 const SHORT_B64     = '__SHORT_B64__';
@@ -242,14 +251,19 @@ function resetOffset(style) {
 }
 
 function applyColor(root, hex) {
-  const target = new THREE.Color(hex);
   root.traverse(o => {
     if (o.isMesh && o.material) {
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       mats.forEach(mat => {
-        if (mat.color) mat.color.copy(target);
-        if ('roughness' in mat) mat.roughness = 0.55;
-        if ('metalness' in mat) mat.metalness = 0.05;
+        // Tag the picked colour as sRGB so filmic tone mapping keeps the hue
+        // the user actually chose (raw .set would be read as linear → washed out).
+        if (mat.color) mat.color.setStyle(hex, THREE.SRGBColorSpace);
+        // Hair-like PBR: fairly glossy so the IBL/rim produce a visible sheen
+        // streak, with a touch of metalness for that silky highlight. Lower
+        // roughness = shinier. Keep any normal/roughness maps the GLB shipped.
+        if ('roughness' in mat) mat.roughness = 0.38;
+        if ('metalness' in mat) mat.metalness = 0.12;
+        if ('envMapIntensity' in mat) mat.envMapIntensity = 1.15;
         mat.needsUpdate = true;
       });
     }
@@ -266,8 +280,10 @@ function setVisibility(style) {
 function applyEdgeFeather() {
   const c = document.getElementById('canvas');
   if (!c) return;
-  // Keep the original light 0.8px anti-alias feather on the silhouette.
-  let f = 'blur(0.8px)';
+  // Light anti-alias feather on the silhouette. Reduced 0.8→0.35 so the hair
+  // strands stay crisp (the extra blur was smearing away detail). Raise a touch
+  // if edges look aliased/jaggy on lower-DPR screens.
+  let f = 'blur(0.35px)';
   if (WIG_EDGE_BLUR_PX > 0) {
     const ds = ' drop-shadow(0 0 ' + WIG_EDGE_BLUR_PX + 'px ' + currentColor + ')';
     f += ds + ds + ds; // stack 3 for a denser, more opaque fringe
@@ -333,12 +349,27 @@ async function main() {
     // 3. three.js scene
     const canvas = document.getElementById('canvas');
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    // Cap DPR at 3 — beyond that the extra pixels cost GPU without visible gain
+    // on a phone screen. Keeps full-res sharpness on modern devices.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 3));
     renderer.setSize(window.innerWidth, window.innerHeight, false);
     renderer.setClearAlpha(0);
+    // Colour management + filmic tone mapping. Without these the hair renders
+    // flat/washed-out; ACES gives natural highlight roll-off so strands read as
+    // real hair instead of a solid colour blob.
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
 
     const scene = new THREE.Scene();
     scene.background = null;
+
+    // Image-based lighting (IBL). A pre-filtered indoor environment gives the
+    // hair soft, direction-varying highlights (sheen along the strands) that
+    // flat lights can't. This is the single biggest realism upgrade.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
     const camera = new THREE.PerspectiveCamera(
       VIRTUAL_CAMERA_FOV_Y,
@@ -349,12 +380,18 @@ async function main() {
     // facialTransformationMatrix maps canonical face → camera-space, which
     // is the world space three.js renders by default.
 
-    // Lights
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1.0));
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
-    dir.position.set(0.5, 1, 0.5);
-    scene.add(dir);
+    // Lights — the IBL environment does most of the work now, so the lights are
+    // lighter than before and shaped to add a key + rim for dimensional hair.
+    const hemi = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 0.5);
+    scene.add(hemi);
+    // Key light from front-upper-left (typical selfie lighting).
+    const key = new THREE.DirectionalLight(0xffffff, 0.9);
+    key.position.set(0.6, 1.2, 1.0);
+    scene.add(key);
+    // Rim light from behind to separate the hair silhouette and add glossy sheen.
+    const rim = new THREE.DirectionalLight(0xfff4ec, 0.55);
+    rim.position.set(-0.8, 0.6, -1.0);
+    scene.add(rim);
 
     // Head root — receives MediaPipe pose matrix every frame
     const headRoot = new THREE.Group();
@@ -532,6 +569,39 @@ async function main() {
     applyEdgeFeather();
     const tmpMatrix = new THREE.Matrix4();
 
+    // --- Scene-adaptive lighting -------------------------------------------
+    // The single biggest "pasted-on / cartoon" fix: match the CG hair's light
+    // to the REAL room the user is in. We downscale the camera frame to 24x24
+    // every ~350ms, read the average colour + brightness, and steer the hair's
+    // ambient tint and the renderer exposure to match. Dark room → hair dims;
+    // warm lamp → hair warms; so it reads as lit by the same light as the face.
+    const lightCanvas = document.createElement('canvas');
+    lightCanvas.width = 24; lightCanvas.height = 24;
+    const lightCtx = lightCanvas.getContext('2d', { willReadFrequently: true });
+    const roomColor = new THREE.Color(1, 1, 1);
+    const whiteColor = new THREE.Color(1, 1, 1);
+    let lastLightSample = 0;
+    function sampleSceneLight(video, now) {
+      if (!lightCtx || !video.videoWidth || now - lastLightSample < 350) return;
+      lastLightSample = now;
+      try {
+        lightCtx.drawImage(video, 0, 0, 24, 24);
+        const d = lightCtx.getImageData(0, 0, 24, 24).data;
+        let r = 0, g = 0, b = 0; const n = d.length / 4;
+        for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+        r /= n * 255; g /= n * 255; b /= n * 255;
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        // Blend the measured room colour halfway toward white so we tint, not
+        // fully recolour, the hair (avoids extreme casts under coloured light).
+        roomColor.setRGB(r, g, b).lerp(whiteColor, 0.5);
+        // Ease the light toward the room tint so it doesn't flicker frame-to-frame.
+        hemi.color.lerp(roomColor, 0.15);
+        // Track scene brightness with exposure, clamped to a sane range.
+        const targetExp = Math.max(0.7, Math.min(1.35, 0.7 + lum * 0.9));
+        renderer.toneMappingExposure += (targetExp - renderer.toneMappingExposure) * 0.1;
+      } catch (e) { /* readback can throw on some frames — ignore */ }
+    }
+
     // MediaPipe gives a fresh pose only on detection frames, and it's noisy, so
     // copying it straight to the wig makes it jitter / snap when you turn. We
     // decompose the latest pose into a TARGET (pos / rotation / scale) and, every
@@ -562,6 +632,7 @@ async function main() {
         return;
       }
       const now = performance.now();
+      sampleSceneLight(video, now);
       if (video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime;
         try {
@@ -765,8 +836,10 @@ async function startCamera(facing) {
   videoStream = await navigator.mediaDevices.getUserMedia({
     video: {
       facingMode: { ideal: facing },
-      width:  { ideal: 1280 },
-      height: { ideal: 720 },
+      // Request 1080p for a sharper camera feed (falls back automatically if the
+      // device/WebView can't provide it). MediaPipe still tracks fine at 1080p.
+      width:  { ideal: 1920 },
+      height: { ideal: 1080 },
     },
     audio: false,
   });

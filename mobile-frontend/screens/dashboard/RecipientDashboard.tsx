@@ -40,6 +40,7 @@ import HairRequestHistoryScreen from './HairRequestHistoryScreen';
 import CommunityScreen from './CommunityScreen';
 import HairCareScreen from './HairCareScreen';
 import { CustomAlert } from '../../components/GlobalAlert';
+import PastEventsSection from '../../components/PastEventsSection';
 
 interface RecipientDashboardProps {
   onLogout?: () => void;
@@ -678,6 +679,8 @@ export default function RecipientDashboard({ onLogout, onRoleChange, userName = 
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
+
+        <PastEventsSection />
       </ScrollView>
 
       {/* Pick-up Ready Modal */}

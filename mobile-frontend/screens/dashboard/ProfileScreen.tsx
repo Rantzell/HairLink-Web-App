@@ -319,7 +319,7 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
     const pickImage = async () => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ['images'],
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 0.3, // Reduced quality for faster upload
@@ -338,30 +338,51 @@ export default function ProfileScreen({ onBack, onLogout, onRoleChange }: Profil
             setUpdating(true);
 
             const formData = new FormData();
-            const fileExt = uri.split('.').pop()?.toLowerCase();
+            const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
             const fileName = `avatar.${fileExt}`;
 
+            // Photo-only update — the backend leaves every other field untouched,
+            // so there's no need to resend name/phone (which would also trip
+            // name/phone validation for locked accounts).
             formData.append('profile_photo', {
                 uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
                 name: fileName,
                 type: `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
             } as any);
 
-            const names = fullName.trim().split(/\s+/);
-            formData.append('first_name', names[0] || '');
-            formData.append('last_name', names.slice(1).join(' ') || (names[0] || ''));
-            if (phone) formData.append('phone', phone);
+            // Use fetch (not axios) for the multipart upload: RN's XHR-based axios
+            // adapter can drop the response of a file upload and surface a bare
+            // "Network Error" even when the server succeeded. fetch handles RN
+            // multipart reliably. Don't set Content-Type — RN adds the boundary.
+            const { data: sessionData } = await supabase.auth.getSession();
+            const token = sessionData?.session?.access_token;
+            const baseUrl = (api.defaults.baseURL || '').replace(/\/$/, '');
 
-            const response = await api.post('/profile/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
+            const res = await fetch(`${baseUrl}/profile/`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: formData,
             });
 
-            const updatedUser = response.data?.user;
+            const payload = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                let msg = payload?.message || payload?.error || 'Failed to upload image to server.';
+                if (payload?.details) {
+                    const messages = Object.values(payload.details).flat();
+                    if (messages.length > 0) msg = messages.join('\n');
+                }
+                throw new Error(msg);
+            }
+
+            const updatedUser = payload?.user;
             setAvatarUrl(getAvatarUrl(updatedUser?.profile_photo_url || updatedUser?.profilePhotoUrl));
             CustomAlert.alert('Success', 'Profile picture updated! ✨');
         } catch (error: any) {
-            console.error('Upload error:', error);
-            CustomAlert.alert('Upload Error', 'Failed to upload image to server.');
+            console.error('Upload error:', error?.message || error);
+            CustomAlert.alert('Upload Error', error?.message || 'Failed to upload image to server.');
         } finally {
             setUpdating(false);
         }

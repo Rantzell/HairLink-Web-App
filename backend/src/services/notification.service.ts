@@ -1,38 +1,63 @@
 import prisma from '../config/database';
-import { Expo } from 'expo-server-sdk';
+import { fcmMessaging } from '../config/firebase';
 
-const expo = new Expo();
-
+/**
+ * Deliver a push to every active device of the given users, straight through
+ * Firebase Cloud Messaging. Every in-app notification funnels through here (via
+ * createNotification), so this one function powers push for ALL notification
+ * types — donations, requests, wigmaker, community, announcements, monetary, etc.
+ *
+ * `data` values must be strings for FCM data payloads, so we stringify them.
+ */
 export const broadcastPushNotifications = async (userIds: string[], title: string, body: string, data?: any) => {
   try {
-    const tokens = await prisma.user_push_tokens.findMany({
-      where: { user_id: { in: userIds }, is_active: true }
-    });
-    
-    const messages = [];
-    for (const tokenRecord of tokens) {
-      if (!Expo.isExpoPushToken(tokenRecord.expo_push_token)) continue;
-      messages.push({
-        to: tokenRecord.expo_push_token,
-        sound: 'default' as const,
-        title: title,
-        body: body,
-        data: data || {},
-      });
-    }
+    const messaging = fcmMessaging();
+    if (!messaging) return; // FCM not configured — skip silently (app still works)
+    if (!userIds.length) return;
 
-    if (messages.length > 0) {
-      const chunks = expo.chunkPushNotifications(messages);
-      for (const chunk of chunks) {
-        try {
-          await expo.sendPushNotificationsAsync(chunk);
-        } catch (error) {
-          console.error('[Notify] Error sending push chunk:', error);
-        }
+    const records = await prisma.user_push_tokens.findMany({
+      where: { user_id: { in: userIds }, is_active: true },
+    });
+    const tokens = records.map((r) => r.expo_push_token).filter(Boolean);
+    if (!tokens.length) return;
+
+    // FCM data payload must be a flat map of strings.
+    const stringData: Record<string, string> = {};
+    if (data && typeof data === 'object') {
+      for (const [k, v] of Object.entries(data)) {
+        stringData[k] = typeof v === 'string' ? v : JSON.stringify(v);
       }
     }
+
+    const res = await messaging.sendEachForMulticast({
+      tokens,
+      notification: { title, body },
+      data: stringData,
+      android: { priority: 'high', notification: { sound: 'default', channelId: 'default' } },
+      apns: { payload: { aps: { sound: 'default' } } },
+    });
+
+    // Deactivate tokens FCM reports as invalid/unregistered so we stop retrying.
+    const dead: string[] = [];
+    res.responses.forEach((r, i) => {
+      if (!r.success) {
+        const code = r.error?.code || '';
+        if (code.includes('registration-token-not-registered') || code.includes('invalid-argument')) {
+          dead.push(tokens[i]);
+        } else {
+          console.error('[FCM] send error:', code, r.error?.message);
+        }
+      }
+    });
+    if (dead.length) {
+      await prisma.user_push_tokens.updateMany({
+        where: { expo_push_token: { in: dead } },
+        data: { is_active: false },
+      });
+    }
+    console.log(`[FCM] sent=${res.successCount} failed=${res.failureCount} deactivated=${dead.length}`);
   } catch (err) {
-    console.error('[Notify] Error fetching tokens for push:', err);
+    console.error('[Notify] push broadcast error:', err);
   }
 };
 

@@ -95,21 +95,27 @@ router.post('/push-token', authenticate, async (req: Request, res: Response) => 
       return;
     }
 
-    await prisma.user_push_tokens.upsert({
+    // NOTE: the live DB lacks a UNIQUE constraint on expo_push_token, so upsert's
+    // ON CONFLICT fails. Do a match-then-update, else create — robust either way.
+    const updated = await prisma.user_push_tokens.updateMany({
       where: { expo_push_token: token },
-      update: {
+      data: {
         user_id: req.user!.id,
         platform: platform || 'unknown',
         is_active: true,
-        updated_at: new Date()
+        updated_at: new Date(),
       },
-      create: {
-        user_id: req.user!.id,
-        expo_push_token: token,
-        platform: platform || 'unknown',
-        is_active: true,
-      }
     });
+    if (updated.count === 0) {
+      await prisma.user_push_tokens.create({
+        data: {
+          user_id: req.user!.id,
+          expo_push_token: token,
+          platform: platform || 'unknown',
+          is_active: true,
+        },
+      });
+    }
 
     res.json({ success: true, message: 'Push token saved successfully.' });
   } catch (err) {

@@ -155,14 +155,16 @@ export const profileUpdateSchema = z.object({
     .regex(/^[A-Za-z\s'-]+$/, 'First name may only contain letters, spaces, hyphens, and apostrophes.')
     .refine(val => !(val === val.toUpperCase() && /[A-Za-z]/.test(val)), {
       message: 'First name cannot be all uppercase.'
-    }),
+    })
+    .optional(),
   last_name: z.string()
     .min(2, 'Last name must be at least 2 characters')
     .max(50)
     .regex(/^[A-Za-z\s'-]+$/, 'Last name may only contain letters, spaces, hyphens, and apostrophes.')
     .refine(val => !(val === val.toUpperCase() && /[A-Za-z]/.test(val)), {
       message: 'Last name cannot be all uppercase.'
-    }),
+    })
+    .optional(),
   phone: z.string()
     .regex(/^\+639\d{9}$/, 'Mobile number must be exactly 10 digits starting with 9 after +63.')
     .or(z.literal(''))

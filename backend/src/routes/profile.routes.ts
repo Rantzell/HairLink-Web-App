@@ -41,17 +41,20 @@ router.post('/', authenticate, upload.single('profile_photo'), validate(profileU
     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
     if (!user) { res.status(404).json({ error: 'Not found' }); return; }
 
-    // Donors and recipients cannot change their own name — preserve existing values
-    // regardless of what the client submits.
+    // Only update the fields the client actually sent. Anything omitted is left
+    // untouched — so a photo-only upload doesn't wipe bio/age/gender/phone.
     const nameLocked = user.role === 'donor' || user.role === 'recipient';
-    const updateData: any = {
-      firstName: nameLocked ? user.firstName : req.body.first_name,
-      lastName: nameLocked ? user.lastName : req.body.last_name,
-      phone: req.body.phone || null,
-      bio: req.body.bio || null,
-      age: req.body.age || null,
-      gender: req.body.gender || null,
-    };
+    const updateData: any = {};
+
+    // Donors and recipients cannot change their own name — ignore any submitted values.
+    if (!nameLocked) {
+      if (req.body.first_name !== undefined) updateData.firstName = req.body.first_name;
+      if (req.body.last_name !== undefined) updateData.lastName = req.body.last_name;
+    }
+    if (req.body.phone !== undefined) updateData.phone = req.body.phone || null;
+    if (req.body.bio !== undefined) updateData.bio = req.body.bio || null;
+    if (req.body.age !== undefined) updateData.age = req.body.age ?? null;
+    if (req.body.gender !== undefined) updateData.gender = req.body.gender || null;
 
     if (req.file) {
       if (user.profile_photo_url) {
@@ -63,7 +66,10 @@ router.post('/', authenticate, upload.single('profile_photo'), validate(profileU
 
     const updated = await prisma.user.update({ where: { id: user.id }, data: updateData });
     res.json({ success: true, message: 'Profile updated successfully!', user: s(updated) });
-  } catch (err) { res.status(500).json({ error: 'Failed' }); }
+  } catch (err: any) {
+    console.error('Profile Update Error:', err);
+    res.status(err?.status || 500).json({ error: 'Failed', message: err?.message || 'Profile update failed' });
+  }
 });
 
 export default router;
