@@ -106,8 +106,9 @@ const MonetaryDonation: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.75rem' }}>Select an amount</label>
+          {/* Preset amounts */}
+          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.75rem' }}>Select an amount</label>
             <div className="amount-pills">
               {amountPills.map(amount => (
                 <button
@@ -122,9 +123,17 @@ const MonetaryDonation: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'end' }}>
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
+            <div style={{ flex: 1, height: '1px', background: '#f0e4ee' }} />
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#b98db5', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>or enter a custom amount</span>
+            <div style={{ flex: 1, height: '1px', background: '#f0e4ee' }} />
+          </div>
+
+          {/* Custom amount + currency on one row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', alignItems: 'end', marginTop: '0.5rem' }}>
             <div className="form-group">
-              <label htmlFor="custom-amount" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Or Enter A Custom Amount</label>
+              <label htmlFor="custom-amount" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Amount</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <span style={{ position: 'absolute', left: '1rem', color: '#4a3452', fontWeight: 700, fontSize: '1rem', pointerEvents: 'none' }}>{currencySymbol}</span>
                 <input
@@ -134,12 +143,12 @@ const MonetaryDonation: React.FC = () => {
                   value={customAmount}
                   onChange={handleCustomAmountChange}
                   className="form-input-premium"
-                  style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.2rem', border: '2px solid #ead7e8', borderRadius: '12px', fontWeight: 600 }}
+                  style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.4rem', border: '2px solid #ead7e8', borderRadius: '12px', fontWeight: 600 }}
                 />
               </div>
             </div>
             <div className="form-group">
-              <label htmlFor="currency" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Currency *</label>
+              <label htmlFor="currency" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Currency</label>
               <select
                 id="currency"
                 value={currency}

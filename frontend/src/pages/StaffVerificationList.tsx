@@ -210,8 +210,7 @@ const StaffVerificationList: React.FC = () => {
                     <th className="tracking-table-th">Amount</th>
                     <th className="tracking-table-th">Method</th>
                     <th className="tracking-table-th">Date</th>
-                    <th className="tracking-table-th">Status</th>
-                    <th className="tracking-table-th-center">Action</th>
+
                   </>
                 ) : (
                   <>
@@ -227,7 +226,7 @@ const StaffVerificationList: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={isMonetary ? 9 : 5} className="tracking-table-loading">
+                  <td colSpan={isMonetary ? 7 : 5} className="tracking-table-loading">
                     <i className='bx bx-loader-alt bx-spin tracking-table-loading-icon'></i>
                     Loading {isMonetary ? 'monetary records' : 'verification queue'}…
                   </td>
@@ -267,17 +266,7 @@ const StaffVerificationList: React.FC = () => {
                             })
                           : '—'}
                       </td>
-                      <td className="tracking-table-td">
-                        <StatusPill status={item.status} />
-                      </td>
-                      <td className="tracking-table-td-center">
-                        <Link
-                          to={`/staff/verification/${type}/${item.reference || item.referenceNumber}`}
-                          className="soft-btn review-btn-styled"
-                        >
-                          Review
-                        </Link>
-                      </td>
+
                     </tr>
                   ) : (
                     <tr key={item.id} className="tracking-table-row">
@@ -304,7 +293,7 @@ const StaffVerificationList: React.FC = () => {
                 )
               ) : (
                 <tr>
-                  <td colSpan={isMonetary ? 9 : 5} className="tracking-table-empty">
+                  <td colSpan={isMonetary ? 7 : 5} className="tracking-table-empty">
                     <i className='bx bx-file-find tracking-table-empty-icon'></i>
                     No items match your search or filter criteria.
                   </td>
