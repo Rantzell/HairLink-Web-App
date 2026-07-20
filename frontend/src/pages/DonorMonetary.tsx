@@ -8,20 +8,21 @@ const DonorMonetary: React.FC = () => {
   const { user: _user } = useAuth();
   const [amount, setAmount] = useState('');
   const [purpose, setPurpose] = useState('Wig Production');
-  const [proof, setProof] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [donations, setDonations] = useState<any[]>([]);
-  const [stats, setStats] = useState({ total: 0, points: 0 });
+  const [total, setTotal] = useState(0);
 
   const fetchHistory = async () => {
     try {
-      const res = await apiClient.get('/internal-api/donor/monetary');
-      setDonations(res.data.history || []);
-      setStats({
-        total: res.data.total_donated || 0,
-        points: res.data.total_points || 0
-      });
+      const res = await apiClient.get('/internal-api/monetary');
+      const rows: any[] = Array.isArray(res.data) ? res.data : [];
+      setDonations(rows);
+      setTotal(
+        rows
+          .filter((d) => d.status === 'Completed')
+          .reduce((sum, d) => sum + Number(d.amount || 0), 0),
+      );
     } catch (err) {
       console.error('Failed to fetch monetary history', err);
     }
@@ -29,32 +30,44 @@ const DonorMonetary: React.FC = () => {
 
   useEffect(() => {
     fetchHistory();
+
+    // Handle the redirect back from Xendit's hosted checkout.
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    if (status === 'success') {
+      toast.success('Payment received! Thank you for your generous donation.');
+    } else if (status === 'failed') {
+      toast.error('Payment was not completed. You can try again anytime.');
+    }
+    if (status) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !proof) return;
+    if (!amount || Number(amount) < 10) return;
     setShowConfirm(true);
   };
 
   const doSubmit = async () => {
     setShowConfirm(false);
     setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append('amount', amount);
-    formData.append('purpose', purpose);
-    formData.append('proof', proof!);
-
     try {
-      await apiClient.post('/internal-api/donor/monetary', formData);
-      toast.success('Financial donation submitted for verification! Thank you for your support.');
-      setAmount('');
-      setProof(null);
-      fetchHistory();
+      const res = await apiClient.post('/internal-api/monetary/create-invoice', {
+        amount: Number(amount),
+        purpose,
+      });
+      if (res.data?.invoiceUrl) {
+        // Redirect to Xendit's secure hosted checkout.
+        window.location.href = res.data.invoiceUrl;
+      } else {
+        toast.error('Could not start payment. Please try again.');
+        setIsSubmitting(false);
+      }
     } catch (err) {
       console.error('Submission failed', err);
-      toast.error('Failed to submit donation. Please try again.');
-    } finally {
+      toast.error('Failed to start payment. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -70,13 +83,13 @@ const DonorMonetary: React.FC = () => {
         <div className="module-card">
           <div className="summary-item">
             <small>Total Donated</small>
-            <strong>₱{stats.total.toLocaleString()}</strong>
+            <strong>₱{total.toLocaleString()}</strong>
           </div>
         </div>
         <div className="module-card">
           <div className="summary-item">
-            <small>Reward Points</small>
-            <strong>{stats.points} pts</strong>
+            <small>Donations</small>
+            <strong>{donations.filter((d) => d.status === 'Completed').length}</strong>
           </div>
         </div>
       </div>
@@ -87,9 +100,10 @@ const DonorMonetary: React.FC = () => {
           <form onSubmit={handleSubmit} className="form-shell" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
             <div className="form-group">
               <label>Donation Amount (PHP)</label>
-              <input 
-                type="number" 
-                placeholder="Enter amount" 
+              <input
+                type="number"
+                min={10}
+                placeholder="Enter amount"
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
                 required
@@ -100,7 +114,7 @@ const DonorMonetary: React.FC = () => {
 
             <div className="form-group">
               <label>Purpose</label>
-              <select 
+              <select
                 value={purpose}
                 onChange={e => setPurpose(e.target.value)}
                 className="form-input-premium"
@@ -113,22 +127,15 @@ const DonorMonetary: React.FC = () => {
               </select>
             </div>
 
-            <div className="form-group">
-              <label>Proof of Payment (Screenshot)</label>
-              <input 
-                type="file" 
-                onChange={e => setProof(e.target.files?.[0] || null)}
-                required
-                accept="image/*"
-                style={{ display: 'block', marginTop: '0.5rem' }}
-              />
-              <small style={{ color: '#8c7895', marginTop: '0.4rem', display: 'block' }}>
-                Please send your donation via GCash (0912-345-6789) or Bank (BPI: 1234-5678-90) and upload the receipt.
+            <div style={{ padding: '1rem', background: '#fdf7fb', borderRadius: '12px', border: '1px solid #f2ebf4' }}>
+              <small style={{ color: '#8c7895', display: 'block', lineHeight: 1.5 }}>
+                <i className='bx bxs-lock-alt'></i> You'll be redirected to our secure payment partner (Xendit) to
+                pay via GCash, card, or online banking. No screenshots needed — your donation is confirmed automatically.
               </small>
             </div>
 
-            <button type="submit" className="soft-btn" disabled={isSubmitting || !amount || !proof} style={{ marginTop: '1rem', width: '100%' }}>
-              {isSubmitting ? 'Submitting...' : 'Confirm Donation'}
+            <button type="submit" className="soft-btn" disabled={isSubmitting || !amount || Number(amount) < 10} style={{ marginTop: '1rem', width: '100%' }}>
+              {isSubmitting ? 'Redirecting to payment…' : 'Donate Securely'}
             </button>
           </form>
         </div>
@@ -140,11 +147,6 @@ const DonorMonetary: React.FC = () => {
             <li style={{ marginBottom: '0.8rem' }}><strong>₱1,500</strong> funds the materials needed for a full custom wig.</li>
             <li style={{ marginBottom: '0.8rem' }}><strong>₱3,000</strong> supports a complete wig-making workshop for our partners.</li>
           </ul>
-          <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fdf7fb', borderRadius: '12px', border: '1px solid #f2ebf4' }}>
-            <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#ad246d' }}>
-              <i className='bx bxs-gift'></i> You earn 1 point for every ₱10 donated!
-            </p>
-          </div>
         </div>
       </div>
 
@@ -164,10 +166,10 @@ const DonorMonetary: React.FC = () => {
               {donations.map((d: any) => (
                 <tr key={d.id} style={{ borderBottom: '1px solid #f2ebf4' }}>
                   <td style={{ padding: '1rem' }}>#{d.reference}</td>
-                  <td style={{ padding: '1rem' }}>₱{d.amount.toLocaleString()}</td>
-                  <td style={{ padding: '1rem' }}>{new Date(d.createdAt).toLocaleDateString()}</td>
+                  <td style={{ padding: '1rem' }}>₱{Number(d.amount).toLocaleString()}</td>
+                  <td style={{ padding: '1rem' }}>{d.createdAt ? new Date(d.createdAt).toLocaleDateString() : '—'}</td>
                   <td style={{ padding: '1rem' }}>
-                    <span className={`status-pill status-${d.status.toLowerCase()}`}>{d.status}</span>
+                    <span className={`status-pill status-${String(d.status).toLowerCase()}`}>{d.status}</span>
                   </td>
                 </tr>
               ))}
@@ -186,8 +188,8 @@ const DonorMonetary: React.FC = () => {
         onClose={() => setShowConfirm(false)}
         onConfirm={doSubmit}
         title="Confirm Monetary Donation"
-        message={`You are about to submit a donation of ₱${Number(amount).toLocaleString()}. This will be reviewed by our team. Proceed?`}
-        confirmText="Yes, Submit Donation"
+        message={`You are about to donate ₱${Number(amount).toLocaleString()} via our secure payment partner. You'll be redirected to complete payment. Proceed?`}
+        confirmText="Proceed to Payment"
         isConfirming={isSubmitting}
       />
     </section>

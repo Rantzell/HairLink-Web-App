@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import prisma from '../config/database';
+import { handleXenditWebhook } from './monetary.routes';
 
 const router = Router();
+
+// POST /api/public/monetary/webhook — Xendit invoice callback (unauthenticated,
+// verified via the x-callback-token shared secret inside the handler).
+router.post('/monetary/webhook', handleXenditWebhook);
 
 function getStartOfTodayPH(): Date {
   const d = new Date();
