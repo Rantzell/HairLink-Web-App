@@ -17,6 +17,7 @@ const MonetaryDonation: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const amountPills = [50, 100, 150, 200, 250];
+  const currencySymbol = currency === 'USD' ? '$' : '₱';
 
   // Handle the redirect back from Xendit's hosted checkout.
   useEffect(() => {
@@ -115,7 +116,7 @@ const MonetaryDonation: React.FC = () => {
                   className={`pill-btn ${activeAmount === amount ? 'active' : ''}`}
                   onClick={() => handleAmountPillClick(amount)}
                 >
-                  &#8369; {amount}
+                  {currencySymbol} {amount}
                 </button>
               ))}
             </div>
@@ -125,7 +126,7 @@ const MonetaryDonation: React.FC = () => {
             <div className="form-group">
               <label htmlFor="custom-amount" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ad246d', marginBottom: '0.5rem' }}>Or Enter A Custom Amount</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <span style={{ position: 'absolute', left: '1rem', color: '#4a3452', fontWeight: 700, fontSize: '1rem', pointerEvents: 'none' }}>&#8369;</span>
+                <span style={{ position: 'absolute', left: '1rem', color: '#4a3452', fontWeight: 700, fontSize: '1rem', pointerEvents: 'none' }}>{currencySymbol}</span>
                 <input
                   type="number"
                   id="custom-amount"
