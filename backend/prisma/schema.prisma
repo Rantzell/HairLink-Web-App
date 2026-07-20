@@ -233,6 +233,7 @@ model MonetaryDonation {
   currency        String?   @default("PHP")
   paymentMethod   String?   @map("payment_method")
   referenceNumber String?   @unique @map("reference_number")
+  xenditInvoiceId String?   @unique @map("xendit_invoice_id")
   proofPath       String?   @map("proof_path")
   status          String?   @default("Completed")
   remarks         String?

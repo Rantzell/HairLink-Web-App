@@ -179,9 +179,9 @@ export const monetaryDonationSchema = z.object({
   amount: z.coerce.number().min(10),
   name: z.string().max(255).optional(),
   email: z.string().email().max(255).optional(),
-  payment_method: z.string().min(1),
+  purpose: z.string().max(255).optional(),
   currency: z.string().default('PHP'),
-  is_anonymous: z.string().optional().transform(v => v === '1'),
+  is_anonymous: z.coerce.boolean().optional(),
 });
 
 export const referralCodeSchema = z.object({
