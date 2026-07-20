@@ -38,13 +38,13 @@ function monetaryDisplayEmail(d: MonetaryItem): string {
 
 const StaffVerificationList: React.FC = () => {
   const { type } = useParams<{ type: 'donor' | 'recipient' | 'monetary' }>();
-  const [items, setItems]               = useState<any[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [searchTerm, setSearchTerm]     = useState('');
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
-  const [currentPage, setCurrentPage]   = useState(1);
-  const [selectedIds, setSelectedIds]   = useState<Set<number>>(new Set());
-  const [isDeleting, setIsDeleting]     = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const isMonetary = type === 'monetary';
@@ -74,7 +74,7 @@ const StaffVerificationList: React.FC = () => {
 
   const filteredItems = items.filter(item => {
     const name = item.user ? `${item.user.firstName} ${item.user.lastName}` : (item.name || '');
-    const ref  = (item.reference || item.referenceNumber || '').toLowerCase();
+    const ref = (item.reference || item.referenceNumber || '').toLowerCase();
     const matchesSearch =
       ref.includes(searchTerm.toLowerCase()) ||
       name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,7 +91,7 @@ const StaffVerificationList: React.FC = () => {
   const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE);
   const pagedItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const title    = type === 'donor' ? 'Hair Donations' : type === 'recipient' ? 'Recipient Requests' : 'Monetary Donations';
+  const title = type === 'donor' ? 'Hair Donations' : type === 'recipient' ? 'Recipient Requests' : 'Monetary Donations';
   const hasReview = true;
 
   const allPageIds = pagedItems.map((i: any) => i.id as number);
@@ -136,11 +136,6 @@ const StaffVerificationList: React.FC = () => {
             <h2 className="staff-queue-title">
               {title}{hasReview ? ' Verification Queue' : ''}
             </h2>
-            {isMonetary && (
-              <p style={{ fontSize: '0.78rem', color: '#9b8a9e', margin: '0.2rem 0 0' }}>
-                Review and approve proof of monetary contributions.
-              </p>
-            )}
           </div>
 
           <div className="staff-tools staff-tools-flex">
@@ -262,8 +257,8 @@ const StaffVerificationList: React.FC = () => {
                       <td className="tracking-table-td-date">
                         {item.createdAt
                           ? new Date(item.createdAt).toLocaleDateString('en-US', {
-                              month: 'short', day: 'numeric', year: 'numeric',
-                            })
+                            month: 'short', day: 'numeric', year: 'numeric',
+                          })
                           : '—'}
                       </td>
 
